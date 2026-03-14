@@ -1,0 +1,211 @@
+import React, { useState } from 'react';
+import DashboardLayout from '../components/layout/DashboardLayout';
+import {
+    Truck,
+    CreditCard,
+    Smartphone,
+    Wallet,
+    ShieldCheck,
+    Lock,
+    ChevronRight,
+    Search,
+    ShoppingBag,
+    CheckCircle2
+} from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import { Input } from '../components/ui/Input';
+import { cn } from '../lib/utils';
+
+const Checkout = () => {
+    const [paymentMethod, setPaymentMethod] = useState('wallet');
+    const [otp, setOtp] = useState('');
+
+    const cartItems = [
+        {
+            id: 1,
+            name: "Routeur Pro BCA-X1",
+            qty: 1,
+            price: 8490000,
+            image: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&q=80&w=200"
+        },
+        {
+            id: 2,
+            name: "Solaire Pro 250W",
+            qty: 2,
+            price: 1850000,
+            image: "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&q=80&w=200"
+        }
+    ];
+
+    const subtotal = 12190000;
+    const deliveryFee = 50000;
+    const total = subtotal + deliveryFee;
+
+    return (
+        <DashboardLayout title="Paiement & Validation">
+            <div className="w-full space-y-10 animate-in fade-in duration-700 font-inter pb-20 px-4 md:px-8">
+                {/* Header Section */}
+                <div className="flex flex-col gap-2">
+                    <span className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-primary/20 w-fit">Tunnel d'Achat Sécurisé</span>
+                    <h2 className="text-4xl md:text-5xl font-black text-foreground tracking-tighter italic leading-none">
+                        Finalisez votre commande <br />
+                        <span className="text-primary not-italic text-3xl md:text-4xl">en toute sécurité.</span>
+                    </h2>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    {/* Left Column: Forms and Payment */}
+                    <div className="lg:col-span-8 flex flex-col gap-8">
+                        {/* Section: Livraison */}
+                        <Card className="rounded-[2rem] border-border overflow-hidden shadow-xl bg-card">
+                            <CardHeader className="p-6 border-b border-border bg-muted/20 flex flex-row items-center gap-4">
+                                <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                    <Truck className="size-5" />
+                                </div>
+                                <CardTitle className="text-sm font-black uppercase tracking-widest">Informations de livraison</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nom complet du destinataire</label>
+                                    <Input placeholder="Ibrahima Bah" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Numéro de téléphone GN</label>
+                                    <Input placeholder="+224 6XX XX XX XX" />
+                                </div>
+                                <div className="space-y-2 md:col-span-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Adresse précise (Commune, Quartier)</label>
+                                    <Input placeholder="Ex: Dixinn, Landreah, Villa 45" />
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Section: Mode de paiement */}
+                        <Card className="rounded-[2rem] border-border overflow-hidden shadow-xl bg-card">
+                            <CardHeader className="p-6 border-b border-border bg-muted/20 flex flex-row items-center gap-4">
+                                <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                    <CreditCard className="size-5" />
+                                </div>
+                                <CardTitle className="text-sm font-black uppercase tracking-widest">Mode de paiement préféré</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-8">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {[
+                                        { id: 'wallet', label: 'Portefeuille BCA', icon: Wallet, sub: 'Solde: 15M GNF' },
+                                        { id: 'mobile', label: 'Mobile Money', icon: Smartphone, sub: 'Orange / MTN' },
+                                        { id: 'card', label: 'Carte Bancaire', icon: CreditCard, sub: 'Visa / Mastercard' }
+                                    ].map((method) => (
+                                        <div
+                                            key={method.id}
+                                            onClick={() => setPaymentMethod(method.id)}
+                                            className={cn(
+                                                "relative cursor-pointer border-2 rounded-[1.5rem] p-6 flex flex-col gap-3 transition-all duration-300",
+                                                paymentMethod === method.id
+                                                    ? "border-primary bg-primary/5 shadow-lg shadow-primary/5"
+                                                    : "border-border bg-muted/10 hover:border-primary/40"
+                                            )}
+                                        >
+                                            <div className="flex justify-between items-start">
+                                                <method.icon className={cn("size-6", paymentMethod === method.id ? "text-primary" : "text-muted-foreground")} />
+                                                <div className={cn(
+                                                    "size-5 rounded-full border-2 flex items-center justify-center",
+                                                    paymentMethod === method.id ? "border-primary" : "border-border"
+                                                )}>
+                                                    {paymentMethod === method.id && <div className="size-2.5 rounded-full bg-primary" />}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="font-black text-foreground italic tracking-tight">{method.label}</p>
+                                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">{method.sub}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Section: Sécurité OTP */}
+                        <Card className="rounded-[2rem] border-dashed border-2 border-primary/30 overflow-hidden bg-primary/5">
+                            <CardContent className="p-8 flex flex-col md:flex-row items-center gap-8">
+                                <div className="size-20 rounded-full bg-white flex items-center justify-center shadow-xl shadow-primary/10 shrink-0">
+                                    <ShieldCheck className="size-10 text-primary" />
+                                </div>
+                                <div className="flex-1 space-y-4 text-center md:text-left">
+                                    <div>
+                                        <h3 className="text-xl font-black italic tracking-tight text-foreground">Double Validation Requise</h3>
+                                        <p className="text-sm text-muted-foreground font-medium mt-1">Saisissez le code de sécurité envoyé par SMS pour confirmer l'ordre de virement.</p>
+                                    </div>
+                                    <div className="flex flex-col md:flex-row items-center gap-4">
+                                        <Input
+                                            className="w-full md:w-64 h-14 text-center text-2xl font-black tracking-[0.5em] rounded-2xl border-white focus:ring-primary/20 bg-white"
+                                            placeholder="000000"
+                                            maxLength={6}
+                                            value={otp}
+                                            onChange={(e) => setOtp(e.target.value)}
+                                        />
+                                        <button className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline whitespace-nowrap">Renvoyer le code (59s)</button>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Right Column: Order Summary */}
+                    <aside className="lg:col-span-4 sticky top-8">
+                        <Card className="rounded-[2rem] border-border overflow-hidden shadow-2xl bg-card">
+                            <div className="p-8 border-b border-border bg-muted/20">
+                                <h3 className="text-sm font-black uppercase tracking-widest text-foreground">Synthèse du Panier</h3>
+                            </div>
+                            <div className="p-8 space-y-6 max-h-[400px] overflow-y-auto scrollbar-hide">
+                                {cartItems.map((item) => (
+                                    <div key={item.id} className="flex gap-4 group">
+                                        <div className="size-20 rounded-2xl bg-muted overflow-hidden border border-border shrink-0">
+                                            <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                        </div>
+                                        <div className="flex flex-col justify-center flex-1 min-w-0">
+                                            <p className="font-bold text-sm text-foreground truncate">{item.name}</p>
+                                            <div className="flex items-center justify-between mt-1">
+                                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Qté: {item.qty}</span>
+                                                <span className="font-black text-primary italic text-sm">{item.price.toLocaleString('fr-FR')} GNF</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="p-8 bg-muted/10 border-t border-border space-y-4">
+                                <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                                    <span>Sous-total</span>
+                                    <span className="text-foreground">{subtotal.toLocaleString('fr-FR')} GNF</span>
+                                </div>
+                                <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                                    <span>Livraison Rush</span>
+                                    <span className="text-foreground">{deliveryFee.toLocaleString('fr-FR')} GNF</span>
+                                </div>
+                                <div className="pt-4 border-t border-border flex justify-between items-end">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Total Final</span>
+                                    <div className="flex flex-col items-end leading-none">
+                                        <span className="text-3xl font-black italic tracking-tighter text-foreground">{total.toLocaleString('fr-FR')} GNF</span>
+                                        <span className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.5em] mt-1">TVA Incluse</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="p-8 pt-0">
+                                <Button className="w-full py-8 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-sm shadow-2xl shadow-primary/30 group">
+                                    Valider le paiement
+                                    <Lock className="size-4 ml-2 group-hover:animate-bounce" />
+                                </Button>
+                                <div className="flex items-center justify-center gap-2 mt-6 text-muted-foreground">
+                                    <ShieldCheck className="size-4" />
+                                    <span className="text-[9px] font-black uppercase tracking-widest">Sécurisé par BCA Cloud Trust</span>
+                                </div>
+                            </div>
+                        </Card>
+                    </aside>
+                </div>
+            </div>
+        </DashboardLayout>
+    );
+};
+
+export default Checkout;
