@@ -27,6 +27,14 @@ const Order = sequelize.define('Order', {
     signature_offline: {
         type: DataTypes.TEXT,
     },
+    statut_livraison: {
+        type: DataTypes.ENUM('en_attente', 'ramasse', 'en_cours', 'livre'),
+        defaultValue: 'en_attente',
+    },
+    transporteur_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+    },
     date_commande: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,

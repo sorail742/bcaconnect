@@ -113,12 +113,54 @@ Bienvenue dans la documentation de l'API BCA Connect. Cette API est conçue pour
 
 ---
 
+## 💳 6. Paiements & Portefeuille (`/api/payments`)
+
+### Initier un dépôt (Rechargement de compte)
+- **Endpoint** : `POST /api/payments/initiate`
+- **Body** :
+```json
+{
+  "montant": 5000,
+  "moyen_paiement": "orange_money"
+}
+```
+- **Réponse** :
+```json
+{
+  "message": "Transaction initiée",
+  "payment_url": "https://...",
+  "transaction_id": "uuid"
+}
+```
+
+### Vérifier son solde
+- **Endpoint** : `GET /api/auth/me` (Le champ `portefeuille.solde_virtuel` contient le solde actuel).
+
+---
+
+## 🚚 7. Logistique & Livraison (`/api/delivery`)
+*Reservé au rôle `transporteur`*
+
+### Voir les commandes à livrer
+- **Endpoint** : `GET /api/delivery/available`
+
+### Accepter une livraison
+- **Endpoint** : `POST /api/delivery/assign`
+- **Body** : `{ "orderId": "uuid" }`
+
+### Mettre à jour le statut
+- **Endpoint** : `PATCH /api/delivery/status`
+- **Body** : `{ "orderId": "uuid", "status": "en_cours" }` 
+> Note: Les status possibles sont `ramasse`, `en_cours`, `livre`.
+
+---
+
 ## ⚠️ Gestion des Erreurs
 L'API utilise les codes HTTP standards :
 - `200/201` : Succès
 - `400` : Requête mal formée (champs manquants)
 - `401` : Non authentifié (Token manquant ou invalide)
-- `403` : Accès refusé (Droits insuffisants, ex: client tentant de créer un produit)
+- `403` : Accès refusé (Droits insuffisants)
 - `404` : Ressource non trouvée
 - `500` : Erreur interne du serveur
 

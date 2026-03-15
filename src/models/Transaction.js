@@ -23,6 +23,14 @@ const Transaction = sequelize.define('Transaction', {
         defaultValue: DataTypes.UUIDV4,
         unique: true,
     },
+    statut: {
+        type: DataTypes.ENUM('en_attente', 'complete', 'echoue'),
+        defaultValue: 'en_attente',
+    },
+    metadata: {
+        type: DataTypes.JSONB,
+        defaultValue: {},
+    },
 }, {
     tableName: 'transactions',
     timestamps: true,
