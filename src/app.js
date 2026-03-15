@@ -22,6 +22,7 @@ app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/delivery', require('./routes/deliveryRoutes'));
+app.use('/api/ai', require('./routes/aiRoutes'));
 
 // Gestion des erreurs globale
 app.use((err, req, res, next) => {

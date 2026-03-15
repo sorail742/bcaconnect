@@ -155,6 +155,18 @@ Bienvenue dans la documentation de l'API BCA Connect. Cette API est conçue pour
 
 ---
 
+## 🤖 8. Intelligence Artificielle (`/api/ai`)
+
+### Obtenir des analyses de vente (Vendeurs uniquement)
+- **Endpoint** : `GET /api/ai/insights`
+- **Description** : Renvoie une analyse des tendances de vente et des recommandations automatiques.
+
+### Obtenir l'analyse de confiance (Profil)
+- **Endpoint** : `GET /api/ai/trust-score`
+- **Description** : Évalue la fiabilité de l'utilisateur basée sur son historique.
+
+---
+
 ## ⚠️ Gestion des Erreurs
 L'API utilise les codes HTTP standards :
 - `200/201` : Succès
