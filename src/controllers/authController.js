@@ -79,6 +79,22 @@ const authController = {
         } catch (error) {
             next(error);
         }
+    },
+
+    // 3. Récupérer le profil de l'utilisateur connecté
+    getMe: async (req, res, next) => {
+        try {
+            const user = await User.findByPk(req.user.id, {
+                attributes: { exclude: ['mot_de_passe'] },
+                include: [{ model: Wallet, as: 'portefeuille' }]
+            });
+            if (!user) {
+                return res.status(404).json({ message: "Utilisateur non trouvé." });
+            }
+            res.json(user);
+        } catch (error) {
+            next(error);
+        }
     }
 };
 

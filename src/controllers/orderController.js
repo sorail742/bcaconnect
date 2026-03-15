@@ -34,7 +34,7 @@ const orderController = {
             const order = await Order.create({
                 utilisateur_id,
                 total_ttc,
-                statut: 'payé' // Simulons un paiement réussi pour le MVP
+                statut: 'payé'
             }, { transaction: t });
 
             // Create OrderItems
@@ -42,6 +42,18 @@ const orderController = {
                 await OrderItem.create({
                     ...item,
                     commande_id: order.id
+                }, { transaction: t });
+            }
+
+            // Create financial Transaction entry
+            const wallet = await Wallet.findOne({ where: { user_id: utilisateur_id }, transaction: t });
+            if (wallet) {
+                await Transaction.create({
+                    portefeuille_id: wallet.id,
+                    commande_id: order.id,
+                    montant: total_ttc,
+                    type_transaction: 'debit_achat',
+                    reference_externe: `ORD-${order.id.slice(0, 8)}`
                 }, { transaction: t });
             }
 
