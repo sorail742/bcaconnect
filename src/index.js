@@ -11,9 +11,9 @@ async function startServer() {
         await sequelize.authenticate();
         console.log('✅ Connexion à la base de données PostgreSQL établie.');
 
-        // En phase 1, on synchronise les modèles
-        // ATTENTION: { force: false } ne supprime pas les données existantes
-        await sequelize.sync({ force: false });
+        // En phase 1 & 2, on synchronise les modèles
+        // alter: true permet d'ajouter les nouvelles colonnes comme statut_livraison
+        await sequelize.sync({ alter: true });
         console.log('✅ Modèles synchronisés avec la base de données.');
 
         app.listen(PORT, () => {
