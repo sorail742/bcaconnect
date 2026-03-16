@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import DashboardLayout from '../components/layout/DashboardLayout';
+import PublicLayout from '../components/layout/PublicLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
@@ -104,8 +104,8 @@ const VendorsList = () => {
     );
 
     return (
-        <DashboardLayout title="Partenaires d'Affaires">
-            <div className="w-full space-y-10 animate-in fade-in duration-700 font-inter pb-20 px-4 md:px-8">
+        <PublicLayout>
+            <div className="w-full space-y-10 animate-in fade-in duration-700 font-inter pb-20 px-4 md:px-8 max-w-7xl mx-auto pt-10">
                 {/* Premium Header */}
                 <div className="relative py-12 px-10 rounded-[2rem] bg-card border border-border overflow-hidden">
                     <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 rounded-full blur-[80px] -mr-32 -mt-32"></div>
@@ -220,7 +220,7 @@ const VendorsList = () => {
                     </div>
                 </div>
             </div>
-        </DashboardLayout>
+        </PublicLayout>
     );
 };
 

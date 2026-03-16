@@ -15,6 +15,10 @@ const OrderItem = sequelize.define('OrderItem', {
         type: DataTypes.DECIMAL(15, 2),
         allowNull: false,
     },
+    statut: {
+        type: DataTypes.ENUM('en_attente', 'confirme', 'prepare', 'expedie', 'livre', 'annule', 'retourne'),
+        defaultValue: 'en_attente',
+    },
 }, {
     tableName: 'details_commandes',
     timestamps: true,

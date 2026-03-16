@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import DashboardLayout from '../components/layout/DashboardLayout';
+import PublicLayout from '../components/layout/PublicLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
@@ -48,8 +48,8 @@ const DeliveryTracking = () => {
     ];
 
     return (
-        <DashboardLayout title="Suivi des Colis">
-            <div className="w-full space-y-10 animate-in fade-in duration-700 font-inter pb-20 px-4 md:px-8">
+        <PublicLayout>
+            <div className="w-full space-y-10 animate-in fade-in duration-700 font-inter pb-20 px-4 md:px-8 max-w-7xl mx-auto pt-10">
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
                     <div className="space-y-4">
@@ -78,7 +78,7 @@ const DeliveryTracking = () => {
                             <div className="relative group/input">
                                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 size-5 group-focus-within/input:text-primary transition-colors" />
                                 <Input
-                                    className="w-full pl-14 pr-8 h-16 bg-white/5 border-white/10 focus:border-primary/50 text-white text-lg rounded-2xl placeholder:text-slate-600 shadow-inner font-black tracking-widest italic"
+                                    className="w-full pl-14 pr-8 h-16 bg-white/5 border-white/10 focus:border-primary/50 text-white text-lg rounded-2xl placeholder:text-slate-600 shadow-none border-none outline-none focus:ring-0 font-black tracking-widest italic"
                                     placeholder="N° DE SUIVI (EX: TRK-000...)"
                                     value={trackingNumber}
                                     onChange={(e) => setTrackingNumber(e.target.value)}
@@ -242,7 +242,7 @@ const DeliveryTracking = () => {
                     </p>
                 </div>
             </div>
-        </DashboardLayout>
+        </PublicLayout>
     );
 };
 

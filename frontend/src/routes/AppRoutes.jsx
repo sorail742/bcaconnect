@@ -53,16 +53,18 @@ const AppRoutes = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
+            {/* Routes Publiques Marketplace */}
+            <Route path="/catalog" element={<ProductCatalogue />} />
+            <Route path="/marketplace" element={<ProductCatalogue />} />
+            <Route path="/vendors" element={<VendorsList />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/tracking" element={<Tracking />} />
+
             {/* Routes Protégées */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/catalog" element={<ProtectedRoute><ProductCatalogue /></ProtectedRoute>} />
-            <Route path="/marketplace" element={<ProtectedRoute><ProductCatalogue /></ProtectedRoute>} />
-            <Route path="/vendors" element={<ProtectedRoute><VendorsList /></ProtectedRoute>} />
-            <Route path="/product/:id" element={<ProtectedRoute><ProductDetail /></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><OrdersClient /></ProtectedRoute>} />
             <Route path="/wallet" element={<ProtectedRoute><UserWallet /></ProtectedRoute>} />
             <Route path="/payments" element={<ProtectedRoute><UserWallet /></ProtectedRoute>} />
-            <Route path="/tracking" element={<ProtectedRoute><Tracking /></ProtectedRoute>} />
             <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />

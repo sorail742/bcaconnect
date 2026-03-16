@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import DataTable from '../../components/ui/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -9,68 +9,129 @@ import {
     Clock,
     Wallet,
     SlidersHorizontal,
-    MoreHorizontal,
+    Package,
+    CheckCircle2,
+    Truck,
+    XCircle,
+    RotateCcw
 } from 'lucide-react';
+import orderService from '../../services/orderService';
 
 const OrdersVendor = () => {
+    const [orders, setOrders] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState('Tous');
     const [search, setSearch] = useState('');
 
-    const STATUS_FILTERS = ['Tous', 'En attente', 'Expédié', 'Livré', 'Annulé'];
+    const STATUS_FILTERS = ['Tous', 'en_attente', 'confirme', 'prepare', 'expedie', 'livre', 'annule'];
 
-    const ordersData = [
-        { id: '#CMD-9482', initials: 'JD', client: 'Jean Diallo', date: '12 Mar 2024', amount: 1240000, status: 'En attente', variant: 'warning' },
-        { id: '#CMD-9481', initials: 'ML', client: 'Mariama Lamarana', date: '11 Mar 2024', amount: 850000, status: 'Expédié', variant: 'info' },
-        { id: '#CMD-9480', initials: 'PM', client: 'Pierre Magassouba', date: '10 Mar 2024', amount: 2410000, status: 'Livré', variant: 'success' },
-        { id: '#CMD-9479', initials: 'SB', client: 'Safiatou Barry', date: '10 Mar 2024', amount: 120000, status: 'Annulé', variant: 'danger' },
-        { id: '#CMD-9478', initials: 'LR', client: 'Lamine Roger', date: '09 Mar 2024', amount: 540000, status: 'Livré', variant: 'success' },
-    ];
+    const fetchOrders = async () => {
+        try {
+            const data = await orderService.getVendorOrders();
+            setOrders(data);
+        } catch (err) {
+            console.error("Erreur chargement commandes:", err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-    const filtered = ordersData.filter((o) => {
-        const matchStatus = activeFilter === 'Tous' || o.status === activeFilter;
+    useEffect(() => {
+        fetchOrders();
+    }, []);
+
+    const handleStatusUpdate = async (itemId, newStatus) => {
+        try {
+            await orderService.updateItemStatus(itemId, newStatus);
+            fetchOrders();
+        } catch (err) {
+            alert("Erreur lors de la mise à jour du statut.");
+        }
+    };
+
+    const getStatusVariant = (status) => {
+        switch (status) {
+            case 'en_attente': return 'warning';
+            case 'confirme': return 'info';
+            case 'prepare': return 'info';
+            case 'expedie': return 'secondary';
+            case 'livre': return 'success';
+            case 'annule': return 'danger';
+            case 'retourne': return 'danger';
+            default: return 'neutral';
+        }
+    };
+
+    const filtered = orders.filter((o) => {
+        const matchStatus = activeFilter === 'Tous' || o.statut === activeFilter;
         const matchSearch =
             o.id.toLowerCase().includes(search.toLowerCase()) ||
-            o.client.toLowerCase().includes(search.toLowerCase());
+            o.Order?.User?.nom_complet.toLowerCase().includes(search.toLowerCase());
         return matchStatus && matchSearch;
     });
 
     const columns = [
         {
-            label: 'ID Commande',
-            render: (row) => <span className="font-black text-primary text-xs italic tracking-widest">{row.id}</span>
-        },
-        {
-            label: 'Client',
+            label: 'Produit',
             render: (row) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary border border-primary/20">
-                        {row.initials}
+                    <div className="size-10 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200 shrink-0">
+                        <Package className="size-5 text-slate-400" />
                     </div>
-                    <span className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">
-                        {row.client}
-                    </span>
+                    <div>
+                        <p className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">{row.produit?.nom_produit}</p>
+                        <p className="text-[10px] text-slate-500 font-mono">CMD-{row.commande_id.slice(0, 8)}</p>
+                    </div>
                 </div>
             )
         },
         {
-            label: 'Date',
-            render: (row) => <span className="text-xs font-bold text-slate-500 uppercase">{row.date}</span>
+            label: 'Client',
+            render: (row) => (
+                <div className="flex flex-col">
+                    <span className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">
+                        {row.Order?.User?.nom_complet}
+                    </span>
+                    <span className="text-[10px] text-slate-500">{row.Order?.User?.telephone}</span>
+                </div>
+            )
+        },
+        {
+            label: 'Quantité',
+            render: (row) => <span className="text-sm font-black text-slate-900 dark:text-white">x{row.quantite}</span>
         },
         {
             label: 'Montant',
-            render: (row) => <span className="text-sm font-black text-slate-900 dark:text-white">{row.amount.toLocaleString('fr-FR')} GNF</span>
+            render: (row) => <span className="text-sm font-black text-slate-900 dark:text-white">{(row.prix_unitaire_achat * row.quantite).toLocaleString('fr-GN')} GNF</span>
         },
         {
             label: 'Statut',
-            render: (row) => <StatusBadge status={row.status} variant={row.variant} />
+            render: (row) => <StatusBadge status={row.statut} variant={getStatusVariant(row.statut)} />
         },
         {
             label: 'Actions',
-            render: () => (
-                <div className="text-right">
-                    <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
-                        <MoreHorizontal className="size-4 text-slate-400" />
-                    </button>
+            render: (row) => (
+                <div className="flex items-center gap-2">
+                    {row.statut === 'en_attente' && (
+                        <button onClick={() => handleStatusUpdate(row.id, 'confirme')} className="p-2 text-emerald-500 hover:bg-emerald-50 rounded-lg transition-all" title="Confirmer">
+                            <CheckCircle2 className="size-4" />
+                        </button>
+                    )}
+                    {row.statut === 'confirme' && (
+                        <button onClick={() => handleStatusUpdate(row.id, 'expedie')} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all" title="Expédier">
+                            <Truck className="size-4" />
+                        </button>
+                    )}
+                    {['en_attente', 'confirme'].includes(row.statut) && (
+                        <button onClick={() => handleStatusUpdate(row.id, 'annule')} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Annuler">
+                            <XCircle className="size-4" />
+                        </button>
+                    )}
+                    {row.statut === 'livre' && (
+                        <button onClick={() => handleStatusUpdate(row.id, 'retourne')} className="p-2 text-orange-500 hover:bg-orange-50 rounded-lg transition-all" title="Retourner">
+                            <RotateCcw className="size-4" />
+                        </button>
+                    )}
                 </div>
             )
         }
@@ -81,43 +142,29 @@ const OrdersVendor = () => {
             <div className="space-y-8 animate-in fade-in duration-500">
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <DashboardCard title="Total Ventes" value={orders.length.toString()} icon={ListOrdered} />
+                    <DashboardCard title="À Traiter" value={orders.filter(o => o.statut === 'en_attente').length.toString()} icon={Clock} />
                     <DashboardCard
-                        title="Total Commandes"
-                        value="1.284"
-                        icon={ListOrdered}
-                        trend="up"
-                        trendValue="+12.5%"
-                    />
-                    <DashboardCard
-                        title="En attente"
-                        value="42"
-                        icon={Clock}
-                        trend="neutral"
-                        trendValue="En hausse"
-                    />
-                    <DashboardCard
-                        title="Revenu Total"
-                        value="45.200.000 GNF"
+                        title="CA Réalisé"
+                        value={`${orders.filter(o => o.statut === 'livre').reduce((acc, o) => acc + (o.prix_unitaire_achat * o.quantite), 0).toLocaleString('fr-GN')} GNF`}
                         icon={Wallet}
-                        trend="down"
-                        trendValue="-2.4%"
                     />
                 </div>
 
                 {/* Filters and Table */}
                 <div className="space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                        <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
                             {STATUS_FILTERS.map((f) => (
                                 <button
                                     key={f}
                                     onClick={() => setActiveFilter(f)}
-                                    className={`px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeFilter === f
+                                    className={`px-4 py-2 text-[8px] font-black uppercase tracking-widest rounded-lg transition-all whitespace-nowrap ${activeFilter === f
                                         ? 'bg-white dark:bg-slate-700 shadow-md text-primary ring-1 ring-slate-200 dark:ring-slate-600'
                                         : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                                         }`}
                                 >
-                                    {f}
+                                    {f.replace('_', ' ')}
                                 </button>
                             ))}
                         </div>
@@ -126,23 +173,20 @@ const OrdersVendor = () => {
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 size-4" />
                                 <input
-                                    className="pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary/20 w-64 transition-all uppercase tracking-widest"
-                                    placeholder="Rechercher..."
+                                    className="pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold focus:ring-2 focus:ring-primary/20 w-64 transition-all uppercase tracking-widest placeholder:text-slate-400"
+                                    placeholder="Rechercher un client ou CMD..."
                                     type="text"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                 />
                             </div>
-                            <button className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 hover:border-primary transition-colors">
-                                <SlidersHorizontal className="size-4" />
-                                Filtres
-                            </button>
                         </div>
                     </div>
 
                     <DataTable
                         columns={columns}
                         data={filtered}
+                        isLoading={isLoading}
                     />
                 </div>
             </div>

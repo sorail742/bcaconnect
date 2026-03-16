@@ -84,7 +84,6 @@ const orderController = {
                 include: [
                     {
                         model: Order,
-                        as: 'commande',
                         include: [{ model: User, attributes: ['nom_complet', 'telephone'] }]
                     },
                     { model: Product, as: 'produit' }
@@ -93,6 +92,80 @@ const orderController = {
             });
             res.json(orders);
         } catch (error) {
+            next(error);
+        }
+    },
+
+    updateItemStatus: async (req, res, next) => {
+        try {
+            const { itemId } = req.params;
+            const { statut } = req.body;
+            const fournisseur_id = req.user.id;
+
+            const item = await OrderItem.findByPk(itemId);
+            if (!item) {
+                return res.status(404).json({ message: "Élément de commande non trouvé." });
+            }
+
+            if (item.fournisseur_id !== fournisseur_id && req.user.role !== 'admin') {
+                return res.status(403).json({ message: "Vous n'êtes pas autorisé à modifier cette commande." });
+            }
+
+            item.statut = statut;
+            await item.save();
+
+            res.json({ message: "Statut mis à jour avec succès", item });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    updateOrderStatus: async (req, res, next) => {
+        const t = await sequelize.transaction();
+        try {
+            const { orderId } = req.params;
+            const { statut } = req.body;
+            const utilisateur_id = req.user.id;
+
+            const order = await Order.findByPk(orderId, { transaction: t });
+            if (!order) {
+                await t.rollback();
+                return res.status(404).json({ message: "Commande non trouvée." });
+            }
+
+            if (order.utilisateur_id !== utilisateur_id && req.user.role !== 'admin') {
+                await t.rollback();
+                return res.status(403).json({ message: "Vous n'êtes pas autorisé à modifier cette commande." });
+            }
+
+            // Autoriser uniquement annulation ou demande de retour par le client
+            const allowedStatus = ['annulé', 'retourné'];
+            if (!allowedStatus.includes(statut)) {
+                await t.rollback();
+                return res.status(400).json({ message: "Statut non autorisé pour une mise à jour client." });
+            }
+
+            // Si annulation d'une commande déjà payée -> Remboursement
+            if (statut === 'annulé' && (order.statut === 'payé' || order.statut === 'en_attente')) {
+                const wallet = await Wallet.findOne({ where: { user_id: order.utilisateur_id }, transaction: t });
+                if (wallet) {
+                    await Transaction.create({
+                        portefeuille_id: wallet.id,
+                        commande_id: order.id,
+                        montant: order.total_ttc,
+                        type_transaction: 'credit_remboursement',
+                        reference_externe: `REFUND-${order.id.slice(0, 8)}`
+                    }, { transaction: t });
+                }
+            }
+
+            order.statut = statut;
+            await order.save({ transaction: t });
+
+            await t.commit();
+            res.json({ message: `Commande passée en état: ${statut}`, order });
+        } catch (error) {
+            await t.rollback();
             next(error);
         }
     }

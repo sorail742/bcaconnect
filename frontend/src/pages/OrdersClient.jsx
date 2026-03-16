@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import DataTable from '../components/ui/DataTable';
 import StatusBadge from '../components/ui/StatusBadge';
@@ -18,33 +18,76 @@ import {
     ShoppingBag,
     Filter
 } from 'lucide-react';
+import orderService from '../services/orderService';
 
 const UserOrders = () => {
+    const [orders, setOrders] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
     const [activeFilter, setActiveFilter] = useState('Tout');
     const [searchQuery, setSearchQuery] = useState('');
-    const isLoading = false;
-    const hasError = false;
 
-    const ordersData = [
-        { id: 'ORD-5291', date: '12 Oct 2023, 14:30', total: 12405000, status: 'Livré', variant: 'success', items: 3 },
-        { id: 'ORD-5288', date: '10 Oct 2023, 09:15', total: 890000, status: 'En cours', variant: 'primary', items: 1 },
-        { id: 'ORD-5282', date: '08 Oct 2023, 11:20', total: 5600000, status: 'Préparation', variant: 'warning', items: 5 },
-        { id: 'ORD-5275', date: '05 Oct 2023, 16:45', total: 21000000, status: 'Annulé', variant: 'danger', items: 2 },
-        { id: 'ORD-5270', date: '03 Oct 2023, 10:00', total: 4322000, status: 'Livré', variant: 'success', items: 4 },
-    ];
+    const fetchOrders = async () => {
+        try {
+            const data = await orderService.getMyOrders();
+            setOrders(data);
+        } catch (err) {
+            console.error("Erreur chargement commandes:", err);
+            setHasError(true);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-    const stats = [
-        { title: 'Dépenses Totales', value: '44.217.000 GNF', icon: TrendingUp, trend: 'up', trendValue: '+12%', description: 'vs mois dernier' },
-        { title: 'Livraisons Actives', value: '2 colis', icon: PackageCheck, trend: 'neutral', trendValue: 'Stable', description: "En transit vers votre adresse" },
-        { title: 'Délai Moyen', value: '3.5 Jours', icon: Clock, trend: 'up', trendValue: '-15%', description: 'plus rapide ce mois' },
-    ];
+    useEffect(() => {
+        fetchOrders();
+    }, []);
 
-    const filters = ["Tout", "Livré", "En cours", "Préparation", "Annulé"];
+    const filters = ["Tout", "payé", "expédié", "livré", "annulé"];
 
-    const filteredOrders = ordersData.filter(o =>
-        (activeFilter === 'Tout' || o.status === activeFilter) &&
+    const getStatusVariant = (status) => {
+        switch (status) {
+            case 'payé': return 'success';
+            case 'expédié': return 'primary';
+            case 'livré': return 'success';
+            case 'annulé': return 'danger';
+            case 'en_attente': return 'warning';
+            default: return 'neutral';
+        }
+    };
+
+    const filteredOrders = orders.filter(o =>
+        (activeFilter === 'Tout' || o.statut === activeFilter) &&
         (o.id.toLowerCase().includes(searchQuery.toLowerCase()))
     );
+
+    const stats = [
+        {
+            title: 'Dépenses Totales',
+            value: `${orders.reduce((acc, o) => acc + parseFloat(o.total_ttc), 0).toLocaleString('fr-GN')} GNF`,
+            icon: TrendingUp
+        },
+        {
+            title: 'Commandes Actives',
+            value: orders.filter(o => o.statut !== 'livré' && o.statut !== 'annulé').length.toString(),
+            icon: PackageCheck
+        },
+        {
+            title: 'Total Commandes',
+            value: orders.length.toString(),
+            icon: Clock
+        },
+    ];
+
+    const handleStatusUpdate = async (orderId, newStatus) => {
+        if (!window.confirm(`Êtes-vous sûr de vouloir passer cette commande en état "${newStatus}" ?`)) return;
+        try {
+            await orderService.updateOrderStatus(orderId, newStatus);
+            fetchOrders();
+        } catch (err) {
+            alert("Erreur lors de la mise à jour du statut.");
+        }
+    };
 
     const columns = [
         {
@@ -55,8 +98,8 @@ const UserOrders = () => {
                         <ShoppingBag className="size-5" />
                     </div>
                     <div>
-                        <span className="font-black text-foreground italic tracking-tight hover:underline cursor-pointer">{row.id}</span>
-                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">{row.items} article{row.items > 1 ? 's' : ''}</p>
+                        <span className="font-black text-foreground italic tracking-tight hover:underline cursor-pointer uppercase">{row.id.slice(0, 8)}</span>
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">{row.details?.length || 0} article(s)</p>
                     </div>
                 </div>
             )
@@ -65,8 +108,8 @@ const UserOrders = () => {
             label: 'Date d\'achat',
             render: (row) => (
                 <div className="flex flex-col">
-                    <span className="text-sm font-bold text-foreground">{row.date.split(',')[0]}</span>
-                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">{row.date.split(',')[1].trim()}</span>
+                    <span className="text-sm font-bold text-foreground">{new Date(row.createdAt).toLocaleDateString('fr-FR')}</span>
+                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">{new Date(row.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
             )
         },
@@ -74,19 +117,39 @@ const UserOrders = () => {
             label: 'Montant Total',
             render: (row) => (
                 <div className="flex flex-col">
-                    <span className="font-black text-foreground italic">{row.total.toLocaleString('fr-FR')} GNF</span>
+                    <span className="font-black text-foreground italic">{parseFloat(row.total_ttc).toLocaleString('fr-GN')} GNF</span>
                     <span className="text-[9px] text-muted-foreground uppercase font-black tracking-widest">TTC</span>
                 </div>
             )
         },
         {
-            label: 'État de la Commande',
-            render: (row) => <StatusBadge status={row.status} variant={row.variant} />
+            label: 'État Global',
+            render: (row) => <StatusBadge status={row.statut} variant={getStatusVariant(row.statut)} />
         },
         {
             label: 'Actions',
-            render: () => (
-                <div className="text-right">
+            render: (row) => (
+                <div className="flex items-center justify-end gap-2">
+                    {row.statut === 'payé' && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleStatusUpdate(row.id, 'annulé')}
+                            className="h-10 px-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] text-destructive hover:bg-destructive/10 border border-transparent hover:border-destructive/20 transition-all"
+                        >
+                            Annuler
+                        </Button>
+                    )}
+                    {row.statut === 'livré' && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleStatusUpdate(row.id, 'retourné')}
+                            className="h-10 px-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] text-orange-500 hover:bg-orange-50 border border-transparent hover:border-orange-200 transition-all"
+                        >
+                            Retour
+                        </Button>
+                    )}
                     <Button variant="ghost" size="sm" className="h-10 px-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] text-primary hover:bg-primary/10 border border-transparent hover:border-primary/20 transition-all flex items-center gap-2">
                         Détails
                         <ChevronRight className="size-3" />
@@ -107,17 +170,6 @@ const UserOrders = () => {
                             Suivez vos commandes <br />
                             <span className="text-primary not-italic text-3xl md:text-4xl">en toute transparence.</span>
                         </h2>
-                        <p className="text-muted-foreground font-medium max-w-xl">Retrouvez l'historique complet, les factures et le suivi en temps réel de tous vos achats sur la plateforme.</p>
-                    </div>
-                    <div className="flex gap-4">
-                        <Button variant="outline" className="h-14 px-6 rounded-2xl font-bold uppercase tracking-widest text-[10px] gap-3 border-border hover:border-primary hover:text-primary transition-all shadow-sm">
-                            <Calendar className="size-4" />
-                            Période
-                        </Button>
-                        <Button className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-primary/20 gap-2">
-                            <Download className="size-4" />
-                            Exporter
-                        </Button>
                     </div>
                 </div>
 
@@ -132,19 +184,10 @@ const UserOrders = () => {
                                     <div className="size-12 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                                         <stat.icon className="size-6" />
                                     </div>
-                                    {stat.trend !== 'neutral' && (
-                                        <span className={cn(
-                                            "text-[10px] font-black px-2 py-1 rounded-lg border",
-                                            stat.trend === 'up' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-destructive/10 text-destructive border-destructive/20"
-                                        )}>
-                                            {stat.trendValue}
-                                        </span>
-                                    )}
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{stat.title}</p>
                                     <h4 className="text-2xl font-black italic tracking-tighter text-foreground">{stat.value}</h4>
-                                    <p className="text-[10px] text-muted-foreground font-medium">{stat.description}</p>
                                 </div>
                             </div>
                         ))
@@ -175,7 +218,7 @@ const UserOrders = () => {
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground size-4 group-focus-within/search:text-primary transition-colors" />
                             <input
                                 className="w-full pl-11 pr-4 h-12 bg-background border-border border-2 focus:border-primary/50 focus:ring-primary/20 transition-all rounded-xl text-sm font-bold placeholder:text-muted-foreground/50"
-                                placeholder="Rechercher par N° de commande..."
+                                placeholder="Rechercher par ID..."
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -201,23 +244,13 @@ const UserOrders = () => {
                             <div className="p-10">
                                 <EmptyState
                                     title="Aucune commande"
-                                    description="Vous n'avez pas encore passé de commande ou aucune ne correspond à votre recherche."
+                                    description="Vous n'avez pas encore passé de commande."
                                     icon={ShoppingBag}
                                 />
                             </div>
                         )}
                     </CardContent>
                 </Card>
-
-                {/* Bottom Tip */}
-                <div className="flex items-center gap-4 p-6 bg-primary/5 rounded-[2rem] border border-primary/10">
-                    <div className="size-10 rounded-full bg-primary flex items-center justify-center text-white shrink-0">
-                        <Filter className="size-5" />
-                    </div>
-                    <p className="text-sm text-foreground font-medium">
-                        <span className="font-black italic">Conseil Pro:</span> Vous pouvez cliquer sur une référence de commande pour consulter le bordereau de livraison détaillé et les options de retour sous 14 jours.
-                    </p>
-                </div>
             </div>
         </DashboardLayout>
     );

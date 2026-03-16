@@ -14,6 +14,16 @@ const orderService = {
     createOrder: async (orderData) => {
         const response = await api.post('/orders', orderData);
         return response.data;
+    },
+
+    updateOrderStatus: async (orderId, statut) => {
+        const response = await api.patch(`/orders/${orderId}/status`, { statut });
+        return response.data;
+    },
+
+    updateItemStatus: async (itemId, statut) => {
+        const response = await api.patch(`/orders/item/${itemId}/status`, { statut });
+        return response.data;
     }
 };
 

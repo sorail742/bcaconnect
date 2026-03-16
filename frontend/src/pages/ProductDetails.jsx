@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import DashboardLayout from '../components/layout/DashboardLayout';
+import PublicLayout from '../components/layout/PublicLayout';
 import { Button } from '../components/ui/Button';
 import {
     ShoppingCart,
@@ -57,8 +57,8 @@ const ProductDetail = () => {
     const decrement = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
 
     return (
-        <DashboardLayout title="Détails du Produit">
-            <div className="w-full space-y-12 animate-in fade-in duration-700 font-inter pb-20 px-4 md:px-8">
+        <PublicLayout>
+            <div className="w-full space-y-12 animate-in fade-in duration-700 font-inter pb-20 px-4 md:px-8 max-w-7xl mx-auto pt-10">
                 {/* Breadcrumbs */}
                 <nav className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
                     <Link to="/marketplace" className="hover:text-primary transition-colors">Marketplace</Link>
@@ -234,7 +234,7 @@ const ProductDetail = () => {
                     </div>
                 </div>
             </div>
-        </DashboardLayout>
+        </PublicLayout>
     );
 };
 
