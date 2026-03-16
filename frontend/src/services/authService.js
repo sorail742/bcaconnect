@@ -16,6 +16,16 @@ const authService = {
         return response.data;
     },
 
+    updateProfile: async (userData) => {
+        const response = await api.put('/auth/update', userData);
+        return response.data;
+    },
+
+    deleteAccount: async () => {
+        const response = await api.delete('/auth/delete');
+        return response.data;
+    },
+
     logout: () => {
         localStorage.removeItem('token');
     }

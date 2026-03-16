@@ -29,24 +29,78 @@ const Toggle = ({ enabled, onChange }) => (
 );
 
 const UserProfile = () => {
-    const [prenom, setPrenom] = useState('Mamadou');
-    const [telephone, setTelephone] = useState('+224 625 00 12 34');
-    const [email, setEmail] = useState('m.diallo@bcaconnect.gn');
+    const { user, updateProfile, deleteAccount } = useAuth();
+
+    const [nomComplet, setNomComplet] = useState(user?.nom_complet || '');
+    const [telephone, setTelephone] = useState(user?.telephone || '');
+    const [email, setEmail] = useState(user?.email || '');
+    const [motDePasse, setMotDePasse] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
 
     const [emailAlerts, setEmailAlerts] = useState(true);
     const [pushNotifs, setPushNotifs] = useState(false);
     const [marketNews, setMarketNews] = useState(true);
 
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [message, setMessage] = useState({ type: '', text: '' });
+
+    const handleUpdate = async (e) => {
+        e.preventDefault();
+        setMessage({ type: '', text: '' });
+
+        if (motDePasse && motDePasse !== confirmPassword) {
+            setMessage({ type: 'error', text: 'Les mots de passe ne correspondent pas.' });
+            return;
+        }
+
+        setIsUpdating(true);
+        try {
+            await updateProfile({
+                nom_complet: nomComplet,
+                telephone,
+                email,
+                mot_de_passe: motDePasse || undefined
+            });
+            setMessage({ type: 'success', text: 'Profil mis à jour avec succès !' });
+            setMotDePasse('');
+            setConfirmPassword('');
+        } catch (error) {
+            setMessage({ type: 'error', text: error.response?.data?.message || 'Erreur lors de la mise à jour.' });
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (window.confirm("Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.")) {
+            try {
+                await deleteAccount();
+            } catch (error) {
+                setMessage({ type: 'error', text: 'Erreur lors de la suppression du compte.' });
+            }
+        }
+    };
+
+    const getInitials = (name) => {
+        return name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'BC';
+    };
+
     return (
         <DashboardLayout title="Mon Profil">
             <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500 pb-12">
+                {message.text && (
+                    <div className={`p-4 rounded-2xl border ${message.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-destructive/10 border-destructive/20 text-destructive'} text-sm font-bold animate-in slide-in-from-top-4`}>
+                        {message.text}
+                    </div>
+                )}
+
                 <Card className="relative overflow-hidden p-8 border-border bg-card shadow-sm">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-[100px] -mr-8 -mt-8"></div>
                     <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
                         {/* Avatar */}
                         <div className="relative group">
                             <div className="size-28 rounded-3xl border-4 border-background shadow-xl overflow-hidden bg-muted flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform duration-300">
-                                <span className="text-4xl font-black text-primary italic">MD</span>
+                                <span className="text-4xl font-black text-primary italic">{getInitials(user?.nom_complet)}</span>
                             </div>
                             <button className="absolute -bottom-2 -right-2 bg-primary text-primary-foreground p-2.5 rounded-xl shadow-lg hover:scale-110 active:scale-95 transition-all">
                                 <Edit3 className="size-4" />
@@ -57,31 +111,32 @@ const UserProfile = () => {
                         <div className="flex-1 text-center md:text-left">
                             <div className="flex flex-col md:flex-row md:items-center gap-3">
                                 <h2 className="text-3xl font-black text-foreground tracking-tight uppercase italic">
-                                    Mamadou Diallo
+                                    {user?.nom_complet}
                                 </h2>
                                 <Badge variant="outline" className="text-[10px] text-primary border-primary/20 bg-primary/5">
-                                    Marchand Vérifié
+                                    {user?.role === 'fournisseur' ? 'Marchand Vérifié' : user?.role === 'admin' ? 'Administrateur' : user?.role === 'transporteur' ? 'Livreur Certifié' : 'Client BCA'}
                                 </Badge>
                             </div>
                             <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 mt-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">
                                 <span className="flex items-center gap-2">
                                     <CalendarDays className="size-4 text-primary" />
-                                    Depuis Janvier 2024
+                                    Depuis {new Date(user?.createdAt || Date.now()).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
                                 </span>
                                 <span className="flex items-center gap-2 text-emerald-500">
                                     <BadgeCheck className="size-4" />
-                                    Compte Certifié
+                                    Compte Actif
                                 </span>
                             </div>
                         </div>
 
                         {/* Actions */}
                         <div className="flex flex-col sm:flex-row gap-3">
-                            <Button variant="outline" className="rounded-xl uppercase tracking-widest text-xs font-black">
-                                Aperçu public
-                            </Button>
-                            <Button className="rounded-xl uppercase tracking-widest text-xs font-black shadow-xl shadow-primary/20">
-                                Enregistrer
+                            <Button
+                                onClick={handleUpdate}
+                                disabled={isUpdating}
+                                className="rounded-xl uppercase tracking-widest text-xs font-black shadow-xl shadow-primary/20"
+                            >
+                                {isUpdating ? 'Chargement...' : 'Enregistrer'}
                             </Button>
                         </div>
                     </div>
@@ -98,7 +153,7 @@ const UserProfile = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Prénom & Nom</label>
-                                        <Input value={prenom} onChange={(e) => setPrenom(e.target.value)} />
+                                        <Input value={nomComplet} onChange={(e) => setNomComplet(e.target.value)} />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Ligne mobile</label>
@@ -118,31 +173,19 @@ const UserProfile = () => {
                                     <Shield className="size-5 text-primary" />
                                     <CardTitle className="text-sm font-black uppercase tracking-widest text-foreground">Sécurité & Accès</CardTitle>
                                 </div>
-                                <Badge className="bg-emerald-500 hover:bg-emerald-600 text-[9px] uppercase tracking-widest text-white">
-                                    Double Auth. (2FA) Activé
-                                </Badge>
                             </CardHeader>
                             <CardContent className="p-8 space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Mot de passe actuel</label>
-                                    <Input type="password" placeholder="••••••••••••" />
-                                </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nouveau code secret</label>
-                                        <Input type="password" placeholder="Min. 8 caractères" />
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nouveau mot de passe</label>
+                                        <Input type="password" placeholder="Min. 8 caractères" value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Confirmation</label>
-                                        <Input type="password" placeholder="Repéter le code" />
+                                        <Input type="password" placeholder="Repéter le mot de passe" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
                                     </div>
                                 </div>
-                                <div className="pt-2 flex justify-end">
-                                    <button className="text-primary text-[11px] font-black uppercase tracking-widest flex items-center gap-2 hover:translate-x-1 transition-transform">
-                                        Gestion avancée des accès
-                                        <ArrowRight className="size-4" />
-                                    </button>
-                                </div>
+                                <p className="text-[10px] text-muted-foreground font-medium italic">Laissez vide si vous ne souhaitez pas modifier votre mot de passe.</p>
                             </CardContent>
                         </Card>
                     </div>
@@ -192,9 +235,6 @@ const UserProfile = () => {
                             <p className="text-[11px] text-muted-foreground font-medium leading-relaxed mb-6 italic">
                                 "Un profil complet à 100% augmente votre visibilité auprès des partenaires de 40%."
                             </p>
-                            <Button className="w-full py-3.5 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all">
-                                Atteindre les 100%
-                            </Button>
                         </div>
                     </div>
                 </div>
@@ -203,9 +243,9 @@ const UserProfile = () => {
                     <div className="flex flex-col md:flex-row items-center justify-between bg-card p-8 rounded-2xl border border-destructive/20 shadow-sm gap-6">
                         <div className="text-center md:text-left">
                             <h3 className="text-lg font-black text-destructive uppercase italic">Action irréversible</h3>
-                            <p className="text-sm text-muted-foreground mt-2 font-medium">Les données supprimées ne pourront pas être récupérées. Pensez à exporter vos données avant.</p>
+                            <p className="text-sm text-muted-foreground mt-2 font-medium">Les données supprimées ne pourront pas être récupérées. Toute suppression est définitive.</p>
                         </div>
-                        <Button variant="destructive" className="flex items-center gap-3 px-8 py-3.5 text-xs font-black uppercase tracking-widest rounded-xl shadow-xl shadow-destructive/20 group">
+                        <Button onClick={handleDelete} variant="destructive" className="flex items-center gap-3 px-8 py-3.5 text-xs font-black uppercase tracking-widest rounded-xl shadow-xl shadow-destructive/20 group">
                             <Trash2 className="size-4 group-hover:animate-bounce" />
                             Fermer mon compte
                         </Button>

@@ -49,13 +49,34 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const updateProfile = async (userData) => {
+        try {
+            const data = await authService.updateProfile(userData);
+            setUser(data.user); // Mettre à jour l'utilisateur dans le state
+            return data.user;
+        } catch (error) {
+            console.error("Erreur de mise à jour:", error);
+            throw error;
+        }
+    };
+
+    const deleteAccount = async () => {
+        try {
+            await authService.deleteAccount();
+            logout(); // Déconnecter après suppression
+        } catch (error) {
+            console.error("Erreur de suppression:", error);
+            throw error;
+        }
+    };
+
     const logout = () => {
         authService.logout();
         setUser(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, register, updateProfile, deleteAccount, logout, loading }}>
             {children}
         </AuthContext.Provider>
     );

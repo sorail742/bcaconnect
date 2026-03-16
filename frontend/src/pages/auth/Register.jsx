@@ -11,6 +11,7 @@ const Register = () => {
         role: 'client',
         fullName: '',
         email: '',
+        telephone: '',
         password: '',
         confirmPassword: '',
     });
@@ -41,6 +42,7 @@ const Register = () => {
             await register({
                 nom_complet: formData.fullName,
                 email: formData.email,
+                telephone: formData.telephone,
                 mot_de_passe: formData.password,
                 role: formData.role
             });
@@ -202,6 +204,25 @@ const Register = () => {
                                     className="block w-full rounded-2xl border-border bg-muted/30 py-4 pl-12 pr-4 shadow-sm ring-1 ring-inset ring-border placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm transition-all duration-300"
                                     placeholder="m.diallo@exemple.com"
                                     type="email"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        {/* Telephone */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-foreground/80 ml-1">Numéro de téléphone</label>
+                            <div className="relative group">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
+                                    <Truck className="size-5" />
+                                </div>
+                                <input
+                                    name="telephone"
+                                    value={formData.telephone}
+                                    onChange={handleChange}
+                                    className="block w-full rounded-2xl border-border bg-muted/30 py-4 pl-12 pr-4 shadow-sm ring-1 ring-inset ring-border placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm transition-all duration-300"
+                                    placeholder="+224 6XX XX XX XX"
+                                    type="tel"
                                     required
                                 />
                             </div>
