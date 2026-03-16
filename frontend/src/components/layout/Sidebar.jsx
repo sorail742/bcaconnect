@@ -23,6 +23,7 @@ import BcaLogo from '../ui/BcaLogo';
 import Button from '../ui/Button';
 import ThemeToggle from '../ui/ThemeToggle';
 import { useAuth } from '../../hooks/useAuth';
+import { hasPermission } from '../../utils/permissions';
 
 const Sidebar = () => {
     const { user, logout } = useAuth();
@@ -122,7 +123,7 @@ const Sidebar = () => {
             </div>
 
             <div className="flex flex-col gap-4">
-                {user?.role === 'fournisseur' && (
+                {hasPermission(user, 'CAN_ADD_PRODUCT') && (
                     <Button
                         onClick={() => window.location.href = '/vendor/products/add'}
                         className="w-full text-sm font-bold gap-2"
