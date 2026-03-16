@@ -4,7 +4,7 @@ import { Bell, Search, Menu } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 const DashboardLayout = ({ children, title, noPadding }) => {
-    const { user } = useAuth() || { user: { name: 'Utilisateur', role: 'client' } };
+    const { user } = useAuth();
 
     return (
         <div className="flex h-screen overflow-hidden bg-background font-sans text-foreground">
@@ -43,7 +43,7 @@ const DashboardLayout = ({ children, title, noPadding }) => {
 
                         <div className="flex items-center gap-3 pl-1 md:pl-2">
                             <div className="hidden sm:flex flex-col items-end">
-                                <p className="text-sm font-bold leading-none">{user?.name || 'Invité'}</p>
+                                <p className="text-sm font-bold leading-none">{user?.nom_complet || 'Invité'}</p>
                                 <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 italic">{user?.role || 'Membre'}</p>
                             </div>
                             <div className="size-10 rounded-full bg-slate-200 dark:bg-slate-700 bg-[url('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80')] bg-cover border-2 border-primary/20 shadow-sm" />

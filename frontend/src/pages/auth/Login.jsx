@@ -26,14 +26,23 @@ const Login = () => {
         setIsSubmitting(true);
 
         try {
-            await login(email, password);
-            navigate(from, { replace: true });
-        } catch (error) {
-            console.error(error);
-            console.log("Mode développement : Simulation de connexion réussie");
-            setTimeout(() => {
+            const user = await login(email, password);
+
+            // Redirection intelligente basée sur le rôle
+            if (user.role === 'admin') {
+                navigate('/admin/dashboard', { replace: true });
+            } else if (user.role === 'fournisseur') {
+                navigate('/vendor/dashboard', { replace: true });
+            } else if (user.role === 'transporteur') {
+                navigate('/carrier/dashboard', { replace: true });
+            } else if (user.role === 'banque') {
+                navigate('/bank/dashboard', { replace: true });
+            } else {
                 navigate(from, { replace: true });
-            }, 1000);
+            }
+        } catch (err) {
+            console.error(err);
+            setError(err.response?.data?.message || "Erreur de connexion. Vérifiez vos identifiants.");
         } finally {
             setIsSubmitting(false);
         }

@@ -18,7 +18,7 @@ const Register = () => {
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const { register } = useAuth();
+    const { register, login } = useAuth();
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -44,13 +44,17 @@ const Register = () => {
                 mot_de_passe: formData.password,
                 role: formData.role
             });
-            navigate('/login');
-        } catch (error) {
-            console.error(error);
-            console.log("Mode développement : Simulation d'inscription réussie");
-            setTimeout(() => {
-                navigate('/login');
-            }, 1000);
+            // Auto login after registration
+            await login(formData.email, formData.password);
+
+            // Redirection vers le dashboard approprié
+            if (formData.role === 'admin') navigate('/admin/dashboard');
+            else if (formData.role === 'fournisseur') navigate('/vendor/dashboard');
+            else if (formData.role === 'transporteur') navigate('/carrier/dashboard');
+            else navigate('/dashboard');
+        } catch (err) {
+            console.error(err);
+            setError(err.response?.data?.message || "Une erreur est survenue lors de l'inscription.");
         } finally {
             setIsSubmitting(false);
         }

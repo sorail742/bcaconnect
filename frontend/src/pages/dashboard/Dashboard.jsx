@@ -6,8 +6,10 @@ import StatusBadge from '../../components/ui/StatusBadge';
 import { Wallet, ShoppingBag, Star, CheckCircle, Truck, Clock } from 'lucide-react';
 import { Skeleton, CardSkeleton, TableRowSkeleton } from '../../components/ui/Loader';
 import { ErrorState, EmptyState } from '../../components/ui/StatusStates';
+import { useAuth } from '../../hooks/useAuth';
 
 const Dashboard = () => {
+    const { user } = useAuth();
     const isLoading = false;
     const hasError = false;
 
@@ -52,7 +54,7 @@ const Dashboard = () => {
             <div className="space-y-8 animate-in fade-in duration-500">
                 {/* Welcome Section */}
                 <div className="flex flex-col gap-1">
-                    <h3 className="text-3xl font-bold tracking-tight text-foreground italic">Bienvenue, Ibrahima 👋</h3>
+                    <h3 className="text-3xl font-bold tracking-tight text-foreground italic">Bienvenue, {user?.nom_complet || 'Utilisateur'} 👋</h3>
                     <p className="text-muted-foreground font-medium">Voici l'aperçu de votre activité commerciale en Guinée aujourd'hui.</p>
                 </div>
 

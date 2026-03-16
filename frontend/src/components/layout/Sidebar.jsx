@@ -16,7 +16,9 @@ import {
     RotateCcw,
     Bell,
     Wallet,
-    Settings
+    Wallet,
+    Settings,
+    LogOut
 } from 'lucide-react';
 import BcaLogo from '../ui/BcaLogo';
 import Button from '../ui/Button';
@@ -24,7 +26,7 @@ import ThemeToggle from '../ui/ThemeToggle';
 import { useAuth } from '../../hooks/useAuth';
 
 const Sidebar = () => {
-    const { user } = useAuth() || { user: { role: 'admin' } }; // Fallback pour le dev
+    const { user, logout } = useAuth();
 
     const menuItems = {
         admin: [
@@ -157,6 +159,13 @@ const Sidebar = () => {
                         <Settings className="size-5" />
                         <span className="text-sm font-medium">Paramètres</span>
                     </NavLink>
+                    <button
+                        onClick={logout}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-destructive hover:bg-destructive/10 font-medium w-full text-left"
+                    >
+                        <LogOut className="size-5" />
+                        <span className="text-sm font-medium">Déconnexion</span>
+                    </button>
                 </div>
             </div>
         </aside>
