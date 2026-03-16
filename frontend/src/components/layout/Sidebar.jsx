@@ -16,7 +16,6 @@ import {
     RotateCcw,
     Bell,
     Wallet,
-    Wallet,
     Settings,
     LogOut
 } from 'lucide-react';
