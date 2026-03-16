@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import api from '../services/api';
+import authService from '../services/authService';
 
 export const AuthContext = createContext(null);
 
@@ -7,14 +7,18 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // Vérifier l'authentification au chargement
     useEffect(() => {
         const checkAuth = async () => {
             const token = localStorage.getItem('token');
             if (token) {
                 try {
-                    setUser({ id: '1', name: 'Ibrahima Bah', role: 'client' });
-                } catch {
+                    const userData = await authService.getMe();
+                    setUser(userData);
+                } catch (error) {
+                    console.error("Session expirée ou invalide");
                     localStorage.removeItem('token');
+                    setUser(null);
                 }
             }
             setLoading(false);
@@ -25,34 +29,28 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
-            const response = await api.post('/auth/login', { email, password });
-            const { token, user: userData } = response.data;
-            localStorage.setItem('token', token);
-            setUser(userData);
-            return userData;
+            const data = await authService.login(email, password);
+            localStorage.setItem('token', data.token);
+            setUser(data.user);
+            return data.user;
         } catch (error) {
-            console.error("Auth Error:", error);
-            console.warn("Auth API non disponible, utilisation du mock...");
-            const mockUser = { id: '1', name: 'Utilisateur Démo', role: 'client', email };
-            localStorage.setItem('token', 'mock-token');
-            setUser(mockUser);
-            return mockUser;
+            console.error("Erreur de connexion:", error);
+            throw error;
         }
     };
 
     const register = async (userData) => {
         try {
-            const response = await api.post('/auth/register', userData);
-            return response.data;
+            const data = await authService.register(userData);
+            return data;
         } catch (error) {
-            console.error("Register Error:", error);
-            console.warn("Auth API non disponible, simulation d'inscription réussie...");
-            return { message: "Inscription réussie (Mock)" };
+            console.error("Erreur d'inscription:", error);
+            throw error;
         }
     };
 
     const logout = () => {
-        localStorage.removeItem('token');
+        authService.logout();
         setUser(null);
     };
 
