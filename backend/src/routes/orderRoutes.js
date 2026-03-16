@@ -4,6 +4,7 @@ const orderController = require('../controllers/orderController');
 const { authMiddleware, authorize } = require('../middlewares/authMiddleware');
 
 router.get('/me', authMiddleware, orderController.getMyOrders);
+router.get('/vendor', authMiddleware, authorize(['fournisseur']), orderController.getVendorOrders);
 router.post('/', authMiddleware, authorize(['client']), orderController.create);
 
 module.exports = router;

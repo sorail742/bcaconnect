@@ -75,6 +75,26 @@ const orderController = {
         } catch (error) {
             next(error);
         }
+    },
+
+    getVendorOrders: async (req, res, next) => {
+        try {
+            const orders = await OrderItem.findAll({
+                where: { fournisseur_id: req.user.id },
+                include: [
+                    {
+                        model: Order,
+                        as: 'commande',
+                        include: [{ model: User, attributes: ['nom_complet', 'telephone'] }]
+                    },
+                    { model: Product, as: 'produit' }
+                ],
+                order: [['createdAt', 'DESC']]
+            });
+            res.json(orders);
+        } catch (error) {
+            next(error);
+        }
     }
 };
 

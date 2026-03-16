@@ -4,29 +4,63 @@ import Button from '../../components/ui/Button';
 import DashboardCard from '../../components/ui/DashboardCard';
 import DataTable from '../../components/ui/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
-import { ShoppingBasket, CreditCard, BarChart3, MousePointer2, Plus, Package } from 'lucide-react';
+import { ShoppingBasket, CreditCard, BarChart3, MousePointer2, Plus, Package, ShieldCheck } from 'lucide-react';
 import { Skeleton, CardSkeleton, TableRowSkeleton } from '../../components/ui/Loader';
 import { ErrorState } from '../../components/ui/StatusStates';
 import { Card } from '../../components/ui/Card';
 
+import { useAuth } from '../../hooks/useAuth';
+import storeService from '../../services/storeService';
+import orderService from '../../services/orderService';
+
 const VendorDashboard = () => {
-    const isLoading = false;
-    const hasError = false;
+    const { user } = useAuth();
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [hasError, setHasError] = React.useState(false);
+    const [store, setStore] = React.useState(null);
+    const [orders, setOrders] = React.useState([]);
 
-    // Données fictives GNF
+    React.useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                const [storeData, orderData] = await Promise.all([
+                    storeService.getMyStore(),
+                    orderService.getVendorOrders()
+                ]);
+                setStore(storeData);
+                setOrders(orderData);
+            } catch (error) {
+                console.error("Erreur chargement dashboard:", error);
+                // Si la boutique n'existe pas, on ne considère pas ça comme une erreur fatale
+                // l'utilisateur devra juste en créer une
+                if (error.response?.status !== 404) {
+                    setHasError(true);
+                }
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchDashboardData();
+    }, []);
+
+    // Calcul des KPIs basés sur les données réelles (ou mocks intelligents si vide)
+    const totalSales = orders.reduce((acc, order) => acc + (parseFloat(order.prix_unitaire_achat) * order.quantite), 0);
+
     const kpis = [
-        { title: "Chiffre d'affaires", value: '12.450.000 GNF', trend: 'up', trendValue: '+12.5%', description: 'vs mois dernier', icon: CreditCard },
-        { title: 'Commandes totales', value: '142', trend: 'up', trendValue: '+5.2%', description: 'vs mois dernier', icon: ShoppingBasket },
-        { title: 'Panier moyen', value: '87.670 GNF', description: 'Stable', icon: BarChart3 },
-        { title: 'Taux de conversion', value: '3.4%', trend: 'down', trendValue: '-1.2%', description: 'vs mois dernier', icon: MousePointer2 },
+        { title: "Chiffre d'affaires", value: `${totalSales.toLocaleString('fr-GN')} GNF`, trend: 'up', trendValue: '+0%', description: 'Total historique', icon: CreditCard },
+        { title: 'Commandes totales', value: orders.length.toString(), trend: 'up', trendValue: '+0%', description: 'Commandes reçues', icon: ShoppingBasket },
+        { title: 'Produits actifs', value: store?.produits?.length.toString() || '0', description: 'Dans votre boutique', icon: Package },
+        { title: 'Score Confiance', value: user?.score_confiance ? `${user.score_confiance}%` : '100%', description: 'Évaluation BCA', icon: ShieldCheck },
     ];
 
-    const recentOrders = [
-        { id: '#ORD-GN-2489', time: 'Il y a 2 min', amount: '1.299.000 GNF', status: 'En cours', statusType: 'warning' },
-        { id: '#ORD-GN-2488', time: 'Il y a 15 min', amount: '450.000 GNF', status: 'Livré', statusType: 'success' },
-        { id: '#ORD-GN-2487', time: 'Il y a 1 heure', amount: '3.205.000 GNF', status: 'Livré', statusType: 'success' },
-        { id: '#ORD-GN-2486', time: 'Il y a 3 heures', amount: '129.000 GNF', status: 'Annulé', statusType: 'danger' },
-    ];
+    const recentOrders = orders.slice(0, 4).map(item => ({
+        id: `#ORD-${item.commande_id.slice(0, 8)}`,
+        time: new Date(item.createdAt).toLocaleDateString('fr-GN'),
+        amount: `${(item.prix_unitaire_achat * item.quantite).toLocaleString('fr-GN')} GNF`,
+        status: item.commande.statut === 'payé' ? 'Payé' : 'En attente',
+        statusType: item.commande.statut === 'payé' ? 'success' : 'warning'
+    }));
 
     const orderColumns = [
         {
@@ -55,8 +89,8 @@ const VendorDashboard = () => {
             <div className="flex flex-col gap-8 animate-in fade-in duration-500">
                 <div className="flex flex-wrap items-center justify-between gap-6">
                     <div className="flex flex-col gap-1">
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground italic">Bonjour, Ibrahima 👋</h1>
-                        <p className="text-muted-foreground font-medium">Voici les performances de votre boutique en Guinée aujourd'hui.</p>
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground italic">Bonjour, {user?.nom_complet?.split(' ')[0] || 'Vendeur'} 👋</h1>
+                        <p className="text-muted-foreground font-medium">Voici les performances de votre boutique {store?.nom_boutique ? `"${store.nom_boutique}"` : ''} aujourd'hui.</p>
                     </div>
                     <Button
                         onClick={() => window.location.href = '/vendor/products/add'}
