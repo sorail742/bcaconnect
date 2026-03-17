@@ -11,6 +11,12 @@ const productService = {
         return response.data;
     },
 
+    // Produits de MON magasin (vendeur connecté)
+    getMyProducts: async () => {
+        const response = await api.get('/products/me/products');
+        return response.data;
+    },
+
     create: async (productData) => {
         const response = await api.post('/products', productData);
         return response.data;
@@ -18,6 +24,12 @@ const productService = {
 
     update: async (id, productData) => {
         const response = await api.put(`/products/${id}`, productData);
+        return response.data;
+    },
+
+    // Mise à jour du stock uniquement (endpoint léger)
+    patchStock: async (id, stock_quantite) => {
+        const response = await api.patch(`/products/${id}/stock`, { stock_quantite });
         return response.data;
     },
 

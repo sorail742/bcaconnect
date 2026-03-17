@@ -3,21 +3,16 @@ const { Product, Store, Category } = require('../models');
 const productController = {
     create: async (req, res, next) => {
         try {
-            const { nom_produit, description, prix_unitaire, stock_quantite, categorie_id } = req.body;
+            const { nom_produit, description, prix_unitaire, prix_ancien, stock_quantite, categorie_id, image_url } = req.body;
 
-            // Trouver la boutique de l'utilisateur
             const store = await Store.findOne({ where: { proprietaire_id: req.user.id } });
             if (!store) {
                 return res.status(403).json({ message: "Vous devez d'abord créer une boutique." });
             }
 
             const product = await Product.create({
-                nom_produit,
-                description,
-                prix_unitaire,
-                stock_quantite,
-                categorie_id,
-                boutique_id: store.id
+                nom_produit, description, prix_unitaire, prix_ancien,
+                stock_quantite, categorie_id, boutique_id: store.id, image_url
             });
 
             res.status(201).json(product);
@@ -32,7 +27,25 @@ const productController = {
                 include: [
                     { model: Store, attributes: ['nom_boutique'] },
                     { model: Category, as: 'categorie', attributes: ['nom_categorie'] }
-                ]
+                ],
+                order: [['createdAt', 'DESC']]
+            });
+            res.json(products);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // Produits du vendeur connecté
+    getMyProducts: async (req, res, next) => {
+        try {
+            const store = await Store.findOne({ where: { proprietaire_id: req.user.id } });
+            if (!store) return res.json([]);
+
+            const products = await Product.findAll({
+                where: { boutique_id: store.id },
+                include: [{ model: Category, as: 'categorie', attributes: ['nom_categorie'] }],
+                order: [['createdAt', 'DESC']]
             });
             res.json(products);
         } catch (error) {
@@ -54,29 +67,45 @@ const productController = {
 
     update: async (req, res, next) => {
         try {
-            const { nom_produit, description, prix_unitaire, stock_quantite, categorie_id } = req.body;
+            const { nom_produit, description, prix_unitaire, prix_ancien, stock_quantite, categorie_id, image_url } = req.body;
             const product = await Product.findByPk(req.params.id, {
                 include: [{ model: Store }]
             });
 
-            if (!product) {
-                return res.status(404).json({ message: "Produit non trouvé." });
-            }
-
-            // Vérifier que l'utilisateur est bien le propriétaire de la boutique du produit (ou admin)
+            if (!product) return res.status(404).json({ message: 'Produit non trouvé.' });
             if (product.Store.proprietaire_id !== req.user.id && req.user.role !== 'admin') {
-                return res.status(403).json({ message: "Action non autorisée sur ce produit." });
+                return res.status(403).json({ message: 'Action non autorisée.' });
             }
 
             await product.update({
-                nom_produit: nom_produit || product.nom_produit,
-                description: description || product.description,
-                prix_unitaire: prix_unitaire || product.prix_unitaire,
+                nom_produit: nom_produit ?? product.nom_produit,
+                description: description ?? product.description,
+                prix_unitaire: prix_unitaire ?? product.prix_unitaire,
+                prix_ancien: prix_ancien ?? product.prix_ancien,
                 stock_quantite: stock_quantite !== undefined ? stock_quantite : product.stock_quantite,
-                categorie_id: categorie_id || product.categorie_id
+                categorie_id: categorie_id ?? product.categorie_id,
+                image_url: image_url ?? product.image_url
             });
 
-            res.json({ message: "Produit mis à jour avec succès", product });
+            res.json({ message: 'Produit mis à jour.', product });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // Mise à jour rapide du stock uniquement
+    patchStock: async (req, res, next) => {
+        try {
+            const { stock_quantite } = req.body;
+            const product = await Product.findByPk(req.params.id, { include: [{ model: Store }] });
+
+            if (!product) return res.status(404).json({ message: 'Produit non trouvé.' });
+            if (product.Store.proprietaire_id !== req.user.id && req.user.role !== 'admin') {
+                return res.status(403).json({ message: 'Action non autorisée.' });
+            }
+
+            await product.update({ stock_quantite });
+            res.json({ message: 'Stock mis à jour.', stock_quantite: product.stock_quantite });
         } catch (error) {
             next(error);
         }

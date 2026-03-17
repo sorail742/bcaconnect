@@ -22,6 +22,14 @@ const Product = sequelize.define('Product', {
         type: DataTypes.INTEGER,
         defaultValue: 0,
     },
+    image_url: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    prix_ancien: {
+        type: DataTypes.DECIMAL(15, 2),
+        allowNull: true,
+    },
     preferences_ia: {
         type: DataTypes.JSONB,
     },

@@ -9,7 +9,7 @@ import Dashboard from '../pages/dashboard/Dashboard';
 // Pages Vendeur
 import VendorDashboard from '../pages/vendor/VendorDashboard';
 import Products from '../pages/vendor/Products';
-import AddProduct from '../pages/vendor/AddProduct';
+import AddProduct from '../pages/vendor/AddProduct'; // Formulaire unifié ajout + édition
 import StoreSettings from '../pages/vendor/StoreSettings';
 import OrdersVendor from '../pages/vendor/OrdersVendor';
 
@@ -55,7 +55,6 @@ const AppRoutes = () => {
 
             {/* Routes Publiques Marketplace */}
             <Route path="/catalog" element={<ProductCatalogue />} />
-            <Route path="/marketplace" element={<ProductCatalogue />} />
             <Route path="/vendors" element={<VendorsList />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/tracking" element={<Tracking />} />
@@ -75,6 +74,7 @@ const AppRoutes = () => {
             <Route path="/vendor/dashboard" element={<ProtectedRoute><VendorDashboard /></ProtectedRoute>} />
             <Route path="/vendor/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
             <Route path="/vendor/products/add" element={<ProtectedRoute><AddProduct /></ProtectedRoute>} />
+            <Route path="/vendor/products/edit/:id" element={<ProtectedRoute><AddProduct /></ProtectedRoute>} />
             <Route path="/vendor/store" element={<ProtectedRoute><StoreSettings /></ProtectedRoute>} />
             <Route path="/vendor/orders" element={<ProtectedRoute><OrdersVendor /></ProtectedRoute>} />
 
