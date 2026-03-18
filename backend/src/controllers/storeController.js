@@ -43,8 +43,24 @@ const storeController = {
 
     getAll: async (req, res, next) => {
         try {
-            const stores = await Store.findAll({ where: { statut: 'actif' } });
+            const stores = await Store.findAll({
+                where: { statut: 'actif' },
+                include: [{ model: User, attributes: ['nom_complet'] }]
+            });
             res.json(stores);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    getById: async (req, res, next) => {
+        try {
+            const { id } = req.params;
+            const store = await Store.findByPk(id, {
+                include: ['produits', { model: User, attributes: ['nom_complet'] }]
+            });
+            if (!store) return res.status(404).json({ message: "Boutique non trouvée." });
+            res.json(store);
         } catch (error) {
             next(error);
         }

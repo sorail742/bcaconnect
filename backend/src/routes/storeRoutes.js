@@ -6,5 +6,6 @@ const { authMiddleware, authorize } = require('../middlewares/authMiddleware');
 router.get('/', storeController.getAll);
 router.get('/me', authMiddleware, authorize(['fournisseur']), storeController.getMyStore);
 router.post('/', authMiddleware, authorize(['fournisseur']), storeController.create);
+router.get('/:id', storeController.getById);
 
 module.exports = router;

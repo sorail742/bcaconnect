@@ -23,6 +23,7 @@ app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/delivery', require('./routes/deliveryRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
+app.use('/api/wallet', require('./routes/walletRoutes'));
 
 // Gestion des erreurs globale
 app.use((err, req, res, next) => {

@@ -1,180 +1,111 @@
-# 🚀 Documentation API - BCA Connect (Phase 1)
+# 🚀 Documentation API - BCA Connect (V2.0)
 
-Bienvenue dans la documentation de l'API BCA Connect. Cette API est conçue pour alimenter une plateforme de mise en relation entre commerçants locaux et acheteurs, avec une gestion intégrée des stocks et des commandes.
+Bienvenue dans la documentation complète de l'API **BCA Connect**. Cette API alimente la plateforme de mise en relation entre commerçants locaux, acheteurs et transporteurs.
 
 ## 🌍 Informations de Base
-- **URL de Production** : [https://bcaconnect.onrender.com](https://bcaconnect.onrender.com)
-- **Format des données** : `application/json`
-- **Authentification** : Porteur de Token (JWT). Ajoutez le header suivant à vos requêtes protégées :
-  ```http
-  Authorization: Bearer <votre_token_jwt>
-  ```
+- **Base URL** : `http://localhost:5000/api` (Développement) ou `https://bcaconnect.onrender.com/api` (Production)
+- **Format** : `application/json`
+- **Authentification** : JWT (JSON Web Token)
+  - Header : `Authorization: Bearer <votre_token>`
 
 ---
 
-## 🔐 1. Authentification (`/api/auth`)
+## 🔐 1. Authentification (`/auth`)
 
-### Inscription d'un utilisateur
-- **Endpoint** : `POST /api/auth/register`
-- **Body** :
-```json
-{
-  "nom_complet": "Jean Dupont",
-  "email": "jean@example.com",
-  "telephone": "0600000000",
-  "mot_de_passe": "MotsDePasseSecret123",
-  "role": "provider" 
-}
-```
-> Note: `role` peut être `client` ou `provider`.
+| Méthode | Endpoint | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/auth/register` | Public | Création d'un compte (client, fournisseur, transporteur) |
+| `POST` | `/auth/login` | Public | Connexion et obtention du token JWT |
+| `GET` | `/auth/me` | User | Récupérer les informations du profil et le portefeuille |
+| `PUT` | `/auth/update` | User | Mettre à jour le profil (nom, email, tel, password) |
+| `DELETE` | `/auth/delete` | User | Supprimer son propre compte |
 
-### Connexion
-- **Endpoint** : `POST /api/auth/login`
-- **Body** :
-```json
-{
-  "email": "jean@example.com",
-  "mot_de_passe": "MotsDePasseSecret123"
-}
-```
-- **Réponse (Succès)** :
-```json
-{
-  "token": "eyJhbG...",
-  "user": { "id": "uuid", "nom_complet": "...", "role": "..." }
-}
-```
+### Exemples de Corps (Auth)
+**Register** : `{ "nom_complet", "email", "telephone", "mot_de_passe", "role" }`
+**Update** : `{ "nom_complet"?, "telephone"?, "email"?, "mot_de_passe"? }`
 
 ---
 
-## 🏬 2. Boutiques (`/api/stores`)
+## 🏬 2. Boutiques (`/stores`)
 
-### Créer une boutique (Vendeurs uniquement)
-- **Endpoint** : `POST /api/stores`
-- **Body** :
-```json
-{
-  "nom_boutique": "Ma Super Boutique",
-  "description": "Vente de produits électroniques"
-}
-```
-
-### Récupérer ma boutique
-- **Endpoint** : `GET /api/stores/me`
-
-### Lister toutes les boutiques actives
-- **Endpoint** : `GET /api/stores`
+| Méthode | Endpoint | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/stores` | Public | Lister toutes les boutiques actives |
+| `GET` | `/stores/:id` | Public | Détails d'une boutique avec ses produits |
+| `POST` | `/stores` | Fournisseur | Créer une boutique (une seule par utilisateur) |
+| `GET` | `/stores/me` | Fournisseur | Voir ma propre boutique et ses produits |
 
 ---
 
-## 📦 3. Produits (`/api/products`)
+## 📦 3. Produits (`/products`)
 
-### Ajouter un produit (Vendeurs uniquement)
-- **Endpoint** : `POST /api/products`
-- **Body** :
-```json
-{
-  "nom_produit": "iPhone 15",
-  "description": "Dernier cri",
-  "prix_unitaire": 1200.00,
-  "stock_quantite": 10,
-  "categorie_id": "uuid_de_la_categorie"
-}
-```
-
-### Lister tous les produits
-- **Endpoint** : `GET /api/products`
+| Méthode | Endpoint | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/products` | Public | Lister tous les produits |
+| `GET` | `/products/:id` | Public | Détails d'un produit (avec catégorie) |
+| `GET` | `/products/me/products` | Fournisseur | Voir mes propres produits |
+| `POST` | `/products` | Fournisseur* | Créer un produit (Permission: `PRODUCTS_CREATE`) |
+| `PUT` | `/products/:id` | Fournisseur* | Modifier un produit (Permission: `PRODUCTS_EDIT_OWN`) |
+| `PATCH` | `/products/:id/stock` | Fournisseur* | Mise à jour rapide du stock |
+| `DELETE` | `/products/:id` | Fournisseur* | Supprimer un produit |
 
 ---
 
-## 🛒 4. Commandes (`/api/orders`)
+## 🛒 4. Commandes (`/orders`)
 
-### Créer une commande
-- **Endpoint** : `POST /api/orders`
-- **Body** :
-```json
-{
-  "items": [
-    { "productId": "uuid_produit_1", "quantity": 2 },
-    { "productId": "uuid_produit_2", "quantity": 1 }
-  ]
-}
-```
+| Méthode | Endpoint | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/orders` | Client | Passer une commande (Paiement automatique via Wallet) |
+| `GET` | `/orders/me` | Client | Historique de mes achats |
+| `GET` | `/orders/vendor` | Fournisseur | Voir les commandes reçues pour mes produits |
+| `PATCH` | `/orders/:orderId/status` | Client/Admin | Annuler ou retourner une commande (Remboursement auto) |
+| `PATCH` | `/orders/item/:itemId/status` | Fournisseur | Gérer le statut d'un item spécifique |
 
-### Historique de mes commandes
-- **Endpoint** : `GET /api/orders/my-orders`
+**Format commande** : `{ "items": [ { "productId": "uuid", "quantity": 1 } ] }`
 
 ---
 
-## 📁 5. Catégories (`/api/categories`)
+## 💳 5. Portefeuille & Paiements (`/wallet` & `/payments`)
 
-### Lister les catégories
-- **Endpoint** : `GET /api/categories`
-
----
-
-## 💳 6. Paiements & Portefeuille (`/api/payments`)
-
-### Initier un dépôt (Rechargement de compte)
-- **Endpoint** : `POST /api/payments/initiate`
-- **Body** :
-```json
-{
-  "montant": 5000,
-  "moyen_paiement": "orange_money"
-}
-```
-- **Réponse** :
-```json
-{
-  "message": "Transaction initiée",
-  "payment_url": "https://...",
-  "transaction_id": "uuid"
-}
-```
-
-### Vérifier son solde
-- **Endpoint** : `GET /api/auth/me` (Le champ `portefeuille.solde_virtuel` contient le solde actuel).
+| Méthode | Endpoint | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/wallet/me` | User | Voir son solde (Virtuel + Séquestre) et dernières transactions |
+| `GET` | `/wallet/transactions` | User | Historique complet des transactions |
+| `POST` | `/payments/initiate` | User | Initier un dépôt (Orange Money, etc.) |
 
 ---
 
-## 🚚 7. Logistique & Livraison (`/api/delivery`)
-*Reservé au rôle `transporteur`*
+## 🚚 6. Livraison (`/delivery`)
 
-### Voir les commandes à livrer
-- **Endpoint** : `GET /api/delivery/available`
+*Accès restreint aux utilisateurs avec le rôle `transporteur`.*
 
-### Accepter une livraison
-- **Endpoint** : `POST /api/delivery/assign`
-- **Body** : `{ "orderId": "uuid" }`
-
-### Mettre à jour le statut
-- **Endpoint** : `PATCH /api/delivery/status`
-- **Body** : `{ "orderId": "uuid", "status": "en_cours" }` 
-> Note: Les status possibles sont `ramasse`, `en_cours`, `livre`.
+| Méthode | Endpoint | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/delivery/available` | Transporteur | Voir les commandes payées en attente de ramassage |
+| `POST` | `/delivery/assign` | Transporteur | S'assigner une commande pour livraison |
+| `PATCH` | `/delivery/status` | Transporteur | Mettre à jour (en_cours, livre) |
 
 ---
 
-## 🤖 8. Intelligence Artificielle (`/api/ai`)
+## 🤖 7. IA BCA (`/ai`)
 
-### Obtenir des analyses de vente (Vendeurs uniquement)
-- **Endpoint** : `GET /api/ai/insights`
-- **Description** : Renvoie une analyse des tendances de vente et des recommandations automatiques.
-
-### Obtenir l'analyse de confiance (Profil)
-- **Endpoint** : `GET /api/ai/trust-score`
-- **Description** : Évalue la fiabilité de l'utilisateur basée sur son historique.
+| Méthode | Endpoint | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/ai/insights` | Fournisseur | Analyse des ventes et recommandations |
+| `GET` | `/ai/trust-score` | User | Score de fiabilité basé sur l'activité |
 
 ---
 
-## ⚠️ Gestion des Erreurs
-L'API utilise les codes HTTP standards :
-- `200/201` : Succès
-- `400` : Requête mal formée (champs manquants)
-- `401` : Non authentifié (Token manquant ou invalide)
-- `403` : Accès refusé (Droits insuffisants)
-- `404` : Ressource non trouvée
-- `500` : Erreur interne du serveur
+## 📁 8. Catégories (`/categories`)
+- `GET /categories` : Liste toutes les catégories.
+- `POST /categories` : (Admin uniquement) Créer une catégorie.
 
 ---
-*Documentation générée par Antigravity - BCA Connect Team*
+
+## 🛠 Codes de Statut Commandes
+- **Commande (`Order`)** : `payé`, `annulé`, `retourné`.
+- **Livraison (`statut_livraison`)** : `en_attente`, `ramasse`, `en_cours`, `livre`.
+- **Items (`OrderItem`)** : `en_attente`, `préparation`, `expédié`.
+
+---
+*Documentation mise à jour le 17 Mars 2026 - BCA Connect Dev Team*

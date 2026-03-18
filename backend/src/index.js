@@ -12,9 +12,12 @@ async function startServer() {
         console.log('✅ Connexion à la base de données PostgreSQL établie.');
 
         // En phase 1 & 2, on synchronise les modèles
-        // alter: true permet d'ajouter les nouvelles colonnes comme statut_livraison
-        await sequelize.sync({ alter: true });
-        console.log('✅ Modèles synchronisés avec la base de données.');
+        const useLocalDB = process.env.USE_LOCAL_DB === 'true';
+        await sequelize.sync({
+            alter: !useLocalDB,
+            force: useLocalDB
+        });
+        console.log(`✅ Modèles synchronisés (${useLocalDB ? 'FORCE' : 'ALTER'}).`);
 
         app.listen(PORT, () => {
             console.log(`🚀 Serveur démarré sur : http://localhost:${PORT}`);

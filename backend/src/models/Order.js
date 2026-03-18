@@ -28,7 +28,7 @@ const Order = sequelize.define('Order', {
         type: DataTypes.TEXT,
     },
     statut_livraison: {
-        type: DataTypes.ENUM('en_attente', 'ramasse', 'en_cours', 'livre'),
+        type: DataTypes.ENUM('en_attente', 'pret', 'ramasse', 'en_cours', 'livre'),
         defaultValue: 'en_attente',
     },
     transporteur_id: {
