@@ -1,23 +1,81 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { Sparkles, HelpCircle, Store, Eye, Info } from 'lucide-react';
+import { Sparkles, HelpCircle, Store, Eye, Info, Loader2, CheckCircle2 } from 'lucide-react';
+import storeService from '../../services/storeService';
+import { toast } from 'sonner';
 
 const StoreSettings = () => {
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
     const [shopData, setShopData] = useState({
-        name: 'Atelier Créatif Conakry',
-        url: 'atelier-creatif-gn',
-        email: 'contact@ateliercreatif.gn',
-        phone: '+224 620 00 00 00',
-        description: "Bienvenue à l'Atelier Créatif Conakry, nous proposons des créations uniques faites à la main avec passion au cœur de la capitale guinéenne."
+        name: '',
+        url: '',
+        email: '',
+        phone: '',
+        description: '',
+        logo_url: ''
     });
+
+    useEffect(() => {
+        const fetchStore = async () => {
+            try {
+                const data = await storeService.getMyStore();
+                setShopData({
+                    name: data.nom_boutique || '',
+                    url: data.slug || '',
+                    email: data.email_boutique || '',
+                    phone: data.telephone_boutique || '',
+                    description: data.description || '',
+                    logo_url: data.logo_url || ''
+                });
+            } catch (error) {
+                console.error("Erreur chargement boutique:", error);
+                if (error.response?.status !== 404) {
+                    toast.error("Impossible de charger les paramètres de la boutique.");
+                }
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchStore();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setShopData(prev => ({ ...prev, [name]: value }));
     };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            await storeService.updateStore({
+                nom_boutique: shopData.name,
+                description: shopData.description,
+                email_boutique: shopData.email,
+                telephone_boutique: shopData.phone,
+                logo_url: shopData.logo_url
+            });
+            toast.success("Paramètres de la boutique mis à jour !");
+        } catch (error) {
+            console.error("Erreur sauvegarde:", error);
+            toast.error("Erreur lors de l'enregistrement.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <DashboardLayout title="Paramètres Boutique">
+                <div className="flex items-center justify-center min-h-[40vh]">
+                    <Loader2 className="size-10 text-primary animate-spin" />
+                </div>
+            </DashboardLayout>
+        );
+    }
 
     return (
         <DashboardLayout title="Paramètres Boutique">
@@ -29,8 +87,13 @@ const StoreSettings = () => {
                     </div>
                     <div className="flex items-center gap-4">
                         <Button variant="ghost" className="px-6 py-2.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Annuler</Button>
-                        <Button className="px-8 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-xl shadow-primary/20">
-                            Enregistrer
+                        <Button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="px-8 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-xl shadow-primary/20 gap-2"
+                        >
+                            {isSaving ? <Loader2 className="size-3 animate-spin" /> : <CheckCircle2 className="size-3" />}
+                            {isSaving ? 'Enregistrement...' : 'Enregistrer'}
                         </Button>
                     </div>
                 </div>
@@ -50,31 +113,20 @@ const StoreSettings = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground block">URL personnalisée</label>
-                                    <div className="flex rounded-md overflow-hidden border border-input focus-within:ring-1 focus-within:ring-ring transition-all">
-                                        <span className="px-4 py-2 text-sm font-medium text-muted-foreground bg-muted border-r border-input flex items-center select-none">bca-connect.com/shop/</span>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground block">URL personnalisée (Lecture seule)</label>
+                                    <div className="flex rounded-md overflow-hidden border border-input bg-muted/30">
+                                        <span className="px-4 py-2 text-[10px] font-black uppercase text-muted-foreground border-r border-input flex items-center select-none tracking-widest">bcaconnect.com/shop/</span>
                                         <input
-                                            name="url"
-                                            className="flex-1 border-none bg-transparent focus:ring-0 text-sm font-medium px-4 outline-none"
-                                            placeholder="mon-atelier"
-                                            type="text"
+                                            readOnly
+                                            className="flex-1 border-none bg-transparent text-sm font-medium px-4 outline-none opacity-50 cursor-not-allowed"
                                             value={shopData.url}
-                                            onChange={handleChange}
                                         />
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground block">Logo de la boutique</label>
-                                    <div className="mt-1 flex justify-center px-8 pt-8 pb-10 border-2 border-border border-dashed rounded-xl hover:border-primary transition-all cursor-pointer group bg-muted/30">
-                                        <div className="space-y-3 text-center">
-                                            <span className="material-symbols-outlined text-5xl text-muted-foreground group-hover:text-primary transition-all group-hover:scale-110">image</span>
-                                            <div className="flex flex-col text-[10px] font-black uppercase tracking-widest">
-                                                <span className="text-primary hover:underline">Charger une image</span>
-                                                <p className="text-muted-foreground mt-1">PNG, JPG (MAX. 10MB)</p>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground block">Logo de la boutique (URL)</label>
+                                    <Input name="logo_url" value={shopData.logo_url} onChange={handleChange} placeholder="https://..." />
                                 </div>
 
                                 <div className="space-y-2">
@@ -119,14 +171,18 @@ const StoreSettings = () => {
                                 <div className="h-40 bg-gradient-to-br from-primary via-blue-600 to-indigo-900 relative">
                                     <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
                                     <div className="absolute -bottom-10 left-8 p-1.5 bg-card rounded-2xl shadow-xl border border-border">
-                                        <div className="size-20 bg-muted rounded-xl flex items-center justify-center border border-border">
-                                            <Store className="size-8 text-muted-foreground" />
+                                        <div className="size-20 bg-muted rounded-xl flex items-center justify-center border border-border overflow-hidden">
+                                            {shopData.logo_url ? (
+                                                <img src={shopData.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <Store className="size-8 text-muted-foreground" />
+                                            )}
                                         </div>
                                     </div>
                                 </div>
                                 <div className="pt-16 pb-8 px-8">
                                     <h4 className="text-2xl font-black text-foreground uppercase tracking-tight italic">{shopData.name || 'Ma Boutique'}</h4>
-                                    <p className="text-primary text-[10px] font-black uppercase tracking-widest mt-2">bca-connect.com/shop/{shopData.url || 'mon-shop'}</p>
+                                    <p className="text-primary text-[10px] font-black uppercase tracking-widest mt-2 truncate">bca-connect.com/shop/{shopData.url || 'mon-shop'}</p>
 
                                     <div className="h-px bg-border my-6"></div>
 
@@ -137,11 +193,11 @@ const StoreSettings = () => {
                                     <div className="mt-8 space-y-3">
                                         <div className="flex items-center gap-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                                             <span className="material-symbols-outlined !text-lg text-primary">mail</span>
-                                            {shopData.email}
+                                            {shopData.email || 'Non défini'}
                                         </div>
                                         <div className="flex items-center gap-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                                             <span className="material-symbols-outlined !text-lg text-primary">call</span>
-                                            {shopData.phone}
+                                            {shopData.phone || 'Non défini'}
                                         </div>
                                     </div>
                                 </div>

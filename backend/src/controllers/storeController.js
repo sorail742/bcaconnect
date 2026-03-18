@@ -64,6 +64,28 @@ const storeController = {
         } catch (error) {
             next(error);
         }
+    },
+
+    updateMyStore: async (req, res, next) => {
+        try {
+            const { nom_boutique, description, email_boutique, telephone_boutique, logo_url } = req.body;
+            const proprietaire_id = req.user.id;
+
+            const store = await Store.findOne({ where: { proprietaire_id } });
+            if (!store) return res.status(404).json({ message: "Boutique non trouvée." });
+
+            const updatedStore = await store.update({
+                nom_boutique,
+                description,
+                email_boutique,
+                telephone_boutique,
+                logo_url
+            });
+
+            res.json(updatedStore);
+        } catch (error) {
+            next(error);
+        }
     }
 };
 

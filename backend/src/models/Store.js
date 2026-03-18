@@ -22,6 +22,18 @@ const Store = sequelize.define('Store', {
         type: DataTypes.STRING(20),
         defaultValue: 'actif',
     },
+    email_boutique: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+    },
+    telephone_boutique: {
+        type: DataTypes.STRING(32),
+        allowNull: true,
+    },
+    logo_url: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+    },
 }, {
     tableName: 'boutiques',
 });

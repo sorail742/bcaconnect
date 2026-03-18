@@ -19,6 +19,11 @@ const storeService = {
     getById: async (id) => {
         const response = await api.get(`/stores/${id}`);
         return response.data;
+    },
+
+    updateStore: async (storeData) => {
+        const response = await api.put('/stores/me', storeData);
+        return response.data;
     }
 };
 

@@ -79,14 +79,12 @@ const UserOrders = () => {
         },
     ];
 
-    const handleStatusUpdate = async (orderId, newStatus) => {
-        if (!window.confirm(`Êtes-vous sûr de vouloir passer cette commande en état "${newStatus}" ?`)) return;
-        try {
-            await orderService.updateOrderStatus(orderId, newStatus);
-            fetchOrders();
-        } catch (err) {
-            alert("Erreur lors de la mise à jour du statut.");
-        }
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const openOrderDetails = (order) => {
+        setSelectedOrder(order);
+        setIsModalOpen(true);
     };
 
     const columns = [
@@ -134,23 +132,18 @@ const UserOrders = () => {
                         <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleStatusUpdate(row.id, 'annulé')}
+                            onClick={(e) => { e.stopPropagation(); handleStatusUpdate(row.id, 'annulé'); }}
                             className="h-10 px-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] text-destructive hover:bg-destructive/10 border border-transparent hover:border-destructive/20 transition-all"
                         >
                             Annuler
                         </Button>
                     )}
-                    {row.statut === 'livré' && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleStatusUpdate(row.id, 'retourné')}
-                            className="h-10 px-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] text-orange-500 hover:bg-orange-50 border border-transparent hover:border-orange-200 transition-all"
-                        >
-                            Retour
-                        </Button>
-                    )}
-                    <Button variant="ghost" size="sm" className="h-10 px-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] text-primary hover:bg-primary/10 border border-transparent hover:border-primary/20 transition-all flex items-center gap-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openOrderDetails(row)}
+                        className="h-10 px-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] text-primary hover:bg-primary/10 border border-transparent hover:border-primary/20 transition-all flex items-center gap-2"
+                    >
                         Détails
                         <ChevronRight className="size-3" />
                     </Button>
@@ -251,6 +244,81 @@ const UserOrders = () => {
                         )}
                     </CardContent>
                 </Card>
+
+                {/* Modal de Détails Premium */}
+                {isModalOpen && selectedOrder && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-in fade-in duration-300">
+                        <div className="bg-card w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-border animate-in zoom-in-95 duration-300">
+                            <div className="p-8 border-b border-border bg-muted/20 flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="size-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/20">
+                                        <PackageCheck className="size-6" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black italic tracking-tighter">Détails Commande #{selectedOrder.id.slice(0, 8)}</h3>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-0.5">Statut: {selectedOrder.statut}</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setIsModalOpen(false)} className="size-10 rounded-xl hover:bg-muted flex items-center justify-center transition-colors">
+                                    <ChevronDown className="size-5" />
+                                </button>
+                            </div>
+
+                            <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
+                                {/* Livraison */}
+                                <div className="space-y-4">
+                                    <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
+                                        <TrendingUp className="size-3" /> Livraison & Contact
+                                    </h4>
+                                    <div className="p-6 rounded-2xl bg-muted/30 border border-border space-y-3">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground font-medium uppercase tracking-tighter text-[10px]">Destinataire</span>
+                                            <span className="font-black italic text-foreground text-xs">{selectedOrder.nom_destinataire || 'Non renseigné'}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground font-medium uppercase tracking-tighter text-[10px]">Téléphone</span>
+                                            <span className="font-black italic text-foreground text-xs">{selectedOrder.telephone_livraison || 'Non renseigné'}</span>
+                                        </div>
+                                        <div className="h-px bg-border my-2"></div>
+                                        <div className="space-y-1">
+                                            <span className="text-muted-foreground font-medium uppercase tracking-tighter text-[10px]">Adresse complète</span>
+                                            <p className="text-xs font-bold leading-relaxed">{selectedOrder.adresse_livraison || 'Non renseignée'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Articles */}
+                                <div className="space-y-4">
+                                    <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
+                                        <ShoppingBag className="size-3" /> Articles Commandés
+                                    </h4>
+                                    <div className="space-y-3">
+                                        {selectedOrder.details?.map((item, idx) => (
+                                            <div key={idx} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card">
+                                                <div className="size-14 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                                                    {item.produit?.images?.[0] ? (
+                                                        <img src={item.produit.images[0].url_image} className="w-full h-full object-cover" />
+                                                    ) : <ShoppingBag className="text-muted-foreground size-6" />}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="font-bold text-sm truncate">{item.produit?.nom_produit || 'Produit inconnu'}</p>
+                                                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">Qté: {item.quantite}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="font-black text-sm italic">{parseFloat(item.prix_unitaire_achat).toLocaleString('fr-GN')} GNF</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="p-8 border-t border-border bg-muted/20 flex justify-end">
+                                <Button onClick={() => setIsModalOpen(false)} className="rounded-xl px-10 font-black uppercase tracking-widest text-[10px]">Fermer</Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </DashboardLayout>
     );
