@@ -12,7 +12,7 @@ const Order = sequelize.define('Order', {
         allowNull: false,
     },
     statut: {
-        type: DataTypes.ENUM('payé', 'annulé', 'retourné'),
+        type: DataTypes.STRING(32),
         defaultValue: 'payé',
     },
     mode_resilience: {
@@ -28,7 +28,7 @@ const Order = sequelize.define('Order', {
         type: DataTypes.TEXT,
     },
     statut_livraison: {
-        type: DataTypes.ENUM('en_attente', 'pret', 'ramasse', 'en_cours', 'livre'),
+        type: DataTypes.STRING(32),
         defaultValue: 'en_attente',
     },
     transporteur_id: {

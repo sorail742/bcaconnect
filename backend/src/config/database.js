@@ -25,7 +25,9 @@ if (useLocalDB || isTest) {
             ssl: {
                 require: true,
                 rejectUnauthorized: false
-            }
+            },
+            // Correction de l'avertissement SSL (Futur compatibilité)
+            sslmode: 'verify-full'
         },
         pool: {
             max: 5,
