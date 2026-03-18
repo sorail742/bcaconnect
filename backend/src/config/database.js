@@ -10,7 +10,7 @@ if (useLocalDB || isTest) {
     console.log('📦 Utilisation de SQLite (Local/Test)');
     sequelize = new Sequelize({
         dialect: 'sqlite',
-        storage: '/tmp/bcaconnect/database.sqlite',
+        storage: '/tmp/database.sqlite',
         logging: false,
         define: {
             timestamps: true,

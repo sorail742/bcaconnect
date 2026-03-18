@@ -14,19 +14,14 @@ const hasDbUrl = !!process.env.DATABASE_URL;
 const hasDbVars = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS'].every(v => !!process.env[v]);
 
 if (!hasDbUrl && !hasDbVars) {
-    console.warn('\n⚠️  ALERTE : Aucune base de données externe configurée (DATABASE_URL manquante).');
-    console.warn('   L\'API va démarrer en mode dégradé avec SQLite (/tmp/bcaconnect).\n');
+    console.warn('\n⚠️  ALERTE : Aucune base PostgreSQL. Mode SQLite actif.\n');
 }
 
-// Vérification des secrets critiques
-const missing = requiredVars.filter(v => !process.env[v]);
-if (missing.length > 0) {
-    console.error(`\n❌ ERREUR CRITIQUE : Variables manquantes : ${missing.join(', ')}`);
-    console.error('   Vérifiez l\'onglet Environment sur Render pour ajouter JWT_SECRET.\n');
-    // On ne crash pas le démarrage en dev, mais en prod oui pour la sécurité
-    if (process.env.NODE_ENV === 'production') {
-        process.exit(1);
-    }
+// Sécurité JWT souple (on ne crash pas, on met un défaut)
+if (!process.env.JWT_SECRET) {
+    console.error('❌ JWT_SECRET MANQUANT : Utilisation d\'une clé de secours instable.');
+    console.error('   Veuillez définir JWT_SECRET dans le dashboard Render.');
+    process.env.JWT_SECRET = 'bca_connect_super_secret_fallback_key_2024';
 }
 
 const app = require('./app');
