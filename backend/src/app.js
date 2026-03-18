@@ -16,11 +16,13 @@ app.get('/', (req, res) => {
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/stores', require('./routes/storeRoutes'));
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api/wallet', require('./routes/walletRoutes'));
 app.use('/api/delivery', require('./routes/deliveryRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
 app.use('/api/wallet', require('./routes/walletRoutes'));

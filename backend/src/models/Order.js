@@ -12,8 +12,8 @@ const Order = sequelize.define('Order', {
         allowNull: false,
     },
     statut: {
-        type: DataTypes.STRING(30),
-        defaultValue: 'en_attente',
+        type: DataTypes.ENUM('payé', 'annulé', 'retourné'),
+        defaultValue: 'payé',
     },
     mode_resilience: {
         type: DataTypes.BOOLEAN,

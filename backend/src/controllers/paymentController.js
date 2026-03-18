@@ -70,6 +70,33 @@ const paymentController = {
             await t.rollback();
             next(error);
         }
+    },
+
+    // 3. Simuler un succès (Pour Phase 1 / Tests)
+    captureSimulation: async (req, res, next) => {
+        const t = await sequelize.transaction();
+        try {
+            const { transaction_id } = req.body;
+            const transaction = await Transaction.findByPk(transaction_id, { transaction: t });
+
+            if (!transaction || transaction.statut !== 'en_attente') {
+                await t.rollback();
+                return res.status(400).json({ message: "Transaction invalide." });
+            }
+
+            transaction.statut = 'complete';
+            await transaction.save({ transaction: t });
+
+            const wallet = await Wallet.findByPk(transaction.portefeuille_id, { transaction: t });
+            wallet.solde_virtuel = parseFloat(wallet.solde_virtuel) + parseFloat(transaction.montant);
+            await wallet.save({ transaction: t });
+
+            await t.commit();
+            res.json({ message: "Recharge réussie (Simulation)", solde: wallet.solde_virtuel });
+        } catch (error) {
+            await t.rollback();
+            next(error);
+        }
     }
 };
 

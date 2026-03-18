@@ -1,29 +1,50 @@
-const { Order, OrderItem, Product, Wallet, Transaction, sequelize } = require('../models');
+const { Order, OrderItem, Product, Wallet, Transaction, User, sequelize } = require('../models');
 
 const orderController = {
     create: async (req, res, next) => {
         const t = await sequelize.transaction();
         try {
-            const { items } = req.body; // Array of { productId, quantity }
+            const { items, cle_idempotence } = req.body; // Array of { productId, quantity }
             const utilisateur_id = req.user.id;
 
+            // 1. Vérification Idempotence
+            if (cle_idempotence) {
+                const existingOrder = await Order.findOne({ where: { cle_idempotence }, transaction: t });
+                if (existingOrder) {
+                    await t.rollback();
+                    return res.status(200).json(existingOrder); // Retourne la commande existante sans erreur (Idempotence)
+                }
+            }
+
             let total_ttc = 0;
-            const orderItems = [];
+            const orderItemsByVendor = [];
 
             for (const item of items) {
-                const product = await Product.findByPk(item.productId);
-                if (!product || product.stock_quantite < item.quantity) {
-                    throw new Error(`Produit ${item.productId} non disponible ou stock insuffisant.`);
+                // Stock check with LOCK to prevent race conditions
+                const product = await Product.findByPk(item.productId, {
+                    lock: t.LOCK.UPDATE,
+                    transaction: t
+                });
+
+                if (!product) {
+                    throw new Error(`Produit ${item.productId} non trouvé.`);
+                }
+
+                if (product.stock_quantite < item.quantity) {
+                    throw new Error(`Stock insuffisant pour le produit: ${product.nom_produit}.`);
                 }
 
                 const subtotal = product.prix_unitaire * item.quantity;
                 total_ttc += parseFloat(subtotal);
 
-                orderItems.push({
+                const store = await product.getStore({ transaction: t });
+
+                orderItemsByVendor.push({
                     produit_id: product.id,
-                    fournisseur_id: (await product.getStore({ transaction: t })).proprietaire_id,
+                    fournisseur_id: store.proprietaire_id,
                     quantite: item.quantity,
-                    prix_unitaire_achat: product.prix_unitaire
+                    prix_unitaire_achat: product.prix_unitaire, // Prix figé au moment de la commande
+                    statut: 'en_attente'
                 });
 
                 // Update stock
@@ -40,68 +61,60 @@ const orderController = {
             const order = await Order.create({
                 utilisateur_id,
                 total_ttc,
-                statut: 'payé',
-                statut_livraison: 'en_attente'
+                statut: 'payé'
             }, { transaction: t });
 
-            // Deduct from buyer's wallet
-            wallet.solde_virtuel = parseFloat(wallet.solde_virtuel) - total_ttc;
-            await wallet.save({ transaction: t });
-
-            // Record transaction for buyer
-            await Transaction.create({
-                portefeuille_id: wallet.id,
-                commande_id: order.id,
-                montant: total_ttc,
-                type_transaction: 'achat',
-                statut: 'complete',
-                reference_externe: `ORD-${order.id.slice(0, 8)}`,
-                metadata: { type: 'achat_marketplace' }
-            }, { transaction: t });
-
-            // Create OrderItems and handle vendor escrow
+            // Create OrderItems
             for (const item of orderItems) {
                 await OrderItem.create({
                     ...item,
+                    commande_id: order.id
+                }, { transaction: t });
+            }
+
+            // Create financial Transaction entry
+            const wallet = await Wallet.findOne({ where: { user_id: utilisateur_id }, transaction: t });
+            if (wallet) {
+                await Transaction.create({
+                    portefeuille_id: wallet.id,
                     commande_id: order.id,
                     statut: 'en_attente'
                 }, { transaction: t });
-
-                // Credit vendor's escrow account
-                const vendorWallet = await Wallet.findOne({ where: { user_id: item.fournisseur_id }, transaction: t });
-                if (vendorWallet) {
-                    const itemAmount = parseFloat(item.prix_unitaire_achat) * item.quantite;
-                    vendorWallet.solde_sequestre = parseFloat(vendorWallet.solde_sequestre) + itemAmount;
-                    await vendorWallet.save({ transaction: t });
-
-                    // Transaction record for vendor (optional: to track pending funds)
-                    await Transaction.create({
-                        portefeuille_id: vendorWallet.id,
-                        commande_id: order.id,
-                        montant: itemAmount,
-                        type_transaction: 'vente_sequestre',
-                        statut: 'en_attente',
-                        reference_externe: `ESCROW-${order.id.slice(0, 8)}-${item.produit_id.slice(0, 4)}`,
-                        metadata: { type: 'vente_attente_livraison', product_id: item.produit_id }
-                    }, { transaction: t });
-                }
             }
 
             await t.commit();
             res.status(201).json(order);
         } catch (error) {
-            if (t) await t.rollback();
-            res.status(400).json({ message: error.message });
+            await t.rollback();
+            next(error);
         }
     },
 
     getMyOrders: async (req, res, next) => {
         try {
-            const orders = await Order.findAll({
+            const { page = 1, limit = 10 } = req.query;
+            const offset = (page - 1) * limit;
+
+            const { count, rows: orders } = await Order.findAndCountAll({
                 where: { utilisateur_id: req.user.id },
-                include: ['details']
+                include: [
+                    {
+                        model: OrderItem,
+                        as: 'details',
+                        include: [{ model: Product, as: 'produit' }]
+                    }
+                ],
+                order: [['createdAt', 'DESC']],
+                limit: parseInt(limit),
+                offset: parseInt(offset)
             });
-            res.json(orders);
+
+            res.json({
+                total: count,
+                pages: Math.ceil(count / limit),
+                currentPage: parseInt(page),
+                orders
+            });
         } catch (error) {
             next(error);
         }
@@ -141,99 +154,85 @@ const orderController = {
 
     getVendorOrders: async (req, res, next) => {
         try {
-            const orders = await OrderItem.findAll({
+            const { page = 1, limit = 10 } = req.query;
+            const offset = (page - 1) * limit;
+
+            const { count, rows: orders } = await OrderItem.findAndCountAll({
                 where: { fournisseur_id: req.user.id },
                 include: [
                     {
                         model: Order,
-                        include: [{ model: User, attributes: ['nom_complet', 'telephone'] }]
+                        include: [{ model: User, attributes: ['nom_complet', 'telephone', 'email'] }]
                     },
                     { model: Product, as: 'produit' }
                 ],
-                order: [['createdAt', 'DESC']]
+                order: [['createdAt', 'DESC']],
+                limit: parseInt(limit),
+                offset: parseInt(offset)
             });
-            res.json(orders);
+
+            res.json({
+                total: count,
+                pages: Math.ceil(count / limit),
+                currentPage: parseInt(page),
+                orders
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    getAllOrders: async (req, res, next) => {
+        try {
+            const { page = 1, limit = 10 } = req.query;
+            const offset = (page - 1) * limit;
+
+            const { count, rows: orders } = await Order.findAndCountAll({
+                include: [
+                    {
+                        model: OrderItem,
+                        as: 'details',
+                        include: [{ model: Product, as: 'produit' }]
+                    },
+                    {
+                        model: User,
+                        attributes: ['nom_complet', 'telephone', 'email']
+                    }
+                ],
+                order: [['createdAt', 'DESC']],
+                limit: parseInt(limit),
+                offset: parseInt(offset)
+            });
+
+            res.json({
+                total: count,
+                pages: Math.ceil(count / limit),
+                currentPage: parseInt(page),
+                orders
+            });
         } catch (error) {
             next(error);
         }
     },
 
     updateItemStatus: async (req, res, next) => {
-        const t = await sequelize.transaction();
         try {
             const { itemId } = req.params;
-            const { statut, status } = req.body;
-            const finalStatut = statut || status;
+            const { statut } = req.body;
             const fournisseur_id = req.user.id;
 
-            const item = await OrderItem.findByPk(itemId, {
-                include: [{ model: Order, as: 'Order' }, { model: Product, as: 'produit' }]
-            });
-
+            const item = await OrderItem.findByPk(itemId);
             if (!item) {
-                await t.rollback();
                 return res.status(404).json({ message: "Élément de commande non trouvé." });
             }
 
-            // Vérification de l'autorisation
             if (item.fournisseur_id !== fournisseur_id && req.user.role !== 'admin') {
-                await t.rollback();
                 return res.status(403).json({ message: "Vous n'êtes pas autorisé à modifier cette commande." });
             }
 
-            // Validation sommaire des transitions (ex: ne pas revenir en arrière depuis 'livre')
-            const statusFlow = ['en_attente', 'confirme', 'prepare', 'expedie', 'livre'];
-            const currentIndex = statusFlow.indexOf(item.statut);
-            const nextIndex = statusFlow.indexOf(finalStatut);
-            if (nextIndex <= currentIndex && finalStatut !== 'annule') {
-                // On autorise l'annulation à tout moment (sauf si déjà livré)
-                if (item.statut !== 'livre') {
-                    // Autoriser l'annulation
-                } else {
-                    await t.rollback();
-                    return res.status(400).json({ message: "Transition de statut invalide." });
-                }
-            }
+            item.statut = statut;
+            await item.save();
 
-            item.statut = finalStatut;
-            await item.save({ transaction: t });
-
-            // Mettre à jour l'état de la commande globale si nécessaire
-            const order = await Order.findByPk(item.commande_id, {
-                include: [{ model: OrderItem, as: 'details' }],
-                transaction: t
-            });
-
-            // Mise à jour de l'item dans la collection locale pour la vérification allReady
-            order.details.forEach(detail => {
-                if (detail.id === item.id) {
-                    detail.statut = finalStatut;
-                }
-            });
-
-            // Si au moins un item est confirmé, la commande passe en préparation
-            if (finalStatut === 'confirme' && order.statut === 'payé') {
-                order.statut = 'en_préparation';
-                await order.save({ transaction: t });
-            }
-
-            // Si TOUS les items sont 'prepare' (ou plus), la livraison passe à 'pret'
-            const allReady = order.details.every(i => ['prepare', 'expedie', 'livre'].includes(i.statut));
-
-            if (allReady && (order.statut_livraison === 'en_attente' || order.statut_livraison === 'pret')) {
-                order.statut_livraison = 'pret';
-                await order.save({ transaction: t });
-            }
-
-            // Si TOUS les items sont livrés, la commande globale est terminée
-            const allDelivered = order.details.every(i => i.statut === 'livre');
-            if (allDelivered) {
-                order.statut = 'complétée';
-                order.statut_livraison = 'livre';
-                await order.save({ transaction: t });
-            }
-
-            await t.commit();
             res.json({ message: "Statut mis à jour avec succès", item });
         } catch (error) {
             await t.rollback();
@@ -245,35 +244,53 @@ const orderController = {
         const t = await sequelize.transaction();
         try {
             const { orderId } = req.params;
-            const { statut, status } = req.body;
-            const finalStatut = statut || status;
+            const { statut } = req.body;
             const utilisateur_id = req.user.id;
 
-            const order = await Order.findByPk(orderId, { transaction: t });
+            const order = await Order.findByPk(orderId, {
+                transaction: t,
+                include: ['details']
+            });
             if (!order) {
                 await t.rollback();
                 return res.status(404).json({ message: "Commande non trouvée." });
             }
 
-            if (order.utilisateur_id !== utilisateur_id && req.user.role !== 'admin') {
+            const isAdmin = req.user.role === 'admin';
+            const isOwner = order.utilisateur_id === req.user.id;
+
+            // Matrice de transition stricte pour ORDER (Global)
+            // payé -> annulé | retourné
+            const transitions = {
+                'payé': ['annulé', 'retourné'],
+                'annulé': [],
+                'retourné': []
+            };
+
+            if (!transitions[order.statut].includes(statut)) {
                 await t.rollback();
-                return res.status(403).json({ message: "Vous n'êtes pas autorisé à modifier cette commande." });
+                return res.status(400).json({
+                    message: `Transition globale invalide: de "${order.statut}" vers "${statut}".`
+                });
+            }
+
+            // Permissions
+            if (statut === 'annulé' && !isOwner && !isAdmin) {
+                await t.rollback();
+                return res.status(403).json({ message: "Non autorisé à annuler cette commande." });
             }
 
             // Autoriser uniquement annulation ou demande de retour par le client
             const allowedStatus = ['annulé', 'retourné'];
-            if (!allowedStatus.includes(finalStatut)) {
+            if (!allowedStatus.includes(statut)) {
                 await t.rollback();
-                return res.status(400).json({ message: "Statut non autorisé pour une mise à jour client." });
+                return res.status(403).json({ message: "Seul l'admin peut initier un retour global." });
             }
 
             // Si annulation d'une commande déjà payée -> Remboursement
-            if (finalStatut === 'annulé' && order.statut === 'payé') {
+            if (statut === 'annulé' && (order.statut === 'payé' || order.statut === 'en_attente')) {
                 const wallet = await Wallet.findOne({ where: { user_id: order.utilisateur_id }, transaction: t });
                 if (wallet) {
-                    wallet.solde_virtuel = parseFloat(wallet.solde_virtuel) + parseFloat(order.total_ttc);
-                    await wallet.save({ transaction: t });
-
                     await Transaction.create({
                         portefeuille_id: wallet.id,
                         commande_id: order.id,
@@ -283,13 +300,19 @@ const orderController = {
                         reference_externe: `REFUND-${order.id.slice(0, 8)}`
                     }, { transaction: t });
                 }
+                // Restaurer stocks
+                for (const item of order.details) {
+                    await Product.increment('stock_quantite', { by: item.quantite, where: { id: item.produit_id }, transaction: t });
+                }
+                // Update all items to annulé
+                await OrderItem.update({ statut: 'annulé' }, { where: { commande_id: order.id }, transaction: t });
             }
 
-            order.statut = finalStatut;
+            order.statut = statut;
             await order.save({ transaction: t });
 
             await t.commit();
-            res.json({ message: `Commande passée en état: ${finalStatut}`, order });
+            res.json({ message: `Commande passée en état: ${statut}`, order });
         } catch (error) {
             await t.rollback();
             next(error);
