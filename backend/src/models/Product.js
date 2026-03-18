@@ -33,9 +33,13 @@ const Product = sequelize.define('Product', {
     preferences_ia: {
         type: DataTypes.JSONB,
     },
-    vendeur_id: {
+    boutique_id: {
         type: DataTypes.UUID,
-        allowNull: false
+        allowNull: true
+    },
+    categorie_id: {
+        type: DataTypes.UUID,
+        allowNull: true
     },
     ia_recommandations: {
         type: DataTypes.JSON,
