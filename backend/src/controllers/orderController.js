@@ -58,10 +58,14 @@ const orderController = {
             }
 
             // Create Order
+            const { deliveryInfo } = req.body;
             const order = await Order.create({
                 utilisateur_id,
                 total_ttc,
-                statut: 'payé'
+                statut: 'payé',
+                nom_destinataire: deliveryInfo?.nom,
+                telephone_livraison: deliveryInfo?.telephone,
+                adresse_livraison: deliveryInfo?.adresse
             }, { transaction: t });
 
             // Create OrderItems

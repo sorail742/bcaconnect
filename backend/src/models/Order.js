@@ -39,6 +39,18 @@ const Order = sequelize.define('Order', {
         type: DataTypes.STRING(10),
         allowNull: true,
     },
+    nom_destinataire: {
+        type: DataTypes.STRING(150),
+        allowNull: true, // Pourrait être null si on utilise les infos du compte par défaut
+    },
+    telephone_livraison: {
+        type: DataTypes.STRING(32),
+        allowNull: true,
+    },
+    adresse_livraison: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
     date_commande: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
