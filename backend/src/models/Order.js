@@ -35,6 +35,10 @@ const Order = sequelize.define('Order', {
         type: DataTypes.UUID,
         allowNull: true,
     },
+    delivery_otp: {
+        type: DataTypes.STRING(10),
+        allowNull: true,
+    },
     date_commande: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,

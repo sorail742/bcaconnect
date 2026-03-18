@@ -48,6 +48,11 @@ const User = sequelize.define('User', {
     metadata_securite: {
         type: DataTypes.JSONB,
     },
+    preferences_ia: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        defaultValue: {}
+    }
 }, {
     tableName: 'utilisateurs',
 });

@@ -62,6 +62,19 @@ const aiService = {
         } catch (error) {
             return { score: 100, level: "Standard" };
         }
+    },  // ← virgule ajoutée
+    /**
+     * PRÉDICTION : Simule une prédiction de demande par catégorie
+     */
+    getMarketTrends: async () => {
+        return {
+            trends: [
+                { category: 'Solaire', demand_score: 95, insight: "Forte hausse prévue (Saison sèche)" },
+                { category: 'Électronique', demand_score: 80, insight: "Stable" },
+                { category: 'Agriculture', demand_score: 90, insight: "Pic de recherche (Période de semis)" }
+            ],
+            confidence: 0.88
+        };
     }
 };
 

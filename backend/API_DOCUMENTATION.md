@@ -1,111 +1,102 @@
-# 🚀 Documentation API - BCA Connect (V2.0)
+# 🚀 Documentation API - BCA Connect (V2.6)
 
-Bienvenue dans la documentation complète de l'API **BCA Connect**. Cette API alimente la plateforme de mise en relation entre commerçants locaux, acheteurs et transporteurs.
-
-## 🌍 Informations de Base
-- **Base URL** : `http://localhost:5000/api` (Développement) ou `https://bcaconnect.onrender.com/api` (Production)
-- **Format** : `application/json`
-- **Authentification** : JWT (JSON Web Token)
-  - Header : `Authorization: Bearer <votre_token>`
+Bienvenue dans la documentation officielle de l'API **BCA Connect**. Cette API REST est conçue pour alimenter une plateforme robuste de commerce, logistique et finance (Crédit/Wallet).
 
 ---
 
-## 🔐 1. Authentification (`/auth`)
+## 🌍 Informations Globales
+- **Base URL** : `http://localhost:5000/api`
+- **Authentification** : Porteur de jeton JWT (`Authorization: Bearer <TOKEN>`)
+- **Format** : Toutes les requêtes et réponses sont en **JSON**.
+- **Sécurité** : 
+  - Rate Limiting (AntidDoS)
+  - Protection Brute-force sur le login (15 essais / 15 min)
+  - Sanitisation Anti-XSS & Injections NoSQL.
 
-| Méthode | Endpoint | Auth | Description |
+---
+
+## 🔑 1. Authentification & Profil (`/auth`)
+
+| Méthode | Endpoint | Accès | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/auth/register` | Public | Création d'un compte (client, fournisseur, transporteur) |
-| `POST` | `/auth/login` | Public | Connexion et obtention du token JWT |
-| `GET` | `/auth/me` | User | Récupérer les informations du profil et le portefeuille |
-| `PUT` | `/auth/update` | User | Mettre à jour le profil (nom, email, tel, password) |
-| `DELETE` | `/auth/delete` | User | Supprimer son propre compte |
-
-### Exemples de Corps (Auth)
-**Register** : `{ "nom_complet", "email", "telephone", "mot_de_passe", "role" }`
-**Update** : `{ "nom_complet"?, "telephone"?, "email"?, "mot_de_passe"? }`
+| `POST` | `/auth/register` | Public | **Inscription** : Requiert (nom_complet, email, telephone, mot_de_passe, role). Rôles : `client`, `fournisseur`, `transporteur`. |
+| `POST` | `/auth/login` | Public | **Connexion** : Retourne un token JWT et les infos de l'utilisateur. |
+| `GET` | `/auth/me` | Connecté| **Profil** : Récupère les infos complètes de l'utilisateur connecté (incluant son Wallet). |
 
 ---
 
-## 🏬 2. Boutiques (`/stores`)
+## 🛍️ 2. Commandes & Panier (`/orders`)
 
-| Méthode | Endpoint | Auth | Description |
+| Méthode | Endpoint | Accès | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/stores` | Public | Lister toutes les boutiques actives |
-| `GET` | `/stores/:id` | Public | Détails d'une boutique avec ses produits |
-| `POST` | `/stores` | Fournisseur | Créer une boutique (une seule par utilisateur) |
-| `GET` | `/stores/me` | Fournisseur | Voir ma propre boutique et ses produits |
+| `POST` | `/orders` | Client | **Paiement Immédiat** : Crée une commande et débite automatiquement le Wallet de l'utilisateur. |
+| `GET` | `/orders/me` | Client | **Historique** : Liste toutes vos commandes avec leurs détails (items). |
+| `PATCH` | `/orders/:id/status`| Client/Adm| **Annulation/Retour** : Change le statut du paiement ou de la livraison. |
 
 ---
 
-## 📦 3. Produits (`/products`)
+## 🚚 3. Logistique & Suivi Livraison (`/delivery`)
 
-| Méthode | Endpoint | Auth | Description |
+| Méthode | Endpoint | Accès | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/products` | Public | Lister tous les produits |
-| `GET` | `/products/:id` | Public | Détails d'un produit (avec catégorie) |
-| `GET` | `/products/me/products` | Fournisseur | Voir mes propres produits |
-| `POST` | `/products` | Fournisseur* | Créer un produit (Permission: `PRODUCTS_CREATE`) |
-| `PUT` | `/products/:id` | Fournisseur* | Modifier un produit (Permission: `PRODUCTS_EDIT_OWN`) |
-| `PATCH` | `/products/:id/stock` | Fournisseur* | Mise à jour rapide du stock |
-| `DELETE` | `/products/:id` | Fournisseur* | Supprimer un produit |
+| `GET` | `/available` | Transpo* | **Marché des colis** : Liste les commandes payées prêtes au ramassage. |
+| `POST` | `/assign` | Transpo* | **Prise en charge** : S'assigne un colis. Génère un **Code OTP** envoyé au client. |
+| `POST` | `/tracking` | Transpo* | **GPS Localisation** : Enregistre les coordonnées (lat, long) actuelles du colis. |
+| `POST` | `/verify` | Transpo* | **Finalisation** : Le transporteur saisit l'OTP du client. Si correct, l'argent du séquestre est libéré au vendeur. |
+| `GET` | `/history/:id` | Tous | **Trace GPS** : Historique complet des déplacements d'un colis spécifique. |
 
 ---
 
-## 🛒 4. Commandes (`/orders`)
+## 💰 4. Crédit & Financement Automatisé (`/credits`)
 
-| Méthode | Endpoint | Auth | Description |
+| Méthode | Endpoint | Accès | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/orders` | Client | Passer une commande (Paiement automatique via Wallet) |
-| `GET` | `/orders/me` | Client | Historique de mes achats |
-| `GET` | `/orders/vendor` | Fournisseur | Voir les commandes reçues pour mes produits |
-| `PATCH` | `/orders/:orderId/status` | Client/Admin | Annuler ou retourner une commande (Remboursement auto) |
-| `PATCH` | `/orders/item/:itemId/status` | Fournisseur | Gérer le statut d'un item spécifique |
-
-**Format commande** : `{ "items": [ { "productId": "uuid", "quantity": 1 } ] }`
+| `POST` | `/simulate` | Public | **Simulateur** : Calcule mensualités, coût total et taux sans créer de dossier. |
+| `POST` | `/request` | Client | **Demande IA** : Soumet un dossier. Un **Score de Solvabilité IA** est calculé en temps réel pour aider l'admin. |
+| `GET` | `/my` | Client | **Mes Financements** : Liste vos crédits et l'échéancier complet (dates et montants). |
+| `POST` | `/pay/:id` | Client | **Remboursement** : Payer une mensualité spécifique via le Wallet. |
+| `PUT` | `/:id/approve` | Admin | **Décision** : Approuver un crédit (génère l'échéancier auto). |
 
 ---
 
-## 💳 5. Portefeuille & Paiements (`/wallet` & `/payments`)
+## 🛠️ 5. SAV, Support & Feedback IA (`/support`)
 
-| Méthode | Endpoint | Auth | Description |
+| Méthode | Endpoint | Accès | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/wallet/me` | User | Voir son solde (Virtuel + Séquestre) et dernières transactions |
-| `GET` | `/wallet/transactions` | User | Historique complet des transactions |
-| `POST` | `/payments/initiate` | User | Initier un dépôt (Orange Money, etc.) |
+| `POST` | `/tickets` | Connecté| **Support Ticket** : Ouvrir une demande (Assistance, Installation, Maintenance). |
+| `GET` | `/tickets/me`| Connecté| **Mes Demandes** : Suivre l'avancement de vos tickets Support. |
+| `POST` | `/reviews` | Client | **Feedback IA** : Laisser un avis. Le système analyse le texte pour classer le sentiment (`positif`, `neutre`, `negatif`). |
+| `PUT` | `/tickets/:id/resolve`| Admin | **Clôture** : Répondre ou fermer un ticket. |
 
 ---
 
-## 🚚 6. Livraison (`/delivery`)
+## 📊 6. Statistiques & Intelligence d'Affaires (`/stats`)
 
-*Accès restreint aux utilisateurs avec le rôle `transporteur`.*
-
-| Méthode | Endpoint | Auth | Description |
+| Méthode | Endpoint | Accès | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/delivery/available` | Transporteur | Voir les commandes payées en attente de ramassage |
-| `POST` | `/delivery/assign` | Transporteur | S'assigner une commande pour livraison |
-| `PATCH` | `/delivery/status` | Transporteur | Mettre à jour (en_cours, livre) |
+| `GET` | `/admin` | Admin | **Dashboard Général** : GMV (Volume d'affaires), Revenus BCA, Distribution des utilisateurs et Croissance mensuelle. |
+| `GET` | `/financial` | Admin | **Rapports Financiers** : Analyse détaillée des types de transactions et flux monétaires. |
+| `GET` | `/trends` | Tous | **Prédictions IA** : Analyse de la demande future par catégories (ex: "Solaire : Forte hausse prévue"). |
 
 ---
 
-## 🤖 7. IA BCA (`/ai`)
+## 📢 7. Régie Publicitaire & Marketing (`/ads`)
 
-| Méthode | Endpoint | Auth | Description |
+| Méthode | Endpoint | Accès | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/ai/insights` | Fournisseur | Analyse des ventes et recommandations |
-| `GET` | `/ai/trust-score` | User | Score de fiabilité basé sur l'activité |
+| `GET` | `/active` | Tous | **Affichage** : Récupère les bannières actives et ciblées selon le profil utilisateur. |
+| `POST` | `/create` | Fournis* | **Campagne** : Créer une pub (Budget, Cible, Date). |
+| `POST` | `/:id/click` | Public | **Statistiques** : Enregistre les clics pour mesurer le CTR (taux de clic). |
 
 ---
 
-## 📁 8. Catégories (`/categories`)
-- `GET /categories` : Liste toutes les catégories.
-- `POST /categories` : (Admin uniquement) Créer une catégorie.
+## ⚡ Codes de Statut Standardisés
+- **200 OK** : Succès.
+- **201 Created** : Ressource créée (Commande, Ticket, Avis).
+- **401 Unauthorized** : Token manquant ou expiré.
+- **403 Forbidden** : Rôle insuffisant (ex: client vers dashboard admin).
+- **422 Unprocessable Content** : Données invalides (ex: email mal formé).
+- **500 Internal Error** : Erreur serveur (logguée dans `src/logs/error.log`).
 
 ---
-
-## 🛠 Codes de Statut Commandes
-- **Commande (`Order`)** : `payé`, `annulé`, `retourné`.
-- **Livraison (`statut_livraison`)** : `en_attente`, `ramasse`, `en_cours`, `livre`.
-- **Items (`OrderItem`)** : `en_attente`, `préparation`, `expédié`.
-
----
-*Documentation mise à jour le 17 Mars 2026 - BCA Connect Dev Team*
+*Dernière mise à jour : 18 Mars 2026 | BCA Connect Dev Team - Robustesse & Intelligence IA*

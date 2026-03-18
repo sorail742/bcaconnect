@@ -1,0 +1,6 @@
+[dotenv@17.3.1] injecting env (5) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+📦 Utilisation de SQLite (Local/Test)
+✅ Connexion à la base de données PostgreSQL établie.
+✅ Modèles synchronisés (FORCE).
+🚀 Serveur démarré sur : http://localhost:5000
