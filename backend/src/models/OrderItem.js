@@ -16,7 +16,7 @@ const OrderItem = sequelize.define('OrderItem', {
         allowNull: false,
     },
     statut: {
-        type: DataTypes.ENUM('en_attente', 'préparation', 'expédié', 'annulé'),
+        type: DataTypes.STRING(32),
         defaultValue: 'en_attente',
     },
 }, {

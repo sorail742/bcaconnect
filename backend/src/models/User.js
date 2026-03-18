@@ -27,8 +27,8 @@ const User = sequelize.define('User', {
         allowNull: false,
     },
     role: {
-        type: DataTypes.ENUM('admin', 'fournisseur', 'transporteur', 'client', 'banque'),
-        allowNull: false,
+        type: DataTypes.STRING(20),
+        defaultValue: 'client',
     },
     score_confiance: {
         type: DataTypes.INTEGER,
@@ -40,7 +40,7 @@ const User = sequelize.define('User', {
     },
     statut: {
         type: DataTypes.STRING(20),
-        defaultValue: 'actif',
+        defaultValue: 'en_attente',
     },
     derniere_synchro: {
         type: DataTypes.DATE,

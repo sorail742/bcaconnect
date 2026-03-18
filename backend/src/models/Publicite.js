@@ -24,11 +24,11 @@ const Publicite = sequelize.define('Publicite', {
         allowNull: true
     },
     format: {
-        type: DataTypes.ENUM('banner', 'popup', 'video', 'interstitial'),
+        type: DataTypes.STRING(32),
         defaultValue: 'banner'
     },
     statut: {
-        type: DataTypes.ENUM('active', 'paused', 'completed', 'pending_payment'),
+        type: DataTypes.STRING(32),
         defaultValue: 'pending_payment'
     },
     budget_total: {

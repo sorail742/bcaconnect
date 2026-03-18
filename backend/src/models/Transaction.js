@@ -24,7 +24,7 @@ const Transaction = sequelize.define('Transaction', {
         unique: true,
     },
     statut: {
-        type: DataTypes.ENUM('en_attente', 'reussi', 'echoue', 'annule'),
+        type: DataTypes.STRING(32),
         defaultValue: 'en_attente'
     },
     ia_suspect: {

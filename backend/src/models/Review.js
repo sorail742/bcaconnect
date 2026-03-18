@@ -28,7 +28,7 @@ const Review = sequelize.define('Review', {
         type: DataTypes.TEXT,
     },
     ia_sentiment: {
-        type: DataTypes.ENUM('positif', 'neutre', 'negatif'),
+        type: DataTypes.STRING(20),
         defaultValue: 'neutre',
     },
     est_approuve: {

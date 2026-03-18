@@ -20,7 +20,7 @@ const Litige = sequelize.define('Litige', {
         allowNull: false,
     },
     type: {
-        type: DataTypes.ENUM('livraison', 'qualite', 'paiement', 'autre'),
+        type: DataTypes.STRING(32),
         defaultValue: 'autre',
     },
     description: {
@@ -28,7 +28,7 @@ const Litige = sequelize.define('Litige', {
         allowNull: false,
     },
     statut: {
-        type: DataTypes.ENUM('ouvert', 'mediation', 'resolu', 'escalade', 'annule'),
+        type: DataTypes.STRING(32),
         defaultValue: 'ouvert',
     },
     solution_proposee_ia: {

@@ -32,7 +32,7 @@ const Credit = sequelize.define('Credit', {
         defaultValue: 0,
     },
     statut: {
-        type: DataTypes.ENUM('en_attente', 'approuve', 'rejete', 'rembourse', 'defaut'),
+        type: DataTypes.STRING(32),
         defaultValue: 'en_attente',
     },
     date_approbation: {

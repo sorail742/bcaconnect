@@ -24,7 +24,7 @@ const PaiementPublicite = sequelize.define('PaiementPublicite', {
         defaultValue: 'GNF'
     },
     statut: {
-        type: DataTypes.ENUM('pending', 'paid', 'failed', 'refunded'),
+        type: DataTypes.STRING(32),
         defaultValue: 'pending'
     },
     transaction_id: {

@@ -24,7 +24,7 @@ const Echeancier = sequelize.define('Echeancier', {
         defaultValue: 0,
     },
     statut: {
-        type: DataTypes.ENUM('du', 'paye', 'en_retard', 'annule'),
+        type: DataTypes.STRING(32),
         defaultValue: 'du',
     },
     reference_paiement: {

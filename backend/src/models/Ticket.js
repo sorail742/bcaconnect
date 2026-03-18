@@ -24,15 +24,15 @@ const Ticket = sequelize.define('Ticket', {
         allowNull: false,
     },
     priorite: {
-        type: DataTypes.ENUM('basse', 'moyenne', 'haute', 'critique'),
+        type: DataTypes.STRING(32),
         defaultValue: 'moyenne',
     },
     statut: {
-        type: DataTypes.ENUM('ouvert', 'en_cours', 'en_attente', 'resolu', 'ferme'),
+        type: DataTypes.STRING(32),
         defaultValue: 'ouvert',
     },
     type_sav: {
-        type: DataTypes.ENUM('assistance', 'installation', 'maintenance', 'autre'),
+        type: DataTypes.STRING(32),
         defaultValue: 'assistance',
     },
     assigne_a: {
