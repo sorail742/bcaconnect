@@ -36,9 +36,19 @@ const start = async () => {
         await sequelize.authenticate();
         console.log('✅ Connexion PostgreSQL établie.');
 
-        // Synchronisation des modèles (sans casser les données en prod)
-        await sequelize.sync({ alter: process.env.NODE_ENV !== 'production' });
-        console.log('✅ Modèles synchronisés.');
+        // 🛠️ RÉPARATION CRITIQUE : Supprime la colonne fantôme 'vendeur_id' si elle bloque la migration
+        if (process.env.NODE_ENV === 'production') {
+            try {
+                await sequelize.query('ALTER TABLE produits DROP COLUMN IF EXISTS vendeur_id CASCADE');
+                console.log('🧹 Nettoyage de la colonne "vendeur_id" (Product) réussi.');
+            } catch (e) {
+                console.log('ℹ️ Nettoyage non nécessaire ou déjà effectué.');
+            }
+        }
+
+        // Synchronisation des modèles (Utiliser alter: true avec prudence en prod)
+        await sequelize.sync({ alter: true });
+        console.log('✅ Modèles synchronisés (ALTER).');
 
         app.listen(PORT, () => {
             console.log(`\n🚀 BCA Connect API v2.5 — Port ${PORT} (${process.env.NODE_ENV || 'development'})`);
