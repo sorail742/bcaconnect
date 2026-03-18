@@ -65,7 +65,7 @@ const orderController = {
             }, { transaction: t });
 
             // Create OrderItems
-            for (const item of orderItems) {
+            for (const item of orderItemsByVendor) {
                 await OrderItem.create({
                     ...item,
                     commande_id: order.id
@@ -73,7 +73,6 @@ const orderController = {
             }
 
             // Create financial Transaction entry
-            const wallet = await Wallet.findOne({ where: { user_id: utilisateur_id }, transaction: t });
             if (wallet) {
                 await Transaction.create({
                     portefeuille_id: wallet.id,
