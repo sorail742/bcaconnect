@@ -22,14 +22,69 @@ import { Button } from '../components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import StatusBadge from '../components/ui/StatusBadge';
 import { cn } from '../lib/utils';
+import walletService from '../services/walletService';
 
 const UserWallet = () => {
-    const transactionsData = [
-        { id: '#TXN-9402', date: '12 Nov 2023', desc: 'Achat Catalogue - Licences Pro', amount: -4500000, status: 'Complété', icon: ShoppingBag, statusVariant: 'success' },
-        { id: '#TXN-9398', date: '10 Nov 2023', desc: 'Rechargement compte', amount: 10000000, status: 'Complété', icon: Landmark, statusVariant: 'success' },
-        { id: '#TXN-9385', date: '08 Nov 2023', desc: 'Remboursement commande #882', amount: 1255000, status: 'En attente', icon: History, statusVariant: 'warning' },
-        { id: '#TXN-9372', date: '05 Nov 2023', desc: 'Abonnement Mensuel Service', amount: -299900, status: 'Complété', icon: CreditCard, statusVariant: 'success' },
-    ];
+    const [wallet, setWallet] = React.useState(null);
+    const [transactions, setTransactions] = React.useState([]);
+    const [isLoading, setIsLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [walletData, txData] = await Promise.all([
+                    walletService.getMyWallet(),
+                    walletService.getTransactions()
+                ]);
+                setWallet(walletData);
+                setTransactions(txData);
+            } catch (error) {
+                console.error("Erreur chargement portefeuille:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
+    const getStatusVariant = (status) => {
+        switch (status) {
+            case 'complete': return 'success';
+            case 'en_attente': return 'warning';
+            case 'echoue': return 'danger';
+            default: return 'neutral';
+        }
+    };
+
+    const getIcon = (type) => {
+        switch (type) {
+            case 'depot': return Landmark;
+            case 'achat': return ShoppingBag;
+            case 'remboursement': return History;
+            case 'retrait': return CreditCard;
+            default: return History;
+        }
+    };
+
+    const handleDeposit = async () => {
+        const amount = window.prompt("Entrez le montant à déposer (GNF):", "500000");
+        if (!amount || isNaN(amount)) return;
+
+        try {
+            const data = await walletService.initiateDeposit({
+                montant: parseFloat(amount),
+                moyen_paiement: 'orange_money'
+            });
+
+            if (data.payment_url) {
+                alert(`Redirection vers le portail de paiement : ${data.payment_url}`);
+                // Simulation d'un succès après redirection (dans un vrai cas, on attendrait le webhook)
+                window.location.reload();
+            }
+        } catch (error) {
+            alert("Erreur lors de l'initiation du dépôt.");
+        }
+    };
 
     return (
         <DashboardLayout title="Mon Portefeuille">
@@ -61,7 +116,7 @@ const UserWallet = () => {
                             </div>
                             <div className="flex flex-col gap-2">
                                 <h3 className="text-5xl md:text-6xl font-black text-white tracking-tighter italic leading-none">
-                                    12.500.000 <span className="text-2xl not-italic opacity-50">GNF</span>
+                                    {isLoading ? "Chargement..." : parseFloat(wallet?.solde_virtuel || 0).toLocaleString('fr-FR')} <span className="text-2xl not-italic opacity-50">GNF</span>
                                 </h3>
                                 <div className="flex items-center gap-4">
                                     <span className="text-emerald-400 font-black flex items-center text-[10px] bg-emerald-400/10 px-3 py-1 rounded-full border border-emerald-400/20 uppercase tracking-widest">
@@ -73,7 +128,10 @@ const UserWallet = () => {
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto relative z-10 self-end md:self-center">
-                            <Button className="flex-1 md:flex-none h-16 px-10 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-xl shadow-primary/20 transition-transform hover:scale-105 active:scale-95">
+                            <Button
+                                onClick={handleDeposit}
+                                className="flex-1 md:flex-none h-16 px-10 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-xl shadow-primary/20 transition-transform hover:scale-105 active:scale-95"
+                            >
                                 <PlusCircle className="size-4 mr-2.5" />
                                 Recharger
                             </Button>
@@ -139,29 +197,41 @@ const UserWallet = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border">
-                                        {transactionsData.map((txn, idx) => (
-                                            <tr key={idx} className="hover:bg-muted/20 transition-all cursor-default group">
-                                                <td className="px-8 py-6 text-[11px] font-black tracking-tight text-primary italic">{txn.id}</td>
-                                                <td className="px-8 py-6 text-[11px] text-muted-foreground font-bold uppercase tracking-widest">{txn.date}</td>
-                                                <td className="px-8 py-6">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="size-10 rounded-xl bg-muted flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all duration-500 border border-border">
-                                                            <txn.icon className="size-4" />
+                                        {transactions.map((txn, idx) => {
+                                            const Icon = getIcon(txn.type_transaction);
+                                            return (
+                                                <tr key={txn.id || idx} className="hover:bg-muted/20 transition-all cursor-default group">
+                                                    <td className="px-8 py-6 text-[11px] font-black tracking-tight text-primary italic">#{txn.id?.slice(0, 8) || txn.reference_externe}</td>
+                                                    <td className="px-8 py-6 text-[11px] text-muted-foreground font-bold uppercase tracking-widest">{new Date(txn.createdAt).toLocaleDateString('fr-FR')}</td>
+                                                    <td className="px-8 py-6">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="size-10 rounded-xl bg-muted flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all duration-500 border border-border">
+                                                                <Icon className="size-4" />
+                                                            </div>
+                                                            <span className="text-sm font-black text-foreground tracking-tight italic">
+                                                                {txn.type_transaction === 'depot' ? 'Rechargement portefeuile' :
+                                                                    txn.type_transaction === 'achat' ? 'Achat sur BCA Connect' :
+                                                                        txn.metadata?.desc || 'Transaction BCA'}
+                                                            </span>
                                                         </div>
-                                                        <span className="text-sm font-black text-foreground tracking-tight italic">{txn.desc}</span>
-                                                    </div>
-                                                </td>
-                                                <td className={cn(
-                                                    "px-8 py-6 text-sm font-black tracking-tighter italic",
-                                                    txn.amount > 0 ? "text-emerald-500" : "text-destructive"
-                                                )}>
-                                                    {txn.amount > 0 ? '+' : ''}{txn.amount.toLocaleString('fr-FR')} <span className="text-[10px] not-italic opacity-70">GNF</span>
-                                                </td>
-                                                <td className="px-8 py-6 text-right">
-                                                    <StatusBadge status={txn.status} variant={txn.statusVariant} />
-                                                </td>
+                                                    </td>
+                                                    <td className={cn(
+                                                        "px-8 py-6 text-sm font-black tracking-tighter italic",
+                                                        txn.type_transaction === 'depot' || txn.type_transaction === 'remboursement' ? "text-emerald-500" : "text-destructive"
+                                                    )}>
+                                                        {txn.type_transaction === 'depot' || txn.type_transaction === 'remboursement' ? '+' : '-'}{parseFloat(txn.montant).toLocaleString('fr-FR')} <span className="text-[10px] not-italic opacity-70">GNF</span>
+                                                    </td>
+                                                    <td className="px-8 py-6 text-right">
+                                                        <StatusBadge status={txn.statut} variant={getStatusVariant(txn.statut)} />
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                        {transactions.length === 0 && !isLoading && (
+                                            <tr>
+                                                <td colSpan="5" className="px-8 py-10 text-center text-muted-foreground font-medium italic">Aucune transaction trouvée.</td>
                                             </tr>
-                                        ))}
+                                        )}
                                     </tbody>
                                 </table>
                             </div>

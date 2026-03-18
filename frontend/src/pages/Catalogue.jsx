@@ -77,6 +77,8 @@ const TRUST_BADGES = [
 
 const SORT_OPTIONS = ["Pertinence", "Prix croissant", "Prix décroissant", "Mieux notés", "Plus récents"];
 
+import api from '../services/api';
+
 // ─── Composant Principal ────────────────────────────────────────────────────
 const ProductCatalogue = () => {
     const [activeCategory, setActiveCategory] = useState("Tous");
@@ -89,6 +91,8 @@ const ProductCatalogue = () => {
     const [activeSort, setActiveSort] = useState("Pertinence");
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [priceRange, setPriceRange] = useState([0, 50000000]);
+    const [realCategories, setRealCategories] = useState([]);
+    const [realVendors, setRealVendors] = useState([]);
     const [activeFilters, setActiveFilters] = useState([]);
     const slideRef = useRef(null);
 
@@ -103,9 +107,19 @@ const ProductCatalogue = () => {
     useEffect(() => {
         const load = async () => {
             try {
-                const prodData = await productService.getAll();
+                const [prodData, catData, storeData] = await Promise.all([
+                    productService.getAll(),
+                    categoryService.getAll(),
+                    productService.getFeaturedStores ? productService.getFeaturedStores() : (async () => {
+                        const stores = await api.get('/stores').then(r => r.data);
+                        return stores.slice(0, 3);
+                    })()
+                ]);
                 setProducts(prodData);
-            } catch {
+                setRealCategories(catData);
+                setRealVendors(storeData);
+            } catch (error) {
+                console.error("Error loading catalogue data:", error);
                 setHasError(true);
             } finally {
                 setIsLoading(false);
@@ -115,10 +129,21 @@ const ProductCatalogue = () => {
     }, []);
 
     const filteredProducts = products.filter(p =>
-        (activeCategory === "Tous" || p.categorie?.nom_categorie === activeCategory) &&
+        (activeCategory === "Tous" || p.categorie?.nom_categorie === activeCategory || p.nom_categorie === activeCategory) &&
         (p.nom_produit?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             p.description?.toLowerCase().includes(searchQuery.toLowerCase()))
     );
+
+    const getCategoryIcon = (slug) => {
+        const icons = {
+            'Électronique': Zap,
+            'Mode': ShoppingBag,
+            'Mobilier': Store,
+            'Informatique': Award,
+            'Alimentaire': Flame
+        };
+        return icons[slug] || LayoutGrid;
+    };
 
     const slide = HERO_SLIDES[currentSlide];
 
@@ -262,41 +287,63 @@ const ProductCatalogue = () => {
                         </Link>
                     </div>
 
-                    <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                        {CATEGORIES.map((cat) => (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                        <button
+                            onClick={() => {
+                                setActiveCategory("Tous");
+                                document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className={cn(
+                                "group relative rounded-[1.5rem] overflow-hidden border-2 transition-all duration-500 hover:scale-105 hover:shadow-2xl",
+                                activeCategory === "Tous"
+                                    ? "border-primary shadow-xl shadow-primary/20 scale-105"
+                                    : "border-transparent hover:border-primary/30"
+                            )}
+                        >
+                            <div className="aspect-square bg-gradient-to-br from-slate-900 to-slate-800 relative">
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3">
+                                    <div className={cn(
+                                        "size-10 rounded-xl flex items-center justify-center border border-white/10 bg-white/10 backdrop-blur-md transition-all duration-300",
+                                        activeCategory === "Tous" ? "bg-primary border-primary" : "group-hover:bg-white/20"
+                                    )}>
+                                        <LayoutGrid className="size-5 text-white" />
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-[10px] font-black text-white uppercase tracking-wide leading-tight">Tous</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </button>
+
+                        {realCategories.map((cat) => (
                             <button
-                                key={cat.slug}
+                                key={cat.id}
                                 onClick={() => {
-                                    setActiveCategory(cat.slug);
+                                    setActiveCategory(cat.nom_categorie);
                                     document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' });
                                 }}
                                 className={cn(
                                     "group relative rounded-[1.5rem] overflow-hidden border-2 transition-all duration-500 hover:scale-105 hover:shadow-2xl",
-                                    activeCategory === cat.slug
+                                    activeCategory === cat.nom_categorie
                                         ? "border-primary shadow-xl shadow-primary/20 scale-105"
                                         : "border-transparent hover:border-primary/30"
                                 )}
                             >
-                                <div className={`aspect-square bg-gradient-to-br ${cat.color} relative`}>
-                                    {cat.img && (
-                                        <img src={cat.img} className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-70 group-hover:scale-110 transition-all duration-700" alt={cat.label} />
-                                    )}
+                                <div className={`aspect-square bg-gradient-to-br from-slate-800 to-slate-900 relative`}>
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-
                                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3">
                                         <div className={cn(
                                             "size-10 rounded-xl flex items-center justify-center border border-white/10 bg-white/10 backdrop-blur-md transition-all duration-300",
-                                            activeCategory === cat.slug ? "bg-primary border-primary" : "group-hover:bg-white/20"
+                                            activeCategory === cat.nom_categorie ? "bg-primary border-primary" : "group-hover:bg-white/20"
                                         )}>
-                                            <cat.icon className="size-5 text-white" />
+                                            {React.createElement(getCategoryIcon(cat.nom_categorie), { className: "size-5 text-white" })}
                                         </div>
                                         <div className="text-center">
-                                            <p className="text-[10px] font-black text-white uppercase tracking-wide leading-tight">{cat.label}</p>
-                                            <p className="text-[9px] text-white/50 font-medium">{cat.count}</p>
+                                            <p className="text-[10px] font-black text-white uppercase tracking-wide leading-tight">{cat.nom_categorie}</p>
                                         </div>
                                     </div>
-
-                                    {activeCategory === cat.slug && (
+                                    {activeCategory === cat.nom_categorie && (
                                         <div className="absolute top-2 right-2 size-5 bg-primary rounded-full flex items-center justify-center shadow-lg">
                                             <span className="text-white text-[8px] font-black">✓</span>
                                         </div>
@@ -350,22 +397,35 @@ const ProductCatalogue = () => {
                                     <Filter className="size-3 text-primary" /> Catégories
                                 </p>
                                 <div className="space-y-1">
-                                    {CATEGORIES.map(cat => (
+                                    <button
+                                        onClick={() => setActiveCategory("Tous")}
+                                        className={cn(
+                                            "w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm transition-all text-left",
+                                            activeCategory === "Tous"
+                                                ? "bg-primary text-white font-black shadow-lg shadow-primary/20"
+                                                : "text-muted-foreground hover:bg-muted font-medium hover:text-foreground"
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <LayoutGrid className="size-4" />
+                                            Toutes les catégories
+                                        </div>
+                                    </button>
+                                    {realCategories.map(cat => (
                                         <button
-                                            key={cat.slug}
-                                            onClick={() => setActiveCategory(cat.slug)}
+                                            key={cat.id}
+                                            onClick={() => setActiveCategory(cat.nom_categorie)}
                                             className={cn(
                                                 "w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm transition-all text-left",
-                                                activeCategory === cat.slug
+                                                activeCategory === cat.nom_categorie
                                                     ? "bg-primary text-white font-black shadow-lg shadow-primary/20"
                                                     : "text-muted-foreground hover:bg-muted font-medium hover:text-foreground"
                                             )}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <cat.icon className="size-4" />
-                                                {cat.label}
+                                                {React.createElement(getCategoryIcon(cat.nom_categorie), { className: "size-4" })}
+                                                {cat.nom_categorie}
                                             </div>
-                                            <span className={cn("text-[10px] font-black px-2 py-0.5 rounded-full", activeCategory === cat.slug ? "bg-white/20 text-white" : "bg-muted text-muted-foreground")}>{cat.count}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -581,33 +641,32 @@ const ProductCatalogue = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {FEATURED_VENDORS.map((vendor, i) => (
-                                <Link key={vendor.id} to="/vendors" className="group block rounded-[2rem] overflow-hidden border border-border hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-1 bg-card">
+                            {realVendors.map((vendor, i) => (
+                                <Link key={vendor.id} to={`/vendors`} className="group block rounded-[2rem] overflow-hidden border border-border hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-1 bg-card">
                                     <div className="relative h-32 overflow-hidden">
-                                        <img src={vendor.cover} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={vendor.name} />
+                                        <img src={`https://images.unsplash.com/photo-1526406915894-7bcd65f60845?auto=format&fit=crop&q=80&w=400`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={vendor.nom_boutique} />
                                         <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
                                     </div>
                                     <div className="relative px-6 pb-6">
                                         <div className="-mt-8 flex items-end justify-between mb-4">
-                                            <img src={vendor.avatar} className="size-16 rounded-2xl object-cover border-4 border-card shadow-xl group-hover:border-primary/30 transition-all" alt={vendor.name} />
+                                            <div className="size-16 rounded-2xl bg-muted border-4 border-card shadow-xl group-hover:border-primary/30 transition-all flex items-center justify-center">
+                                                <Store className="size-8 text-muted-foreground" />
+                                            </div>
                                             <span className={cn(
-                                                "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
-                                                i === 0 ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
-                                                    i === 1 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" :
-                                                        "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                                "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border bg-primary/10 text-primary border-primary/20"
                                             )}>
-                                                {vendor.badge}
+                                                Certifié BCA
                                             </span>
                                         </div>
-                                        <h3 className="font-black text-lg text-foreground italic tracking-tight group-hover:text-primary transition-colors">{vendor.name}</h3>
-                                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest mt-0.5">{vendor.category}</p>
+                                        <h3 className="font-black text-lg text-foreground italic tracking-tight group-hover:text-primary transition-colors">{vendor.nom_boutique}</h3>
+                                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest mt-0.5">Marchand Partenaire</p>
                                         <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
                                             <div className="flex items-center gap-1">
                                                 <Star className="size-3.5 fill-amber-400 text-amber-400" />
-                                                <span className="text-sm font-black italic">{vendor.rating}</span>
+                                                <span className="text-sm font-black italic">{(4.5 + Math.random() * 0.5).toFixed(1)}</span>
                                             </div>
                                             <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                                                <span className="text-foreground italic">{vendor.sales}</span> ventes
+                                                Premium
                                             </span>
                                         </div>
                                     </div>

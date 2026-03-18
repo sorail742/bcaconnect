@@ -2,6 +2,7 @@ import React from 'react';
 import Sidebar from './Sidebar';
 import { Bell, Search, Menu } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import AdBanner from '../ads/AdBanner';
 
 const DashboardLayout = ({ children, title, noPadding }) => {
     const { user } = useAuth();
@@ -53,6 +54,7 @@ const DashboardLayout = ({ children, title, noPadding }) => {
 
                 {/* Main Content Area */}
                 <main className={`flex-1 overflow-y-auto scrollbar-hide ${noPadding ? '' : 'p-4 md:p-8'}`}>
+                    <AdBanner format="banner" className="mb-6" />
                     {children}
                 </main>
             </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import {
     Truck,
@@ -17,6 +17,9 @@ import { cn } from '../lib/utils';
 import { useCart } from '../context/CartContext';
 import orderService from '../services/orderService';
 import { useNavigate } from 'react-router-dom';
+import walletService from '../services/walletService';
+import { offlineStorage } from '../lib/db';
+import { toast } from 'sonner';
 
 const Checkout = () => {
     const { cartItems, cartTotal, clearCart } = useCart();
@@ -24,6 +27,7 @@ const Checkout = () => {
     const [paymentMethod, setPaymentMethod] = useState('wallet');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [wallet, setWallet] = useState(null);
     const [formData, setFormData] = useState({
         nom: '',
         telephone: '',
@@ -33,9 +37,27 @@ const Checkout = () => {
     const deliveryFee = 50000;
     const total = cartTotal + deliveryFee;
 
+    useEffect(() => {
+        const fetchWallet = async () => {
+            try {
+                const data = await walletService.getMyWallet();
+                setWallet(data);
+            } catch (error) {
+                console.error("Erreur chargement portefeuille:", error);
+            }
+        };
+        fetchWallet();
+    }, []);
+
     const handleSubmit = async () => {
         if (!formData.nom || !formData.telephone || !formData.adresse) {
             alert("Veuillez remplir toutes les informations de livraison.");
+            return;
+        }
+
+        if (paymentMethod === 'wallet' && wallet && parseFloat(wallet.solde_virtuel) < total) {
+            alert("Solde insuffisant dans votre portefeuille BCA Connect.");
+            navigate('/wallet');
             return;
         }
 
@@ -45,16 +67,36 @@ const Checkout = () => {
         }
 
         setIsSubmitting(true);
-        try {
-            const orderData = {
-                items: cartItems.map(item => ({
-                    productId: item.id,
-                    quantity: item.quantity
-                })),
-                deliveryInfo: formData, // On pourra adapter le backend plus tard si besoin de stocker l'adresse
-                paymentMethod
-            };
+        const orderData = {
+            items: cartItems.map(item => ({
+                id: item.id, // Adaptation pour correspondre au format backend si besoin
+                productId: item.id,
+                quantity: item.quantity,
+                nom: item.nom_produit,
+                prix: item.prix
+            })),
+            deliveryInfo: formData,
+            paymentMethod,
+            total_ttc: total
+        };
 
+        if (!navigator.onLine) {
+            try {
+                await offlineStorage.queueOrder(orderData);
+                setIsSuccess(true);
+                clearCart();
+                toast.success("Commande enregistrée hors-ligne ! Elle sera synchronisée dès le retour du réseau.");
+                setTimeout(() => navigate('/orders'), 3000);
+            } catch (err) {
+                console.error("Erreur stockage offline:", err);
+                alert("Impossible d'enregistrer la commande hors-ligne.");
+            } finally {
+                setIsSubmitting(false);
+            }
+            return;
+        }
+
+        try {
             await orderService.createOrder(orderData);
             setIsSuccess(true);
             clearCart();
@@ -168,6 +210,14 @@ const Checkout = () => {
                                             </div>
                                             <div>
                                                 <p className="font-black text-foreground italic tracking-tight">{method.label}</p>
+                                                {method.id === 'wallet' && wallet && (
+                                                    <p className={cn(
+                                                        "text-[9px] font-black uppercase tracking-widest mt-0.5",
+                                                        parseFloat(wallet.solde_virtuel) < total ? "text-destructive" : "text-emerald-500"
+                                                    )}>
+                                                        Solde: {parseFloat(wallet.solde_virtuel).toLocaleString('fr-GN')} GNF
+                                                    </p>
+                                                )}
                                                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">{method.sub}</p>
                                             </div>
                                         </div>
@@ -192,10 +242,10 @@ const Checkout = () => {
                                             </div>
                                         </div>
                                         <div className="flex flex-col justify-center flex-1 min-w-0">
-                                            <p className="font-bold text-sm text-foreground truncate">{item.nom_produit || item.name}</p>
+                                            <p className="font-bold text-sm text-foreground truncate">{item.nom_produit}</p>
                                             <div className="flex items-center justify-between mt-1">
                                                 <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Qté: {item.quantity}</span>
-                                                <span className="font-black text-primary italic text-sm">{parseFloat(item.prix_unitaire || item.price).toLocaleString('fr-GN')} GNF</span>
+                                                <span className="font-black text-primary italic text-sm">{parseFloat(item.prix).toLocaleString('fr-GN')} GNF</span>
                                             </div>
                                         </div>
                                     </div>

@@ -50,7 +50,10 @@ export const CartProvider = ({ children }) => {
         setCartItems([]);
     };
 
-    const cartTotal = cartItems.reduce((acc, item) => acc + (parseFloat(item.prix_unitaire || item.price) * item.quantity), 0);
+    const cartTotal = cartItems.reduce((acc, item) => {
+        const price = parseFloat(item.prix || item.prix_unitaire || item.price || 0);
+        return acc + (price * item.quantity);
+    }, 0);
 
     return (
         <CartContext.Provider value={{

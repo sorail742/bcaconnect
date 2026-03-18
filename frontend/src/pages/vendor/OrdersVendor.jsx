@@ -118,11 +118,11 @@ const OrdersVendor = () => {
                         </button>
                     )}
                     {row.statut === 'confirme' && (
-                        <button onClick={() => handleStatusUpdate(row.id, 'expedie')} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all" title="Expédier">
-                            <Truck className="size-4" />
+                        <button onClick={() => handleStatusUpdate(row.id, 'prepare')} className="p-2 text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all" title="Prêt pour ramassage">
+                            <Package className="size-4" />
                         </button>
                     )}
-                    {['en_attente', 'confirme'].includes(row.statut) && (
+                    {['en_attente', 'confirme', 'prepare'].includes(row.statut) && (
                         <button onClick={() => handleStatusUpdate(row.id, 'annule')} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Annuler">
                             <XCircle className="size-4" />
                         </button>

@@ -23,6 +23,8 @@ import AdminProducts from '../pages/admin/AdminProducts';
 import AdminTransactions from '../pages/admin/AdminTransactions';
 import Categories from '../pages/admin/Categories';
 import Returns from '../pages/admin/Returns';
+import AdManager from '../pages/admin/AdManager';
+import AdminDisputes from '../pages/admin/AdminDisputes';
 
 // Pages Client & Commun
 import ProductCatalogue from '../pages/Catalogue';
@@ -35,6 +37,7 @@ import Notifications from '../pages/Notifications';
 import Checkout from '../pages/Checkout';
 import VendorsList from '../pages/VendorsList';
 import Tracking from '../pages/Tracking';
+import DisputeReport from '../pages/DisputeReport';
 
 // Pages Banque
 import BankDashboard from '../pages/bank/BankDashboard';
@@ -69,6 +72,7 @@ const AppRoutes = () => {
             <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
             <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+            <Route path="/dispute/:orderId" element={<ProtectedRoute><DisputeReport /></ProtectedRoute>} />
 
             {/* Routes Vendeur (Vendor) */}
             <Route path="/vendor/dashboard" element={<ProtectedRoute><VendorDashboard /></ProtectedRoute>} />
@@ -91,6 +95,8 @@ const AppRoutes = () => {
             <Route path="/admin/transactions" element={<ProtectedRoute><AdminTransactions /></ProtectedRoute>} />
             <Route path="/admin/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
             <Route path="/admin/returns" element={<ProtectedRoute><Returns /></ProtectedRoute>} />
+            <Route path="/admin/ads" element={<ProtectedRoute><AdManager /></ProtectedRoute>} />
+            <Route path="/admin/disputes" element={<ProtectedRoute><AdminDisputes /></ProtectedRoute>} />
 
             {/* Route par défaut (404) */}
             <Route path="*" element={<NotFound />} />

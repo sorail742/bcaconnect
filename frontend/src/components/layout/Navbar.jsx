@@ -39,6 +39,11 @@ const Navbar = () => {
                             S'inscrire
                         </Button>
                     </Link>
+                    {!navigator.onLine && (
+                        <div className="flex items-center gap-1 text-orange-500" title="Mode hors-ligne actif">
+                            <span className="material-symbols-outlined !text-lg">wifi_off</span>
+                        </div>
+                    )}
                 </div>
             </div>
         </header>

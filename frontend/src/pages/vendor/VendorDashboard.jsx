@@ -12,6 +12,7 @@ import { Card } from '../../components/ui/Card';
 import { useAuth } from '../../hooks/useAuth';
 import storeService from '../../services/storeService';
 import orderService from '../../services/orderService';
+import aiService from '../../services/aiService';
 
 const VendorDashboard = () => {
     const { user } = useAuth();
@@ -19,16 +20,19 @@ const VendorDashboard = () => {
     const [hasError, setHasError] = React.useState(false);
     const [store, setStore] = React.useState(null);
     const [orders, setOrders] = React.useState([]);
+    const [insights, setInsights] = React.useState(null);
 
     React.useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                const [storeData, orderData] = await Promise.all([
+                const [storeData, orderData, aiData] = await Promise.all([
                     storeService.getMyStore(),
-                    orderService.getVendorOrders()
+                    orderService.getVendorOrders(),
+                    aiService.getSalesInsights()
                 ]);
                 setStore(storeData);
                 setOrders(orderData);
+                setInsights(aiData);
             } catch (error) {
                 console.error("Erreur chargement dashboard:", error);
                 // Si la boutique n'existe pas, on ne considère pas ça comme une erreur fatale
@@ -155,8 +159,18 @@ const VendorDashboard = () => {
                     <div className="flex-1 bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-10 rounded-2xl text-primary-foreground relative overflow-hidden shadow-xl shadow-primary/20 group">
                         <div className="relative z-10">
                             <h4 className="text-2xl font-bold tracking-tight italic">Booster votre croissance</h4>
-                            <p className="mt-3 text-primary-foreground/80 max-w-md font-medium leading-relaxed">Utilisez nos nouveaux outils d'analyse pour comprendre les habitudes d'achat de vos clients guinéens et optimiser vos stocks.</p>
-                            <Button variant="secondary" className="mt-8 px-8 py-3 rounded-xl font-bold hover:scale-105 transition-transform shadow-xl">Découvrir les insights</Button>
+                            <p className="mt-3 text-primary-foreground/80 max-w-md font-medium leading-relaxed">
+                                {insights?.global_trend || "Utilisez nos nouveaux outils d'analyse pour comprendre les habitudes d'achat."}
+                            </p>
+                            <div className="mt-6 space-y-2">
+                                {insights?.recommendations?.map((rec, i) => (
+                                    <div key={i} className="flex items-center gap-2 text-xs font-bold bg-white/10 p-2 rounded-lg">
+                                        <ShieldCheck className="size-3" />
+                                        <span>{rec.name}: {rec.insight}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <Button variant="secondary" className="mt-8 px-8 py-3 rounded-xl font-bold hover:scale-105 transition-transform shadow-xl">Calculer de nouveaux Insights</Button>
                         </div>
                         <BarChart3 className="absolute -right-6 -bottom-6 size-48 opacity-10 rotate-12 transition-transform group-hover:rotate-0 duration-700" />
                     </div>

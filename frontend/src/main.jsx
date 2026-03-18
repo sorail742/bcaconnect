@@ -8,3 +8,14 @@ createRoot(document.getElementById('root')).render(
     <App />
   </StrictMode>,
 )
+
+// Enregistrement du Service Worker pour le mode hors-ligne
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then((registration) => {
+      console.log('SW enregistré avec succès:', registration.scope);
+    }).catch((error) => {
+      console.log('Erreur d\'enregistrement du SW:', error);
+    });
+  });
+}

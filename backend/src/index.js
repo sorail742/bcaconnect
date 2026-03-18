@@ -5,22 +5,28 @@
  */
 require('dotenv').config(); // ← Doit être PREMIER
 
+require('dotenv').config();
+
 const requiredVars = ['JWT_SECRET'];
 
-// Accepte soit DATABASE_URL (Neon, Render) soit les variables individuelles
+// Vérification de la Base de Données
 const hasDbUrl = !!process.env.DATABASE_URL;
 const hasDbVars = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS'].every(v => !!process.env[v]);
 
 if (!hasDbUrl && !hasDbVars) {
-    console.error('\n❌ Configuration DB manquante : fournissez DATABASE_URL ou DB_HOST + DB_NAME + DB_USER + DB_PASS');
-    process.exit(1);
+    console.warn('\n⚠️  ALERTE : Aucune base de données externe configurée (DATABASE_URL manquante).');
+    console.warn('   L\'API va démarrer en mode dégradé avec SQLite (/tmp/bcaconnect).\n');
 }
 
+// Vérification des secrets critiques
 const missing = requiredVars.filter(v => !process.env[v]);
 if (missing.length > 0) {
-    console.error(`\n❌ Variables d'environnement manquantes : ${missing.join(', ')}`);
-    console.error('   Vérifiez votre fichier .env avant de démarrer.\n');
-    process.exit(1);
+    console.error(`\n❌ ERREUR CRITIQUE : Variables manquantes : ${missing.join(', ')}`);
+    console.error('   Vérifiez l\'onglet Environment sur Render pour ajouter JWT_SECRET.\n');
+    // On ne crash pas le démarrage en dev, mais en prod oui pour la sécurité
+    if (process.env.NODE_ENV === 'production') {
+        process.exit(1);
+    }
 }
 
 const app = require('./app');

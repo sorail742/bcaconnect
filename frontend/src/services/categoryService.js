@@ -1,9 +1,19 @@
 import api from './api';
+import { offlineStorage } from '../lib/db';
 
 const categoryService = {
     getAll: async () => {
-        const response = await api.get('/categories');
-        return response.data;
+        if (!navigator.onLine) {
+            return await offlineStorage.getCategories();
+        }
+        try {
+            const response = await api.get('/categories');
+            const categories = response.data;
+            offlineStorage.saveCategories(categories).catch(err => console.error("Erreur cache categories:", err));
+            return categories;
+        } catch (error) {
+            return await offlineStorage.getCategories();
+        }
     },
 
     create: async (categoryData) => {

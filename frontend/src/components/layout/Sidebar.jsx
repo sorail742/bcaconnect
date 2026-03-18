@@ -17,7 +17,9 @@ import {
     Bell,
     Wallet,
     Settings,
-    LogOut
+    LogOut,
+    Megaphone,
+    Gavel
 } from 'lucide-react';
 import BcaLogo from '../ui/BcaLogo';
 import Button from '../ui/Button';
@@ -34,14 +36,16 @@ const Sidebar = () => {
             { path: '/admin/users', label: 'Utilisateurs', icon: Users },
             { path: '/admin/products', label: 'Produits', icon: Package },
             { path: '/admin/categories', label: 'Gestion Catégories', icon: Folder },
-            { path: '/admin/returns', label: 'Retours & Litiges', icon: RotateCcw },
+            { path: '/admin/disputes', label: 'Médiation Litiges', icon: Gavel },
             { path: '/admin/transactions', label: 'Transactions', icon: Receipt },
+            { path: '/admin/ads', label: 'Gestion Pubs', icon: Megaphone },
             { path: '/bank/dashboard', label: 'Panel Financier', icon: Landmark },
         ],
         fournisseur: [
             { path: '/vendor/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
             { path: '/vendor/products', label: 'Mes Produits', icon: Package },
             { path: '/vendor/orders', label: 'Commandes reçues', icon: ShoppingCart },
+            { path: '/admin/ads', label: 'Mes Publicités', icon: Megaphone },
             { path: '/vendor/store', label: 'Paramètres Boutique', icon: Store },
         ],
         transporteur: [

@@ -1,9 +1,22 @@
 import api from './api';
+import { offlineStorage } from '../lib/db';
 
 const productService = {
     getAll: async () => {
-        const response = await api.get('/products');
-        return response.data;
+        if (!navigator.onLine) {
+            console.log("📦 Récupération des produits depuis le cache local...");
+            return await offlineStorage.getProducts();
+        }
+        try {
+            const response = await api.get('/products');
+            const products = response.data;
+            // Mise à jour silencieuse du cache
+            offlineStorage.saveProducts(products).catch(err => console.error("Erreur cache products:", err));
+            return products;
+        } catch (error) {
+            console.error("Erreur réseau products, tentative cache...");
+            return await offlineStorage.getProducts();
+        }
     },
 
     getById: async (id) => {

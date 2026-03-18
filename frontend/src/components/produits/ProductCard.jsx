@@ -18,7 +18,7 @@ const ProductCard = ({ product, compact = false }) => {
     const oldPrice = product.prix_ancien ? parseFloat(product.prix_ancien) : null;
     const discount = oldPrice ? Math.round((1 - price / oldPrice) * 100) : null;
     const category = product.categorie?.nom_categorie || product.category || 'N/A';
-    const image = product.image || 'https://images.unsplash.com/photo-1523275319145-80b01958f7a2?auto=format&fit=crop&q=80&w=400';
+    const image = product.image_url || product.image || 'https://images.unsplash.com/photo-1523275319145-80b01958f7a2?auto=format&fit=crop&q=80&w=400';
     const isNew = product.isNew;
     const vendor = product.boutique?.nom_boutique || product.vendor;
     const stock = product.stock ?? 99;
