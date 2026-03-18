@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Button from '../../components/ui/Button';
 import DashboardCard from '../../components/ui/DashboardCard';
@@ -6,26 +6,44 @@ import DataTable from '../../components/ui/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
 import { Users, CreditCard, Package, Calendar, Download, Info, Activity, Utensils, Car, Activity as HealthIcon, ShoppingBag } from 'lucide-react';
 import { Skeleton, CardSkeleton, TableRowSkeleton } from '../../components/ui/Loader';
-import { ErrorState } from '../../components/ui/StatusStates';
-import { Card, CardContent } from '../../components/ui/Card';
+import productService from '../../services/productService';
+import storeService from '../../services/storeService';
 
 const AdminDashboard = () => {
-    const isLoading = false;
-    const hasError = false;
+    const [isLoading, setIsLoading] = useState(true);
+    const [productsCount, setProductsCount] = useState(0);
+    const [storesCount, setStoresCount] = useState(0);
 
-    // Données fictives GNF pour l'admin
+    useEffect(() => {
+        const fetchGlobalStats = async () => {
+            try {
+                const [products, stores] = await Promise.all([
+                    productService.getAll(),
+                    storeService.getAllStores()
+                ]);
+                setProductsCount(products.length);
+                setStoresCount(stores.length);
+            } catch (err) {
+                console.error("Erreur stats admin:", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchGlobalStats();
+    }, []);
+
     const stats = [
-        { title: "Utilisateurs totaux", value: '12 840', icon: Users, trend: 'up', trendValue: '+5.2%', description: 'vs mois dernier' },
-        { title: 'Transactions (MTD)', value: '45.200.000 GNF', icon: CreditCard, trend: 'up', trendValue: '+12.8%', description: 'vs mois dernier' },
-        { title: 'Produits actifs', value: '1 420', icon: Package, trend: 'up', trendValue: '+2.4%', description: 'vs mois dernier' },
+        { title: "Utilisateurs totaux", value: '1 240', icon: Users, trend: 'up', trendValue: '+5.2%', description: 'Clients & Partenaires' },
+        { title: 'Transactions (Globales)', value: '185.000.000 GNF', icon: CreditCard, trend: 'up', trendValue: '+12.8%', description: 'Volume total' },
+        { title: 'Produits actifs', value: productsCount.toString(), icon: Package, trend: 'up', trendValue: '+2.4%', description: 'Catalogue multi-fournisseurs' },
     ];
 
     const transactions = [
-        { name: 'Apple Watch Series 9', time: 'Il y a 2 min', cat: 'Électronique', amount: '3.990.000 GNF', status: 'Succès', statusType: 'success' },
-        { name: 'Le Petit Bistro Conakry', time: 'Il y a 45 min', cat: 'Alimentation', amount: '725.000 GNF', status: 'Succès', statusType: 'success' },
-        { name: 'Taxi - Kaloum', time: 'Il y a 1 heure', cat: 'Transport', amount: '182.000 GNF', status: 'En attente', statusType: 'warning' },
-        { name: 'Sony WH-1000XM5', time: 'Il y a 3 heures', cat: 'Électronique', amount: '3.490.000 GNF', status: 'Succès', statusType: 'success' },
-        { name: 'Abonnement Gym', time: 'Il y a 5 heures', cat: 'Santé', amount: '299.000 GNF', status: 'Échoué', statusType: 'danger' },
+        { name: 'Routeur Haute Performance', time: 'Il y a 2 min', cat: 'Électronique', amount: '8.490.000 GNF', status: 'Succès', statusType: 'success' },
+        { name: 'Lot de Siment CPJ-35', time: 'Il y a 45 min', cat: 'Construction', amount: '12.500.000 GNF', status: 'Succès', statusType: 'success' },
+        { name: 'Livraison Conakry-Labé', time: 'Il y a 1 heure', cat: 'Transport', amount: '450.000 GNF', status: 'En attente', statusType: 'warning' },
+        { name: 'Panneaux Solaires 250W', time: 'Il y a 3 heures', cat: 'Énergie', amount: '15.000.000 GNF', status: 'Succès', statusType: 'success' },
+        { name: 'Maintenance Réseau', time: 'Il y a 5 heures', cat: 'Services', amount: '2.500.000 GNF', status: 'Échoué', statusType: 'danger' },
     ];
 
     const transactionColumns = [
@@ -51,11 +69,11 @@ const AdminDashboard = () => {
     ];
 
     return (
-        <DashboardLayout title="Tableau de bord Administrateur">
+        <DashboardLayout title="Portail Administrateur BCA">
             <div className="space-y-8 animate-in fade-in duration-500">
                 <header className="flex flex-wrap justify-between items-end gap-4">
                     <div>
-                        <p className="text-muted-foreground font-medium">Bienvenue, voici un aperçu de l'activité globale en Guinée.</p>
+                        <p className="text-muted-foreground font-medium">Gestion globale de la marketplace BCA Connect Guinée.</p>
                     </div>
                     <div className="flex gap-3">
                         <button className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors">
@@ -64,12 +82,11 @@ const AdminDashboard = () => {
                         </button>
                         <Button className="gap-2">
                             <Download className="size-4" />
-                            Exporter
+                            Rapport PDF
                         </Button>
                     </div>
                 </header>
 
-                {/* Stats Overview Cards */}
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {isLoading ? (
                         [1, 2, 3].map(i => <CardSkeleton key={i} />)
@@ -80,45 +97,39 @@ const AdminDashboard = () => {
                     )}
                 </section>
 
-                {/* Main Grid and Lists */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 bg-card rounded-xl border border-border shadow-sm p-8 overflow-hidden">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-lg font-bold text-foreground">Performance Hebdomadaire</h3>
+                            <h3 className="text-lg font-bold text-foreground">Volume d'Affaires Hebdomadaire</h3>
                             <div className="flex items-center gap-2 text-sm">
                                 <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
-                                <span className="text-muted-foreground font-medium">Volume de Transactions</span>
+                                <span className="text-muted-foreground font-medium">BCA Guinée Network</span>
                             </div>
                         </div>
                         <div className="space-y-1">
-                            <p className="text-3xl font-bold tracking-tight text-foreground">8.400.000 GNF</p>
-                            <p className="text-emerald-500 text-[10px] font-bold uppercase tracking-widest">+8% cette semaine</p>
+                            <p className="text-3xl font-bold tracking-tight text-foreground">42.500.000 GNF</p>
+                            <p className="text-emerald-500 text-[10px] font-bold uppercase tracking-widest">+15% vs semaine dernière</p>
                         </div>
-                        <div className="mt-8 relative h-64 w-full bg-muted/30 rounded-xl flex items-center justify-center border border-dashed border-border overflow-hidden group">
-                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                            <p className="text-muted-foreground text-sm italic font-bold uppercase tracking-widest relative z-10">Graphique de performance dynamique (Admin)</p>
+                        <div className="mt-8 relative h-64 w-full bg-muted/30 rounded-xl flex items-center justify-center border border-dashed border-border overflow-hidden group font-black italic uppercase tracking-[0.2em] text-muted-foreground">
+                            Chart: Distribution Géographique des Ventes
                         </div>
                     </div>
 
                     <div className="flex flex-col gap-6">
                         {isLoading ? (
-                            <Card className="rounded-xl border border-border shadow-sm p-0 overflow-hidden">
-                                <div className="p-6 border-b border-border">
-                                    <Skeleton className="h-6 w-1/2" />
-                                </div>
+                            <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+                                <Skeleton className="h-6 w-1/2" />
                                 <div className="divide-y divide-border/50">
                                     {[1, 2, 3, 4, 5].map(i => <TableRowSkeleton key={i} />)}
                                 </div>
-                            </Card>
-                        ) : hasError ? (
-                            <ErrorState />
+                            </div>
                         ) : (
                             <DataTable
-                                title="Transactions Récentes"
+                                title="Transactions Globales"
                                 columns={transactionColumns}
                                 data={transactions}
                                 actions={
-                                    <a className="text-xs font-bold text-primary hover:underline uppercase tracking-widest" href="#">Voir tout</a>
+                                    <button className="text-xs font-bold text-primary hover:underline uppercase tracking-widest">Auditer tout</button>
                                 }
                             />
                         )}
@@ -127,25 +138,16 @@ const AdminDashboard = () => {
                             <div className="flex items-start gap-4">
                                 <Info className="text-primary size-5 shrink-0 mt-1" />
                                 <div>
-                                    <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Note Système</p>
-                                    <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed font-medium">Les transactions échouées sont automatiquement notifiées à l'assistance pour vérification manuelle.</p>
+                                    <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Monitoring</p>
+                                    <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed font-medium">Le système surveille actuellement {storesCount} boutiques partenaires actives sur tout le territoire.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <footer className="mt-12 py-8 border-t border-border flex flex-wrap justify-between items-center gap-4 text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
-                    <p>© 2024 BCA Connect Admin. Tous droits réservés.</p>
-                    <div className="flex gap-8">
-                        <a className="hover:text-primary transition-colors" href="#">Support technique</a>
-                        <a className="hover:text-primary transition-colors" href="#">Documentation</a>
-                    </div>
-                </footer>
             </div>
         </DashboardLayout>
     );
 };
 
 export default AdminDashboard;
-

@@ -1,30 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import DashboardCard from '../../components/ui/DashboardCard';
 import DataTable from '../../components/ui/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
 import { Wallet, ShoppingBag, Star, CheckCircle, Truck, Clock } from 'lucide-react';
 import { Skeleton, CardSkeleton, TableRowSkeleton } from '../../components/ui/Loader';
-import { ErrorState, EmptyState } from '../../components/ui/StatusStates';
+import { ErrorState } from '../../components/ui/StatusStates';
 import { useAuth } from '../../hooks/useAuth';
+import orderService from '../../services/orderService';
+import productService from '../../services/productService';
+import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
     const { user } = useAuth();
-    const isLoading = false;
-    const hasError = false;
+    const [isLoading, setIsLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
+    const [orders, setOrders] = useState([]);
+    const [quickProducts, setQuickProducts] = useState([]);
 
-    // Données adaptées au contexte guinéen
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setIsLoading(true);
+                const [ordersData, productsData] = await Promise.all([
+                    orderService.getMyOrders(),
+                    productService.getAll()
+                ]);
+                
+                // On ne prend que les 4 dernières commandes
+                setOrders(ordersData.slice(0, 4));
+                // On ne prend que les 4 premiers produits pour le catalogue rapide
+                setQuickProducts(productsData.slice(0, 4));
+                setHasError(false);
+            } catch (err) {
+                console.error("Erreur chargement dashboard:", err);
+                setHasError(true);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    // Données de stats (Le backend n'a pas encore d'endpoint pour les stats globales client)
     const stats = [
-        { title: 'Solde du portefeuille', value: '15.450.000 GNF', icon: Wallet, trend: 'up', trendValue: '+12%', description: 'vs mois dernier' },
-        { title: 'Commandes en cours', value: '12', icon: ShoppingBag, trend: 'up', trendValue: '+2%', description: 'vs mois dernier' },
-        { title: 'Points de fidélité', value: '850 pts', icon: Star, trend: 'down', trendValue: '-5%', description: 'vs mois dernier' },
-    ];
-
-    const recentOrders = [
-        { id: 'CMD-GN-2024-001', date: "Aujourd'hui, 14:30", amount: '4.500.000 GNF', status: 'Livré', statusVariant: 'success' },
-        { id: 'CMD-GN-2024-002', date: 'Hier, 09:15', amount: '12.990.000 GNF', status: 'En route', statusVariant: 'primary' },
-        { id: 'CMD-GN-2024-003', date: '24 Oct, 16:45', amount: '890.000 GNF', status: 'Préparation', statusVariant: 'warning' },
-        { id: 'CMD-GN-2024-004', date: '22 Oct, 11:20', amount: '3.200.000 GNF', status: 'Livré', statusVariant: 'success' },
+        { title: 'Solde du portefeuille', value: '0 GNF', icon: Wallet, trend: 'up', trendValue: '+0%', description: 'vs mois dernier' },
+        { title: 'Commandes en cours', value: orders.filter(o => o.statut !== 'Livré').length.toString(), icon: ShoppingBag, trend: 'up', trendValue: '+2%', description: 'Total commandes' },
+        { title: 'Points de fidélité', value: '0 pts', icon: Star, trend: 'down', trendValue: '-0%', description: 'Points accumulés' },
     ];
 
     const orderColumns = [
@@ -33,19 +56,32 @@ const Dashboard = () => {
             render: (row) => (
                 <div className="flex items-center gap-3">
                     <div className="size-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                        {row.status === 'Livré' ? <CheckCircle className="size-5" /> : row.status === 'En route' ? <Truck className="size-5" /> : <Clock className="size-5" />}
+                        {row.statut === 'Livré' ? <CheckCircle className="size-5" /> : row.statut === 'En route' ? <Truck className="size-5" /> : <Clock className="size-5" />}
                     </div>
                     <div>
-                        <p className="text-sm font-bold text-foreground tracking-tight">{row.id}</p>
-                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter mt-0.5">{row.date}</p>
+                        <p className="text-sm font-bold text-foreground tracking-tight">#{row.id.substring(0, 8)}</p>
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter mt-0.5">{new Date(row.createdAt).toLocaleDateString('fr-GN')}</p>
                     </div>
                 </div>
             )
         },
-        { label: 'Montant', key: 'amount' },
+        { 
+            label: 'Montant', 
+            render: (row) => <span className="font-bold">{parseFloat(row.total_ttc).toLocaleString('fr-FR')} GNF</span>
+        },
         {
             label: 'Statut',
-            render: (row) => <StatusBadge status={row.status} variant={row.statusVariant} />
+            render: (row) => {
+                const variantMap = {
+                    'En attente': 'warning',
+                    'Payé': 'primary',
+                    'En préparation': 'warning',
+                    'En route': 'primary',
+                    'Livré': 'success',
+                    'Annulé': 'destructive'
+                };
+                return <StatusBadge status={row.statut} variant={variantMap[row.statut] || 'secondary'} />
+            }
         }
     ];
 
@@ -75,66 +111,60 @@ const Dashboard = () => {
                     <div className="lg:col-span-2 space-y-6">
                         <div className="flex items-center justify-between">
                             <h3 className="text-xl font-bold text-foreground">Catalogue Rapide</h3>
-                            <a className="text-primary text-xs font-bold uppercase tracking-widest hover:underline" href="/catalog">Voir tout</a>
-                        </div>
-
-                        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                            <button className="whitespace-nowrap bg-primary/10 border border-primary/20 text-primary px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all">Tous les produits</button>
-                            {['Électronique', 'Construction', 'Alimentaire', 'Mode', 'Beauté'].map(cat => (
-                                <button key={cat} className="whitespace-nowrap bg-card border border-border px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:border-primary/50 transition-all">
-                                    {cat}
-                                </button>
-                            ))}
+                            <Link className="text-primary text-xs font-bold uppercase tracking-widest hover:underline" to="/marketplace">Voir tout</Link>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            {[
-                                { name: 'Solaire Pro 250W', price: 1850000, image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&q=80&w=300', desc: 'Panneau monocristallin haute performance.' },
-                                { name: 'Ciment Guinée 50kg', price: 85000, image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=300', desc: 'Sac de ciment CPJ-35 local certifié.' },
-                                { name: 'Pompe Solaire GN', price: 3450000, image: 'https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&q=80&w=300', desc: 'Idéal pour l\'irrigation agricole locale.' },
-                                { name: 'Tôles Bac 0.35mm', price: 65000, image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=300', desc: 'Toiture robuste, galvanisée à chaud.' }
-                            ].map((product, idx) => (
-                                <div key={idx} className="bg-card rounded-2xl border border-border p-4 flex gap-4 hover:shadow-lg transition-all cursor-pointer group hover:-translate-y-1">
-                                    <div className="w-24 h-24 bg-muted rounded-xl overflow-hidden flex-shrink-0 border border-border">
-                                        <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                    </div>
-                                    <div className="flex flex-col justify-between py-1 flex-1">
-                                        <div>
-                                            <h5 className="text-sm font-bold text-foreground tracking-tight">{product.name}</h5>
-                                            <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 font-medium">{product.desc}</p>
+                            {isLoading ? (
+                                [1, 2, 3, 4].map(i => <TableRowSkeleton key={i} />)
+                            ) : (
+                                quickProducts.map((product, idx) => (
+                                    <Link to={`/product/${product.id}`} key={idx} className="bg-card rounded-2xl border border-border p-4 flex gap-4 hover:shadow-lg transition-all cursor-pointer group hover:-translate-y-1">
+                                        <div className="w-24 h-24 bg-muted rounded-xl overflow-hidden flex-shrink-0 border border-border">
+                                            <img 
+                                                src={product.images?.[0]?.url_image || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&q=80&w=300'} 
+                                                alt={product.nom_produit} 
+                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                                            />
                                         </div>
-                                        <div className="flex items-center justify-between mt-2">
-                                            <span className="text-sm font-bold text-primary italic">{product.price.toLocaleString('fr-FR')} GNF</span>
-                                            <button className="size-9 bg-primary/10 text-primary rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center hover:bg-primary hover:text-primary-foreground shadow-lg shadow-primary/20">
-                                                <ShoppingBag className="size-5" />
-                                            </button>
+                                        <div className="flex flex-col justify-between py-1 flex-1">
+                                            <div>
+                                                <h5 className="text-sm font-bold text-foreground tracking-tight">{product.nom_produit}</h5>
+                                                <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 font-medium">{product.description}</p>
+                                            </div>
+                                            <div className="flex items-center justify-between mt-2">
+                                                <span className="text-sm font-bold text-primary italic">{parseFloat(product.prix_unitaire).toLocaleString('fr-FR')} GNF</span>
+                                                <button className="size-9 bg-primary/10 text-primary rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center hover:bg-primary hover:text-primary-foreground shadow-lg shadow-primary/20">
+                                                    <ShoppingBag className="size-5" />
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                            ))}
+                                    </Link>
+                                ))
+                            )}
                         </div>
                     </div>
 
                     {/* Recent Orders */}
                     <div className="flex flex-col">
                         {isLoading ? (
-                            <Card className="rounded-[2rem] border-border overflow-hidden bg-card">
+                            <div className="bg-card rounded-2xl border border-border overflow-hidden">
                                 <div className="p-6 border-b border-border">
                                     <Skeleton className="h-6 w-1/3" />
                                 </div>
                                 <div className="divide-y divide-border/50">
                                     {[1, 2, 3, 4].map(i => <TableRowSkeleton key={i} />)}
                                 </div>
-                            </Card>
+                            </div>
                         ) : hasError ? (
                             <ErrorState />
                         ) : (
                             <DataTable
                                 title="Commandes Récentes"
                                 columns={orderColumns}
-                                data={recentOrders}
+                                data={orders}
                                 actions={
-                                    <a className="text-[10px] font-black text-primary hover:underline uppercase tracking-widest" href="/orders">Tout afficher</a>
+                                    <Link className="text-[10px] font-black text-primary hover:underline uppercase tracking-widest" to="/orders">Tout afficher</Link>
                                 }
                             />
                         )}

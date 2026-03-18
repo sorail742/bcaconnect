@@ -16,7 +16,6 @@ import {
     Hourglass
 } from 'lucide-react';
 import { Skeleton, CardSkeleton, TableRowSkeleton } from '../../components/ui/Loader';
-import { ErrorState } from '../../components/ui/StatusStates';
 
 const STATS = [
     { title: "Commandes assignées", value: '12', icon: ClipboardList },
@@ -26,10 +25,10 @@ const STATS = [
 ];
 
 const DELIVERIES = [
-    { id: '#ORD-9823', client: 'Marc Lefebvre', shop: 'Tech Store Paris', address: '15 Rue de la Paix, 75002 Paris', status: 'En attente ramassage', statusType: 'warning', date: "Aujourd'hui, 10:30", action: 'Accepter' },
-    { id: '#ORD-9821', client: 'Sophie Martin', shop: 'Mode & Co Lyon', address: '42 Avenue Foch, 69006 Lyon', status: 'En livraison', statusType: 'info', date: "Aujourd'hui, 09:15", action: 'Livré' },
-    { id: '#ORD-9799', client: 'Lucas Bernard', shop: 'Brico Dépôt Nice', address: '8 Promenade des Anglais, 06000 Nice', status: 'Assignée', statusType: 'info', date: 'Hier, 17:45', action: 'Démarrer' },
-    { id: '#ORD-9750', client: 'Emma Petit', shop: 'Bio Marché Lille', address: '12 Boulevard Vauban, 59000 Lille', status: 'Livré', statusType: 'success', date: 'Hier, 14:20', action: null },
+    { id: '#ORD-GN-9823', client: 'Moussa Camara', shop: 'BCA Tech Conakry', address: 'Boulbinet, Kaloum, Conakry', status: 'En attente ramassage', statusType: 'warning', date: "Aujourd'hui, 10:30", action: 'Accepter' },
+    { id: '#ORD-GN-9821', client: 'Aïssatou Diallo', shop: 'Mode Boutique Kindia', address: 'Quartier Tafory, Kindia', status: 'En livraison', statusType: 'info', date: "Aujourd'hui, 09:15", action: 'Livré' },
+    { id: '#ORD-GN-9799', client: 'Ibrahim Sory', shop: 'Quincaillerie Labé', address: 'Dognora, Labé Centre', status: 'Assignée', statusType: 'info', date: 'Hier, 17:45', action: 'Démarrer' },
+    { id: '#ORD-GN-9750', client: 'Mariama Sylla', shop: 'Alimentation Kankan', address: 'Quartier Salamani, Kankan', status: 'Livré', statusType: 'success', date: 'Hier, 14:20', action: null },
 ];
 
 const CarrierDashboard = () => {
@@ -98,7 +97,7 @@ const CarrierDashboard = () => {
                                 {[1, 2, 3, 4].map(i => <TableRowSkeleton key={i} />)}
                             </div>
                         </div>
-                    ) : ( // hasError condition removed as hasError is always false
+                    ) : ( 
                         <DataTable
                             title="Gestion des Livraisons"
                             columns={deliveryColumns}
@@ -129,14 +128,14 @@ const CarrierDashboard = () => {
                         <div className="flex items-center justify-between mb-8">
                             <h3 className="font-bold flex items-center gap-3 text-slate-900 dark:text-white uppercase text-xs tracking-widest">
                                 <span className="material-symbols-outlined text-primary">map</span>
-                                Localisation en temps réel
+                                Localisation en temps réel (Guinée)
                             </h3>
                             <button className="text-[10px] text-primary font-black hover:underline uppercase tracking-widest">Plein écran</button>
                         </div>
                         <div className="aspect-video bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden relative border border-slate-200 dark:border-slate-700 shadow-inner group">
                             <div
                                 className="absolute inset-0 bg-cover bg-center opacity-80"
-                                style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDjtVLnym32DFkbuccS0pRZ6zWsrhnUvST0yVB1ik9uIHC3h7bEiEJThuo4Fj_cnkdiSrZeHnAotj9zkQp6mxv9d5Eze7-nxDEzW8341DBin6BUOSOhf_9FE9PjKifXJEykAeLoXrxEDTk0hoayveU62RkJpoCGf0cB6X7nYqQqci_H6SoZR_-4b-nqo_857rmNgIy8KdKbZGJdX0EqP6vJqjo8T6dMa3PbXWXs3JyCm3KM8Ig9oBes43bGxXgQH75UQ7r9Joe2mcN4')" }}
+                                style={{ backgroundImage: "url('https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Guinea_Map.png/800px-Guinea_Map.png')" }}
                             ></div>
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent"></div>
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-16 flex flex-col items-center group cursor-pointer text-slate-900 dark:text-white">
@@ -180,4 +179,3 @@ const CarrierDashboard = () => {
 };
 
 export default CarrierDashboard;
-
