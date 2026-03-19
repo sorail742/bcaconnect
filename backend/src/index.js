@@ -46,8 +46,8 @@ const start = async () => {
             }
         }
 
-        // Synchronisation des modèles (Utiliser alter: true avec prudence en prod)
-        await sequelize.sync({ alter: true });
+        // Synchronisation des modèles
+        await sequelize.sync();
         console.log('✅ Modèles synchronisés (ALTER).');
 
         app.listen(PORT, () => {
@@ -55,7 +55,7 @@ const start = async () => {
             console.log(`   Health check : http://localhost:${PORT}/health\n`);
         });
     } catch (error) {
-        console.error('❌ Échec du démarrage du serveur :', error.message);
+        console.error('❌ Échec du démarrage du serveur :', error);
         process.exit(1);
     }
 };

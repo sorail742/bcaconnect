@@ -1,0 +1,58 @@
+
+> bcaconnect@1.0.0 start
+> node src/index.js
+
+[dotenv@17.3.1] injecting env (5) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+📦 Utilisation de SQLite (Local/Test)
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+✅ Connexion PostgreSQL établie.
+✅ Modèles synchronisés (ALTER).
+
+🚀 BCA Connect API v2.5 — Port 5000 (development)
+   Health check : http://localhost:5000/health
+
+[0mPOST /api/auth/register [32m201[0m 321.844 ms - 141[0m
+[0mPOST /api/auth/login [32m200[0m 154.307 ms - 347[0m
+[0mGET /api/ads/serve [32m200[0m 66.590 ms - 2[0m
+[0mGET /api/products [32m200[0m 39.564 ms - 2[0m
+[0mGET /api/orders/me [32m200[0m 42.171 ms - 49[0m
+[0mGET /api/ads/serve [36m304[0m 42.775 ms - -[0m
+[0mGET /api/products [36m304[0m 15.812 ms - -[0m
+[0mGET /api/orders/me [36m304[0m 39.234 ms - -[0m
+[0mGET /api/ads/serve [36m304[0m 69.020 ms - -[0m
+[0mGET /api/orders/me [36m304[0m 47.217 ms - -[0m
+[0mGET /api/products [36m304[0m 26.237 ms - -[0m
+[0mGET /api/ads/serve [36m304[0m 58.866 ms - -[0m
+[0mGET /api/products [36m304[0m 25.690 ms - -[0m
+[0mGET /api/orders/me [36m304[0m 56.319 ms - -[0m
+[0mGET /api/stores [32m200[0m 4.527 ms - 2[0m
+[0mGET /api/stores [36m304[0m 7.344 ms - -[0m
+[0mGET /api/ads/serve [36m304[0m 59.539 ms - -[0m
+[0mGET /api/products [36m304[0m 24.401 ms - -[0m
+[0mGET /api/orders/me [36m304[0m 53.013 ms - -[0m
+[0mGET /api/ads/serve [36m304[0m 64.148 ms - -[0m
+[0mGET /api/orders/me [36m304[0m 43.739 ms - -[0m
+[0mGET /api/products [36m304[0m 24.967 ms - -[0m
+[0mGET /api/ads/serve [36m304[0m 43.071 ms - -[0m
+[0mGET /api/orders/me [36m304[0m 37.679 ms - -[0m
+[0mGET /api/ads/serve [36m304[0m 36.271 ms - -[0m
+[0mGET /api/orders/me [36m304[0m 28.802 ms - -[0m
+[0mGET /api/auth/me [32m200[0m 60.718 ms - 587[0m
+[0mGET /api/auth/me [36m304[0m 13.875 ms - -[0m
+[0mGET /api/ads/serve [36m304[0m 52.768 ms - -[0m
+[0mGET /api/products [36m304[0m 25.223 ms - -[0m
+[0mGET /api/ads/serve [36m304[0m 21.356 ms - -[0m
+[0mGET /api/orders/me [36m304[0m 56.182 ms - -[0m
+[0mGET /api/orders/me [36m304[0m 35.382 ms - -[0m
+[0mGET /api/products [36m304[0m 47.646 ms - -[0m
+[0mGET /api/auth/me [33m401[0m 12.488 ms - 40[0m
+[0mGET /api/auth/me [33m401[0m 11.016 ms - 40[0m
+[0mGET /api/auth/me [36m304[0m 44.431 ms - -[0m
+[0mGET /api/auth/me [36m304[0m 35.078 ms - -[0m
+[0mPOST /api/auth/login [33m401[0m 15.856 ms - 37[0m
+[0mGET /api/auth/me [36m304[0m 286.621 ms - -[0m
+[0mGET /api/auth/me [36m304[0m 24.721 ms - -[0m
+[0mPOST /api/auth/register [33m422[0m 40.947 ms - 61[0m

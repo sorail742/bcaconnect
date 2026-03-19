@@ -38,6 +38,22 @@ const walletController = {
         } catch (error) {
             next(error);
         }
+    },
+
+    getAllTransactions: async (req, res, next) => {
+        try {
+            const transactions = await Transaction.findAll({
+                include: [{
+                    model: Wallet,
+                    include: [{ model: require('../models').User, attributes: ['nom_complet', 'role', 'email'] }]
+                }],
+                order: [['createdAt', 'DESC']],
+                limit: 100
+            });
+            res.json(transactions);
+        } catch (error) {
+            next(error);
+        }
     }
 };
 

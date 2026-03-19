@@ -57,6 +57,9 @@ const orderController = {
                 throw new Error('Solde insuffisant dans votre portefeuille BCA.');
             }
 
+            // Update wallet balance (virtual deduction for the order)
+            await wallet.decrement('solde_virtuel', { by: total_ttc, transaction: t });
+
             // Create Order
             const { deliveryInfo } = req.body;
             const order = await Order.create({
@@ -81,7 +84,9 @@ const orderController = {
                 await Transaction.create({
                     portefeuille_id: wallet.id,
                     commande_id: order.id,
-                    statut: 'en_attente'
+                    montant: total_ttc,
+                    type_transaction: 'achat_produit',
+                    statut: 'terminé'
                 }, { transaction: t });
             }
 
@@ -165,6 +170,7 @@ const orderController = {
                 include: [
                     {
                         model: Order,
+                        as: 'commande',
                         include: [{ model: User, attributes: ['nom_complet', 'telephone', 'email'] }]
                     },
                     { model: Product, as: 'produit' }
@@ -221,7 +227,8 @@ const orderController = {
     updateItemStatus: async (req, res, next) => {
         try {
             const { itemId } = req.params;
-            const { statut } = req.body;
+            const { statut, status } = req.body;
+            const newStatus = statut || status;
             const fournisseur_id = req.user.id;
 
             const item = await OrderItem.findByPk(itemId);
@@ -233,12 +240,26 @@ const orderController = {
                 return res.status(403).json({ message: "Vous n'êtes pas autorisé à modifier cette commande." });
             }
 
-            item.statut = statut;
+            item.statut = newStatus;
             await item.save();
 
-            res.json({ message: "Statut mis à jour avec succès", item });
+            // Vérifier si tous les articles de la commande sont préparés pour notifier le transporteur
+            const allItems = await OrderItem.findAll({ where: { commande_id: item.commande_id } });
+            const allPrepared = allItems.every(i => i.statut === 'prepare');
+
+            if (allPrepared) {
+                await Order.update(
+                    { statut_livraison: 'pret' },
+                    { where: { id: item.commande_id } }
+                );
+            }
+
+            res.json({
+                message: "Statut mis à jour avec succès",
+                item,
+                orderPrepared: allPrepared
+            });
         } catch (error) {
-            await t.rollback();
             next(error);
         }
     },

@@ -1,7 +1,7 @@
 const axios = require('axios');
 const testUtils = require('./test-utils');
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'http://127.0.0.1:5000/api';
 
 async function testFullCycle() {
     console.log('🏁 DÉMARRAGE DU TEST DE CYCLE COMPLET (PHASE 2-5)\n');
@@ -69,20 +69,21 @@ async function testFullCycle() {
         console.log(`🔍 Commande ${orderId.slice(0, 8)} trouvée dans les disponibles.`);
 
         // Assignation
-        await axios.post(`${API_URL}/delivery/assign`, { orderId: orderId }, carrierAuth.authHeader);
-        console.log('✅ Commande assignée au transporteur.');
+        const assignRes = await axios.post(`${API_URL}/delivery/assign`, { orderId: orderId }, carrierAuth.authHeader);
+        const otp = assignRes.data.order_otp;
+        console.log(`✅ Commande assignée au transporteur. OTP: ${otp}`);
 
         // Status: ramasse
-        await axios.patch(`${API_URL}/delivery/status`, { orderId: orderId, status: "ramasse" }, carrierAuth.authHeader);
+        await axios.post(`${API_URL}/delivery/tracking`, { orderId: orderId, status: "ramasse" }, carrierAuth.authHeader);
         console.log('📦 Commande ramassée.');
 
         // Status: en_cours
-        await axios.patch(`${API_URL}/delivery/status`, { orderId: orderId, status: "en_cours" }, carrierAuth.authHeader);
+        await axios.post(`${API_URL}/delivery/tracking`, { orderId: orderId, status: "en_cours" }, carrierAuth.authHeader);
         console.log('🛣️  En cours de livraison...');
 
-        // Status: livre
-        await axios.patch(`${API_URL}/delivery/status`, { orderId: orderId, status: "livre" }, carrierAuth.authHeader);
-        console.log('🏁 Commande marquée comme LIVRÉE !\n');
+        // Finalisation avec verify (OTP)
+        await axios.post(`${API_URL}/delivery/verify`, { orderId: orderId, otp: otp }, carrierAuth.authHeader);
+        console.log('🏁 Commande validée par OTP et marquée comme LIVRÉE !\n');
 
         // --- ÉTAPE 5 : ANALYSE & INSIGHTS ---
         console.log('🤖 Étape 5: Vérification des Insights & Scores...');
