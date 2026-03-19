@@ -14,6 +14,11 @@ const walletService = {
     initiateDeposit: async (depositData) => {
         const response = await api.post('/payments/initiate', depositData);
         return response.data;
+    },
+
+    getAllTransactions: async () => {
+        const response = await api.get('/wallet/all');
+        return response.data;
     }
 };
 

@@ -124,9 +124,67 @@ const VendorDashboard = () => {
                                 <p className="text-sm text-muted-foreground font-medium">Analyse comparative hebdomadaire</p>
                             </div>
                         </div>
-                        <div className="relative w-full h-72 mt-4 bg-muted/30 rounded-2xl flex items-center justify-center border border-dashed border-border overflow-hidden group">
-                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                            <p className="text-muted-foreground text-sm italic font-bold uppercase tracking-widest relative z-10">Graphique des ventes (SVG Dynamique)</p>
+                        <div className="relative w-full h-72 mt-4 bg-muted/50 rounded-3xl flex items-center justify-center border border-border overflow-hidden group">
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-1000"></div>
+
+                            <svg className="w-full h-full px-6 pt-10 pb-6 overflow-visible" viewBox="0 0 800 300">
+                                {/* Grille horizontale */}
+                                {[0, 1, 2, 3].map(i => (
+                                    <line key={i} x1="0" y1={300 - i * 80} x2="800" y2={300 - i * 80} stroke="currentColor" strokeOpacity="0.05" strokeWidth="1" />
+                                ))}
+
+                                {/* Chemin de courbe lissé (Bézier) */}
+                                <path
+                                    d="M 0 250 C 100 230, 200 280, 300 200 C 400 120, 500 150, 600 80 C 700 10, 800 50, 850 40"
+                                    fill="none"
+                                    stroke="url(#gradient-line)"
+                                    strokeWidth="6"
+                                    strokeLinecap="round"
+                                    className="animate-draw-path"
+                                    style={{
+                                        strokeDasharray: '1000',
+                                        strokeDashoffset: '1000',
+                                        animation: 'drawPath 3s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+                                    }}
+                                />
+
+                                {/* Gradient definition */}
+                                <defs>
+                                    <linearGradient id="gradient-line" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.4" />
+                                        <stop offset="100%" stopColor="hsl(var(--primary))" />
+                                    </linearGradient>
+                                    <linearGradient id="gradient-fill" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.1" />
+                                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+                                    </linearGradient>
+                                </defs>
+
+                                {/* Area Fill */}
+                                <path
+                                    d="M 0 250 C 100 230, 200 280, 300 200 C 400 120, 500 150, 600 80 C 700 10, 800 50, 850 40 L 850 300 L 0 300 Z"
+                                    fill="url(#gradient-fill)"
+                                    className="fade-in-delayed"
+                                />
+
+                                {/* Points d'interaction simulés */}
+                                {[
+                                    { x: 300, y: 200, label: 'Lun' },
+                                    { x: 450, y: 130, label: 'Mar' },
+                                    { x: 600, y: 80, label: 'Mer' },
+                                    { x: 750, y: 45, label: 'Jeu' },
+                                ].map((p, i) => (
+                                    <g key={i} className="cursor-pointer group/point">
+                                        <circle cx={p.x} cy={p.y} r="6" fill="white" stroke="hsl(var(--primary))" strokeWidth="3" className="transition-all duration-300 group-hover/point:r-8" />
+                                        <text x={p.x} y={290} textAnchor="middle" fill="currentColor" fillOpacity="0.4" className="text-[10px] font-black uppercase tracking-widest">{p.label}</text>
+                                    </g>
+                                ))}
+                            </svg>
+
+                            <div className="absolute top-6 left-8 flex items-center gap-2">
+                                <div className="size-2 rounded-full bg-primary animate-pulse"></div>
+                                <span className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.2em]">En Direct • GNF / Heure</span>
+                            </div>
                         </div>
                     </div>
 

@@ -17,20 +17,21 @@ const Dashboard = () => {
     const [hasError, setHasError] = useState(false);
     const [orders, setOrders] = useState([]);
     const [quickProducts, setQuickProducts] = useState([]);
+    const [wallet, setWallet] = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setIsLoading(true);
-                const [ordersData, productsData] = await Promise.all([
+                const [ordersData, productsData, walletData] = await Promise.all([
                     orderService.getMyOrders(),
-                    productService.getAll()
+                    productService.getAll(),
+                    import('../../services/walletService').then(m => m.default.getMyWallet())
                 ]);
-                
-                // On ne prend que les 4 dernières commandes
+
                 setOrders(ordersData.slice(0, 4));
-                // On ne prend que les 4 premiers produits pour le catalogue rapide
                 setQuickProducts(productsData.slice(0, 4));
+                setWallet(walletData);
                 setHasError(false);
             } catch (err) {
                 console.error("Erreur chargement dashboard:", err);
@@ -43,11 +44,10 @@ const Dashboard = () => {
         fetchData();
     }, []);
 
-    // Données de stats (Le backend n'a pas encore d'endpoint pour les stats globales client)
     const stats = [
-        { title: 'Solde du portefeuille', value: '0 GNF', icon: Wallet, trend: 'up', trendValue: '+0%', description: 'vs mois dernier' },
+        { title: 'Solde du portefeuille', value: wallet ? `${parseFloat(wallet.solde_virtuel).toLocaleString('fr-GN')} GNF` : '0 GNF', icon: Wallet, trend: 'up', trendValue: '+0%', description: 'Disponible' },
         { title: 'Commandes en cours', value: orders.filter(o => o.statut !== 'Livré').length.toString(), icon: ShoppingBag, trend: 'up', trendValue: '+2%', description: 'Total commandes' },
-        { title: 'Points de fidélité', value: '0 pts', icon: Star, trend: 'down', trendValue: '-0%', description: 'Points accumulés' },
+        { title: 'Points de fidélité', value: user?.points_fidelite || '0 pts', icon: Star, trend: 'down', trendValue: '-0%', description: 'Points accumulés' },
     ];
 
     const orderColumns = [
@@ -65,8 +65,8 @@ const Dashboard = () => {
                 </div>
             )
         },
-        { 
-            label: 'Montant', 
+        {
+            label: 'Montant',
             render: (row) => <span className="font-bold">{parseFloat(row.total_ttc).toLocaleString('fr-FR')} GNF</span>
         },
         {
@@ -121,10 +121,10 @@ const Dashboard = () => {
                                 quickProducts.map((product, idx) => (
                                     <Link to={`/product/${product.id}`} key={idx} className="bg-card rounded-2xl border border-border p-4 flex gap-4 hover:shadow-lg transition-all cursor-pointer group hover:-translate-y-1">
                                         <div className="w-24 h-24 bg-muted rounded-xl overflow-hidden flex-shrink-0 border border-border">
-                                            <img 
-                                                src={product.images?.[0]?.url_image || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&q=80&w=300'} 
-                                                alt={product.nom_produit} 
-                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                                            <img
+                                                src={product.images?.[0]?.url_image || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&q=80&w=300'}
+                                                alt={product.nom_produit}
+                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                             />
                                         </div>
                                         <div className="flex flex-col justify-between py-1 flex-1">
