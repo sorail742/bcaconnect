@@ -20,6 +20,7 @@ const VendorDashboard = () => {
     const [hasError, setHasError] = React.useState(false);
     const [store, setStore] = React.useState(null);
     const [orders, setOrders] = React.useState([]);
+    const [totalOrders, setTotalOrders] = React.useState(0);
     const [insights, setInsights] = React.useState(null);
 
     React.useEffect(() => {
@@ -31,7 +32,8 @@ const VendorDashboard = () => {
                     aiService.getSalesInsights()
                 ]);
                 setStore(storeData);
-                setOrders(orderData);
+                setOrders(orderData.orders || []);
+                setTotalOrders(orderData.total || 0);
                 setInsights(aiData);
             } catch (error) {
                 console.error("Erreur chargement dashboard:", error);
@@ -53,7 +55,7 @@ const VendorDashboard = () => {
 
     const kpis = [
         { title: "Chiffre d'affaires", value: `${totalSales.toLocaleString('fr-GN')} GNF`, trend: 'up', trendValue: '+0%', description: 'Total historique', icon: CreditCard },
-        { title: 'Commandes totales', value: orders.length.toString(), trend: 'up', trendValue: '+0%', description: 'Commandes reçues', icon: ShoppingBasket },
+        { title: 'Commandes totales', value: totalOrders.toString(), trend: 'up', trendValue: '+0%', description: 'Commandes reçues', icon: ShoppingBasket },
         { title: 'Produits actifs', value: store?.produits?.length.toString() || '0', description: 'Dans votre boutique', icon: Package },
         { title: 'Score Confiance', value: user?.score_confiance ? `${user.score_confiance}%` : '100%', description: 'Évaluation BCA', icon: ShieldCheck },
     ];

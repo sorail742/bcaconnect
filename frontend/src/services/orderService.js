@@ -22,7 +22,7 @@ const orderService = {
     },
 
     updateItemStatus: async (itemId, statut) => {
-        const response = await api.patch(`/orders/item/${itemId}/status`, { statut });
+        const response = await api.patch(`/orders/items/${itemId}/status`, { statut });
         return response.data;
     },
 

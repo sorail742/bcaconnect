@@ -16,6 +16,7 @@ const Dashboard = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
     const [orders, setOrders] = useState([]);
+    const [totalOrders, setTotalOrders] = useState(0);
     const [quickProducts, setQuickProducts] = useState([]);
     const [wallet, setWallet] = useState(null);
 
@@ -29,7 +30,8 @@ const Dashboard = () => {
                     import('../../services/walletService').then(m => m.default.getMyWallet())
                 ]);
 
-                setOrders(ordersData.slice(0, 4));
+                setOrders(ordersData.orders || []);
+                setTotalOrders(ordersData.total || 0);
                 setQuickProducts(productsData.slice(0, 4));
                 setWallet(walletData);
                 setHasError(false);
@@ -46,7 +48,7 @@ const Dashboard = () => {
 
     const stats = [
         { title: 'Solde du portefeuille', value: wallet ? `${parseFloat(wallet.solde_virtuel).toLocaleString('fr-GN')} GNF` : '0 GNF', icon: Wallet, trend: 'up', trendValue: '+0%', description: 'Disponible' },
-        { title: 'Commandes en cours', value: orders.filter(o => o.statut !== 'Livré').length.toString(), icon: ShoppingBag, trend: 'up', trendValue: '+2%', description: 'Total commandes' },
+        { title: 'Commandes en cours', value: totalOrders.toString(), icon: ShoppingBag, trend: 'up', trendValue: '+2%', description: 'Total historique' },
         { title: 'Points de fidélité', value: user?.points_fidelite || '0 pts', icon: Star, trend: 'down', trendValue: '-0%', description: 'Points accumulés' },
     ];
 
@@ -162,7 +164,7 @@ const Dashboard = () => {
                             <DataTable
                                 title="Commandes Récentes"
                                 columns={orderColumns}
-                                data={orders}
+                                data={orders.slice(0, 4)}
                                 actions={
                                     <Link className="text-[10px] font-black text-primary hover:underline uppercase tracking-widest" to="/orders">Tout afficher</Link>
                                 }
