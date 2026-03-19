@@ -25,23 +25,38 @@ const VendorDashboard = () => {
 
     React.useEffect(() => {
         const fetchDashboardData = async () => {
+            setIsLoading(true);
             try {
-                const [storeData, orderData, aiData] = await Promise.all([
-                    storeService.getMyStore(),
-                    orderService.getVendorOrders(),
-                    aiService.getSalesInsights()
-                ]);
-                setStore(storeData);
-                setOrders(orderData.orders || []);
-                setTotalOrders(orderData.total || 0);
-                setInsights(aiData);
-            } catch (error) {
-                console.error("Erreur chargement dashboard:", error);
-                // Si la boutique n'existe pas, on ne considère pas ça comme une erreur fatale
-                // l'utilisateur devra juste en créer une
-                if (error.response?.status !== 404) {
-                    setHasError(true);
+                // Appel Boutique - On gère le 404 séparément car c'est un état normal au début
+                try {
+                    const storeData = await storeService.getMyStore();
+                    setStore(storeData);
+                } catch (storeError) {
+                    if (storeError.response?.status !== 404) {
+                        console.error("Erreur boutique:", storeError);
+                    }
                 }
+
+                // Appel Commandes
+                try {
+                    const orderData = await orderService.getVendorOrders();
+                    setOrders(orderData.orders || []);
+                    setTotalOrders(orderData.total || 0);
+                } catch (orderError) {
+                    console.error("Erreur commandes:", orderError);
+                }
+
+                // Appel AI Insights
+                try {
+                    const aiData = await aiService.getSalesInsights();
+                    setInsights(aiData);
+                } catch (aiError) {
+                    // On ne bloque pas si l'IA échoue
+                }
+
+            } catch (error) {
+                console.error("Erreur globale dashboard:", error);
+                setHasError(true);
             } finally {
                 setIsLoading(false);
             }
