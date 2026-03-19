@@ -32,8 +32,8 @@ const StoreSettings = () => {
                     logo_url: data.logo_url || ''
                 });
             } catch (error) {
-                console.error("Erreur chargement boutique:", error);
                 if (error.response?.status !== 404) {
+                    console.error("Erreur chargement boutique:", error);
                     toast.error("Impossible de charger les paramètres de la boutique.");
                 }
             } finally {
