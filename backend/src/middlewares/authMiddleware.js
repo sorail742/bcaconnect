@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { hasPermission } = require('../config/permissions');
 
 const authMiddleware = (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -14,6 +15,25 @@ const authMiddleware = (req, res, next) => {
     } catch (error) {
         res.status(401).json({ message: "Jeton invalide ou expiré." });
     }
+};
+
+/**
+ * Middleware de vérification des permissions (RBAC)
+ * @param {string} permission - La permission requise
+ */
+const grantAccess = (permission) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({ message: "Non authentifié." });
+        }
+
+        if (!hasPermission(req.user.role, permission)) {
+            return res.status(403).json({
+                message: `Action refusée pour le rôle ${req.user.role} (Manque la permission : ${permission})`
+            });
+        }
+        next();
+    };
 };
 
 // Middleware pour vérifier les rôles : accepte string ou tableau
@@ -49,4 +69,4 @@ const optionalAuth = (req, res, next) => {
     next();
 };
 
-module.exports = { authMiddleware, protect, authorize, optionalAuth };
+module.exports = { authMiddleware, protect, authorize, optionalAuth, grantAccess };

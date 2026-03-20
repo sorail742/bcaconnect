@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-const { authMiddleware, authorize } = require('../middlewares/authMiddleware');
+const { authMiddleware, grantAccess } = require('../middlewares/authMiddleware');
 
-// Toutes ces routes sont réservées aux administrateurs
+// Toutes ces routes sont réservées aux administrateurs (ou ceux ayant la permission)
 router.use(authMiddleware);
-router.use(authorize(['admin']));
+router.use(grantAccess('manage_users'));
 
 router.get('/', userController.getAll);
 router.post('/', userController.create);

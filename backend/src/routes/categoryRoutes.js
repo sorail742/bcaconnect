@@ -1,9 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const categoryController = require('../controllers/categoryController');
-const { authMiddleware, authorize } = require('../middlewares/authMiddleware');
+const { authMiddleware, authorize, grantAccess } = require('../middlewares/authMiddleware');
 
 router.get('/', categoryController.getAll);
-router.post('/', authMiddleware, authorize(['admin']), categoryController.create);
+
+// Admin only routes
+router.post('/', authMiddleware, grantAccess('manage_categories'), categoryController.create);
+router.put('/:id', authMiddleware, grantAccess('manage_categories'), categoryController.update);
+router.delete('/:id', authMiddleware, grantAccess('manage_categories'), categoryController.delete);
 
 module.exports = router;

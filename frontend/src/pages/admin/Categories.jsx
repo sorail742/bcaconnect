@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import {
     PlusCircle,
@@ -7,121 +7,192 @@ import {
     Trash2,
     Folder,
     ChevronRight,
-    MoreHorizontal,
     X,
     UploadCloud,
-    CheckCircle2,
-    Clock
+    AlertCircle
 } from 'lucide-react';
 import Button from '../../components/ui/Button';
+import categoryService from '../../services/categoryService';
+import { toast } from 'sonner';
 
-const AdminCategories = () => {
+const Categories = () => {
+    const [categories, setCategories] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState('all');
 
-    const categories = [
-        { id: 1, name: 'Électronique', parent: '—', products: 1240, status: 'Active', date: '12/01/2024', isParent: true },
-        { id: 2, name: 'Smartphones', parent: 'Électronique', products: 450, status: 'Active', date: '15/01/2024', isParent: false },
-        { id: 3, name: 'Audio & Casques', parent: 'Électronique', products: 312, status: 'Inactive', date: '20/01/2024', isParent: false },
-        { id: 4, name: 'Maison & Jardin', parent: '—', products: 856, status: 'Active', date: '10/01/2024', isParent: true },
-    ];
+    // Form State
+    const [editingCategory, setEditingCategory] = useState(null);
+    const [formData, setFormData] = useState({
+        nom: '',
+        description: '',
+        parent_id: '',
+        statut: 'actif'
+    });
+
+    useEffect(() => {
+        fetchCategories();
+    }, []);
+
+    const fetchCategories = async () => {
+        setIsLoading(true);
+        try {
+            const data = await categoryService.getAll();
+            setCategories(data || []);
+        } catch (error) {
+            toast.error("Erreur de chargement des catégories.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm("Supprimer cette catégorie ? Cela pourrait affecter les produits liés.")) return;
+        try {
+            await categoryService.delete(id);
+            toast.success("Catégorie supprimée.");
+            fetchCategories();
+        } catch (error) {
+            toast.error("Erreur de suppression.");
+        }
+    };
+
+    const handleOpenModal = (cat = null) => {
+        if (cat) {
+            setEditingCategory(cat);
+            setFormData({
+                nom: cat.nom || '',
+                description: cat.description || '',
+                parent_id: cat.parent_id || '',
+                statut: cat.statut || 'actif'
+            });
+        } else {
+            setEditingCategory(null);
+            setFormData({
+                nom: '',
+                description: '',
+                parent_id: '',
+                statut: 'actif'
+            });
+        }
+        setIsModalOpen(true);
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            if (editingCategory) {
+                await categoryService.update(editingCategory.id, formData);
+                toast.success("Catégorie mise à jour !");
+            } else {
+                await categoryService.create(formData);
+                toast.success("Catégorie créée !");
+            }
+            setIsModalOpen(false);
+            fetchCategories();
+        } catch (error) {
+            toast.error("Échec de l'enregistrement.");
+        }
+    };
+
+    const filtered = categories.filter(c =>
+        c.nom.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     return (
-        <DashboardLayout title="Gestion des Catégories">
+        <DashboardLayout title="Gestion Catalogue">
             <div className="space-y-8 animate-in fade-in duration-500 font-inter pb-12">
-                {/* Title & Action Bar */}
+
+                {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                        <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic">Gestion des Catégories</h2>
-                        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 font-medium">Structurez votre catalogue avec une hiérarchie précise.</p>
+                        <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic underline decoration-primary/30 decoration-8 underline-offset-4">Rayons & Familles</h2>
+                        <p className="text-slate-500 dark:text-slate-400 text-xs mt-3 font-bold uppercase tracking-widest">Hiérarchie officielle du catalogue BCA.</p>
                     </div>
                     <Button
-                        onClick={() => setIsModalOpen(true)}
-                        className="bg-primary text-white px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-3 shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+                        onClick={() => handleOpenModal()}
+                        className="bg-primary text-white px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 shadow-2xl shadow-primary/30 hover:scale-[1.05] active:scale-95 transition-all"
                     >
                         <PlusCircle className="size-4" />
-                        Ajouter une catégorie
+                        Nouvelle Famille
                     </Button>
                 </div>
 
-                {/* Filters & Tabs */}
-                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-2 shadow-sm">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-2">
-                        <div className="relative w-full md:w-96 group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 size-4 group-focus-within:text-primary transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="Filtrer les catégories..."
-                                className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-transparent rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm font-bold dark:text-white"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </div>
-                        <div className="flex gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-                            <button
-                                onClick={() => setActiveTab('all')}
-                                className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeTab === 'all' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                            >
-                                Toutes
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('archived')}
-                                className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeTab === 'archived' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                            >
-                                Archivées
-                            </button>
-                        </div>
+                {/* Filters */}
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-3 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="relative w-full md:w-96 group">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 size-4 group-focus-within:text-primary transition-colors" />
+                        <input
+                            type="text"
+                            placeholder="RECHERCHER UN RAYON..."
+                            className="w-full pl-12 pr-6 py-4 bg-slate-50 dark:bg-slate-950 border border-transparent rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm font-black uppercase tracking-widest placeholder:text-slate-400"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
                     </div>
                 </div>
 
                 {/* Categories Table */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
                     <div className="overflow-x-auto italic">
                         <table className="w-full text-left">
                             <thead>
-                                <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-100 dark:border-slate-800">
-                                    <th className="px-8 py-5">Nom de la catégorie</th>
-                                    <th className="px-8 py-5">Parente</th>
-                                    <th className="px-8 py-5 text-center">Produits</th>
-                                    <th className="px-8 py-5">Statut</th>
-                                    <th className="px-8 py-5">Création</th>
-                                    <th className="px-8 py-5 text-right">Actions</th>
+                                <tr className="bg-slate-50 dark:bg-slate-950/50 text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-100 dark:border-slate-800">
+                                    <th className="px-8 py-6">Libellé de la catégorie</th>
+                                    <th className="px-8 py-6">Parenté</th>
+                                    <th className="px-8 py-6">Statut</th>
+                                    <th className="px-8 py-6 text-right">Actions de gestion</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                {categories.map((cat) => (
+                                {isLoading ? (
+                                    <tr><td colSpan="4" className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-xs">Chargement du système...</td></tr>
+                                ) : filtered.length === 0 ? (
+                                    <tr><td colSpan="4" className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-xs">Aucun résultat trouvé</td></tr>
+                                ) : filtered.map((cat) => (
                                     <tr key={cat.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
-                                        <td className="px-8 py-5">
-                                            <div className={`flex items-center gap-3 ${!cat.isParent ? 'pl-10' : ''}`}>
-                                                {cat.isParent ? (
-                                                    <Folder className="size-4 text-primary" />
-                                                ) : (
+                                        <td className="px-8 py-6">
+                                            <div className={`flex items-center gap-4 ${cat.parent_id ? 'pl-8' : ''}`}>
+                                                {cat.parent_id ? (
                                                     <ChevronRight className="size-3 text-slate-300" />
+                                                ) : (
+                                                    <Folder className="size-5 text-primary fill-primary/10" />
                                                 )}
-                                                <span className={`text-sm font-black tracking-tight ${cat.isParent ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
-                                                    {cat.name}
-                                                </span>
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter italic leading-none">
+                                                        {cat.nom}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 font-medium tracking-tight mt-1">{cat.description?.substring(0, 50) || 'Aucune description'}</span>
+                                                </div>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-5 text-xs font-bold text-slate-400 uppercase">{cat.parent}</td>
-                                        <td className="px-8 py-5 text-center text-sm font-black italic">{cat.products}</td>
-                                        <td className="px-8 py-5">
-                                            <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${cat.status === 'Active'
-                                                    ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
-                                                    : 'bg-rose-500/10 text-rose-600 border border-rose-500/20'
-                                                }`}>
-                                                <div className={`size-1.5 rounded-full ${cat.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
-                                                {cat.status}
+                                        <td className="px-8 py-6">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                                                {cat.Parent?.nom || 'RACINE'}
                                             </span>
                                         </td>
-                                        <td className="px-8 py-5 text-[11px] text-slate-400 font-bold">{cat.date}</td>
-                                        <td className="px-8 py-5 text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <button className="p-2 hover:bg-primary/10 text-slate-400 hover:text-primary rounded-xl transition-all group-hover:scale-110">
+                                        <td className="px-8 py-6">
+                                            <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${cat.statut === 'actif'
+                                                ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                                                : 'bg-rose-500/10 text-rose-600 border border-rose-500/20'
+                                                }`}>
+                                                <div className={`size-1.5 rounded-full ${cat.statut === 'actif' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+                                                {cat.statut}
+                                            </span>
+                                        </td>
+                                        <td className="px-8 py-6 text-right">
+                                            <div className="flex justify-end gap-3">
+                                                <button
+                                                    onClick={() => handleOpenModal(cat)}
+                                                    className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-400 hover:text-primary hover:shadow-xl transition-all"
+                                                >
                                                     <Edit2 className="size-4" />
                                                 </button>
-                                                <button className="p-2 hover:bg-rose-500/10 text-slate-400 hover:text-rose-600 rounded-xl transition-all group-hover:scale-110">
+                                                <button
+                                                    onClick={() => handleDelete(cat.id)}
+                                                    className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-400 hover:text-rose-500 hover:shadow-xl transition-all"
+                                                >
                                                     <Trash2 className="size-4" />
                                                 </button>
                                             </div>
@@ -134,79 +205,84 @@ const AdminCategories = () => {
                 </div>
             </div>
 
-            {/* Slide-over Modal Overlay */}
+            {/* Modal Form */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[100] flex justify-end animate-in fade-in duration-300">
-                    <div className="w-full max-w-xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col transform animate-in slide-in-from-right duration-500 font-inter">
-                        <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[100] flex justify-end animate-in fade-in duration-300">
+                    <div className="w-full max-w-xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col transform animate-in slide-in-from-right duration-500 font-inter border-l border-slate-200 dark:border-slate-800">
+                        <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 sticky top-0 z-10">
                             <div>
-                                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic">Ajouter une catégorie</h3>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Nouveaux paramètres du catalogue</p>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic">
+                                    {editingCategory ? "Modifier la famille" : "Créer un nouveau rayon"}
+                                </h3>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Édition des métadonnées du catalogue</p>
                             </div>
                             <button
                                 onClick={() => setIsModalOpen(false)}
-                                className="size-10 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all hover:rotate-90"
+                                className="size-12 flex items-center justify-center rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-rose-500 transition-all hover:rotate-90"
                             >
-                                <X className="size-5" />
+                                <X className="size-6" />
                             </button>
                         </div>
 
-                        <div className="flex-1 p-8 space-y-8 overflow-y-auto scrollbar-hide italic">
-                            {/* Nom field */}
+                        <form onSubmit={handleSubmit} className="flex-1 p-8 space-y-8 overflow-y-auto italic custom-scrollbar">
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center">
-                                    Nom de la catégorie <span className="text-primary ml-1">*</span>
-                                </label>
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Libellé officiel *</label>
                                 <input
-                                    className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-sm dark:text-white"
-                                    placeholder="Ex: Informatique"
+                                    required
+                                    className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 focus:ring-8 focus:ring-primary/5 outline-none transition-all font-black text-sm dark:text-white placeholder:text-slate-300 uppercase tracking-tighter"
+                                    placeholder="EX: ÉLECTROMÉNAGER"
                                     type="text"
+                                    value={formData.nom}
+                                    onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
                                 />
                             </div>
 
-                            {/* Parent select */}
-                            <div className="space-y-3 font-normal">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Catégorie parente</label>
-                                <select className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm font-bold dark:text-white appearance-none">
-                                    <option value="">Aucune (Catégorie racine)</option>
-                                    <option value="1">Électronique</option>
-                                    <option value="2">Maison & Jardin</option>
-                                    <option value="3">Mode</option>
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 underline decoration-primary/20 decoration-2 underline-offset-4">Emplacement hiérarchique</label>
+                                <select
+                                    className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 focus:ring-4 focus:ring-primary/10 outline-none transition-all text-[10px] font-black uppercase tracking-widest appearance-none dark:text-white"
+                                    value={formData.parent_id || ''}
+                                    onChange={(e) => setFormData({ ...formData, parent_id: e.target.value || null })}
+                                >
+                                    <option value="">-- AUCUN (RACINE) --</option>
+                                    {categories.filter(c => c.id !== editingCategory?.id && !c.parent_id).map(c => (
+                                        <option key={c.id} value={c.id}>{c.nom.toUpperCase()}</option>
+                                    ))}
                                 </select>
                             </div>
 
-                            {/* Description field */}
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Description</label>
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Description détaillée</label>
                                 <textarea
-                                    className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm font-medium dark:text-white min-h-[120px]"
-                                    placeholder="Décrivez brièvement cette catégorie..."
+                                    className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 focus:ring-4 focus:ring-primary/10 outline-none transition-all text-xs font-medium dark:text-white min-h-[140px] leading-relaxed tracking-tight"
+                                    placeholder="Détails techniques pour les moteurs de recherche..."
+                                    value={formData.description}
+                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 />
                             </div>
 
-                            {/* Icon Upload */}
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Icône (Optionnel)</label>
-                                <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-10 flex flex-col items-center justify-center gap-4 hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all bg-slate-50/30 dark:bg-slate-800/10 group">
-                                    <UploadCloud className="size-10 text-primary/40 group-hover:text-primary transition-all group-hover:scale-110" />
-                                    <div className="text-center">
-                                        <p className="text-xs font-black uppercase tracking-widest">Choisir un fichier</p>
-                                        <p className="text-[10px] text-slate-400 mt-2 font-bold">SVG, PNG JUSQU'À 2 MO</p>
-                                    </div>
-                                </div>
+                            <div className="p-6 bg-amber-500/5 border border-amber-500/10 rounded-2xl flex gap-4">
+                                <AlertCircle className="size-5 text-amber-500 shrink-0" />
+                                <p className="text-[10px] text-amber-600/80 font-bold leading-relaxed uppercase tracking-tight">
+                                    Une famille modifiée impacte l'affichage de tous les produits associés sur le marché public. Soyez précis !
+                                </p>
                             </div>
-                        </div>
+                        </form>
 
-                        <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex gap-4">
+                        <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex gap-4">
                             <button
+                                type="button"
                                 onClick={() => setIsModalOpen(false)}
-                                className="flex-1 px-8 py-4 rounded-xl border border-slate-200 dark:border-slate-700 font-black text-xs uppercase tracking-widest text-slate-500 hover:bg-white dark:hover:bg-slate-800 transition-all"
+                                className="flex-1 px-8 py-5 rounded-2xl border border-slate-200 dark:border-slate-800 font-black text-[10px] uppercase tracking-widest text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95"
                             >
                                 Annuler
                             </button>
-                            <Button className="flex-1 bg-primary text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
-                                Enregistrer
-                            </Button>
+                            <button
+                                onClick={handleSubmit}
+                                className="flex-1 bg-primary text-white py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+                            >
+                                {editingCategory ? "Appliquer Mutations" : "Valider Création"}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -215,4 +291,4 @@ const AdminCategories = () => {
     );
 };
 
-export default AdminCategories;
+export default Categories;

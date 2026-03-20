@@ -1,15 +1,53 @@
+
+> bcaconnect@1.0.0 start
+> node src/index.js
+
 [dotenv@17.3.1] injecting env (5) from .env -- tip: ⚙️  override existing env vars with { override: true }
 [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
-[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
-[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
-[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
-(node:6316) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
-In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+📦 Utilisation de SQLite (Local/Test)
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+✅ Connexion PostgreSQL établie.
+✅ Modèles synchronisés (ALTER).
 
-To prepare for this change:
-- If you want the current behavior, explicitly use 'sslmode=verify-full'
-- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+🚀 BCA Connect API v2.5 — Port 5000 (development)
+   Health check : http://localhost:5000/health
 
-See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
-(Use `node --trace-warnings ...` to show where the warning was created)
-❌ Échec du démarrage du serveur : 
+[0mGET /health [32m200[0m 7.557 ms - 98[0m
+[0mPOST /api/auth/register [33m422[0m 65.767 ms - 61[0m
+[0mPOST /api/auth/login [32m200[0m 268.807 ms - 358[0m
+[0mPOST /api/users [32m201[0m 23.450 ms - 311[0m
+[0mPUT /api/users/248f607f-f3b7-43a8-902d-100c861cfac8 [32m200[0m 30.258 ms - 369[0m
+[0mGET /api/users?search=User+Modified [32m200[0m 28.250 ms - 417[0m
+[0mDELETE /api/users/248f607f-f3b7-43a8-902d-100c861cfac8 [32m200[0m 24.987 ms - 49[0m
+[0mGET /api/users?search=User+Modified [32m200[0m 17.231 ms - 48[0m
+[0mGET /api/auth/me [33m401[0m 5.565 ms - 40[0m
+[0mGET /api/auth/me [33m401[0m 7.840 ms - 40[0m
+[0mGET /api/stores [32m200[0m 12.790 ms - -[0m
+[0mGET /api/stores [36m304[0m 8.360 ms - -[0m
+[0mGET /api/orders/me [33m401[0m 3.735 ms - 40[0m
+[0mGET /api/orders/me [33m401[0m 2.218 ms - 40[0m
+[0mGET /api/ads/serve [36m304[0m 38.843 ms - -[0m
+[0mGET /api/products [32m200[0m 16.243 ms - -[0m
+[0mGET /api/ads/serve [36m304[0m 9.213 ms - -[0m
+[0mGET /api/products [36m304[0m 6.334 ms - -[0m
+[0mGET /api/ads/serve [36m304[0m 13.487 ms - -[0m
+[0mGET /api/orders/me [33m401[0m 4.662 ms - 40[0m
+[0mGET /api/orders/me [33m401[0m 2.158 ms - 40[0m
+[0mGET /api/ads/serve [36m304[0m 15.550 ms - -[0m
+[0mGET /api/products [36m304[0m 22.869 ms - -[0m
+[0mGET /api/products [36m304[0m 13.085 ms - -[0m
+[0mGET /api/ads/serve [36m304[0m 5.804 ms - -[0m
+[0mGET /api/ads/serve [36m304[0m 7.998 ms - -[0m
+[0mGET /api/health [33m404[0m 34.067 ms - 49[0m
+[0mGET /health [32m200[0m 0.648 ms - 98[0m
+[0mPOST /api/auth/login [32m200[0m 187.919 ms - 358[0m
+[0mGET /api/users [32m200[0m 18.805 ms - -[0m
+[0mGET /api/products [32m200[0m 5.563 ms - -[0m
+[0mGET /api/categories [32m200[0m 2.263 ms - 2[0m
+[0mGET /health [32m200[0m 0.776 ms - 98[0m
+[0mPOST /api/auth/login [32m200[0m 144.359 ms - 358[0m
+[0mGET /api/users [32m200[0m 20.856 ms - -[0m
+[0mGET /api/products [32m200[0m 28.350 ms - -[0m
+[0mGET /api/categories [32m200[0m 6.887 ms - 2[0m

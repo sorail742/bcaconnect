@@ -25,44 +25,48 @@ import BcaLogo from '../ui/BcaLogo';
 import Button from '../ui/Button';
 import ThemeToggle from '../ui/ThemeToggle';
 import { useAuth } from '../../hooks/useAuth';
-import { hasPermission } from '../../utils/permissions';
+import { useRBAC } from '../../hooks/useRBAC';
 
 const Sidebar = () => {
     const { user, logout } = useAuth();
+    const { can } = useRBAC();
 
     const menuItems = {
         admin: [
             { path: '/admin/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
-            { path: '/admin/users', label: 'Utilisateurs', icon: Users },
+            { path: '/admin/users', label: 'Utilisateurs', icon: Users, permission: 'manage_users' },
             { path: '/admin/products', label: 'Produits', icon: Package },
-            { path: '/admin/categories', label: 'Gestion Catégories', icon: Folder },
-            { path: '/admin/disputes', label: 'Médiation Litiges', icon: Gavel },
-            { path: '/admin/transactions', label: 'Transactions', icon: Receipt },
-            { path: '/admin/ads', label: 'Gestion Pubs', icon: Megaphone },
-            { path: '/bank/dashboard', label: 'Panel Financier', icon: Landmark },
+            { path: '/admin/categories', label: 'Gestion Catégories', icon: Folder, permission: 'manage_categories' },
+            { path: '/admin/disputes', label: 'Médiation Litiges', icon: Gavel, permission: 'solve_disputes' },
+            { path: '/admin/transactions', label: 'Transactions', icon: Receipt, permission: 'view_all_transactions' },
+            { path: '/admin/ads', label: 'Gestion Pubs', icon: Megaphone, permission: 'manage_ads' },
+            { path: '/bank/dashboard', label: 'Panel Financier', icon: Landmark, permission: 'view_all_transactions' },
         ],
         fournisseur: [
             { path: '/vendor/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
-            { path: '/vendor/products', label: 'Mes Produits', icon: Package },
-            { path: '/vendor/orders', label: 'Commandes reçues', icon: ShoppingCart },
-            { path: '/admin/ads', label: 'Mes Publicités', icon: Megaphone },
-            { path: '/vendor/store', label: 'Paramètres Boutique', icon: Store },
+            { path: '/vendor/products', label: 'Mes Produits', icon: Package, permission: 'manage_own_products' },
+            { path: '/vendor/orders', label: 'Commandes reçues', icon: ShoppingCart, permission: 'view_own_orders' },
+            { path: '/admin/ads', label: 'Mes Publicités', icon: Megaphone, permission: 'manage_ads' },
+            { path: '/vendor/store', label: 'Paramètres Boutique', icon: Store, permission: 'manage_own_store' },
         ],
         transporteur: [
             { path: '/carrier/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
-            { path: '/tracking', label: 'Livraisons', icon: Truck },
+            { path: '/tracking', label: 'Livraisons', icon: Truck, permission: 'view_available_deliveries' },
         ],
         client: [
             { path: '/dashboard', label: 'Mon Espace', icon: LayoutDashboard },
             { path: '/marketplace', label: 'Marché', icon: Store },
             { path: '/vendors', label: 'Vendeurs', icon: Users },
-            { path: '/orders', label: 'Mes Commandes', icon: ShoppingCart },
+            { path: '/orders', label: 'Mes Commandes', icon: ShoppingCart, permission: 'view_own_history' },
             { path: '/payments', label: 'Paiements', icon: Wallet },
             { path: '/tracking', label: 'Livraisons', icon: Truck },
         ]
     };
 
-    const currentMenu = menuItems[user?.role] || menuItems.client;
+    const currentMenu = (menuItems[user?.role] || menuItems.client).filter(item => {
+        if (!item.permission) return true;
+        return can(item.permission);
+    });
 
     return (
         <aside className="w-64 flex-shrink-0 bg-card border-r border-border flex flex-col justify-between py-8 px-5 hidden md:flex relative z-30">
@@ -127,7 +131,7 @@ const Sidebar = () => {
             </div>
 
             <div className="flex flex-col gap-4">
-                {hasPermission(user, 'CAN_ADD_PRODUCT') && (
+                {can('manage_own_products') && (
                     <Button
                         onClick={() => window.location.href = '/vendor/products/add'}
                         className="w-full text-sm font-bold gap-2"
