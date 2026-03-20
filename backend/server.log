@@ -51,3 +51,8 @@
 [0mGET /api/users [32m200[0m 20.856 ms - -[0m
 [0mGET /api/products [32m200[0m 28.350 ms - -[0m
 [0mGET /api/categories [32m200[0m 6.887 ms - 2[0m
+[0mGET /health [32m200[0m 2.198 ms - 98[0m
+[0mPOST /api/auth/login [32m200[0m 202.301 ms - 358[0m
+[0mGET /api/users [32m200[0m 17.206 ms - -[0m
+[0mGET /api/products [32m200[0m 11.676 ms - -[0m
+[0mGET /api/categories [32m200[0m 3.745 ms - 2[0m

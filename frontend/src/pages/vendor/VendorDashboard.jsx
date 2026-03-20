@@ -113,14 +113,36 @@ const VendorDashboard = () => {
                         <h1 className="text-3xl font-bold tracking-tight text-foreground italic">Bonjour, {user?.nom_complet?.split(' ')[0] || 'Vendeur'} 👋</h1>
                         <p className="text-muted-foreground font-medium">Voici les performances de votre boutique {store?.nom_boutique ? `"${store.nom_boutique}"` : ''} aujourd'hui.</p>
                     </div>
-                    <Button
-                        onClick={() => window.location.href = '/vendor/products/add'}
-                        className="shadow-lg shadow-primary/20 rounded-xl font-bold"
-                    >
-                        <Plus className="size-4 mr-2" />
-                        Nouveau Produit
-                    </Button>
+                    {store ? (
+                        <Button
+                            onClick={() => window.location.href = '/vendor/products/add'}
+                            className="shadow-lg shadow-primary/20 rounded-xl font-bold"
+                        >
+                            <Plus className="size-4 mr-2" />
+                            Nouveau Produit
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={() => window.location.href = '/vendor/store'}
+                            className="shadow-lg shadow-primary/20 rounded-xl font-bold bg-amber-500 hover:bg-amber-600 text-white border-none"
+                        >
+                            <Store className="size-4 mr-2" />
+                            Créer ma boutique
+                        </Button>
+                    )}
                 </div>
+
+                {!isLoading && !store && (
+                    <div className="p-8 rounded-[2rem] bg-gradient-to-r from-primary/20 via-primary/5 to-transparent border border-primary/20 flex flex-col md:flex-row items-center justify-between gap-6 animate-in slide-in-from-top-4 duration-700">
+                        <div className="space-y-2">
+                            <h3 className="text-xl font-black text-foreground italic tracking-tight uppercase">Lancez votre activité !</h3>
+                            <p className="text-muted-foreground text-sm font-medium">Vous n'avez pas encore configuré votre boutique. Créez-la maintenant pour commencer à vendre sur BCA Connect.</p>
+                        </div>
+                        <Button onClick={() => window.location.href = '/vendor/store'} className="h-12 px-8 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-primary/30">
+                            Configurer ma boutique
+                        </Button>
+                    </div>
+                )}
 
                 {/* KPI Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

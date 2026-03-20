@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 const StoreSettings = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isNew, setIsNew] = useState(false);
     const [shopData, setShopData] = useState({
         name: '',
         url: '',
@@ -31,8 +32,11 @@ const StoreSettings = () => {
                     description: data.description || '',
                     logo_url: data.logo_url || ''
                 });
+                setIsNew(false);
             } catch (error) {
-                if (error.response?.status !== 404) {
+                if (error.response?.status === 404) {
+                    setIsNew(true);
+                } else {
                     console.error("Erreur chargement boutique:", error);
                     toast.error("Impossible de charger les paramètres de la boutique.");
                 }
@@ -49,19 +53,33 @@ const StoreSettings = () => {
     };
 
     const handleSave = async () => {
+        if (!shopData.name.trim()) {
+            return toast.error("Le nom de la boutique est requis.");
+        }
+
         setIsSaving(true);
         try {
-            await storeService.updateStore({
+            const payload = {
                 nom_boutique: shopData.name,
                 description: shopData.description,
                 email_boutique: shopData.email,
                 telephone_boutique: shopData.phone,
                 logo_url: shopData.logo_url
-            });
-            toast.success("Paramètres de la boutique mis à jour !");
+            };
+
+            if (isNew) {
+                const newStore = await storeService.createStore(payload);
+                setShopData(prev => ({ ...prev, url: newStore.slug }));
+                setIsNew(false);
+                toast.success("Votre boutique a été créée avec succès !");
+            } else {
+                await storeService.updateStore(payload);
+                toast.success("Paramètres de la boutique mis à jour !");
+            }
         } catch (error) {
             console.error("Erreur sauvegarde:", error);
-            toast.error("Erreur lors de l'enregistrement.");
+            const msg = error.response?.data?.message || "Erreur lors de l'enregistrement.";
+            toast.error(msg);
         } finally {
             setIsSaving(false);
         }
