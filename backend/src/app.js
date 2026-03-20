@@ -18,7 +18,7 @@ app.use(helmet());
 // CORS configuré précisément (domaines autorisés)
 app.use(cors({
     origin: process.env.NODE_ENV === 'production'
-        ? ['https://bcaconnect.onrender.com', 'https://bcaconnect.vercel.app']
+        ? ['https://bcaconnect-backend.onrender.com', 'https://bcaconnect.onrender.com', 'https://bcaconnect.vercel.app']
         : '*',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
