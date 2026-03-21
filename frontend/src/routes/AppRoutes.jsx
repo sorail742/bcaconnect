@@ -35,6 +35,7 @@ import AdminDisputes from '../pages/admin/AdminDisputes';
 // Pages Client & Commun
 import ProductCatalogue from '../pages/Catalogue';
 import ProductDetail from '../pages/ProductDetails';
+import CartPage from '../pages/CartPage';
 import OrdersClient from '../pages/OrdersClient';
 import UserWallet from '../pages/Wallet';
 import UserProfile from '../pages/Profile';
@@ -66,6 +67,7 @@ const AppRoutes = () => {
             <Route path="/catalog" element={<ProductCatalogue />} />
             <Route path="/vendors" element={<VendorsList />} />
             <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/cart" element={<CartPage />} />
             <Route path="/tracking" element={<Tracking />} />
             <Route path="/shop/:slug" element={<StorePage />} />
 

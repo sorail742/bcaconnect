@@ -4,6 +4,7 @@ import { ShoppingCart, Star, Heart, Eye, ArrowRight, CheckCircle2, Zap } from 'l
 import { Button } from '../ui/Button';
 import { useCart } from '../../context/CartContext';
 import { cn } from '../../lib/utils';
+import { toast } from 'sonner';
 
 const ProductCard = ({ product, compact = false }) => {
     const { addToCart } = useCart();
@@ -31,6 +32,12 @@ const ProductCard = ({ product, compact = false }) => {
         addToCart(product);
         setIsAdded(true);
         setTimeout(() => setIsAdded(false), 2500);
+        toast.success(`"${name}" ajouté au panier !`, {
+            action: {
+                label: 'Panier',
+                onClick: () => navigate('/cart')
+            }
+        });
     };
 
     const handleWishlist = (e) => {

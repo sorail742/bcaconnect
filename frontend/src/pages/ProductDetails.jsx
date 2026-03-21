@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import PublicLayout from '../components/layout/PublicLayout';
 import { Button } from '../components/ui/Button';
 import {
@@ -14,20 +14,26 @@ import {
     Award,
     Share2,
     Heart,
-    AlertCircle
+    AlertCircle,
+    Zap
 } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import { cn } from '../lib/utils';
 import productService from '../services/productService';
 import { PageLoader } from '../components/ui/Loader';
+import { useCart } from '../context/CartContext';
+import { toast } from 'sonner';
 
 const ProductDetail = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
+    const { addToCart, cartItems } = useCart();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [quantity, setQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState('desc');
+    const [addedToCart, setAddedToCart] = useState(false);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -49,8 +55,33 @@ const ProductDetail = () => {
         }
     }, [id]);
 
-    const increment = () => setQuantity(prev => prev + 1);
+    const maxQty = product?.stock_quantite || 0;
+    const increment = () => setQuantity(prev => Math.min(prev + 1, maxQty));
     const decrement = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
+
+    const handleAddToCart = () => {
+        if (!product || product.stock_quantite <= 0) return;
+        addToCart(product, quantity);
+        setAddedToCart(true);
+        setTimeout(() => setAddedToCart(false), 2500);
+        toast.success(
+            `✅ ${quantity}x "${product.nom_produit}" ajouté au panier
+Total panier mis à jour.`,
+            {
+                duration: 3000,
+                action: {
+                    label: 'Commander →',
+                    onClick: () => navigate('/checkout')
+                }
+            }
+        );
+    };
+
+    const handleBuyNow = () => {
+        if (!product || product.stock_quantite <= 0) return;
+        addToCart(product, quantity);
+        navigate('/checkout');
+    };
 
     if (loading) return <PageLoader />;
 
@@ -79,9 +110,9 @@ const ProductDetail = () => {
         price: parseFloat(product.prix_unitaire || 0),
         description: product.description || "Aucune description disponible.",
         fullDescription: product.description_longue || product.description || "Détails complets à venir pour ce produit.",
-        images: product.images && product.images.length > 0 
-            ? product.images.map(img => img.url_image) 
-            : ['https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&q=80&w=600'], 
+        images: product.images && product.images.length > 0
+            ? product.images.map(img => img.url_image)
+            : ['https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&q=80&w=600'],
         rating: 4.5,
         reviewsCount: 0,
         isNew: true,
@@ -188,12 +219,26 @@ const ProductDetail = () => {
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-                                <Button disabled={product.stock_quantite <= 0} className="h-16 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-primary/30 group">
-                                    <ShoppingCart className="size-5 mr-2 group-hover:rotate-12 transition-transform" />
-                                    Ajouter au panier
+                                <Button
+                                    disabled={product.stock_quantite <= 0}
+                                    onClick={handleAddToCart}
+                                    className={cn(
+                                        "h-16 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-primary/30 group transition-all duration-300",
+                                        addedToCart && "bg-emerald-500 shadow-emerald-500/30"
+                                    )}
+                                >
+                                    {addedToCart
+                                        ? <><CheckCircle2 className="size-5 mr-2" /> Ajouté !</>
+                                        : <><ShoppingCart className="size-5 mr-2 group-hover:rotate-12 transition-transform" /> Ajouter au panier</>
+                                    }
                                 </Button>
-                                <Button disabled={product.stock_quantite <= 0} variant="outline" className="h-16 rounded-2xl border-border bg-card font-black uppercase tracking-widest text-[11px] hover:bg-muted transition-all">
-                                    Acheter maintenant
+                                <Button
+                                    disabled={product.stock_quantite <= 0}
+                                    onClick={handleBuyNow}
+                                    variant="outline"
+                                    className="h-16 rounded-2xl border-primary/30 bg-primary/5 font-black uppercase tracking-widest text-[11px] hover:bg-primary hover:text-white transition-all group"
+                                >
+                                    <Zap className="size-4 mr-2 group-hover:animate-bounce" /> Acheter maintenant
                                 </Button>
                             </div>
                         </div>

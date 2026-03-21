@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import DataTable from '../components/ui/DataTable';
 import StatusBadge from '../components/ui/StatusBadge';
@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button';
 import { cn } from '../lib/utils';
 import { Skeleton, TableRowSkeleton, CardSkeleton } from '../components/ui/Loader';
 import { ErrorState, EmptyState } from '../components/ui/StatusStates';
+import { toast } from 'sonner';
 import {
     Calendar,
     Download,
@@ -15,8 +16,12 @@ import {
     PackageCheck,
     Search,
     ChevronRight,
+    ChevronDown,
     ShoppingBag,
-    Filter
+    Filter,
+    X,
+    RefreshCw,
+    XCircle
 } from 'lucide-react';
 import orderService from '../services/orderService';
 
@@ -26,22 +31,43 @@ const UserOrders = () => {
     const [hasError, setHasError] = useState(false);
     const [activeFilter, setActiveFilter] = useState('Tout');
     const [searchQuery, setSearchQuery] = useState('');
+    const [isCancelling, setIsCancelling] = useState(null); // ID de la commande en cours d'annulation
 
-    const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
+        setIsLoading(true);
+        setHasError(false);
         try {
             const data = await orderService.getMyOrders();
-            setOrders(data);
+            // Le backend retourne { orders: [...], total, pages } — on s'adapte
+            const list = Array.isArray(data) ? data : (data?.orders || []);
+            setOrders(list);
         } catch (err) {
             console.error("Erreur chargement commandes:", err);
             setHasError(true);
         } finally {
             setIsLoading(false);
         }
-    };
-
-    useEffect(() => {
-        fetchOrders();
     }, []);
+
+    useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+    // ── Annuler une commande avec remboursement automatique ───────────────────
+    const handleStatusUpdate = async (orderId, newStatus) => {
+        if (newStatus === 'annulé') {
+            const confirmed = window.confirm('Confirmer l\'annulation ? Le montant sera remboursé dans votre portefeuille.');
+            if (!confirmed) return;
+        }
+        setIsCancelling(orderId);
+        try {
+            await orderService.updateOrderStatus(orderId, newStatus);
+            toast.success(`Commande ${newStatus === 'annulé' ? 'annulée' : 'mise à jour'}. ${newStatus === 'annulé' ? 'Remboursement en cours.' : ''}`);
+            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, statut: newStatus } : o));
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Impossible de mettre à jour la commande.');
+        } finally {
+            setIsCancelling(null);
+        }
+    };
 
     const filters = ["Tout", "payé", "expédié", "livré", "annulé"];
 
@@ -132,10 +158,14 @@ const UserOrders = () => {
                         <Button
                             variant="ghost"
                             size="sm"
+                            disabled={isCancelling === row.id}
                             onClick={(e) => { e.stopPropagation(); handleStatusUpdate(row.id, 'annulé'); }}
                             className="h-10 px-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] text-destructive hover:bg-destructive/10 border border-transparent hover:border-destructive/20 transition-all"
                         >
-                            Annuler
+                            {isCancelling === row.id
+                                ? <RefreshCw className="size-3 animate-spin" />
+                                : <><XCircle className="size-3 mr-1" /> Annuler</>
+                            }
                         </Button>
                     )}
                     <Button

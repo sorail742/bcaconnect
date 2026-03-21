@@ -38,6 +38,12 @@ const Checkout = () => {
     const total = cartTotal + deliveryFee;
 
     useEffect(() => {
+        if (cartItems.length === 0 && !isSuccess) {
+            navigate('/cart');
+        }
+    }, [cartItems, navigate, isSuccess]);
+
+    useEffect(() => {
         const fetchWallet = async () => {
             try {
                 const data = await walletService.getMyWallet();

@@ -143,16 +143,23 @@ export function Header() {
                                         )}
 
                                         {cartItems.length > 0 && (
-                                            <div className="p-4 border-t border-border bg-muted/30 space-y-3">
-                                                <div className="flex items-center justify-between">
+                                            <div className="p-4 border-t border-border bg-muted/30 space-y-2">
+                                                <div className="flex items-center justify-between mb-2">
                                                     <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total</span>
                                                     <span className="text-sm font-black text-foreground italic">{cartTotal.toLocaleString('fr-FR')} GNF</span>
                                                 </div>
-                                                <Link to="/checkout" onClick={() => setIsCartOpen(false)}>
-                                                    <Button className="w-full h-12 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20">
-                                                        Commander maintenant
-                                                    </Button>
-                                                </Link>
+                                                <div className="grid grid-cols-1 gap-2">
+                                                    <Link to="/cart" onClick={() => setIsCartOpen(false)}>
+                                                        <Button variant="outline" className="w-full h-10 rounded-xl font-black uppercase tracking-widest text-[9px] border-border hover:bg-muted transition-all">
+                                                            Voir le panier
+                                                        </Button>
+                                                    </Link>
+                                                    <Link to="/checkout" onClick={() => setIsCartOpen(false)}>
+                                                        <Button className="w-full h-11 rounded-xl font-black uppercase tracking-widest text-[9px] shadow-lg shadow-primary/20">
+                                                            Paiement sécurisé
+                                                        </Button>
+                                                    </Link>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
