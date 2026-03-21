@@ -101,11 +101,13 @@ const VendorsList = () => {
         },
         {
             label: 'Action',
-            render: () => (
-                <Button variant="ghost" className="h-10 px-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] text-primary hover:bg-primary/10 group/btn border border-transparent hover:border-primary/20 transition-all">
-                    Profil Marchand
-                    <ArrowRight className="size-3 ml-2 group-hover/btn:translate-x-1 transition-transform" />
-                </Button>
+            render: (row) => (
+                <Link to={`/shop/${row.slug}`}>
+                    <Button variant="ghost" className="h-10 px-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] text-primary hover:bg-primary/10 group/btn border border-transparent hover:border-primary/20 transition-all">
+                        Profil Marchand
+                        <ArrowRight className="size-3 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                    </Button>
+                </Link>
             )
         }
     ];

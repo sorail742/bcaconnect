@@ -3,23 +3,47 @@ const { Product, Store, Category } = require('../models');
 const productController = {
     create: async (req, res, next) => {
         try {
-            const { nom_produit, description, prix_unitaire, prix_ancien, stock_quantite, categorie_id, image_url } = req.body;
+            const { nom_produit, description, prix_unitaire, prix_ancien, stock_quantite, categorie_id, image_url, est_local } = req.body;
+
+            // Validation minimale
+            if (!nom_produit || nom_produit.trim().length < 3) {
+                return res.status(422).json({ message: "Le nom du produit doit contenir au moins 3 caractères." });
+            }
+            if (!prix_unitaire || parseFloat(prix_unitaire) <= 0) {
+                return res.status(422).json({ message: "Le prix doit être supérieur à 0 GNF." });
+            }
 
             const store = await Store.findOne({ where: { proprietaire_id: req.user.id } });
             if (!store) {
-                return res.status(403).json({ message: "Vous devez d'abord créer une boutique." });
+                return res.status(403).json({ message: "Vous devez d'abord créer une boutique avant d'ajouter des produits." });
             }
 
             const product = await Product.create({
-                nom_produit, description, prix_unitaire, prix_ancien,
-                stock_quantite, categorie_id, boutique_id: store.id, image_url
+                nom_produit: nom_produit.trim(),
+                description: description?.trim() || null,
+                prix_unitaire: parseFloat(prix_unitaire),
+                prix_ancien: prix_ancien ? parseFloat(prix_ancien) : null,
+                stock_quantite: parseInt(stock_quantite ?? 0),
+                categorie_id: categorie_id || null,
+                boutique_id: store.id,
+                image_url: image_url?.trim() || null,
+                est_local: est_local !== undefined ? est_local : true
             });
 
-            res.status(201).json(product);
+            // Recharger avec les associations pour la réponse complète
+            const fullProduct = await Product.findByPk(product.id, {
+                include: [{ model: Category, as: 'categorie', attributes: ['nom_categorie'] }]
+            });
+
+            console.log(`✅ Produit créé : "${fullProduct.nom_produit}" par user ${req.user.id} (boutique: ${store.nom_boutique})`);
+
+            res.status(201).json(fullProduct);
         } catch (error) {
+            console.error('❌ Erreur création produit:', error.message);
             next(error);
         }
     },
+
 
     getAll: async (req, res, next) => {
         try {

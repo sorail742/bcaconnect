@@ -1,6 +1,12 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
 
+// Pages Publiques
+import StorePage from '../pages/StorePage';
+import AboutPage from '../pages/AboutPage';
+import ContactPage from '../pages/ContactPage';
+import FaqPage from '../pages/FaqPage';
+
 // Importation des pages (Refactorisées et Réorganisées)
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
@@ -61,6 +67,12 @@ const AppRoutes = () => {
             <Route path="/vendors" element={<VendorsList />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/tracking" element={<Tracking />} />
+            <Route path="/shop/:slug" element={<StorePage />} />
+
+            {/* Pages Institutionnelles */}
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/faq" element={<FaqPage />} />
 
             {/* Routes Protégées */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

@@ -60,7 +60,7 @@ const StoreSettings = () => {
         setIsSaving(true);
         try {
             const payload = {
-                nom_boutique: shopData.name,
+                nom_boutique: shopData.name.trim(),
                 description: shopData.description,
                 email_boutique: shopData.email,
                 telephone_boutique: shopData.phone,
@@ -69,17 +69,47 @@ const StoreSettings = () => {
 
             if (isNew) {
                 const newStore = await storeService.createStore(payload);
-                setShopData(prev => ({ ...prev, url: newStore.slug }));
+                // Mise à jour dynamique du state avec les données retournées par l'API
+                setShopData(prev => ({
+                    ...prev,
+                    url: newStore.slug || '',
+                    name: newStore.nom_boutique || prev.name,
+                    email: newStore.email_boutique || prev.email,
+                    phone: newStore.telephone_boutique || prev.phone,
+                    description: newStore.description || prev.description,
+                    logo_url: newStore.logo_url || prev.logo_url,
+                }));
                 setIsNew(false);
-                toast.success("Votre boutique a été créée avec succès !");
+                toast.success("🎉 Votre boutique a été créée avec succès !");
             } else {
-                await storeService.updateStore(payload);
-                toast.success("Paramètres de la boutique mis à jour !");
+                const updated = await storeService.updateStore(payload);
+                if (updated?.slug) {
+                    setShopData(prev => ({ ...prev, url: updated.slug }));
+                }
+                toast.success("✅ Paramètres de la boutique mis à jour !");
             }
         } catch (error) {
             console.error("Erreur sauvegarde:", error);
-            const msg = error.response?.data?.message || "Erreur lors de l'enregistrement.";
-            toast.error(msg);
+            const status = error.response?.status;
+            const msg = error.response?.data?.message;
+
+            if (status === 400 && error.response?.data?.store) {
+                // Cas spécial : le backend dit "vous avez déjà une boutique"
+                // On charge les données existantes au lieu d'afficher une erreur
+                const existingStore = error.response.data.store;
+                setShopData({
+                    name: existingStore.nom_boutique || '',
+                    url: existingStore.slug || '',
+                    email: existingStore.email_boutique || '',
+                    phone: existingStore.telephone_boutique || '',
+                    description: existingStore.description || '',
+                    logo_url: existingStore.logo_url || ''
+                });
+                setIsNew(false);
+                toast.info("Votre boutique existante a été chargée.");
+            } else {
+                toast.error(msg || "Erreur lors de l'enregistrement. Vérifiez votre connexion.");
+            }
         } finally {
             setIsSaving(false);
         }

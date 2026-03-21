@@ -3,28 +3,28 @@ import { Facebook, Twitter, Linkedin, Instagram } from "lucide-react"
 
 const footerLinks = {
     product: [
-        { label: "Fonctionnalités", href: "#features" },
-        { label: "Comment ça marche", href: "#how-it-works" },
-        { label: "Tarifs", href: "#pricing" },
-        { label: "API", href: "#api" }
+        { label: "Catalogue", href: "/catalog" },
+        { label: "Nos Marchands", href: "/vendors" },
+        { label: "Suivi de commande", href: "/tracking" },
+        { label: "Devenir fournisseur", href: "/register" }
     ],
     company: [
-        { label: "À propos", href: "#about" },
-        { label: "Carrières", href: "#careers" },
-        { label: "Blog", href: "#blog" },
-        { label: "Presse", href: "#press" }
+        { label: "À propos de BCA", href: "/about" },
+        { label: "Notre Mission", href: "/about" },
+        { label: "Contact", href: "/contact" },
+        { label: "Presse", href: "/contact" }
     ],
     resources: [
-        { label: "Documentation", href: "#docs" },
-        { label: "Centre d'aide", href: "#help" },
-        { label: "Communauté", href: "#community" },
-        { label: "Webinaires", href: "#webinars" }
+        { label: "FAQ & Aide", href: "/faq" },
+        { label: "Centre de support", href: "/contact" },
+        { label: "S'inscrire", href: "/register" },
+        { label: "Se connecter", href: "/login" }
     ],
     legal: [
-        { label: "Confidentialité", href: "#privacy" },
-        { label: "Conditions d'utilisation", href: "#terms" },
-        { label: "Cookies", href: "#cookies" },
-        { label: "Licences", href: "#licenses" }
+        { label: "Confidentialité", href: "/faq" },
+        { label: "Conditions d'utilisation", href: "/faq" },
+        { label: "Politique de remboursement", href: "/faq" },
+        { label: "Signaler un abus", href: "/contact" }
     ]
 }
 
@@ -71,9 +71,9 @@ export function Footer() {
                         <ul className="space-y-3">
                             {footerLinks.product.map((link, index) => (
                                 <li key={index}>
-                                    <a href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                                    <Link to={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                                         {link.label}
-                                    </a>
+                                    </Link>
                                 </li>
                             ))}
                         </ul>
@@ -84,9 +84,9 @@ export function Footer() {
                         <ul className="space-y-3">
                             {footerLinks.company.map((link, index) => (
                                 <li key={index}>
-                                    <a href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                                    <Link to={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                                         {link.label}
-                                    </a>
+                                    </Link>
                                 </li>
                             ))}
                         </ul>
@@ -97,9 +97,9 @@ export function Footer() {
                         <ul className="space-y-3">
                             {footerLinks.resources.map((link, index) => (
                                 <li key={index}>
-                                    <a href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                                    <Link to={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                                         {link.label}
-                                    </a>
+                                    </Link>
                                 </li>
                             ))}
                         </ul>
@@ -110,9 +110,9 @@ export function Footer() {
                         <ul className="space-y-3">
                             {footerLinks.legal.map((link, index) => (
                                 <li key={index}>
-                                    <a href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                                    <Link to={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                                         {link.label}
-                                    </a>
+                                    </Link>
                                 </li>
                             ))}
                         </ul>
