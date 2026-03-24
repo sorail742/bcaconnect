@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import DashboardLayout from '../components/layout/DashboardLayout';
+import PublicLayout from '../components/layout/PublicLayout';
 import {
     Truck,
     CreditCard,
@@ -117,7 +117,7 @@ const Checkout = () => {
 
     if (isSuccess) {
         return (
-            <DashboardLayout title="Commande Réussie">
+            <PublicLayout>
                 <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
                     <div className="size-24 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 animate-bounce">
                         <CheckCircle2 className="size-16" />
@@ -125,12 +125,12 @@ const Checkout = () => {
                     <h2 className="text-4xl font-black italic tracking-tighter">Merci pour votre confiance !</h2>
                     <p className="text-muted-foreground font-medium max-w-md">Votre commande a été enregistrée avec succès. Vous allez être redirigé vers votre historique.</p>
                 </div>
-            </DashboardLayout>
+            </PublicLayout>
         );
     }
 
     return (
-        <DashboardLayout title="Paiement & Validation">
+        <PublicLayout>
             <div className="w-full space-y-10 animate-in fade-in duration-700 font-inter pb-20 px-4 md:px-8">
                 {/* Header Section */}
                 <div className="flex flex-col gap-2">
@@ -251,7 +251,7 @@ const Checkout = () => {
                                             <p className="font-bold text-sm text-foreground truncate">{item.nom_produit}</p>
                                             <div className="flex items-center justify-between mt-1">
                                                 <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Qté: {item.quantity}</span>
-                                                <span className="font-black text-primary italic text-sm">{parseFloat(item.prix).toLocaleString('fr-GN')} GNF</span>
+                                                <span className="font-black text-primary italic text-sm">{(parseFloat(item.prix || item.prix_unitaire || item.price || 0)).toLocaleString('fr-GN')} GNF</span>
                                             </div>
                                         </div>
                                     </div>
@@ -288,7 +288,7 @@ const Checkout = () => {
                     </aside>
                 </div>
             </div>
-        </DashboardLayout>
+        </PublicLayout>
     );
 };
 

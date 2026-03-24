@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Button } from "../ui/Button"
-import { Menu, X, ShoppingCart, Search, Bell, ChevronDown, Store, Users, Package, Truck, Sparkles, User, LogIn } from "lucide-react"
+import { Menu, X, ShoppingCart, Search, Bell, ChevronDown, Store, Users, Package, Truck, Sparkles, User, LogIn, HelpCircle, BookOpen, MessageSquare, Info, FileText, ShieldCheck } from "lucide-react"
 import { useCart } from "../../context/CartContext"
 import { useAuth } from "../../hooks/useAuth"
 import ThemeToggle from "../ui/ThemeToggle"
@@ -20,6 +20,18 @@ export function Header() {
         { to: "/marketplace", label: "Catalogue Produits", icon: Package, desc: "Parcourir tous les produits" },
         { to: "/vendors", label: "Liste des Vendeurs", icon: Users, desc: "Trouver un marchand certifié" },
         { to: "/tracking", label: "Suivi de Colis", icon: Truck, desc: "Où est ma commande ?" },
+    ]
+
+    const supportLinks = [
+        { to: "/faq", label: "FAQ", icon: HelpCircle, desc: "Réponses à vos questions" },
+        { to: "/help", label: "Guide & Aide", icon: BookOpen, desc: "Ressources pour démarrer" },
+        { to: "/contact", label: "Nous contacter", icon: MessageSquare, desc: "Support technique 24/7" },
+    ]
+
+    const companyLinks = [
+        { to: "/about", label: "À propos de BCA", icon: Info, desc: "Notre mission et vision" },
+        { to: "/terms", label: "Conditions", icon: FileText, desc: "Règles d'utilisation" },
+        { to: "/privacy", label: "Confidentialité", icon: ShieldCheck, desc: "Protection de vos données" },
     ]
 
     return (
@@ -73,11 +85,59 @@ export function Header() {
                             )}
                         </div>
 
-                        <a href="#features" className="px-4 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all font-medium">
+                        {/* Support Dropdown */}
+                        <div className="relative group/help">
+                            <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all">
+                                <HelpCircle className="size-4" />
+                                Aide
+                                <ChevronDown className="size-3 group-hover/help:rotate-180 transition-transform" />
+                            </button>
+                            <div className="absolute top-full left-0 pt-2 opacity-0 translate-y-2 pointer-events-none group-hover/help:opacity-100 group-hover/help:translate-y-0 group-hover/help:pointer-events-auto transition-all duration-200 z-50">
+                                <div className="w-64 bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-2xl p-2 font-inter">
+                                    {supportLinks.map((link) => (
+                                        <Link key={link.to} to={link.to} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted/60 transition-all group/item">
+                                            <div className="size-9 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover/item:bg-blue-500 group-hover/item:text-white transition-all">
+                                                <link.icon className="size-4" />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-black text-foreground">{link.label}</p>
+                                                <p className="text-[9px] text-muted-foreground font-medium">{link.desc}</p>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Company Dropdown */}
+                        <div className="relative group/comp">
+                            <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all">
+                                <Info className="size-4" />
+                                Entreprise
+                                <ChevronDown className="size-3 group-hover/comp:rotate-180 transition-transform" />
+                            </button>
+                            <div className="absolute top-full left-0 pt-2 opacity-0 translate-y-2 pointer-events-none group-hover/comp:opacity-100 group-hover/comp:translate-y-0 group-hover/comp:pointer-events-auto transition-all duration-200 z-50">
+                                <div className="w-64 bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-2xl p-2 font-inter">
+                                    {companyLinks.map((link) => (
+                                        <Link key={link.to} to={link.to} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted/60 transition-all group/item">
+                                            <div className="size-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover/item:bg-emerald-500 group-hover/item:text-white transition-all">
+                                                <link.icon className="size-4" />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-black text-foreground">{link.label}</p>
+                                                <p className="text-[9px] text-muted-foreground font-medium">{link.desc}</p>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <a href="/#features" className="px-4 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all font-medium whitespace-nowrap">
                             Fonctionnalités
                         </a>
-                        <a href="#how-it-works" className="px-4 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all font-medium">
-                            Comment ça marche
+                        <a href="/#how-it-works" className="px-4 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all font-medium whitespace-nowrap">
+                            Mode d'emploi
                         </a>
                     </nav>
 
@@ -238,8 +298,22 @@ export function Header() {
                                 </Link>
                             ))}
                             <div className="h-px bg-border my-2 mx-3"></div>
-                            <a href="#features" className="px-3 py-3 rounded-xl text-sm text-muted-foreground hover:bg-muted transition-all font-medium">Fonctionnalités</a>
-                            <a href="#how-it-works" className="px-3 py-3 rounded-xl text-sm text-muted-foreground hover:bg-muted transition-all font-medium">Comment ça marche</a>
+                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground px-3 py-2">Support & Aide</p>
+                            {supportLinks.map(link => (
+                                <Link key={link.to} to={link.to} onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-muted-foreground hover:bg-muted transition-all font-medium">
+                                    <link.icon className="size-4" /> {link.label}
+                                </Link>
+                            ))}
+                            <div className="h-px bg-border my-2 mx-3"></div>
+                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground px-3 py-2">Entreprise</p>
+                            {companyLinks.map(link => (
+                                <Link key={link.to} to={link.to} onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-muted-foreground hover:bg-muted transition-all font-medium">
+                                    <link.icon className="size-4" /> {link.label}
+                                </Link>
+                            ))}
+                            <div className="h-px bg-border my-2 mx-3"></div>
+                            <a href="/#features" onClick={() => setIsMenuOpen(false)} className="px-3 py-3 rounded-xl text-sm text-muted-foreground hover:bg-muted transition-all font-medium">✨ Fonctionnalités</a>
+                            <a href="/#how-it-works" onClick={() => setIsMenuOpen(false)} className="px-3 py-3 rounded-xl text-sm text-muted-foreground hover:bg-muted transition-all font-medium">🚀 Comment ça marche</a>
                             <div className="flex flex-col gap-2 pt-4 px-3">
                                 {user ? (
                                     <Link to="/dashboard">

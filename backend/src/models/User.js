@@ -46,7 +46,7 @@ const User = sequelize.define('User', {
         type: DataTypes.DATE,
     },
     metadata_securite: {
-        type: DataTypes.JSONB,
+        type: DataTypes.JSON,
     },
     preferences_ia: {
         type: DataTypes.JSON,

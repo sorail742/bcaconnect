@@ -6,6 +6,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { CartProvider } from './context/CartContext';
 import OfflineBanner from './components/layout/OfflineBanner';
 import { syncService } from './services/syncService';
+import AIChat from './components/ui/AIChat';
 import './App.css';
 
 function App() {
@@ -18,7 +19,6 @@ function App() {
     };
 
     window.addEventListener('online', handleOnline);
-    // Synchro initiale si déjà en ligne
     handleOnline();
 
     return () => window.removeEventListener('online', handleOnline);
@@ -33,6 +33,7 @@ function App() {
               <OfflineBanner />
               <AppRoutes />
             </div>
+            <AIChat />
           </BrowserRouter>
         </CartProvider>
       </AuthProvider>

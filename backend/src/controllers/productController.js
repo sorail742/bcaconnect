@@ -1,4 +1,4 @@
-const { Product, Store, Category } = require('../models');
+const { Product, Store, Category, Notification } = require('../models');
 
 const productController = {
     create: async (req, res, next) => {
@@ -12,10 +12,25 @@ const productController = {
             if (!prix_unitaire || parseFloat(prix_unitaire) <= 0) {
                 return res.status(422).json({ message: "Le prix doit être supérieur à 0 GNF." });
             }
+            if (!categorie_id) {
+                return res.status(422).json({ message: "La catégorie est obligatoire. Veuillez en sélectionner une." });
+            }
 
-            const store = await Store.findOne({ where: { proprietaire_id: req.user.id } });
+            // Vérifier si la catégorie existe
+            const cat = await Category.findByPk(categorie_id);
+            if (!cat) {
+                return res.status(422).json({ message: "La catégorie sélectionnée est invalide." });
+            }
+
+            let store = await Store.findOne({ where: { proprietaire_id: req.user.id } });
+
+            // Si l'admin n'a pas de boutique, on lui permet d'utiliser la première boutique trouvée (ou une spécifiée)
+            if (!store && req.user.role === 'admin') {
+                store = await Store.findOne();
+            }
+
             if (!store) {
-                return res.status(403).json({ message: "Vous devez d'abord créer une boutique avant d'ajouter des produits." });
+                return res.status(403).json({ message: "Action impossible : Aucune boutique n'est configurée dans le système." });
             }
 
             const product = await Product.create({
@@ -34,6 +49,25 @@ const productController = {
             const fullProduct = await Product.findByPk(product.id, {
                 include: [{ model: Category, as: 'categorie', attributes: ['nom_categorie'] }]
             });
+
+            // ⚡ TEMPS RÉEL : Émettre l'événement à tous les clients
+            const io = req.app.get('socketio');
+            if (io) {
+                io.emit('product_added', fullProduct);
+            }
+
+            // 🔔 NOTIFICATION : Créer une notification pour le vendeur
+            const notif = await Notification.create({
+                utilisateur_id: req.user.id,
+                titre: "Produit publié !",
+                message: `Votre produit <span class="font-black text-primary">${fullProduct.nom_produit}</span> est maintenant en ligne.`,
+                type: 'system'
+            });
+
+            // ⚡ Envoyer la notification en temps réel au vendeur
+            if (io) {
+                io.to(req.user.id).emit('notification_received', notif);
+            }
 
             console.log(`✅ Produit créé : "${fullProduct.nom_produit}" par user ${req.user.id} (boutique: ${store.nom_boutique})`);
 

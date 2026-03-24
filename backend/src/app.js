@@ -10,6 +10,7 @@ const auditMiddleware = require('./middlewares/auditMiddleware');
 const sanitizeMiddleware = require('./middlewares/sanitizeMiddleware');
 const responseTimeMiddleware = require('./middlewares/responseTime');
 
+const path = require('path');
 const app = express();
 
 // ─── Sécurité & Performance ─────────────────────────────────────────────────
@@ -92,6 +93,17 @@ app.use('/api/disputes', require('./routes/disputeRoutes'));
 app.use('/api/credits', require('./routes/creditRoutes'));
 app.use('/api/stats', require('./routes/statRoutes'));
 app.use('/api/support', require('./routes/supportRoutes'));
+app.use('/api/upload', require('./routes/uploadRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/messages', require('./routes/messageRoutes'));
+app.use('/api/reviews', require('./routes/reviewRoutes'));
+
+// Service des fichiers statiques avec CORS
+app.use('/uploads', cors(), express.static(path.join(__dirname, '../uploads'), {
+    setHeaders: (res, path) => {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+    }
+}));
 
 // ─── Gestion des 404 ─────────────────────────────────────────────────────────
 app.use((req, res) => {

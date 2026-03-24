@@ -8,21 +8,21 @@ import { Users, CreditCard, Package, Calendar, Download, Info, Activity, Utensil
 import { Skeleton, CardSkeleton, TableRowSkeleton } from '../../components/ui/Loader';
 import productService from '../../services/productService';
 import storeService from '../../services/storeService';
+import statService from '../../services/statService';
 
 const AdminDashboard = () => {
     const [isLoading, setIsLoading] = useState(true);
-    const [productsCount, setProductsCount] = useState(0);
+    const [dashboardData, setDashboardData] = useState(null);
     const [storesCount, setStoresCount] = useState(0);
 
     useEffect(() => {
         const fetchGlobalStats = async () => {
             try {
-                const [products, stores] = await Promise.all([
-                    productService.getAll(),
-                    storeService.getAllStores()
-                ]);
-                setProductsCount(products.length);
-                setStoresCount(stores.length);
+                const data = await statService.getAdminStats();
+                setDashboardData(data);
+                if (data.overview) {
+                    setStoresCount(data.overview.storesCount || 0);
+                }
             } catch (err) {
                 console.error("Erreur stats admin:", err);
             } finally {
@@ -32,19 +32,14 @@ const AdminDashboard = () => {
         fetchGlobalStats();
     }, []);
 
-    const stats = [
-        { title: "Utilisateurs totaux", value: '1 240', icon: Users, trend: 'up', trendValue: '+5.2%', description: 'Clients & Partenaires' },
-        { title: 'Transactions (Globales)', value: '185.000.000 GNF', icon: CreditCard, trend: 'up', trendValue: '+12.8%', description: 'Volume total' },
-        { title: 'Produits actifs', value: productsCount.toString(), icon: Package, trend: 'up', trendValue: '+2.4%', description: 'Catalogue multi-fournisseurs' },
+    const stats = dashboardData?.stats || [
+        { title: "Utilisateurs totaux", value: '0', icon: 'Users', trend: 'up', trendValue: '0%', description: 'Chargement...' },
+        { title: 'Transactions (Globales)', value: '0 GNF', icon: 'CreditCard', trend: 'up', trendValue: '0%', description: 'Chargement...' },
+        { title: 'Produits actifs', value: '0', icon: 'Package', trend: 'up', trendValue: '0%', description: 'Chargement...' },
     ];
 
-    const transactions = [
-        { name: 'Routeur Haute Performance', time: 'Il y a 2 min', cat: 'Électronique', amount: '8.490.000 GNF', status: 'Succès', statusType: 'success' },
-        { name: 'Lot de Siment CPJ-35', time: 'Il y a 45 min', cat: 'Construction', amount: '12.500.000 GNF', status: 'Succès', statusType: 'success' },
-        { name: 'Livraison Conakry-Labé', time: 'Il y a 1 heure', cat: 'Transport', amount: '450.000 GNF', status: 'En attente', statusType: 'warning' },
-        { name: 'Panneaux Solaires 250W', time: 'Il y a 3 heures', cat: 'Énergie', amount: '15.000.000 GNF', status: 'Succès', statusType: 'success' },
-        { name: 'Maintenance Réseau', time: 'Il y a 5 heures', cat: 'Services', amount: '2.500.000 GNF', status: 'Échoué', statusType: 'danger' },
-    ];
+    const transactions = dashboardData?.recentTransactions || [];
+
 
     const transactionColumns = [
         {
@@ -52,7 +47,7 @@ const AdminDashboard = () => {
             render: (row) => (
                 <div className="flex items-center gap-4 group transition-transform hover:translate-x-1 duration-200 cursor-default">
                     <div className="size-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                        {row.cat === 'Alimentation' ? <Utensils className="size-5" /> : row.cat === 'Transport' ? <Car className="size-5" /> : row.cat === 'Santé' ? <HealthIcon className="size-5" /> : <ShoppingBag className="size-5" />}
+                        {row.cat === 'Alimentation' ? <Utensils className="size-5" /> : row.cat === 'Transport' ? <Car className="size-5" /> : row.cat === 'Santé' ? <HealthIcon className="size-5" /> : row.cat === 'Vente' ? <ShoppingBag className="size-5" /> : <ShoppingBag className="size-5" />}
                     </div>
                     <div className="flex-1 overflow-hidden">
                         <p className="text-sm font-bold truncate text-foreground">{row.name}</p>
@@ -91,9 +86,10 @@ const AdminDashboard = () => {
                     {isLoading ? (
                         [1, 2, 3].map(i => <CardSkeleton key={i} />)
                     ) : (
-                        stats.map((stat, idx) => (
-                            <DashboardCard key={idx} {...stat} />
-                        ))
+                        stats.map((stat, idx) => {
+                            const Icon = stat.icon === 'Users' ? Users : stat.icon === 'CreditCard' ? CreditCard : Package;
+                            return <DashboardCard key={idx} {...stat} icon={Icon} />;
+                        })
                     )}
                 </section>
 
@@ -107,8 +103,10 @@ const AdminDashboard = () => {
                             </div>
                         </div>
                         <div className="space-y-1">
-                            <p className="text-3xl font-bold tracking-tight text-foreground">42.500.000 GNF</p>
-                            <p className="text-emerald-500 text-[10px] font-bold uppercase tracking-widest">+15% vs semaine dernière</p>
+                            <p className="text-3xl font-bold tracking-tight text-foreground">{dashboardData?.weeklyChart?.total?.toLocaleString() || '0'} GNF</p>
+                            <p className={`${(dashboardData?.weeklyChart?.delta || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'} text-[10px] font-bold uppercase tracking-widest`}>
+                                {(dashboardData?.weeklyChart?.delta || 0) >= 0 ? '+' : ''}{dashboardData?.weeklyChart?.delta || '0'}% vs mois dernier
+                            </p>
                         </div>
                         <div className="mt-8 relative h-64 w-full bg-muted/30 rounded-xl flex items-center justify-center border border-dashed border-border overflow-hidden group font-black italic uppercase tracking-[0.2em] text-muted-foreground">
                             Chart: Distribution Géographique des Ventes

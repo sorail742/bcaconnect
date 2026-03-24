@@ -69,7 +69,7 @@ const UserOrders = () => {
         }
     };
 
-    const filters = ["Tout", "payé", "expédié", "livré", "annulé"];
+    const filters = ["Tout", "en_attente_paiement", "payé", "expédié", "livré", "annulé"];
 
     const getStatusVariant = (status) => {
         switch (status) {
@@ -77,20 +77,21 @@ const UserOrders = () => {
             case 'expédié': return 'primary';
             case 'livré': return 'success';
             case 'annulé': return 'danger';
-            case 'en_attente': return 'warning';
+            case 'en_attente':
+            case 'en_attente_paiement': return 'warning';
             default: return 'neutral';
         }
     };
 
     const filteredOrders = orders.filter(o =>
         (activeFilter === 'Tout' || o.statut === activeFilter) &&
-        (o.id.toLowerCase().includes(searchQuery.toLowerCase()))
+        (String(o.id || '').toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     const stats = [
         {
             title: 'Dépenses Totales',
-            value: `${orders.reduce((acc, o) => acc + parseFloat(o.total_ttc), 0).toLocaleString('fr-GN')} GNF`,
+            value: `${orders.reduce((acc, o) => acc + parseFloat(o.total_ttc || 0), 0).toLocaleString('fr-GN')} GNF`,
             icon: TrendingUp
         },
         {
@@ -122,7 +123,7 @@ const UserOrders = () => {
                         <ShoppingBag className="size-5" />
                     </div>
                     <div>
-                        <span className="font-black text-foreground italic tracking-tight hover:underline cursor-pointer uppercase">{row.id.slice(0, 8)}</span>
+                        <span className="font-black text-foreground italic tracking-tight hover:underline cursor-pointer uppercase">{(row.id || '...').slice(0, 8)}</span>
                         <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">{row.details?.length || 0} article(s)</p>
                     </div>
                 </div>
@@ -326,8 +327,8 @@ const UserOrders = () => {
                                         {selectedOrder.details?.map((item, idx) => (
                                             <div key={idx} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card">
                                                 <div className="size-14 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0">
-                                                    {item.produit?.images?.[0] ? (
-                                                        <img src={item.produit.images[0].url_image} className="w-full h-full object-cover" />
+                                                    {item.produit?.image_url ? (
+                                                        <img src={item.produit.image_url} className="w-full h-full object-cover" />
                                                     ) : <ShoppingBag className="text-muted-foreground size-6" />}
                                                 </div>
                                                 <div className="flex-1">

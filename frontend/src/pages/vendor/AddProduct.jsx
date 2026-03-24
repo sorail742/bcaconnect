@@ -7,11 +7,12 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import {
     Package, Image as ImageIcon, Tag, Layers, ArrowLeft,
     Save, AlertCircle, CheckCircle2, Loader2, Eye,
-    Store, Star, ShoppingCart, Truck, ShieldCheck, Sparkles, TrendingDown, Hash
+    Store, Star, ShoppingCart, Truck, ShieldCheck, Sparkles, TrendingDown, Hash, Wand2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
+import aiService from '../../services/aiService';
 import { cn } from '../../lib/utils';
 
 // ── Composant : Champ formulaire stylisé ─────────────────────────────────────
@@ -175,6 +176,8 @@ const AddProduct = () => {
     const [categories, setCategories] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isInitializing, setIsInitializing] = useState(true);
+    const [isSuggestingPrice, setIsSuggestingPrice] = useState(false);
+    const [priceSuggestion, setPriceSuggestion] = useState(null);
     const [errors, setErrors] = useState({});
 
     // ── Initialisation ────────────────────────────────────────────────────────
@@ -214,6 +217,35 @@ const AddProduct = () => {
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
     };
 
+    // ── Suggestion de prix IA ─────────────────────────────────────────────────
+    const handleSuggestPrice = async () => {
+        if (!formData.nom_produit.trim()) {
+            toast.warning("Saisissez d'abord le nom du produit.");
+            return;
+        }
+        const cat = categories.find(c => c.id === formData.categorie_id);
+        setIsSuggestingPrice(true);
+        setPriceSuggestion(null);
+        try {
+            const suggestion = await aiService.suggestPrice(
+                formData.nom_produit,
+                cat?.nom_categorie || 'Général',
+                formData.description
+            );
+            setPriceSuggestion(suggestion);
+        } catch (err) {
+            toast.error("L'IA n'a pas pu suggérer un prix. Réessayez.");
+        } finally {
+            setIsSuggestingPrice(false);
+        }
+    };
+
+    const applyPriceSuggestion = () => {
+        if (!priceSuggestion) return;
+        setFormData(prev => ({ ...prev, prix_unitaire: priceSuggestion.prix_recommande.toString() }));
+        setPriceSuggestion(null);
+        toast.success("Prix suggéré par l'IA appliqué ✅");
+    };
     // ── Validation ────────────────────────────────────────────────────────────
     const validate = () => {
         const newErrors = {};
@@ -228,6 +260,9 @@ const AddProduct = () => {
         }
         if (formData.stock_quantite === '' || parseInt(formData.stock_quantite) < 0) {
             newErrors.stock_quantite = "Le stock doit être un nombre positif ou nul.";
+        }
+        if (!formData.categorie_id) {
+            newErrors.categorie_id = "Veuillez sélectionner une catégorie pour votre produit.";
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -367,14 +402,17 @@ const AddProduct = () => {
                                     />
                                 </FormField>
 
-                                <FormField label="Catégorie">
-                                    <div className="relative">
+                                <FormField label="Catégorie" required error={errors.categorie_id}>
+                                    <div className="relative flex-1">
                                         <Layers className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                                         <select
                                             name="categorie_id"
                                             value={formData.categorie_id}
                                             onChange={handleChange}
-                                            className="w-full h-12 pl-11 pr-4 rounded-xl border border-input bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                                            className={cn(
+                                                "w-full h-12 pl-11 pr-4 rounded-xl border border-input bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring transition-all",
+                                                errors.categorie_id && "border-destructive focus:ring-destructive/20"
+                                            )}
                                         >
                                             <option value="">— Sélectionner une catégorie —</option>
                                             {categories.map(cat => (
@@ -382,6 +420,11 @@ const AddProduct = () => {
                                             ))}
                                         </select>
                                     </div>
+                                    {categories.length === 0 && (
+                                        <p className="text-[10px] text-amber-500 font-bold bg-amber-500/10 p-2 rounded-lg flex items-center gap-2 mt-2">
+                                            <AlertCircle className="size-3" /> Aucune catégorie n'a encore été créée par l'administrateur.
+                                        </p>
+                                    )}
                                 </FormField>
 
                                 {/* Toggle Produit Local */}
@@ -463,6 +506,74 @@ const AddProduct = () => {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-8 space-y-6">
+
+                                {/* ── Bouton suggestion IA ── */}
+                                <div className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20">
+                                    <div className="flex items-center gap-3">
+                                        <div className="size-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                                            <Sparkles className="size-4 text-primary" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-black text-foreground">Prix suggéré par l'IA</p>
+                                            <p className="text-[10px] text-muted-foreground font-medium">Basé sur le marché guinéen (Groq)</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleSuggestPrice}
+                                        disabled={isSuggestingPrice || !formData.nom_produit.trim()}
+                                        className={cn(
+                                            "flex items-center gap-2 h-9 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                            formData.nom_produit.trim()
+                                                ? "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
+                                                : "bg-muted text-muted-foreground cursor-not-allowed"
+                                        )}
+                                    >
+                                        {isSuggestingPrice
+                                            ? <><Loader2 className="size-3 animate-spin" /> Analyse...</>
+                                            : <><Wand2 className="size-3" /> Suggérer</>
+                                        }
+                                    </button>
+                                </div>
+
+                                {/* ── Résultat suggestion IA ── */}
+                                {priceSuggestion && (
+                                    <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-3 animate-in slide-in-from-top-2 duration-300">
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                                                <Sparkles className="size-3" /> Recommandation IA (Groq)
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={applyPriceSuggestion}
+                                                className="flex items-center gap-1.5 h-8 px-4 rounded-xl bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20"
+                                            >
+                                                <CheckCircle2 className="size-3" /> Appliquer
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center gap-6">
+                                            <div>
+                                                <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">Prix recommandé</p>
+                                                <p className="text-2xl font-black text-foreground italic">
+                                                    {priceSuggestion.prix_recommande?.toLocaleString('fr-FR')} <span className="text-sm font-bold text-muted-foreground">GNF</span>
+                                                </p>
+                                            </div>
+                                            <div className="h-10 w-px bg-border" />
+                                            <div>
+                                                <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">Fourchette</p>
+                                                <p className="text-xs font-black text-foreground">
+                                                    {priceSuggestion.fourchette_min?.toLocaleString('fr-FR')} — {priceSuggestion.fourchette_max?.toLocaleString('fr-FR')} GNF
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {priceSuggestion.justification && (
+                                            <p className="text-[10px] text-muted-foreground font-medium leading-relaxed border-t border-emerald-500/20 pt-3">
+                                                💡 {priceSuggestion.justification}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     <FormField label="Prix de vente (GNF)" required error={errors.prix_unitaire}>
                                         <div className="relative">

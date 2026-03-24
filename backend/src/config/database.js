@@ -6,11 +6,13 @@ const useLocalDB = !process.env.DATABASE_URL || process.env.USE_LOCAL_DB === 'tr
 
 let sequelize;
 
+const path = require('path');
+
 if (useLocalDB || isTest) {
-    console.log('📦 Utilisation de SQLite (Local/Test)');
+    console.log('📦 Utilisation de SQLite (Local/Persistant)');
     sequelize = new Sequelize({
         dialect: 'sqlite',
-        storage: '/tmp/database.sqlite',
+        storage: path.join(__dirname, '../data/database.sqlite'),
         logging: false,
         define: {
             timestamps: true,
@@ -21,14 +23,12 @@ if (useLocalDB || isTest) {
     sequelize = new Sequelize(process.env.DATABASE_URL, {
         dialect: 'postgres',
         logging: false,
-        dialectOptions: {
+        /* dialectOptions: {
             ssl: {
                 require: true,
                 rejectUnauthorized: false
-            },
-            // Correction de l'avertissement SSL (Futur compatibilité)
-            sslmode: 'verify-full'
-        },
+            }
+        }, */
         pool: {
             max: 5,
             min: 0,

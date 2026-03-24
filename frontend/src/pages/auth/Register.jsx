@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import Button from '../../components/ui/Button';
 import BcaLogo from '../../components/ui/BcaLogo';
 import ThemeToggle from '../../components/ui/ThemeToggle';
+import { toast } from 'sonner';
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -19,7 +20,7 @@ const Register = () => {
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const { register, login } = useAuth();
+    const { register } = useAuth();
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -46,14 +47,9 @@ const Register = () => {
                 mot_de_passe: formData.password,
                 role: formData.role
             });
-            // Auto login after registration
-            await login(formData.email, formData.password);
 
-            // Redirection vers le dashboard approprié
-            if (formData.role === 'admin') navigate('/admin/dashboard');
-            else if (formData.role === 'fournisseur') navigate('/vendor/dashboard');
-            else if (formData.role === 'transporteur') navigate('/carrier/dashboard');
-            else navigate('/dashboard');
+            toast.success("Compte créé avec succès ! Veuillez vous connecter.");
+            navigate('/login');
         } catch (err) {
             console.error(err);
             setError(err.response?.data?.message || "Une erreur est survenue lors de l'inscription.");

@@ -31,7 +31,7 @@ const Product = sequelize.define('Product', {
         allowNull: true,
     },
     preferences_ia: {
-        type: DataTypes.JSONB,
+        type: DataTypes.JSON,
     },
     boutique_id: {
         type: DataTypes.UUID,

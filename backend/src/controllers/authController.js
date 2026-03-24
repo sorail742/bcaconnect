@@ -8,10 +8,16 @@ const authController = {
         try {
             const { nom_complet, email, telephone, mot_de_passe, role } = req.body;
 
-            // Vérification si l'utilisateur existe déjà
-            const existingUser = await User.findOne({ where: { email } });
-            if (existingUser) {
+            // Vérification si l'utilisateur existe déjà (email)
+            const existingEmail = await User.findOne({ where: { email } });
+            if (existingEmail) {
                 return res.status(400).json({ message: "Cet email est déjà utilisé." });
+            }
+
+            // Vérification si l'utilisateur existe déjà (téléphone)
+            const existingPhone = await User.findOne({ where: { telephone } });
+            if (existingPhone) {
+                return res.status(400).json({ message: "Ce numéro de téléphone est déjà utilisé." });
             }
 
             // Hachage du mot de passe

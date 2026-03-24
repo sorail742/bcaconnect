@@ -18,13 +18,12 @@ const ProductCard = ({ product, compact = false }) => {
     const price = parseFloat(product.prix_unitaire || product.price || 0);
     const oldPrice = product.prix_ancien ? parseFloat(product.prix_ancien) : null;
     const discount = oldPrice ? Math.round((1 - price / oldPrice) * 100) : null;
-    const category = product.categorie?.nom_categorie || product.category || 'N/A';
     const image = product.image_url || product.image || 'https://images.unsplash.com/photo-1523275319145-80b01958f7a2?auto=format&fit=crop&q=80&w=400';
     const isNew = product.isNew;
     const vendor = product.boutique?.nom_boutique || product.vendor;
     const stock = product.stock ?? 99;
-    const rating = product.rating || 4.8;
-    const reviewsCount = product.reviews_count || Math.floor(Math.random() * 120 + 10);
+    const rating = parseFloat(product.rating || 0);
+    const reviewsCount = parseInt(product.reviews_count || 0);
 
     const handleAddToCart = (e) => {
         e.preventDefault();
@@ -139,7 +138,7 @@ const ProductCard = ({ product, compact = false }) => {
                 {/* Category + Rating */}
                 <div className="flex items-center justify-between">
                     <span className="text-[9px] font-black text-primary uppercase tracking-[0.2em] px-2 py-0.5 bg-primary/8 rounded-md border border-primary/10">
-                        {category}
+                        {product.categorie?.nom_categorie || product.nom_categorie || 'Catalogue'}
                     </span>
                     <div className="flex items-center gap-1">
                         <div className="flex gap-0.5">
@@ -186,16 +185,17 @@ const ProductCard = ({ product, compact = false }) => {
                             <span className="text-xs not-italic font-medium opacity-50 ml-1">GNF</span>
                         </span>
                     </div>
-                    <Link to={`/product/${id}`}>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-9 px-4 rounded-xl font-black uppercase tracking-widest text-[9px] border-border/50 hover:bg-primary hover:text-white hover:border-primary transition-all group/btn gap-1.5"
-                        >
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                        className="h-9 px-4 rounded-xl font-black uppercase tracking-widest text-[9px] border-border/50 hover:bg-primary hover:text-white hover:border-primary transition-all group/btn gap-1.5"
+                    >
+                        <Link to={`/product/${id}`}>
                             Détails
                             <ArrowRight className="size-3 group-hover/btn:translate-x-0.5 transition-transform" />
-                        </Button>
-                    </Link>
+                        </Link>
+                    </Button>
                 </div>
             </div>
         </div>

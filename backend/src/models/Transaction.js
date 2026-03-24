@@ -32,7 +32,7 @@ const Transaction = sequelize.define('Transaction', {
         defaultValue: false
     },
     metadata: {
-        type: DataTypes.JSONB,
+        type: DataTypes.JSON,
         defaultValue: {},
     },
 }, {

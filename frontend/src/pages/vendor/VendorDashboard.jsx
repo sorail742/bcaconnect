@@ -4,7 +4,7 @@ import Button from '../../components/ui/Button';
 import DashboardCard from '../../components/ui/DashboardCard';
 import DataTable from '../../components/ui/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
-import { ShoppingBasket, CreditCard, BarChart3, MousePointer2, Plus, Package, ShieldCheck } from 'lucide-react';
+import { ShoppingBasket, CreditCard, BarChart3, MousePointer2, Plus, Package, ShieldCheck, Store } from 'lucide-react';
 import { Skeleton, CardSkeleton, TableRowSkeleton } from '../../components/ui/Loader';
 import { ErrorState } from '../../components/ui/StatusStates';
 import { Card } from '../../components/ui/Card';
@@ -28,14 +28,9 @@ const VendorDashboard = () => {
             setIsLoading(true);
             try {
                 // Appel Boutique - On gère le 404 séparément car c'est un état normal au début
-                try {
-                    const storeData = await storeService.getMyStore();
-                    setStore(storeData);
-                } catch (storeError) {
-                    if (storeError.response?.status !== 404) {
-                        console.error("Erreur boutique:", storeError);
-                    }
-                }
+                // Appel Boutique
+                const storeData = await storeService.getMyStore();
+                setStore(storeData);
 
                 // Appel Commandes
                 try {

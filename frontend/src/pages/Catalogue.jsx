@@ -78,6 +78,8 @@ const TRUST_BADGES = [
 const SORT_OPTIONS = ["Pertinence", "Prix croissant", "Prix décroissant", "Mieux notés", "Plus récents"];
 
 import api from '../services/api';
+import socketService from '../services/socketService';
+import { toast } from 'sonner';
 
 // ─── Composant Principal ────────────────────────────────────────────────────
 const ProductCatalogue = () => {
@@ -95,6 +97,29 @@ const ProductCatalogue = () => {
     const [realVendors, setRealVendors] = useState([]);
     const [activeFilters, setActiveFilters] = useState([]);
     const slideRef = useRef(null);
+
+    // Temps réel : Écouter l'ajout de produits
+    useEffect(() => {
+        socketService.connect();
+
+        const handleNewProduct = (newProduct) => {
+            setProducts(prev => {
+                // Vérifier si déjà présent pour éviter les doublons
+                if (prev.find(p => p.id === newProduct.id)) return prev;
+                return [newProduct, ...prev];
+            });
+            toast.info(`🎉 Nouveau produit en ligne : ${newProduct.nom_produit}`, {
+                description: "Le catalogue vient d'être mis à jour en temps réel.",
+                duration: 5000
+            });
+        };
+
+        socketService.on('product_added', handleNewProduct);
+
+        return () => {
+            socketService.off('product_added', handleNewProduct);
+        };
+    }, []);
 
     // Auto-slide
     useEffect(() => {
@@ -316,16 +341,16 @@ const ProductCatalogue = () => {
                             </div>
                         </button>
 
-                        {realCategories.map((cat) => (
+                        {(realCategories?.length > 0 ? realCategories : CATEGORIES.slice(1)).map((cat) => (
                             <button
-                                key={cat.id}
+                                key={cat.id || cat.slug}
                                 onClick={() => {
-                                    setActiveCategory(cat.nom_categorie);
+                                    setActiveCategory(cat.nom_categorie || cat.label);
                                     document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' });
                                 }}
                                 className={cn(
                                     "group relative rounded-[1.5rem] overflow-hidden border-2 transition-all duration-500 hover:scale-105 hover:shadow-2xl",
-                                    activeCategory === cat.nom_categorie
+                                    (activeCategory === cat.nom_categorie || activeCategory === cat.label)
                                         ? "border-primary shadow-xl shadow-primary/20 scale-105"
                                         : "border-transparent hover:border-primary/30"
                                 )}
@@ -335,19 +360,14 @@ const ProductCatalogue = () => {
                                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3">
                                         <div className={cn(
                                             "size-10 rounded-xl flex items-center justify-center border border-white/10 bg-white/10 backdrop-blur-md transition-all duration-300",
-                                            activeCategory === cat.nom_categorie ? "bg-primary border-primary" : "group-hover:bg-white/20"
+                                            (activeCategory === cat.nom_categorie || activeCategory === cat.label) ? "bg-primary border-primary" : "group-hover:bg-white/20"
                                         )}>
-                                            {React.createElement(getCategoryIcon(cat.nom_categorie), { className: "size-5 text-white" })}
+                                            {React.createElement(getCategoryIcon(cat.nom_categorie || cat.label), { className: "size-5 text-white" })}
                                         </div>
                                         <div className="text-center">
-                                            <p className="text-[10px] font-black text-white uppercase tracking-wide leading-tight">{cat.nom_categorie}</p>
+                                            <p className="text-[10px] font-black text-white uppercase tracking-wide leading-tight">{cat.nom_categorie || cat.label}</p>
                                         </div>
                                     </div>
-                                    {activeCategory === cat.nom_categorie && (
-                                        <div className="absolute top-2 right-2 size-5 bg-primary rounded-full flex items-center justify-center shadow-lg">
-                                            <span className="text-white text-[8px] font-black">✓</span>
-                                        </div>
-                                    )}
                                 </div>
                             </button>
                         ))}
@@ -641,16 +661,22 @@ const ProductCatalogue = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {realVendors.map((vendor, i) => (
-                                <Link key={vendor.id} to={`/vendors`} className="group block rounded-[2rem] overflow-hidden border border-border hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-1 bg-card">
+                            {(realVendors?.length > 0 ? realVendors : FEATURED_VENDORS).map((vendor, i) => (
+                                <Link key={vendor.id} to={`/store/${vendor.slug}`} className="group block rounded-[2rem] overflow-hidden border border-border hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-1 bg-card">
                                     <div className="relative h-32 overflow-hidden">
-                                        <img src={`https://images.unsplash.com/photo-1526406915894-7bcd65f60845?auto=format&fit=crop&q=80&w=400`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={vendor.nom_boutique} />
+                                        <img
+                                            src={vendor.cover_url || `https://images.unsplash.com/photo-1526406915894-7bcd65f60845?auto=format&fit=crop&q=80&w=400`}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                            alt={vendor.nom_boutique}
+                                        />
                                         <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
                                     </div>
                                     <div className="relative px-6 pb-6">
                                         <div className="-mt-8 flex items-end justify-between mb-4">
-                                            <div className="size-16 rounded-2xl bg-muted border-4 border-card shadow-xl group-hover:border-primary/30 transition-all flex items-center justify-center">
-                                                <Store className="size-8 text-muted-foreground" />
+                                            <div className="size-16 rounded-2xl bg-muted border-4 border-card shadow-xl group-hover:border-primary/30 transition-all flex items-center justify-center overflow-hidden">
+                                                {vendor.logo_url ? (
+                                                    <img src={vendor.logo_url} className="w-full h-full object-cover" />
+                                                ) : <Store className="size-8 text-muted-foreground" />}
                                             </div>
                                             <span className={cn(
                                                 "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border bg-primary/10 text-primary border-primary/20"
@@ -659,14 +685,14 @@ const ProductCatalogue = () => {
                                             </span>
                                         </div>
                                         <h3 className="font-black text-lg text-foreground italic tracking-tight group-hover:text-primary transition-colors">{vendor.nom_boutique}</h3>
-                                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest mt-0.5">Marchand Partenaire</p>
+                                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest mt-0.5">{vendor.description?.slice(0, 40) || 'Marchand Partenaire'}...</p>
                                         <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
                                             <div className="flex items-center gap-1">
                                                 <Star className="size-3.5 fill-amber-400 text-amber-400" />
-                                                <span className="text-sm font-black italic">{(4.5 + Math.random() * 0.5).toFixed(1)}</span>
+                                                <span className="text-sm font-black italic">{vendor.rating || '0.0'}</span>
                                             </div>
                                             <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                                                Premium
+                                                {vendor.statut || 'Premium'}
                                             </span>
                                         </div>
                                     </div>

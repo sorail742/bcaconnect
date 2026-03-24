@@ -1,4 +1,4 @@
-const { Transaction, Wallet, sequelize } = require('../models');
+const { Transaction, Wallet, Notification, sequelize } = require('../models');
 const { v4: uuidv4 } = require('uuid');
 
 const paymentController = {
@@ -85,6 +85,19 @@ const paymentController = {
                 await wallet.save({ transaction: t });
 
                 await t.commit();
+
+                // ⚡ NOTIFICATION TEMPS RÉEL
+                const io = req.app.get('socketio');
+                if (io) {
+                    const paymentNotif = await Notification.create({
+                        utilisateur_id: wallet.utilisateur_id,
+                        titre: "Recharge réussie !",
+                        message: `Votre portefeuille BCA a été crédité de <span class="font-black text-emerald-600">${transaction.montant.toLocaleString('fr-FR')} GNF</span>.`,
+                        type: 'payment'
+                    });
+                    io.to(wallet.user_id).emit('notification_received', paymentNotif);
+                }
+
                 return res.json({ message: "Paiement confirmé et portefeuille crédité." });
             } else {
                 transaction.statut = 'echoue';
@@ -118,6 +131,19 @@ const paymentController = {
             await wallet.save({ transaction: t });
 
             await t.commit();
+
+            // ⚡ NOTIFICATION TEMPS RÉEL
+            const io = req.app.get('socketio');
+            if (io) {
+                const simNotif = await Notification.create({
+                    utilisateur_id: wallet.user_id,
+                    titre: "Compte crédité (Sim)",
+                    message: `Simulation réussie : <span class="font-black text-emerald-600">${transaction.montant.toLocaleString('fr-FR')} GNF</span> ajoutés.`,
+                    type: 'payment'
+                });
+                io.to(wallet.user_id).emit('notification_received', simNotif);
+            }
+
             res.json({ message: "Recharge réussie (Simulation)", solde: wallet.solde_virtuel });
         } catch (error) {
             await t.rollback();

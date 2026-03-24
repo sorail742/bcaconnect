@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import DashboardCard from '../../components/ui/DashboardCard';
 import DataTable from '../../components/ui/DataTable';
@@ -7,56 +7,36 @@ import { Landmark, Hourglass, CreditCard, CheckCircle2 } from 'lucide-react';
 import { Skeleton, CardSkeleton, TableRowSkeleton } from '../../components/ui/Loader';
 import { ErrorState } from '../../components/ui/StatusStates';
 import { Card } from '../../components/ui/Card';
+import statService from '../../services/statService';
 
 const BankDashboard = () => {
-    const isLoading = false;
-    const hasError = false;
+    const [isLoading, setIsLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
+    const [dashboardData, setDashboardData] = useState(null);
 
-    const stats = [
-        { title: 'Dépôts totaux', value: '450.200.000 GNF', trendValue: '+12.5%', trend: 'up', icon: Landmark },
-        { title: 'Dépôts en attente', value: '12', trendValue: '+2.1%', trend: 'up', icon: Hourglass },
-        { title: 'Retraits en attente', value: '8', trendValue: '-1.4%', trend: 'down', icon: CreditCard },
-        { title: 'Transactions traitées', value: '1 240', trendValue: '+5.7%', trend: 'up', icon: CheckCircle2 },
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const data = await statService.getFinancialStats();
+                setDashboardData(data);
+            } catch (err) {
+                console.error("Erreur stats financières:", err);
+                setHasError(true);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchStats();
+    }, []);
+
+    const stats = dashboardData?.stats || [
+        { title: 'Dépôts totaux', value: '0 GNF', trendValue: '...', trend: 'up', icon: Landmark },
+        { title: 'Dépôts en attente', value: '0', trendValue: '...', trend: 'up', icon: Hourglass },
+        { title: 'Retraits en attente', value: '0', trendValue: '...', trend: 'down', icon: CreditCard },
+        { title: 'Transactions traitées', value: '0', trendValue: '...', trend: 'up', icon: CheckCircle2 },
     ];
 
-    const transactions = [
-        {
-            id: '#TRX-8291',
-            user: 'Jean Dupont',
-            avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBhY18Xy4lFbg5MQrJ0Va0TiXlevlRCQv5KDi0-JQH0w1JwinaooJb1wMB7Adi0vaqMXfxn36_K0IGquetMbKW-qfAMQCIFB-_gxssFrSlCf45Yyw-Tt2ipvDRmQzqlaFEp06CJdJonyZjKhyWqrTJWB49ySgo7e9p1imf6-Wdc9Y50Fp9aKGVU8PtH-GzZ3Pr834eCHaoAWnuLV3wfS2fDz6U3sqSxNUkTPScNY1cTPUtZrRlcrd_F4_1pQXn8tul3lxq2zJNqyd6b',
-            type: 'Dépôt',
-            typeVariant: 'info',
-            amount: '1.500.000 GNF',
-            method: 'Virement SEPA',
-            status: 'En attente',
-            statusVariant: 'warning',
-            date: '24 Mai 2024'
-        },
-        {
-            id: '#TRX-8290',
-            user: 'Marie Curie',
-            avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCpkdN2JB7UFrKaKP4BVlor_uS1cQ8PK0fAhHfrqhgXoLSH5n8xsl8wrxgJEcOHNmrLMfBmGZRlAPs4e_L7IixtZM2hyvhr-iLpX9SUJGYXGq0fPUQlrqNUFD5tQuG3ccHPmnk7M_85VIL7-aPZobPD8TR55Y4ucI6aWH4ktiqsH0SHIvh5cAlrOmpdloUoAbEuTD2FXg2gfTSBiavt6FeLp80aL5OJMsQ4TghnMbVvrOP1bN3dxUopW-BxdaNKh1TxhXNPaxWff4lE',
-            type: 'Retrait',
-            typeVariant: 'secondary',
-            amount: '450.000 GNF',
-            method: 'PayPal',
-            status: 'Approuvé',
-            statusVariant: 'success',
-            date: '23 Mai 2024'
-        },
-        {
-            id: '#TRX-8289',
-            user: 'Marc Levinson',
-            avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAEDu7Xf3XLOZr_PIMGm4EqJFpZeLzAYC-IjyNoWV8BqGSyYe60jrOJKjVg2daixoqkli0wBSWQ-ylTK47LczFjmRuBSzJXgo3EYIV97uZmqi4QJoFEAUnnPXSNIxFja9kbkfKn7CYSPpFiqWdvHfBG-QEeTnLX9FAlNQhKhNMxv1Qz1s8GqhdbmU84XHcD8jds0sziTd0KK3Jxo91KSMSLmJ-snvFDeiY0nnWO8zg4sjWXqnDLp62Zg7uLUMarAewVbBpxMj06lAnR',
-            type: 'Paiement',
-            typeVariant: 'warning',
-            amount: '125.500 GNF',
-            method: 'Carte Visa',
-            status: 'Rejeté',
-            statusVariant: 'danger',
-            date: '23 Mai 2024'
-        }
-    ];
+    const transactions = dashboardData?.transactions || [];
 
     const transactionColumns = [
         {
@@ -126,8 +106,8 @@ const BankDashboard = () => {
                             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Aperçu des 7 derniers jours</p>
                         </div>
                         <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-xl border border-slate-100 dark:border-slate-700">
-                            <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter italic">85.400.000 GNF</span>
-                            <span className="text-emerald-500 text-xs font-black uppercase tracking-widest">+8.2%</span>
+                            <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter italic">{dashboardData?.chartData?.total?.toLocaleString() || '0'} GNF</span>
+                            <span className="text-emerald-500 text-xs font-black uppercase tracking-widest">{dashboardData?.chartData?.delta || '+0%'}</span>
                         </div>
                     </div>
                     <div className="h-64 w-full group relative">

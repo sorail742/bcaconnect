@@ -10,7 +10,7 @@ import { Skeleton, TableRowSkeleton } from '../components/ui/Loader';
 import { ErrorState, EmptyState } from '../components/ui/StatusStates';
 
 import storeService from '../services/storeService';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const VendorsList = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -102,19 +102,19 @@ const VendorsList = () => {
         {
             label: 'Action',
             render: (row) => (
-                <Link to={`/shop/${row.slug}`}>
-                    <Button variant="ghost" className="h-10 px-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] text-primary hover:bg-primary/10 group/btn border border-transparent hover:border-primary/20 transition-all">
+                <Button asChild variant="ghost" className="h-10 px-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] text-primary hover:bg-primary/10 group/btn border border-transparent hover:border-primary/20 transition-all">
+                    <Link to={`/shop/${row.slug}`}>
                         Profil Marchand
                         <ArrowRight className="size-3 ml-2 group-hover/btn:translate-x-1 transition-transform" />
-                    </Button>
-                </Link>
+                    </Link>
+                </Button>
             )
         }
     ];
 
     const filteredVendors = vendors.filter(v =>
-        v.nom_boutique.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        v.description?.toLowerCase().includes(searchQuery.toLowerCase())
+        (v.nom_boutique?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+        (v.description?.toLowerCase() || '').includes(searchQuery.toLowerCase())
     );
 
     return (

@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { Sparkles, HelpCircle, Store, Eye, Info, Loader2, CheckCircle2 } from 'lucide-react';
+import { Sparkles, HelpCircle, Store, Eye, Info, Loader2, CheckCircle2, Upload } from 'lucide-react';
 import storeService from '../../services/storeService';
+import api from '../../services/api';
 import { toast } from 'sonner';
 
 const StoreSettings = () => {
+    const fileInputRef = useRef(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isNew, setIsNew] = useState(false);
@@ -19,11 +22,57 @@ const StoreSettings = () => {
         description: '',
         logo_url: ''
     });
+    const [isUploading, setIsUploading] = useState(false);
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validation format
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            return toast.error("Format non supporté. JPEG, PNG ou WEBP uniquement.");
+        }
+
+        // Validation taille (2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            return toast.error("Le fichier est trop lourd (max 2MB).");
+        }
+
+        setIsUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Utiliser l'URL absolue pour éviter tout problème de proxy/relative path
+            const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+            console.log("📤 Tentative d'upload vers:", `${backendUrl}/upload`);
+            const response = await api.post(`${backendUrl}/upload`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            setShopData(prev => ({ ...prev, logo_url: response.data.url }));
+            toast.success("Logo mis à jour !");
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast.error("Échec de l'upload du fichier.");
+        } finally {
+            setIsUploading(false);
+        }
+    };
 
     useEffect(() => {
         const fetchStore = async () => {
             try {
                 const data = await storeService.getMyStore();
+
+                if (!data) {
+                    setIsNew(true);
+                    setIsLoading(false);
+                    return;
+                }
+
                 setShopData({
                     name: data.nom_boutique || '',
                     url: data.slug || '',
@@ -172,9 +221,54 @@ const StoreSettings = () => {
                                     </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground block">Logo de la boutique (URL)</label>
-                                    <Input name="logo_url" value={shopData.logo_url} onChange={handleChange} placeholder="https://..." />
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground block">Logo de la boutique</label>
+                                    <div className="flex flex-col md:flex-row items-center gap-6 p-6 rounded-2xl bg-muted/10 border border-dashed border-border group hover:border-primary/50 transition-all">
+                                        <div className="size-24 rounded-2xl bg-card border border-border flex items-center justify-center overflow-hidden shrink-0 shadow-lg group-hover:scale-105 transition-transform">
+                                            {shopData.logo_url ? (
+                                                <img src={shopData.logo_url} alt="Logo Preview" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <Store className="size-10 text-muted-foreground/30" />
+                                            )}
+                                        </div>
+                                        <div className="flex-1 space-y-3">
+                                            <p className="text-sm font-bold text-foreground italic">Sélectionnez une image de marque</p>
+                                            <p className="text-[10px] text-muted-foreground font-medium">Format JPEG, PNG ou WEBP. Max 2MB.</p>
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <input
+                                                    type="file"
+                                                    ref={fileInputRef}
+                                                    onChange={handleFileUpload}
+                                                    accept="image/*"
+                                                    className="hidden"
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    onClick={() => fileInputRef.current.click()}
+                                                    disabled={isUploading}
+                                                    variant="outline"
+                                                    className="h-10 px-5 rounded-xl text-[10px] font-black uppercase tracking-widest gap-2"
+                                                >
+                                                    {isUploading ? <Loader2 className="size-3 animate-spin" /> : <Upload className="size-3" />}
+                                                    {isUploading ? 'Chargement...' : 'Choisir un fichier'}
+                                                </Button>
+                                                {shopData.logo_url && (
+                                                    <Button
+                                                        type="button"
+                                                        onClick={() => setShopData(prev => ({ ...prev, logo_url: '' }))}
+                                                        variant="ghost"
+                                                        className="h-10 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-destructive hover:bg-destructive/10"
+                                                    >
+                                                        Supprimer
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground block">Ou URL directe de l'image (optionnel)</label>
+                                        <Input name="logo_url" value={shopData.logo_url} onChange={handleChange} placeholder="https://..." className="h-11" />
+                                    </div>
                                 </div>
 
                                 <div className="space-y-2">
@@ -250,8 +344,10 @@ const StoreSettings = () => {
                                     </div>
                                 </div>
                                 <div className="px-8 pb-8">
-                                    <Button variant="outline" className="w-full py-4 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary hover:text-white transition-all border-primary/20 text-primary">
-                                        Visiter la page publique
+                                    <Button asChild variant="outline" className="w-full py-4 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary hover:text-white transition-all border-primary/20 text-primary">
+                                        <Link to={`/shop/${shopData.url || 'mon-shop'}`}>
+                                            Visiter la page publique
+                                        </Link>
                                     </Button>
                                 </div>
                             </Card>

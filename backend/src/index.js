@@ -26,33 +26,45 @@ if (!process.env.JWT_SECRET) {
 
 const app = require('./app');
 const { sequelize } = require('./models');
-require('dotenv').config();
+const http = require('http');
+const { Server } = require('socket.io');
 
 const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: "*", // En dév, on laisse ouvert. En prod, à restreindre.
+        methods: ["GET", "POST"]
+    }
+});
+
+// Attacher io à l'app pour y accéder dans les contrôleurs
+app.set('socketio', io);
+
+io.on('connection', (socket) => {
+    console.log('⚡ Un utilisateur s\'est connecté :', socket.id);
+
+    socket.on('join', (userId) => {
+        socket.join(userId);
+        console.log(`👤 Utilisateur ${userId} a rejoint son canal personnel.`);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('🔥 Utilisateur déconnecté');
+    });
+});
 
 const start = async () => {
     try {
-        // Vérification de la connexion à la base de données
         await sequelize.authenticate();
         console.log('✅ Connexion PostgreSQL établie.');
 
-        // 🛠️ RÉPARATION CRITIQUE : Supprime la colonne fantôme 'vendeur_id' si elle bloque la migration
-        if (process.env.NODE_ENV === 'production') {
-            try {
-                await sequelize.query('ALTER TABLE produits DROP COLUMN IF EXISTS vendeur_id CASCADE');
-                console.log('🧹 Nettoyage de la colonne "vendeur_id" (Product) réussi.');
-            } catch (e) {
-                console.log('ℹ️ Nettoyage non nécessaire ou déjà effectué.');
-            }
-        }
-
-        // Synchronisation des modèles
+        // Synchronisation standard (Stable)
         await sequelize.sync();
-        console.log('✅ Modèles synchronisés (ALTER).');
+        console.log('✅ Modèles synchronisés.');
 
-        app.listen(PORT, () => {
-            console.log(`\n🚀 BCA Connect API v2.5 — Port ${PORT} (${process.env.NODE_ENV || 'development'})`);
-            console.log(`   Health check : http://localhost:${PORT}/health\n`);
+        server.listen(PORT, () => {
+            console.log(`\n🚀 BCA Connect Real-Time API v2.5 — Port ${PORT}`);
         });
     } catch (error) {
         console.error('❌ Échec du démarrage du serveur :', error);

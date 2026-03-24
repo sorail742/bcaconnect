@@ -28,7 +28,7 @@ const OrdersVendor = () => {
     const fetchOrders = async () => {
         try {
             const data = await orderService.getVendorOrders();
-            setOrders(data);
+            setOrders(data.orders || []);
         } catch (err) {
             console.error("Erreur chargement commandes:", err);
         } finally {

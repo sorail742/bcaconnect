@@ -11,6 +11,10 @@ const Order = sequelize.define('Order', {
         type: DataTypes.DECIMAL(15, 2),
         allowNull: false,
     },
+    frais_port: {
+        type: DataTypes.DECIMAL(15, 2),
+        defaultValue: 0,
+    },
     statut: {
         type: DataTypes.STRING(32),
         defaultValue: 'payé',

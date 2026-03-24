@@ -15,16 +15,16 @@ const footerLinks = {
         { label: "Presse", href: "/contact" }
     ],
     resources: [
-        { label: "FAQ & Aide", href: "/faq" },
-        { label: "Centre de support", href: "/contact" },
+        { label: "FAQ", href: "/faq" },
+        { label: "Centre d'Aide", href: "/help" },
         { label: "S'inscrire", href: "/register" },
         { label: "Se connecter", href: "/login" }
     ],
     legal: [
-        { label: "Confidentialité", href: "/faq" },
-        { label: "Conditions d'utilisation", href: "/faq" },
-        { label: "Politique de remboursement", href: "/faq" },
-        { label: "Signaler un abus", href: "/contact" }
+        { label: "Confidentialité", href: "/privacy" },
+        { label: "Conditions d'utilisation", href: "/terms" },
+        { label: "Remboursement", href: "/faq" },
+        { label: "Avis Légal", href: "/privacy" }
     ]
 }
 

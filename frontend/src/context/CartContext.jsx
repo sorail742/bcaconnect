@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { AuthContext } from './AuthContext';
 
 const CartContext = createContext();
 
@@ -11,14 +12,28 @@ export const useCart = () => {
 };
 
 export const CartProvider = ({ children }) => {
-    const [cartItems, setCartItems] = useState(() => {
-        const savedCart = localStorage.getItem('bca_cart');
-        return savedCart ? JSON.parse(savedCart) : [];
-    });
+    const { user, loading: authLoading } = useContext(AuthContext);
+    const [cartItems, setCartItems] = useState([]);
+    const [isInitialized, setIsInitialized] = useState(false);
 
+    // Définir la clé du panier en fonction de l'utilisateur (ou invité)
+    const cartKey = user ? `bca_cart_${user.id}` : 'bca_cart_guest';
+
+    // Charger le panier quand l'utilisateur change ou au démarrage
     useEffect(() => {
-        localStorage.setItem('bca_cart', JSON.stringify(cartItems));
-    }, [cartItems]);
+        if (authLoading) return;
+
+        const savedCart = localStorage.getItem(cartKey);
+        setCartItems(savedCart ? JSON.parse(savedCart) : []);
+        setIsInitialized(true);
+    }, [user, authLoading, cartKey]);
+
+    // Sauvegarder le panier quand il change (seulement après l'initialisation pour éviter d'écraser avec un tableau vide)
+    useEffect(() => {
+        if (isInitialized) {
+            localStorage.setItem(cartKey, JSON.stringify(cartItems));
+        }
+    }, [cartItems, cartKey, isInitialized]);
 
     const addToCart = (product, quantity = 1) => {
         setCartItems(prev => {

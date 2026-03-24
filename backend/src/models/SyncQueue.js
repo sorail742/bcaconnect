@@ -11,7 +11,7 @@ const SyncQueue = sequelize.define('SyncQueue', {
         type: DataTypes.STRING(50),
     },
     payload: {
-        type: DataTypes.JSONB,
+        type: DataTypes.JSON,
         allowNull: false,
     },
     tentatives: {

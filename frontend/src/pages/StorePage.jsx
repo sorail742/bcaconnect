@@ -23,16 +23,14 @@ const StorePage = () => {
         const loadStore = async () => {
             setIsLoading(true);
             try {
-                // Charger toutes les boutiques et trouver par slug
-                const allStores = await storeService.getAllStores();
-                const found = allStores.find(s => s.slug === slug);
-                if (!found) { setNotFound(true); return; }
-                setStore(found);
-                // Charger les produits de cette boutique
-                const allProducts = await productService.getAll();
-                setProducts(allProducts.filter(p => p.boutique_id === found.id));
+                // Charger la boutique directement par son slug
+                const data = await storeService.getBySlug(slug);
+                if (!data) { setNotFound(true); return; }
+                setStore(data);
+                // Utiliser les produits déjà inclus dans la réponse du store
+                setProducts(data.produits || []);
             } catch (err) {
-                console.error(err);
+                console.error("Erreur chargement boutique:", err);
                 setNotFound(true);
             } finally {
                 setIsLoading(false);

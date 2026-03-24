@@ -4,12 +4,11 @@ import './index.css'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+  <App />
 )
 
-// Enregistrement du Service Worker pour le mode hors-ligne
+/* 
+// Désactivé temporairement pour résoudre le conflit de cache React
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').then((registration) => {
@@ -19,3 +18,4 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+*/

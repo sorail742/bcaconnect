@@ -20,7 +20,7 @@ const PubliciteCiblage = sequelize.define('PubliciteCiblage', {
         allowNull: true
     },
     preferences_cle: {
-        type: DataTypes.JSONB, // Tags ou centres d'intérêt
+        type: DataTypes.JSON, // Tags ou centres d'intérêt
         allowNull: true
     }
 }, {

@@ -33,8 +33,13 @@ self.addEventListener('activate', (event) => {
 
 // Stratégie de cache : Stale-While-Revalidate
 self.addEventListener('fetch', (event) => {
-    // Ne pas cacher les requêtes API (POST/PUT/DELETE/PATCH) ou les webhooks
-    if (event.request.url.includes('/api/') && event.request.method !== 'GET') {
+    // Ne pas intercepter les requêtes vers d'autres domaines (comme le backend sur le port 5000)
+    if (!event.request.url.startsWith(self.location.origin)) {
+        return;
+    }
+
+    // Ne pas cacher les requêtes API (POST/PUT/DELETE/PATCH)
+    if (event.request.method !== 'GET') {
         return;
     }
 
@@ -42,7 +47,7 @@ self.addEventListener('fetch', (event) => {
         caches.match(event.request).then((cachedResponse) => {
             const fetchPromise = fetch(event.request).then((networkResponse) => {
                 // Mettre à jour le cache pour les GET réussis
-                if (networkResponse && networkResponse.status === 200 && event.request.method === 'GET') {
+                if (networkResponse && networkResponse.status === 200) {
                     const responseToCache = networkResponse.clone();
                     caches.open(CACHE_NAME).then((cache) => {
                         cache.put(event.request, responseToCache);
@@ -50,8 +55,9 @@ self.addEventListener('fetch', (event) => {
                 }
                 return networkResponse;
             }).catch(() => {
-                // Si le réseau échoue, on retourne la réponse du cache si elle existe
-                return cachedResponse;
+                // Si le réseau échoue, on retourne la réponse du cache si elle existe,
+                // sinon une réponse d'erreur 408 propre (sans faire planter le FetchEvent)
+                return cachedResponse || new Response('Network Error', { status: 408 });
             });
 
             return cachedResponse || fetchPromise;

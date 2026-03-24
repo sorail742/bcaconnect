@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
@@ -30,6 +32,21 @@ const Toggle = ({ enabled, onChange }) => (
 
 const UserProfile = () => {
     const { user, updateProfile, deleteAccount } = useAuth();
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    // Onglet actif basé sur l'URL
+    const [activeTab, setActiveTab] = useState(location.pathname === '/settings' ? 'settings' : 'profile');
+
+    // Synchronisation de l'onglet si l'URL change (ex: via la sidebar)
+    useEffect(() => {
+        setActiveTab(location.pathname === '/settings' ? 'settings' : 'profile');
+    }, [location.pathname]);
+
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+        navigate(tab === 'settings' ? '/settings' : '/profile');
+    };
 
     const [nomComplet, setNomComplet] = useState(user?.nom_complet || '');
     const [telephone, setTelephone] = useState(user?.telephone || '');
@@ -86,8 +103,24 @@ const UserProfile = () => {
     };
 
     return (
-        <DashboardLayout title="Mon Profil">
+        <DashboardLayout title={activeTab === 'profile' ? "Mon Profil" : "Paramètres du compte"}>
             <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500 pb-12">
+                {/* Navigation par onglets */}
+                <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-2xl border border-border w-fit">
+                    <button
+                        onClick={() => handleTabChange('profile')}
+                        className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'profile' ? 'bg-background text-primary shadow-sm ring-1 ring-border' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                        Identité
+                    </button>
+                    <button
+                        onClick={() => handleTabChange('settings')}
+                        className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'settings' ? 'bg-background text-primary shadow-sm ring-1 ring-border' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                        Sécurité & Préférences
+                    </button>
+                </div>
+
                 {message.text && (
                     <div className={`p-4 rounded-2xl border ${message.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-destructive/10 border-destructive/20 text-destructive'} text-sm font-bold animate-in slide-in-from-top-4`}>
                         {message.text}
@@ -142,115 +175,122 @@ const UserProfile = () => {
                     </div>
                 </Card>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 space-y-8">
-                        <Card>
-                            <CardHeader className="flex flex-row items-center gap-3 border-b border-border py-4">
-                                <User className="size-5 text-primary" />
-                                <CardTitle className="text-sm font-black uppercase tracking-widest text-foreground">Informations personnelles</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-8 space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Prénom & Nom</label>
-                                        <Input value={nomComplet} onChange={(e) => setNomComplet(e.target.value)} />
+                {activeTab === 'profile' ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-2 space-y-8">
+                            <Card>
+                                <CardHeader className="flex flex-row items-center gap-3 border-b border-border py-4">
+                                    <User className="size-5 text-primary" />
+                                    <CardTitle className="text-sm font-black uppercase tracking-widest text-foreground">Informations personnelles</CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-8 space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Prénom & Nom</label>
+                                            <Input value={nomComplet} onChange={(e) => setNomComplet(e.target.value)} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Ligne mobile</label>
+                                            <Input type="tel" value={telephone} onChange={(e) => setTelephone(e.target.value)} />
+                                        </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Ligne mobile</label>
-                                        <Input type="tel" value={telephone} onChange={(e) => setTelephone(e.target.value)} />
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Adresse E-mail professionnelle</label>
+                                        <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
                                     </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Adresse E-mail professionnelle</label>
-                                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-                                </div>
-                            </CardContent>
-                        </Card>
+                                </CardContent>
+                            </Card>
 
-                        <Card>
-                            <CardHeader className="flex flex-row justify-between items-center border-b border-border py-4">
-                                <div className="flex items-center gap-3">
-                                    <Shield className="size-5 text-primary" />
-                                    <CardTitle className="text-sm font-black uppercase tracking-widest text-foreground">Sécurité & Accès</CardTitle>
+                            <div className="bg-gradient-to-br from-primary/10 to-transparent dark:from-primary/20 rounded-2xl p-8 border border-primary/20 relative group">
+                                <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-6">Force du profil digital</h4>
+                                <div className="flex items-end gap-3 mb-6">
+                                    <span className="text-4xl font-black text-primary italic leading-none">85%</span>
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pb-1">Excellent</span>
                                 </div>
-                            </CardHeader>
-                            <CardContent className="p-8 space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nouveau mot de passe</label>
-                                        <Input type="password" placeholder="Min. 8 caractères" value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Confirmation</label>
-                                        <Input type="password" placeholder="Repéter le mot de passe" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-                                    </div>
+                                <div className="h-2.5 bg-muted rounded-full overflow-hidden mb-6 p-0.5 shadow-inner">
+                                    <div className="bg-primary h-full w-[85%] rounded-full shadow-[0_0_12px_rgba(43,108,238,0.5)] transition-all duration-1000" />
                                 </div>
-                                <p className="text-[10px] text-muted-foreground font-medium italic">Laissez vide si vous ne souhaitez pas modifier votre mot de passe.</p>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    <div className="space-y-8">
-                        <Card>
-                            <CardHeader className="flex flex-row items-center gap-3 border-b border-border py-4">
-                                <BellRing className="size-5 text-primary" />
-                                <CardTitle className="text-sm font-black uppercase tracking-widest text-foreground">Préférences</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-6 space-y-8">
-                                <div className="flex items-center justify-between group">
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-xs font-black uppercase tracking-widest text-foreground">Rapports E-mail</span>
-                                        <span className="text-[10px] text-muted-foreground font-bold max-w-[140px]">Résumé hebdomadaire de vos ventes</span>
-                                    </div>
-                                    <Toggle enabled={emailAlerts} onChange={setEmailAlerts} />
-                                </div>
-
-                                <div className="flex items-center justify-between group">
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-xs font-black uppercase tracking-widest text-foreground">Alertes Mobiles</span>
-                                        <span className="text-[10px] text-muted-foreground font-bold max-w-[140px]">Notifications instantanées (Push)</span>
-                                    </div>
-                                    <Toggle enabled={pushNotifs} onChange={setPushNotifs} />
-                                </div>
-
-                                <div className="flex items-center justify-between group">
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-xs font-black uppercase tracking-widest text-foreground">Market Insights</span>
-                                        <span className="text-[10px] text-muted-foreground font-bold max-w-[140px]">Conseils et opportunités de marché</span>
-                                    </div>
-                                    <Toggle enabled={marketNews} onChange={setMarketNews} />
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <div className="bg-gradient-to-br from-primary/10 to-transparent dark:from-primary/20 rounded-2xl p-8 border border-primary/20 relative group">
-                            <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-6">Force du profil digital</h4>
-                            <div className="flex items-end gap-3 mb-6">
-                                <span className="text-4xl font-black text-primary italic leading-none">85%</span>
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pb-1">Excellent</span>
+                                <p className="text-[11px] text-muted-foreground font-medium leading-relaxed mb-6 italic">
+                                    "Un profil complet à 100% augmente votre visibilité auprès des partenaires de 40%."
+                                </p>
                             </div>
-                            <div className="h-2.5 bg-muted rounded-full overflow-hidden mb-6 p-0.5 shadow-inner">
-                                <div className="bg-primary h-full w-[85%] rounded-full shadow-[0_0_12px_rgba(43,108,238,0.5)] transition-all duration-1000" />
-                            </div>
-                            <p className="text-[11px] text-muted-foreground font-medium leading-relaxed mb-6 italic">
-                                "Un profil complet à 100% augmente votre visibilité auprès des partenaires de 40%."
-                            </p>
+                        </div>
+
+                        <div className="space-y-8">
+                            <Card className="p-6">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4">Aide</h4>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    Ces informations sont utilisées pour vos factures, livraisons et la communication avec les autres membres de BCA Connect.
+                                </p>
+                            </Card>
                         </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-2 space-y-8">
+                            <Card>
+                                <CardHeader className="flex flex-row justify-between items-center border-b border-border py-4">
+                                    <div className="flex items-center gap-3">
+                                        <Shield className="size-5 text-primary" />
+                                        <CardTitle className="text-sm font-black uppercase tracking-widest text-foreground">Sécurité & Accès</CardTitle>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-8 space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nouveau mot de passe</label>
+                                            <Input type="password" placeholder="Min. 8 caractères" value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Confirmation</label>
+                                            <Input type="password" placeholder="Repéter le mot de passe" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground font-medium italic">Laissez vide si vous ne souhaitez pas modifier votre mot de passe.</p>
+                                </CardContent>
+                            </Card>
 
-                <div className="pt-8 border-t border-border">
-                    <div className="flex flex-col md:flex-row items-center justify-between bg-card p-8 rounded-2xl border border-destructive/20 shadow-sm gap-6">
-                        <div className="text-center md:text-left">
-                            <h3 className="text-lg font-black text-destructive uppercase italic">Action irréversible</h3>
-                            <p className="text-sm text-muted-foreground mt-2 font-medium">Les données supprimées ne pourront pas être récupérées. Toute suppression est définitive.</p>
+                            <div className="pt-8 border-t border-border">
+                                <div className="flex flex-col md:flex-row items-center justify-between bg-card p-8 rounded-2xl border border-destructive/20 shadow-sm gap-6">
+                                    <div className="text-center md:text-left">
+                                        <h3 className="text-lg font-black text-destructive uppercase italic">Action irréversible</h3>
+                                        <p className="text-sm text-muted-foreground mt-2 font-medium">Les données supprimées ne pourront pas être récupérées.</p>
+                                    </div>
+                                    <Button onClick={handleDelete} variant="destructive" className="flex items-center gap-3 px-8 py-3.5 text-xs font-black uppercase tracking-widest rounded-xl shadow-xl shadow-destructive/20 group">
+                                        <Trash2 className="size-4 group-hover:animate-bounce" />
+                                        Fermer mon compte
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
-                        <Button onClick={handleDelete} variant="destructive" className="flex items-center gap-3 px-8 py-3.5 text-xs font-black uppercase tracking-widest rounded-xl shadow-xl shadow-destructive/20 group">
-                            <Trash2 className="size-4 group-hover:animate-bounce" />
-                            Fermer mon compte
-                        </Button>
+
+                        <div className="space-y-8">
+                            <Card>
+                                <CardHeader className="flex flex-row items-center gap-3 border-b border-border py-4">
+                                    <BellRing className="size-5 text-primary" />
+                                    <CardTitle className="text-sm font-black uppercase tracking-widest text-foreground">Préférences</CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-6 space-y-8">
+                                    <div className="flex items-center justify-between group">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-xs font-black uppercase tracking-widest text-foreground">Rapports E-mail</span>
+                                            <span className="text-[10px] text-muted-foreground font-bold max-w-[140px]">Résumé hebdomadaire</span>
+                                        </div>
+                                        <Toggle enabled={emailAlerts} onChange={setEmailAlerts} />
+                                    </div>
+
+                                    <div className="flex items-center justify-between group">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-xs font-black uppercase tracking-widest text-foreground">Alertes Mobiles</span>
+                                            <span className="text-[10px] text-muted-foreground font-bold max-w-[140px]">Push instantané</span>
+                                        </div>
+                                        <Toggle enabled={pushNotifs} onChange={setPushNotifs} />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </DashboardLayout>
     );

@@ -1,4 +1,4 @@
-const { Store, User } = require('../models');
+const { Store, User, Product, Category } = require('../models');
 const { v4: uuidv4 } = require('uuid');
 
 // Génère un slug unique à partir du nom de boutique
@@ -73,9 +73,15 @@ const storeController = {
         try {
             const store = await Store.findOne({
                 where: { proprietaire_id: req.user.id },
-                include: ['produits']
+                include: [
+                    {
+                        model: Product,
+                        as: 'produits',
+                        include: [{ model: Category, as: 'categorie', attributes: ['nom_categorie'] }]
+                    }
+                ]
             });
-            if (!store) return res.status(404).json({ message: "Boutique non trouvée." });
+            if (!store) return res.json(null);
             res.json(store);
         } catch (error) {
             next(error);
@@ -99,6 +105,27 @@ const storeController = {
             const { id } = req.params;
             const store = await Store.findByPk(id, {
                 include: ['produits', { model: User, attributes: ['nom_complet'] }]
+            });
+            if (!store) return res.status(404).json({ message: "Boutique non trouvée." });
+            res.json(store);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    getBySlug: async (req, res, next) => {
+        try {
+            const { slug } = req.params;
+            const store = await Store.findOne({
+                where: { slug },
+                include: [
+                    {
+                        model: Product,
+                        as: 'produits',
+                        include: [{ model: Category, as: 'categorie', attributes: ['nom_categorie'] }]
+                    },
+                    { model: User, attributes: ['nom_complet'] }
+                ]
             });
             if (!store) return res.status(404).json({ message: "Boutique non trouvée." });
             res.json(store);

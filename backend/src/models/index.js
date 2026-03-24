@@ -18,6 +18,10 @@ const Echeancier = require('./Echeancier');
 const DeliveryLog = require('./DeliveryLog');
 const Ticket = require('./Ticket');
 const Review = require('./Review');
+const Notification = require('./Notification');
+const Conversation = require('./Conversation');
+const Message = require('./Message');
+const ConversationParticipant = require('./ConversationParticipant');
 const sequelize = require('../config/database');
 
 // 1. Relations Utilisateur - Portefeuille
@@ -38,7 +42,7 @@ Product.belongsTo(Category, { foreignKey: 'categorie_id', as: 'categorie' });
 
 // 5. Relations Commandes
 User.hasMany(Order, { foreignKey: 'utilisateur_id', as: 'commandes' });
-Order.belongsTo(User, { foreignKey: 'utilisateur_id' });
+Order.belongsTo(User, { foreignKey: 'utilisateur_id', as: 'client' });
 
 Order.hasMany(OrderItem, { foreignKey: 'commande_id', as: 'details' });
 OrderItem.belongsTo(Order, { foreignKey: 'commande_id', as: 'commande' });
@@ -116,6 +120,23 @@ Review.belongsTo(Product, { foreignKey: 'produit_id' });
 User.hasMany(Review, { foreignKey: 'utilisateur_id' });
 Review.belongsTo(User, { foreignKey: 'utilisateur_id' });
 
+User.hasMany(Notification, { foreignKey: 'utilisateur_id', as: 'notifications' });
+Notification.belongsTo(User, { foreignKey: 'utilisateur_id' });
+
+// ── Relations Conversations & Messages ───────────────────────────────
+User.belongsToMany(Conversation, { through: ConversationParticipant, foreignKey: 'user_id', as: 'conversations' });
+Conversation.belongsToMany(User, { through: ConversationParticipant, foreignKey: 'conversation_id', as: 'participants' });
+
+Conversation.hasMany(Message, { foreignKey: 'conversation_id', as: 'messages' });
+Message.belongsTo(Conversation, { foreignKey: 'conversation_id' });
+
+User.hasMany(Message, { foreignKey: 'expediteur_id', as: 'messages_envoyes' });
+Message.belongsTo(User, { foreignKey: 'expediteur_id', as: 'expediteur' });
+
+ConversationParticipant.belongsTo(Conversation, { foreignKey: 'conversation_id' });
+ConversationParticipant.belongsTo(User, { foreignKey: 'user_id', as: 'utilisateur' });
+Conversation.hasMany(ConversationParticipant, { foreignKey: 'conversation_id', as: 'details_participants' });
+
 module.exports = {
     User,
     Wallet,
@@ -137,5 +158,9 @@ module.exports = {
     DeliveryLog,
     Ticket,
     Review,
+    Notification,
+    Conversation,
+    Message,
+    ConversationParticipant,
     sequelize
 };

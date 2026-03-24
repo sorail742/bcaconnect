@@ -6,6 +6,9 @@ import StorePage from '../pages/StorePage';
 import AboutPage from '../pages/AboutPage';
 import ContactPage from '../pages/ContactPage';
 import FaqPage from '../pages/FaqPage';
+import PrivacyPage from '../pages/PrivacyPage';
+import TermsPage from '../pages/TermsPage';
+import HelpCenter from '../pages/HelpCenter';
 
 // Importation des pages (Refactorisées et Réorganisées)
 import Login from '../pages/auth/Login';
@@ -64,6 +67,7 @@ const AppRoutes = () => {
             <Route path="/register" element={<Register />} />
 
             {/* Routes Publiques Marketplace */}
+            <Route path="/marketplace" element={<ProductCatalogue />} />
             <Route path="/catalog" element={<ProductCatalogue />} />
             <Route path="/vendors" element={<VendorsList />} />
             <Route path="/product/:id" element={<ProductDetail />} />
@@ -75,6 +79,9 @@ const AppRoutes = () => {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/faq" element={<FaqPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/help" element={<HelpCenter />} />
 
             {/* Routes Protégées */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

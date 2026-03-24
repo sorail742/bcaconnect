@@ -1,71 +1,87 @@
-const { Order, OrderItem, Product, Wallet, Transaction, User, sequelize } = require('../models');
+const { Order, OrderItem, Product, Wallet, Transaction, User, Notification, sequelize } = require('../models');
+
+// Logic de calcul des frais de livraison dynamique pour la Guinée
+const calculateShippingFee = (adresse, itemsCount) => {
+    const checkCase = (str) => str?.toLowerCase() || '';
+    const addr = checkCase(adresse);
+
+    // Conakry : Dynamisation par zone
+    const isConakry = addr.includes('conakry');
+    const isKaloum = addr.includes('kaloum'); // Zone administrative/business (souvent plus cher ou base différente)
+    const otherCommunes = ['dixinn', 'ratoma', 'matam', 'matoto', 'kagbelen', 'dubréka'];
+    const matchesCommune = otherCommunes.some(c => addr.includes(c));
+
+    if (isKaloum) {
+        return 25000 + (itemsCount * 2500); // Kaloum est plus central mais accès plus restreint
+    }
+
+    if (isConakry || matchesCommune) {
+        return 20000 + (itemsCount * 2000); // Standard Conakry
+    }
+
+    // Province : Base fixe plus élevée
+    return 50000 + (itemsCount * 5000);
+};
 
 const orderController = {
     create: async (req, res, next) => {
         const t = await sequelize.transaction();
         try {
-            const { items, cle_idempotence } = req.body; // Array of { productId, quantity }
+            const { items, cle_idempotence, deliveryInfo, paymentMethod } = req.body;
             const utilisateur_id = req.user.id;
 
-            // 1. Vérification Idempotence
+            // ... (Vérification Idempotence existante)
             if (cle_idempotence) {
                 const existingOrder = await Order.findOne({ where: { cle_idempotence }, transaction: t });
                 if (existingOrder) {
                     await t.rollback();
-                    return res.status(200).json(existingOrder); // Retourne la commande existante sans erreur (Idempotence)
+                    return res.status(200).json(existingOrder);
                 }
             }
 
-            let total_ttc = 0;
+            let total_produits = 0;
             const orderItemsByVendor = [];
 
             for (const item of items) {
-                // Stock check with LOCK to prevent race conditions
-                const product = await Product.findByPk(item.productId, {
-                    lock: t.LOCK.UPDATE,
-                    transaction: t
-                });
-
-                if (!product) {
-                    throw new Error(`Produit ${item.productId} non trouvé.`);
-                }
-
-                if (product.stock_quantite < item.quantity) {
-                    throw new Error(`Stock insuffisant pour le produit: ${product.nom_produit}.`);
-                }
+                const product = await Product.findByPk(item.productId, { lock: t.LOCK.UPDATE, transaction: t });
+                if (!product) throw new Error(`Produit ${item.productId} non trouvé.`);
+                if (product.stock_quantite < item.quantity) throw new Error(`Stock insuffisant: ${product.nom_produit}.`);
 
                 const subtotal = product.prix_unitaire * item.quantity;
-                total_ttc += parseFloat(subtotal);
+                total_produits += parseFloat(subtotal);
 
                 const store = await product.getStore({ transaction: t });
-
                 orderItemsByVendor.push({
                     produit_id: product.id,
                     fournisseur_id: store.proprietaire_id,
                     quantite: item.quantity,
-                    prix_unitaire_achat: product.prix_unitaire, // Prix figé au moment de la commande
+                    prix_unitaire_achat: product.prix_unitaire,
                     statut: 'en_attente'
                 });
 
-                // Update stock
                 await product.decrement('stock_quantite', { by: item.quantity, transaction: t });
             }
 
-            // Verify wallet balance
-            const wallet = await Wallet.findOne({ where: { user_id: utilisateur_id }, transaction: t });
-            if (!wallet || parseFloat(wallet.solde_virtuel) < total_ttc) {
-                throw new Error('Solde insuffisant dans votre portefeuille BCA.');
+            // --- CALCUL DES FRAIS DE PORT ---
+            const frais_port = calculateShippingFee(deliveryInfo?.adresse, items.length);
+            const total_ttc = total_produits + frais_port;
+
+            // 3. Gestion du paiement
+            if (paymentMethod === 'wallet') {
+                const wallet = await Wallet.findOne({ where: { user_id: utilisateur_id }, transaction: t });
+                if (!wallet || parseFloat(wallet.solde_virtuel) < total_ttc) {
+                    throw new Error('Solde insuffisant dans votre portefeuille BCA.');
+                }
+                await wallet.decrement('solde_virtuel', { by: total_ttc, transaction: t });
             }
 
-            // Update wallet balance (virtual deduction for the order)
-            await wallet.decrement('solde_virtuel', { by: total_ttc, transaction: t });
-
             // Create Order
-            const { deliveryInfo } = req.body;
             const order = await Order.create({
                 utilisateur_id,
                 total_ttc,
-                statut: 'payé',
+                frais_port,
+                statut: paymentMethod === 'wallet' ? 'payé' : 'en_attente_paiement',
+                methode_paiement: paymentMethod || 'wallet',
                 nom_destinataire: deliveryInfo?.nom,
                 telephone_livraison: deliveryInfo?.telephone,
                 adresse_livraison: deliveryInfo?.adresse
@@ -91,6 +107,31 @@ const orderController = {
             }
 
             await t.commit();
+
+            // ⚡ NOTIFICATIONS TEMPS RÉEL
+            const io = req.app.get('socketio');
+            if (io) {
+                // 1. Notification pour l'acheteur (Confirmation)
+                const buyerNotif = await Notification.create({
+                    utilisateur_id: utilisateur_id,
+                    titre: "Commande confirmée !",
+                    message: `Votre commande <span class="font-black text-primary">#${order.id.slice(0, 8)}</span> d'un montant de <span class="italic font-bold text-emerald-600">${total_ttc.toLocaleString('fr-FR')} GNF</span> a été enregistrée.`,
+                    type: 'order'
+                });
+                io.to(utilisateur_id).emit('notification_received', buyerNotif);
+
+                // 2. Notifications pour les vendeurs
+                const uniqueVendors = [...new Set(orderItemsByVendor.map(item => item.fournisseur_id))];
+                for (const vendorId of uniqueVendors) {
+                    const vendorNotif = await Notification.create({
+                        utilisateur_id: vendorId,
+                        titre: "Nouvelle vente !",
+                        message: `Vous avez reçu une nouvelle commande <span class="font-black text-primary">#${order.id.slice(0, 8)}</span>. Veuillez préparer les produits.`,
+                        type: 'order'
+                    });
+                    io.to(vendorId).emit('notification_received', vendorNotif);
+                }
+            }
             res.status(201).json(order);
         } catch (error) {
             await t.rollback();
@@ -252,6 +293,26 @@ const orderController = {
                     { statut_livraison: 'pret' },
                     { where: { id: item.commande_id } }
                 );
+            }
+
+            // ⚡ NOTIFICATION POUR LE CLIENT
+            const io = req.app.get('socketio');
+            if (io) {
+                const order = await Order.findByPk(item.commande_id);
+                const statusLabels = {
+                    'prepare': 'est en cours de préparation',
+                    'expedie': 'a été expédiée',
+                    'livre': 'a été livrée',
+                    'annule': 'a été annulée'
+                };
+
+                const clientNotif = await Notification.create({
+                    utilisateur_id: order.utilisateur_id,
+                    titre: "Mise à jour de votre commande",
+                    message: `L'article <span class="font-bold underline">${item.id.slice(0, 8)}</span> de votre commande <span class="font-black text-primary">#${order.id.slice(0, 8)}</span> ${statusLabels[newStatus] || 'a changé de statut'}.`,
+                    type: 'order'
+                });
+                io.to(order.utilisateur_id).emit('notification_received', clientNotif);
             }
 
             res.json({
