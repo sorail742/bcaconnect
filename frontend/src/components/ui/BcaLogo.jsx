@@ -13,8 +13,8 @@ const BcaLogo = ({ className = "size-10", gradientId = "bca-gradient" }) => {
         >
             <defs>
                 <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#6366f1" />
-                    <stop offset="100%" stopColor="#a855f7" />
+                    <stop offset="0%" stopColor="#2563eb" />
+                    <stop offset="100%" stopColor="#1d4ed8" />
                 </linearGradient>
             </defs>
 

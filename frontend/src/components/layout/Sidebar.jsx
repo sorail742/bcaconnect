@@ -80,132 +80,111 @@ const Sidebar = ({ isOpen, onClose }) => {
             )}
 
             <aside className={`
-                fixed inset-y-0 left-0 w-72 bg-card border-r border-border flex flex-col justify-between py-8 px-5 z-50
-                transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:flex md:w-64
-                ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                fixed inset-y-0 left-0 w-80 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 flex flex-col justify-between py-10 px-6 z-50
+                transition-all duration-500 ease-in-out md:relative md:translate-x-0 md:flex md:w-72
+                ${isOpen ? 'translate-x-0 shadow-2xl shadow-black/20' : '-translate-x-full md:translate-x-0'}
             `}>
                 {/* Close button mobile */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 p-2 text-muted-foreground hover:bg-muted rounded-xl md:hidden"
+                    className="absolute top-6 right-6 p-2.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl md:hidden transition-all active:scale-90"
                 >
-                    <X className="size-5" />
+                    <X className="size-6" />
                 </button>
 
-                <div className="flex flex-col gap-10">
+                <div className="flex flex-col gap-12">
                     {/* Logo Section */}
-                    <div className="flex items-center gap-4 px-2" translate="no">
-                        <div className="shrink-0">
-                            <BcaLogo className="size-11" />
+                    <div className="flex items-center gap-4 px-2 group cursor-default" translate="no">
+                        <div className="shrink-0 relative">
+                            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full scale-0 group-hover:scale-150 transition-transform duration-700"></div>
+                            <BcaLogo className="size-12 relative z-10 drop-shadow-md" />
                         </div>
                         <div className="flex flex-col min-w-0">
-                            <h1 className="text-foreground text-lg font-black leading-none tracking-tighter italic">BCA Connect</h1>
-                            <p className="text-primary text-[10px] font-black uppercase tracking-[0.2em] mt-1 leading-none" translate="yes">
-                                {user?.role || 'Membre'}
-                            </p>
+                            <h1 className="text-slate-900 dark:text-white text-lg font-black leading-none tracking-tight">BCA Connect</h1>
+                            <div className="flex items-center gap-1.5 mt-2">
+                                <span className="size-1.5 rounded-full bg-primary animate-pulse"></span>
+                                <p className="text-primary text-[10px] font-black uppercase tracking-[0.2em] leading-none" translate="yes">
+                                    {user?.role === 'fournisseur' ? 'Marchand' : user?.role === 'admin' ? 'Super Admin' : user?.role === 'transporteur' ? 'Livreur Pro' : 'Client Privilège'}
+                                </p>
+                            </div>
                         </div>
                     </div>
 
                     {/* Navigation Links */}
-                    <nav className="flex flex-col gap-1">
+                    <nav className="flex flex-col gap-2">
                         {currentMenu.map((item) => (
                             <NavLink
                                 key={item.path}
                                 to={item.path}
                                 onClick={() => { if (window.innerWidth < 768) onClose(); }}
                                 className={({ isActive }) =>
-                                    `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive
-                                        ? 'bg-primary/10 text-primary'
-                                        : 'text-muted-foreground hover:bg-muted font-medium'
-                                    }`
+                                    cn(
+                                        "flex items-center gap-3.5 px-5 py-3.5 rounded-2xl transition-all duration-500 group relative overflow-hidden",
+                                        isActive
+                                            ? "bg-primary text-white shadow-xl shadow-primary/20 scale-[1.02]"
+                                            : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-white"
+                                    )
                                 }
                             >
-                                <item.icon className="size-5" />
-                                <span className="text-sm font-semibold">{item.label}</span>
+                                <item.icon className={cn("size-5 transition-transform duration-500 group-hover:scale-110")} />
+                                <span className="text-[14px] font-black tracking-tight">{item.label}</span>
+                                
+                                {/* Active Indicator Dot */}
+                                <span className={cn(
+                                    "absolute right-4 size-1.5 rounded-full bg-white transition-all duration-500 scale-0",
+                                    "group-[.active]:scale-100"
+                                )}></span>
                             </NavLink>
                         ))}
-
-                        <NavLink
-                            to="/notifications"
-                            onClick={() => { if (window.innerWidth < 768) onClose(); }}
-                            className={({ isActive }) =>
-                                `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive
-                                    ? 'bg-primary/10 text-primary'
-                                    : 'text-muted-foreground hover:bg-muted font-medium'
-                                }`
-                            }
-                        >
-                            <Bell className="size-5" />
-                            <span className="text-sm font-semibold">Notifications</span>
-                        </NavLink>
-
-                        <NavLink
-                            to="/messages"
-                            onClick={() => { if (window.innerWidth < 768) onClose(); }}
-                            className={({ isActive }) =>
-                                `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive
-                                    ? 'bg-primary/10 text-primary'
-                                    : 'text-muted-foreground hover:bg-muted font-medium'
-                                }`
-                            }
-                        >
-                            <MessageSquare className="size-5" />
-                            <span className="text-sm font-semibold">Messages</span>
-                        </NavLink>
                     </nav>
                 </div>
 
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-8">
                     {can('manage_own_products') && (
-                        <Button
-                            onClick={() => {
-                                window.location.href = '/vendor/products/add';
-                                if (window.innerWidth < 768) onClose();
-                            }}
-                            className="w-full text-sm font-bold gap-2"
-                        >
-                            <Plus className="size-4" />
-                            Ajouter un produit
-                        </Button>
+                        <div className="px-2">
+                             <Button
+                                onClick={() => {
+                                    window.location.href = '/vendor/products/add';
+                                    if (window.innerWidth < 768) onClose();
+                                }}
+                                className="w-full text-xs font-black gap-3 h-14 rounded-2xl shadow-2xl shadow-primary/15 hover:-translate-y-1 transition-all duration-300"
+                            >
+                                <Plus className="size-5" />
+                                Nouveau Produit
+                            </Button>
+                        </div>
                     )}
 
-                    <div className="pt-4 border-t border-border space-y-1">
-                        <ThemeToggle className="w-full mb-2" />
+                    <div className="pt-8 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                        <div className="px-2 mb-6">
+                            <ThemeToggle className="w-full h-11 rounded-2xl bg-slate-50 dark:bg-slate-800/50" />
+                        </div>
+                        
                         <NavLink
                             to="/profile"
                             onClick={() => { if (window.innerWidth < 768) onClose(); }}
                             className={({ isActive }) =>
-                                `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive
-                                    ? 'bg-primary/10 text-primary'
-                                    : 'text-muted-foreground hover:bg-muted font-medium'
-                                }`
+                                cn(
+                                    "flex items-center gap-3.5 px-5 py-3 rounded-2xl transition-all group",
+                                    isActive
+                                        ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
+                                        : "text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30 hover:text-slate-600 dark:hover:text-slate-300"
+                                )
                             }
                         >
                             <User className="size-5" />
-                            <span className="text-sm font-medium">Mon Profil</span>
+                            <span className="text-[14px] font-black">Mon Profil</span>
                         </NavLink>
-                        <NavLink
-                            to="/settings"
-                            onClick={() => { if (window.innerWidth < 768) onClose(); }}
-                            className={({ isActive }) =>
-                                `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive
-                                    ? 'bg-primary/10 text-primary'
-                                    : 'text-muted-foreground hover:bg-muted font-medium'
-                                }`
-                            }
-                        >
-                            <Settings className="size-5" />
-                            <span className="text-sm font-medium">Paramètres</span>
-                        </NavLink>
+                        
                         <button
                             onClick={() => {
                                 logout();
                                 if (window.innerWidth < 768) onClose();
                             }}
-                            className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-destructive hover:bg-destructive/10 font-medium w-full text-left"
+                            className="flex items-center gap-3.5 px-5 py-3 rounded-2xl transition-all text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 font-black w-full text-left group"
                         >
-                            <LogOut className="size-5" />
-                            <span className="text-sm font-medium">Déconnexion</span>
+                            <LogOut className="size-5 group-hover:-translate-x-1 transition-transform" />
+                            <span className="text-[14px]">Déconnexion</span>
                         </button>
                     </div>
                 </div>

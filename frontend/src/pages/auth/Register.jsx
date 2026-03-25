@@ -79,28 +79,29 @@ const Register = () => {
                 </div>
 
                 <div className="relative z-10 max-w-lg text-center px-12 animate-in zoom-in-95 duration-1000">
-                    <div className="mb-10 inline-flex items-center justify-center rounded-[2.5rem] bg-white/10 p-8 backdrop-blur-2xl border border-white/20 shadow-[-20px_20px_60px_rgba(0,0,0,0.3)] rotate-3">
-                        <BcaLogo className="size-20" />
+                    <div className="mb-10 inline-flex items-center justify-center rounded-[2.5rem] bg-white/10 p-10 backdrop-blur-2xl border border-white/20 shadow-2xl transition-transform hover:rotate-2 duration-500">
+                        <BcaLogo className="size-24" />
                     </div>
-                    <h1 className="text-5xl font-black text-white mb-8 leading-tight tracking-tight">
+                    <h1 className="text-5xl font-bold text-white mb-8 leading-tight tracking-tight">
                         Rejoignez la <br />
-                        <span className="text-secondary-foreground italic">marketplace</span> de référence
+                        <span className="opacity-60">marketplace</span> de <br />
+                        référence.
                     </h1>
-                    <p className="text-xl text-white/80 leading-relaxed font-medium mb-12">
-                        Accédez à un réseau exclusif de fournisseurs et d'acheteurs qualifiés pour faire passer votre business au niveau supérieur.
+                    <p className="text-lg text-white/70 leading-relaxed font-medium mb-12 max-w-sm mx-auto">
+                        Accédez à un réseau exclusif de partenaires qualifiés pour développer votre activité en Afrique.
                     </p>
 
-                    <div className="space-y-6 text-left max-w-md mx-auto">
+                    <div className="space-y-6 text-left max-w-xs mx-auto">
                         {[
-                            "Vérification rigoureuse des membres",
-                            "Transactions sécurisées et garanties",
-                            "Support dédié 24/7 pour vos opérations"
+                            "Membres vérifiés & certifiés",
+                            "Paiements 100% sécurisés",
+                            "Support prioritaire 24/7"
                         ].map((text, i) => (
-                            <div key={i} className="flex items-center gap-4 text-white animate-in slide-in-from-left duration-700" style={{ delay: `${i * 150}ms` }}>
-                                <div className="p-1.5 rounded-full bg-accent/20 border border-accent/30">
-                                    <CheckCircle2 className="size-5 text-accent" />
+                            <div key={i} className="flex items-center gap-4 text-white/90 animate-in slide-in-from-left duration-700" style={{ transitionDelay: `${i * 150}ms` }}>
+                                <div className="p-1.5 rounded-full bg-white/10 border border-white/20">
+                                    <CheckCircle2 className="size-4 text-emerald-400" />
                                 </div>
-                                <span className="font-bold tracking-wide">{text}</span>
+                                <span className="text-[13px] font-bold tracking-wide">{text}</span>
                             </div>
                         ))}
                     </div>
@@ -121,37 +122,37 @@ const Register = () => {
 
                 <div className="mx-auto w-full max-w-md">
                     {/* Header */}
-                    <div className="mb-8 flex flex-col items-start gap-6">
-                        <Link to="/" className="flex items-center gap-3 group animate-in slide-in-from-left duration-700">
-                            <div className="p-2.5 rounded-2xl bg-primary/10 border border-primary/20 group-hover:scale-110 transition-transform duration-300">
+                    <div className="mb-10 flex flex-col items-start gap-8">
+                        <Link to="/" className="flex items-center gap-3.5 group animate-in slide-in-from-left duration-700">
+                            <div className="p-2.5 rounded-2xl bg-primary/5 border border-primary/10 group-hover:bg-primary/10 transition-colors duration-300">
                                 <BcaLogo className="size-8" />
                             </div>
-                            <span className="text-2xl font-black tracking-tighter italic text-primary">BCA Connect</span>
+                            <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">BCA Connect</span>
                         </Link>
                         <div className="animate-in slide-in-from-bottom duration-700 delay-100">
-                            <h2 className="text-4xl font-black tracking-tight text-foreground mb-3">Créer un compte</h2>
-                            <p className="text-muted-foreground font-medium">Rejoignez la plus grande communauté B2B de Guinée.</p>
+                            <h2 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">Créer un compte</h2>
+                            <p className="text-slate-400 font-medium">Rejoignez la plus grande communauté B2B digitale et commencez à trader aujourd'hui.</p>
                         </div>
                     </div>
 
                     {error && (
-                        <div className="mb-6 p-4 rounded-2xl bg-destructive/10 text-destructive text-sm border border-destructive/20 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
-                            <ShieldCheck className="size-5 shrink-0" />
-                            <p className="font-semibold">{error}</p>
+                        <div className="mb-8 p-4 rounded-2xl bg-red-50 dark:bg-red-500/5 text-red-600 dark:text-red-500 text-xs border border-red-100 dark:border-red-500/10 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+                            <ShieldCheck className="size-4 shrink-0" />
+                            <p className="font-bold uppercase tracking-widest">{error}</p>
                         </div>
                     )}
 
                     <form className="space-y-6 animate-in fade-in duration-1000 delay-200" onSubmit={handleSubmit}>
                         {/* Type d'utilisateur */}
-                        <div className="space-y-3">
-                            <label className="text-sm font-bold text-foreground/80 ml-1">Je souhaite être :</label>
-                            <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Je souhaite être :</label>
+                            <div className="grid grid-cols-3 gap-4">
                                 {[
                                     { id: 'client', label: 'Acheteur', icon: User },
                                     { id: 'fournisseur', label: 'Vendeur', icon: Store },
                                     { id: 'transporteur', label: 'Livreur', icon: Truck },
                                 ].map((role) => (
-                                    <label key={role.id} className="relative flex flex-col items-center gap-3 p-4 rounded-2xl border-2 border-border bg-muted/20 cursor-pointer hover:border-primary/50 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:ring-2 has-[:checked]:ring-primary/20 group">
+                                    <label key={role.id} className="relative flex flex-col items-center gap-3 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 cursor-pointer overflow-hidden transition-all hover:bg-white dark:hover:bg-slate-800 has-[:checked]:border-primary/50 has-[:checked]:bg-white dark:has-[:checked]:bg-slate-800 has-[:checked]:shadow-lg has-[:checked]:shadow-primary/5 group">
                                         <input
                                             type="radio"
                                             name="role"
@@ -160,25 +161,36 @@ const Register = () => {
                                             onChange={handleChange}
                                             className="sr-only"
                                         />
-                                        <role.icon className="size-6 text-muted-foreground group-has-[:checked]:text-primary group-hover:scale-110 transition-transform duration-300" />
-                                        <span className="text-xs font-black uppercase tracking-wider">{role.label}</span>
+                                        <role.icon className={cn(
+                                            "size-5 transition-colors duration-300",
+                                            formData.role === role.id ? "text-primary" : "text-slate-400"
+                                        )} />
+                                        <span className={cn(
+                                            "text-[10px] font-bold uppercase tracking-widest transition-colors",
+                                            formData.role === role.id ? "text-primary" : "text-slate-400"
+                                        )}>{role.label}</span>
+                                        {formData.role === role.id && (
+                                            <div className="absolute top-2 right-2">
+                                                <div className="size-1.5 rounded-full bg-primary animate-pulse" />
+                                            </div>
+                                        )}
                                     </label>
                                 ))}
                             </div>
                         </div>
 
                         {/* Nom complet */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold text-foreground/80 ml-1">Nom complet</label>
+                        <div className="space-y-2.5">
+                            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Nom complet</label>
                             <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
-                                    <User className="size-5" />
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors duration-300">
+                                    <User className="size-4.5" />
                                 </div>
                                 <input
                                     name="fullName"
                                     value={formData.fullName}
                                     onChange={handleChange}
-                                    className="block w-full rounded-2xl border-border bg-muted/30 py-4 pl-12 pr-4 shadow-sm ring-1 ring-inset ring-border placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm transition-all duration-300"
+                                    className="block w-full rounded-2xl border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 overflow-hidden py-4.5 pl-12 pr-4 shadow-sm focus:ring-2 focus:ring-primary/20 focus:outline-none placeholder:text-slate-300 text-xs font-bold transition-all duration-300"
                                     placeholder="Prénom Nom"
                                     type="text"
                                     required
@@ -187,18 +199,18 @@ const Register = () => {
                         </div>
 
                         {/* Email */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold text-foreground/80 ml-1">Adresse Email</label>
+                        <div className="space-y-2.5">
+                            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Adresse Email</label>
                             <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
-                                    <Mail className="size-5" />
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors duration-300">
+                                    <Mail className="size-4.5" />
                                 </div>
                                 <input
                                     name="email"
                                     value={formData.email}
                                     onChange={handleChange}
-                                    className="block w-full rounded-2xl border-border bg-muted/30 py-4 pl-12 pr-4 shadow-sm ring-1 ring-inset ring-border placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm transition-all duration-300"
-                                    placeholder="m.diallo@exemple.com"
+                                    className="block w-full rounded-2xl border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 overflow-hidden py-4.5 pl-12 pr-4 shadow-sm focus:ring-2 focus:ring-primary/20 focus:outline-none placeholder:text-slate-300 text-xs font-bold transition-all duration-300"
+                                    placeholder="votre@email.com"
                                     type="email"
                                     required
                                 />
@@ -206,17 +218,17 @@ const Register = () => {
                         </div>
 
                         {/* Telephone */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold text-foreground/80 ml-1">Numéro de téléphone</label>
+                        <div className="space-y-2.5">
+                            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Téléphone</label>
                             <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
-                                    <Truck className="size-5" />
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors duration-300">
+                                    <Truck className="size-4.5" />
                                 </div>
                                 <input
                                     name="telephone"
                                     value={formData.telephone}
                                     onChange={handleChange}
-                                    className="block w-full rounded-2xl border-border bg-muted/30 py-4 pl-12 pr-4 shadow-sm ring-1 ring-inset ring-border placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm transition-all duration-300"
+                                    className="block w-full rounded-2xl border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 overflow-hidden py-4.5 pl-12 pr-4 shadow-sm focus:ring-2 focus:ring-primary/20 focus:outline-none placeholder:text-slate-300 text-xs font-bold transition-all duration-300"
                                     placeholder="+224 6XX XX XX XX"
                                     type="tel"
                                     required
@@ -225,42 +237,42 @@ const Register = () => {
                         </div>
 
                         {/* Passwords */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-foreground/80 ml-1">Mot de passe</label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2.5">
+                                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Mot de passe</label>
                                 <div className="relative group">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
-                                        <Lock className="size-5" />
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors duration-300">
+                                        <Lock className="size-4.5" />
                                     </div>
                                     <input
                                         name="password"
                                         value={formData.password}
                                         onChange={handleChange}
-                                        className="block w-full rounded-2xl border-border bg-muted/30 py-4 pl-12 pr-12 shadow-sm ring-1 ring-inset ring-border placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm transition-all duration-300"
+                                        className="block w-full rounded-2xl border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 overflow-hidden py-4.5 pl-12 pr-12 shadow-sm focus:ring-2 focus:ring-primary/20 focus:outline-none placeholder:text-slate-300 text-xs font-bold transition-all duration-300"
                                         placeholder="••••••••"
                                         type={showPassword ? 'text' : 'password'}
                                         required
                                     />
                                     <button
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-primary transition-colors"
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
                                     >
-                                        {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                                        {showPassword ? <EyeOff className="size-4.5" /> : <Eye className="size-4.5" />}
                                     </button>
                                 </div>
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-foreground/80 ml-1">Confirmer</label>
+                            <div className="space-y-2.5">
+                                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Confirmer</label>
                                 <div className="relative group">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
-                                        <ArrowRight className="size-5" />
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors duration-300">
+                                        <ArrowRight className="size-4.5" />
                                     </div>
                                     <input
                                         name="confirmPassword"
                                         value={formData.confirmPassword}
                                         onChange={handleChange}
-                                        className="block w-full rounded-2xl border-border bg-muted/30 py-4 pl-12 pr-4 shadow-sm ring-1 ring-inset ring-border placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm transition-all duration-300"
+                                        className="block w-full rounded-2xl border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 overflow-hidden py-4.5 pl-12 pr-4 shadow-sm focus:ring-2 focus:ring-primary/20 focus:outline-none placeholder:text-slate-300 text-xs font-bold transition-all duration-300"
                                         placeholder="••••••••"
                                         type="password"
                                         required
@@ -278,19 +290,19 @@ const Register = () => {
 
                         <Button
                             type="submit"
-                            className="w-full py-7 rounded-2xl font-black text-lg group shadow-xl shadow-primary/25 relative overflow-hidden active:scale-[0.98] transition-transform"
+                            className="w-full py-7 rounded-2xl font-bold text-xs uppercase tracking-[0.2em] group shadow-2xl shadow-primary/20 relative overflow-hidden active:scale-[0.98] transition-transform"
                             disabled={isSubmitting}
                         >
                             <span className="relative z-10 flex items-center justify-center gap-3">
-                                {isSubmitting ? 'Création...' : 'Créer mon compte'}
-                                {!isSubmitting && <ArrowRight className="size-6 group-hover:translate-x-2 transition-transform duration-300" />}
+                                {isSubmitting ? 'Finalisation...' : 'Créer mon compte'}
+                                {!isSubmitting && <ArrowRight className="size-4 group-hover:translate-x-2 transition-transform duration-300" />}
                             </span>
                         </Button>
                     </form>
 
-                    <p className="mt-10 text-center text-sm font-semibold text-muted-foreground">
+                    <p className="mt-10 text-center text-[11px] font-bold text-slate-400 uppercase tracking-widest">
                         Déjà inscrit ?{' '}
-                        <Link className="text-primary font-black hover:text-accent transition-all hover:underline underline-offset-4 decoration-2" to="/login">
+                        <Link className="text-primary hover:underline underline-offset-4 decoration-2" to="/login">
                             Se connecter
                         </Link>
                     </p>

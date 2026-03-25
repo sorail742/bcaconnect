@@ -35,6 +35,9 @@ export const offlineStorage = {
     markOrderSynced: async (id) => {
         return await db.orders_queue.update(id, { status: 'synced' });
     },
+    markOrderFailed: async (id, reason) => {
+        return await db.orders_queue.update(id, { status: 'failed', reason, updated_at: Date.now() });
+    },
 
     // Transactions
     saveTransactions: async (transactions) => {

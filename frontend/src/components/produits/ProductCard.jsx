@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Star, Heart, Eye, ArrowRight, CheckCircle2, Zap } from 'lucide-react';
+import { ShoppingCart, Star, Heart, Eye, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useCart } from '../../context/CartContext';
 import { cn } from '../../lib/utils';
@@ -31,12 +31,7 @@ const ProductCard = ({ product, compact = false }) => {
         addToCart(product);
         setIsAdded(true);
         setTimeout(() => setIsAdded(false), 2500);
-        toast.success(`"${name}" ajouté au panier !`, {
-            action: {
-                label: 'Panier',
-                onClick: () => navigate('/cart')
-            }
-        });
+        toast.success(`"${name}" ajouté au panier !`);
     };
 
     const handleWishlist = (e) => {
@@ -45,157 +40,116 @@ const ProductCard = ({ product, compact = false }) => {
         setIsWishlisted(prev => !prev);
     };
 
-    const handleQuickView = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        navigate(`/product/${id}`);
-    };
-
     return (
         <div className={cn(
-            "group relative bg-card rounded-[1.75rem] overflow-hidden border border-border/60",
-            "hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5",
-            "transition-all duration-500 flex flex-col",
-            compact ? "h-auto" : "h-full"
+            "group relative bg-white dark:bg-slate-900 rounded-[2rem] overflow-hidden border border-slate-100 dark:border-slate-800 transition-all duration-700 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-2 flex flex-col h-full",
+            compact ? "max-w-sm" : ""
         )}>
             {/* ── Image Zone ── */}
-            <div className="relative overflow-hidden bg-slate-100 dark:bg-slate-900 m-3 rounded-[1.25rem]">
-                <Link to={`/product/${id}`} className="block relative aspect-[4/3]">
+            <div className="relative aspect-[4/5] overflow-hidden bg-slate-50 dark:bg-slate-950">
+                <Link to={`/product/${id}`} className="block h-full">
                     <img
                         src={image}
                         alt={name}
-                        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                        className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                     />
-                    {/* Dark overlay on hover */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-500" />
                 </Link>
 
-                {/* ── Badges ── */}
-                <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+                {/* ── Glass Badges ── */}
+                <div className="absolute top-4 left-4 flex flex-col gap-2 z-10 transition-transform duration-500 group-hover:translate-x-1">
                     {isNew && (
-                        <span className="px-2.5 py-1 bg-primary text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-xl shadow-primary/20">
-                            New
+                        <span className="px-3 py-1 bg-primary/90 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg">
+                            Nouveau
                         </span>
                     )}
                     {discount && (
-                        <span className="px-2.5 py-1 bg-red-500 text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-xl shadow-red-500/20">
+                        <span className="px-3 py-1 bg-rose-500/90 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg">
                             -{discount}%
                         </span>
                     )}
-                    {stock <= 5 && stock > 0 && (
-                        <span className="px-2.5 py-1 bg-amber-500 text-white text-[9px] font-black uppercase tracking-widest rounded-full">
-                            Dernier stock
-                        </span>
+                </div>
+
+                {/* ── Overlay Actions ── */}
+                <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                
+                <button
+                    onClick={handleWishlist}
+                    className={cn(
+                        "absolute top-4 right-4 h-10 w-10 rounded-2xl flex items-center justify-center transition-all duration-500 z-10",
+                        isWishlisted
+                            ? "bg-rose-500 text-white shadow-xl shadow-rose-500/20"
+                            : "bg-white/80 dark:bg-slate-800/80 backdrop-blur-md text-slate-400 hover:text-rose-500 hover:bg-white dark:hover:bg-slate-800 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0"
                     )}
-                </div>
+                >
+                    <Heart className={cn("size-5 transition-transform duration-500", isWishlisted ? "fill-current" : "group-hover:scale-110")} />
+                </button>
 
-                {/* ── Action Buttons (top right) ── */}
-                <div className="absolute top-3 right-3 flex flex-col gap-2 z-10">
-                    {/* Wishlist */}
-                    <button
-                        onClick={handleWishlist}
-                        className={cn(
-                            "size-9 rounded-xl backdrop-blur-md border flex items-center justify-center transition-all duration-300 shadow-lg",
-                            isWishlisted
-                                ? "bg-red-500 border-red-500 text-white scale-110"
-                                : "bg-white/80 dark:bg-black/40 border-white/20 text-slate-600 dark:text-white/80 opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:border-red-500 hover:text-white"
-                        )}
+                <div className="absolute bottom-4 left-4 right-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 z-10">
+                    <Button 
+                        onClick={() => navigate(`/product/${id}`)}
+                        className="w-full h-11 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-slate-900 dark:text-white hover:bg-primary hover:text-white border-transparent text-[10px] font-black uppercase tracking-[0.2em] rounded-xl shadow-2xl"
                     >
-                        <Heart className={cn("size-4", isWishlisted ? "fill-white" : "")} />
-                    </button>
-
-                    {/* Quick View */}
-                    <button
-                        onClick={handleQuickView}
-                        className="size-9 rounded-xl bg-white/80 dark:bg-black/40 backdrop-blur-md border border-white/20 text-slate-600 dark:text-white/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 delay-75 shadow-lg hover:bg-primary hover:border-primary hover:text-white"
-                    >
-                        <Eye className="size-4" />
-                    </button>
-                </div>
-
-                {/* ── Quick Add Button (bottom center, slides up) ── */}
-                <div className="absolute bottom-3 inset-x-3 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 z-10">
-                    <button
-                        onClick={handleAddToCart}
-                        className={cn(
-                            "w-full h-10 rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 shadow-2xl transition-all duration-300",
-                            isAdded
-                                ? "bg-emerald-500 text-white"
-                                : "bg-white dark:bg-slate-800 text-foreground hover:bg-primary hover:text-white"
-                        )}
-                    >
-                        {isAdded ? (
-                            <><CheckCircle2 className="size-4" /> Ajouté !</>
-                        ) : (
-                            <><ShoppingCart className="size-4" /> Ajouter au panier</>
-                        )}
-                    </button>
+                        <Eye className="size-4 mr-2" />
+                        Voir Détails
+                    </Button>
                 </div>
             </div>
 
             {/* ── Info Zone ── */}
-            <div className="px-5 pb-5 pt-3 flex flex-col flex-1 gap-3">
-                {/* Category + Rating */}
+            <div className="p-6 flex flex-col flex-1 gap-3">
                 <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-black text-primary uppercase tracking-[0.2em] px-2 py-0.5 bg-primary/8 rounded-md border border-primary/10">
-                        {product.categorie?.nom_categorie || product.nom_categorie || 'Catalogue'}
+                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] opacity-80">
+                        {product.categorie?.nom_categorie || 'Premium Collection'}
                     </span>
-                    <div className="flex items-center gap-1">
-                        <div className="flex gap-0.5">
-                            {[...Array(5)].map((_, i) => (
-                                <Star key={i} className={cn("size-2.5", i < Math.floor(rating) ? "fill-amber-400 text-amber-400" : "text-slate-300 dark:text-slate-600")} />
-                            ))}
-                        </div>
-                        <span className="text-[10px] font-bold text-muted-foreground">({reviewsCount})</span>
+                    <div className="flex items-center px-1.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-600 border border-amber-500/10">
+                        <Star className="size-3 fill-amber-500 text-amber-500" />
+                        <span className="text-[10px] font-black ml-1">{rating || '4.8'}</span>
                     </div>
                 </div>
 
-                {/* Name */}
-                <div>
-                    <Link to={`/product/${id}`} className="block">
-                        <h3 className="font-black text-foreground text-base leading-tight hover:text-primary transition-colors line-clamp-2 tracking-tight italic uppercase">
-                            {name}
-                        </h3>
-                    </Link>
-                    {vendor && (
-                        <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-[0.15em] flex items-center gap-1.5 mt-1">
-                            <span className="size-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]" />
-                            {vendor}
-                        </p>
-                    )}
+                <Link to={`/product/${id}`} className="block group/title">
+                    <h3 className="font-black text-slate-900 dark:text-white text-base tracking-tight hover:text-primary transition-colors line-clamp-2 italic leading-tight">
+                        {name}
+                    </h3>
+                </Link>
+
+                <div className="flex items-center gap-2 py-1">
+                    <div className="size-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700">
+                         <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${vendor || 'BCA'}`} className="w-full h-full" alt="V" />
+                    </div>
+                    <p className="text-[11px] font-bold text-slate-500">
+                        Par <span className="text-slate-800 dark:text-slate-300 hover:text-primary transition-colors cursor-pointer">{vendor || 'BCA Partner'}</span>
+                    </p>
                 </div>
 
-                {/* Description */}
-                {!compact && (
-                    <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2 font-medium flex-1">
-                        {description || "Produit de qualité sélectionné par BCA Connect."}
-                    </p>
-                )}
-
-                {/* Price + CTA */}
-                <div className="flex items-end justify-between pt-3 border-t border-border/40 mt-auto">
+                <div className="mt-auto pt-4 flex items-center justify-between border-t border-slate-50 dark:border-slate-800/50">
                     <div className="flex flex-col">
+                        <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter italic">
+                            {price.toLocaleString('fr-FR')} <span className="text-[10px] font-bold text-primary not-italic tracking-normal">GNF</span>
+                        </span>
                         {oldPrice && (
-                            <span className="text-[10px] text-muted-foreground line-through font-medium">
-                                {oldPrice.toLocaleString('fr-FR')} GNF
+                            <span className="text-[10px] text-slate-400 font-bold line-through tracking-tight opacity-60">
+                                {oldPrice.toLocaleString('fr-FR')}
                             </span>
                         )}
-                        <span className="text-xl font-black text-foreground italic tracking-tighter leading-none">
-                            {price.toLocaleString('fr-FR')}
-                            <span className="text-xs not-italic font-medium opacity-50 ml-1">GNF</span>
-                        </span>
                     </div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        asChild
-                        className="h-9 px-4 rounded-xl font-black uppercase tracking-widest text-[9px] border-border/50 hover:bg-primary hover:text-white hover:border-primary transition-all group/btn gap-1.5"
+                    
+                    <button
+                        onClick={handleAddToCart}
+                        className={cn(
+                            "group/cart h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-500 relative overflow-hidden",
+                            isAdded
+                                ? "bg-emerald-500 text-white shadow-xl shadow-emerald-500/20"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary hover:text-white hover:shadow-xl hover:shadow-primary/20"
+                        )}
                     >
-                        <Link to={`/product/${id}`}>
-                            Détails
-                            <ArrowRight className="size-3 group-hover/btn:translate-x-0.5 transition-transform" />
-                        </Link>
-                    </Button>
+                        <div className={cn("transition-all duration-500", isAdded ? "scale-0 rotate-90" : "scale-100 group-hover/cart:rotate-12")}>
+                             <ShoppingCart className="size-5" />
+                        </div>
+                        <div className={cn("absolute inset-0 flex items-center justify-center transition-all duration-500", isAdded ? "scale-100 rotate-0" : "scale-0 -rotate-90")}>
+                             <CheckCircle2 className="size-6" />
+                        </div>
+                    </button>
                 </div>
             </div>
         </div>
