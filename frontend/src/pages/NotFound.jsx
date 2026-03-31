@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Home, Headphones, Car, Wallet, HelpCircle, SearchX, Bell } from 'lucide-react';
+import { Home, Headphones, Store, Wallet, HelpCircle, SearchX, Bell } from 'lucide-react';
 
 const NotFound = () => {
     return (
@@ -86,17 +86,17 @@ const NotFound = () => {
 
                     {/* Quick Links */}
                     <div className="mt-16 grid grid-cols-2 md:grid-cols-3 gap-6 text-sm">
-                        <Link to="/vehicules" className="text-slate-500 hover:text-primary flex items-center justify-center gap-1 transition-colors">
-                            <Car className="size-4" />
-                            Véhicules
+                        <Link to="/marketplace" className="text-slate-500 hover:text-primary flex items-center justify-center gap-1 transition-colors">
+                            <Store className="size-4" />
+                            Marché B2B
                         </Link>
-                        <Link to="/financement" className="text-slate-500 hover:text-primary flex items-center justify-center gap-1 transition-colors">
+                        <Link to="/wallet" className="text-slate-500 hover:text-primary flex items-center justify-center gap-1 transition-colors">
                             <Wallet className="size-4" />
-                            Financement
+                            Portefeuille
                         </Link>
-                        <Link to="/aide" className="text-slate-500 hover:text-primary flex items-center justify-center gap-1 transition-colors">
+                        <Link to="/help" className="text-slate-500 hover:text-primary flex items-center justify-center gap-1 transition-colors">
                             <HelpCircle className="size-4" />
-                            Aide
+                            Centre d'aide
                         </Link>
                     </div>
                 </div>

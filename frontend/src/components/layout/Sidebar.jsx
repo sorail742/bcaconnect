@@ -27,6 +27,7 @@ import Button from '../ui/Button';
 import ThemeToggle from '../ui/ThemeToggle';
 import { useAuth } from '../../hooks/useAuth';
 import { useRBAC } from '../../hooks/useRBAC';
+import { cn } from '../../lib/utils';
 
 const Sidebar = ({ isOpen, onClose }) => {
     const { user, logout } = useAuth();

@@ -3,6 +3,7 @@ import PublicLayout from '../components/layout/PublicLayout';
 import { HelpCircle, Star, ShoppingBag, Truck, CheckCircle2, ShieldCheck, ArrowRight, BookOpen, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
+import { cn } from '../lib/utils';
 
 const HelpCenter = () => {
     return (

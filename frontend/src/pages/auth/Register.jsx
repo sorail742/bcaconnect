@@ -6,6 +6,7 @@ import Button from '../../components/ui/Button';
 import BcaLogo from '../../components/ui/BcaLogo';
 import ThemeToggle from '../../components/ui/ThemeToggle';
 import { toast } from 'sonner';
+import { cn } from '../../lib/utils';
 
 const Register = () => {
     const [formData, setFormData] = useState({

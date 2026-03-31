@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '../../lib/utils';
 
 const FormInput = ({ label, type = 'text', placeholder, value, onChange, name, error, icon, className = "", ...props }) => {
     return (

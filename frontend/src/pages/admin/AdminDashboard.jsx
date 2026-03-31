@@ -95,7 +95,7 @@ const AdminDashboard = () => {
     const nba = {
         message: "Audit de sécurité requis pour 3 nouvelles boutiques partenaires.",
         label: "Lancer l'audit",
-        onClick: () => window.location.href = '/admin/stores'
+        onClick: () => toast.info("Le module de gestion poussée des boutiques sera bientôt disponible.")
     };
 
     const stats = dashboardData?.stats || [

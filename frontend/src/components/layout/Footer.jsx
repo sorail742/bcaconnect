@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Footer = () => {
     return (
@@ -21,9 +22,9 @@ const Footer = () => {
                         </p>
                         <div className="flex gap-4">
                             {[Facebook, Twitter, Instagram, Linkedin].map((Icon, i) => (
-                                <a key={i} href="#" className="h-10 w-10 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-500 hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all outline-none focus:ring-2 focus:ring-primary/20">
+                                <button key={i} onClick={(e) => { e.preventDefault(); toast.info("Réseaux sociaux bientôt configurés."); }} className="h-10 w-10 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-500 hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all outline-none focus:ring-2 focus:ring-primary/20">
                                     <Icon className="h-5 w-5" />
-                                </a>
+                                </button>
                             ))}
                         </div>
                     </div>
@@ -31,9 +32,9 @@ const Footer = () => {
                     <div>
                         <h4 className="font-bold text-slate-900 dark:text-white mb-6">Marketplace</h4>
                         <ul className="space-y-4 text-sm text-slate-600 dark:text-slate-400">
-                            <li><Link className="hover:text-primary transition-colors flex items-center gap-2" to="/catalogue">Catalogue</Link></li>
-                            <li><Link className="hover:text-primary transition-colors flex items-center gap-2" to="/boutiques">Vendeurs certifiés</Link></li>
-                            <li><a className="hover:text-primary transition-colors flex items-center gap-2" href="#">Appels d'offres</a></li>
+                            <li><Link className="hover:text-primary transition-colors flex items-center gap-2" to="/marketplace">Catalogue</Link></li>
+                            <li><Link className="hover:text-primary transition-colors flex items-center gap-2" to="/vendors">Vendeurs certifiés</Link></li>
+                            <li><button className="hover:text-primary transition-colors flex items-center gap-2" onClick={(e) => { e.preventDefault(); toast.info("Module Appels d'offres bientôt disponible."); }}>Appels d'offres</button></li>
                             <li><Link className="hover:text-primary transition-colors flex items-center gap-2" to="/register">Devenir vendeur</Link></li>
                         </ul>
                     </div>
@@ -41,10 +42,10 @@ const Footer = () => {
                     <div>
                         <h4 className="font-bold text-slate-900 dark:text-white mb-6">Support</h4>
                         <ul className="space-y-4 text-sm text-slate-600 dark:text-slate-400">
-                            <li><a className="hover:text-primary transition-colors flex items-center gap-2" href="/about">À propos</a></li>
-                            <li><a className="hover:text-primary transition-colors flex items-center gap-2" href="/help">Centre d'aide</a></li>
-                            <li><a className="hover:text-primary transition-colors flex items-center gap-2" href="/contact">Contact</a></li>
-                            <li><a className="hover:text-primary transition-colors flex items-center gap-2" href="/faq">FAQ</a></li>
+                            <li><Link className="hover:text-primary transition-colors flex items-center gap-2" to="/about">À propos</Link></li>
+                            <li><Link className="hover:text-primary transition-colors flex items-center gap-2" to="/help">Centre d'aide</Link></li>
+                            <li><Link className="hover:text-primary transition-colors flex items-center gap-2" to="/contact">Contact</Link></li>
+                            <li><Link className="hover:text-primary transition-colors flex items-center gap-2" to="/faq">FAQ</Link></li>
                         </ul>
                     </div>
 
