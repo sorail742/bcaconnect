@@ -59,10 +59,10 @@ const Register = () => {
     };
 
     return (
-        <div className="flex min-h-screen bg-background text-foreground transition-all duration-500 selection:bg-primary/30 font-sans">
+        <div className="flex min-h-screen bg-background text-foreground transition-all duration-500 selection:bg-primary/30 font-inter">
             {/* Theme Toggle Floating */}
             <div className="absolute top-6 right-6 z-50">
-                <div className="bg-card/50 backdrop-blur-xl border border-border p-1.5 rounded-2xl shadow-2xl hover:shadow-primary/10 transition-all hover:scale-105 active:scale-95">
+                <div className="bg-card/50 backdrop-blur-xl border-2 border-border p-2 rounded-2xl shadow-premium hover:shadow-primary/10 transition-all hover:scale-105 active-press">
                     <ThemeToggle minimal className="hover:bg-transparent" />
                 </div>
             </div>
@@ -113,7 +113,7 @@ const Register = () => {
             </div>
 
             {/* Côté droit : Formulaire d'inscription */}
-            <div className="flex flex-1 flex-col justify-center px-6 py-12 lg:px-24 xl:px-40 relative z-10 overflow-y-auto">
+            <div className="flex flex-1 flex-col justify-center px-6 py-12 lg:px-24 xl:px-40 relative z-10 overflow-y-auto bg-background">
                 {/* Background decorative elements */}
                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 opacity-30 pointer-events-none">
                     <div className="absolute -top-[10%] -right-[10%] size-[40%] bg-primary/20 blur-[120px] rounded-full"></div>
@@ -122,16 +122,16 @@ const Register = () => {
 
                 <div className="mx-auto w-full max-w-md">
                     {/* Header */}
-                    <div className="mb-10 flex flex-col items-start gap-8">
-                        <Link to="/" className="flex items-center gap-3.5 group animate-in slide-in-from-left duration-700">
-                            <div className="p-2.5 rounded-2xl bg-primary/5 border border-primary/10 group-hover:bg-primary/10 transition-colors duration-300">
-                                <BcaLogo className="size-8" />
+                    <div className="mb-12 flex flex-col items-start gap-10">
+                        <Link to="/" className="flex items-center gap-6 group animate-in slide-in-from-left duration-700">
+                            <div className="size-14 rounded-2xl bg-foreground text-background flex items-center justify-center group-hover:bg-primary transition-colors duration-300 shadow-premium">
+                                <BcaLogo className="size-7" />
                             </div>
-                            <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">BCA Connect</span>
+                            <span className="text-2xl font-black tracking-tighter text-foreground uppercase italic underline decoration-primary/50 decoration-4 underline-offset-8">BCA Connect</span>
                         </Link>
                         <div className="animate-in slide-in-from-bottom duration-700 delay-100">
-                            <h2 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">Créer un compte</h2>
-                            <p className="text-slate-400 font-medium">Rejoignez la plus grande communauté B2B digitale et commencez à trader aujourd'hui.</p>
+                            <h2 className="text-6xl font-black tracking-tighter text-foreground mb-6 italic uppercase leading-none">Création <span className="text-primary italic">Compte</span></h2>
+                            <p className="text-executive-label opacity-40 italic">Incorporez-vous dans l'écosystème B2B digital le plus performant d'Afrique.</p>
                         </div>
                     </div>
 
@@ -142,17 +142,17 @@ const Register = () => {
                         </div>
                     )}
 
-                    <form className="space-y-6 animate-in fade-in duration-1000 delay-200" onSubmit={handleSubmit}>
+                    <form className="space-y-8 animate-in fade-in duration-1000 delay-200" onSubmit={handleSubmit}>
                         {/* Type d'utilisateur */}
                         <div className="space-y-4">
-                            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Je souhaite être :</label>
-                            <div className="grid grid-cols-3 gap-4">
+                            <label className="text-executive-label opacity-40 ml-2">Configuration du Profil Executive :</label>
+                            <div className="grid grid-cols-3 gap-5">
                                 {[
-                                    { id: 'client', label: 'Acheteur', icon: User },
-                                    { id: 'fournisseur', label: 'Vendeur', icon: Store },
-                                    { id: 'transporteur', label: 'Livreur', icon: Truck },
+                                    { id: 'client', label: 'ACHETEUR', icon: User },
+                                    { id: 'fournisseur', label: 'VENDEUR', icon: Store },
+                                    { id: 'transporteur', label: 'LOGISTIQUE', icon: Truck },
                                 ].map((role) => (
-                                    <label key={role.id} className="relative flex flex-col items-center gap-3 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 cursor-pointer overflow-hidden transition-all hover:bg-white dark:hover:bg-slate-800 has-[:checked]:border-primary/50 has-[:checked]:bg-white dark:has-[:checked]:bg-slate-800 has-[:checked]:shadow-lg has-[:checked]:shadow-primary/5 group">
+                                    <label key={role.id} className="relative flex flex-col items-center gap-4 p-6 rounded-2xl border-2 border-border bg-accent/30 cursor-pointer overflow-hidden transition-all hover:bg-background has-[:checked]:border-primary has-[:checked]:bg-background has-[:checked]:shadow-premium group">
                                         <input
                                             type="radio"
                                             name="role"
@@ -162,16 +162,16 @@ const Register = () => {
                                             className="sr-only"
                                         />
                                         <role.icon className={cn(
-                                            "size-5 transition-colors duration-300",
-                                            formData.role === role.id ? "text-primary" : "text-slate-400"
+                                            "size-6 transition-colors duration-300",
+                                            formData.role === role.id ? "text-primary" : "text-muted-foreground"
                                         )} />
                                         <span className={cn(
-                                            "text-[10px] font-bold uppercase tracking-widest transition-colors",
-                                            formData.role === role.id ? "text-primary" : "text-slate-400"
+                                            "text-executive-label transition-colors italic",
+                                            formData.role === role.id ? "text-primary" : "text-muted-foreground"
                                         )}>{role.label}</span>
                                         {formData.role === role.id && (
                                             <div className="absolute top-2 right-2">
-                                                <div className="size-1.5 rounded-full bg-primary animate-pulse" />
+                                                <div className="size-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(43,90,255,0.6)]" />
                                             </div>
                                         )}
                                     </label>
@@ -180,18 +180,18 @@ const Register = () => {
                         </div>
 
                         {/* Nom complet */}
-                        <div className="space-y-2.5">
-                            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Nom complet</label>
+                        <div className="space-y-3">
+                            <label className="text-executive-label opacity-40 ml-2">Nom Complet Certifié</label>
                             <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors duration-300">
-                                    <User className="size-4.5" />
+                                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
+                                    <User className="size-5" />
                                 </div>
                                 <input
                                     name="fullName"
                                     value={formData.fullName}
                                     onChange={handleChange}
-                                    className="block w-full rounded-2xl border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 overflow-hidden py-4.5 pl-12 pr-4 shadow-sm focus:ring-2 focus:ring-primary/20 focus:outline-none placeholder:text-slate-300 text-xs font-bold transition-all duration-300"
-                                    placeholder="Prénom Nom"
+                                    className="block w-full h-16 rounded-[1.5rem] border-2 border-border bg-accent/30 py-4 pl-14 pr-4 shadow-inner focus:border-primary focus:bg-background focus:outline-none placeholder:text-muted-foreground/30 text-sm font-black italic transition-all duration-300"
+                                    placeholder="Executive Name"
                                     type="text"
                                     required
                                 />
@@ -199,18 +199,18 @@ const Register = () => {
                         </div>
 
                         {/* Email */}
-                        <div className="space-y-2.5">
-                            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Adresse Email</label>
+                        <div className="space-y-3">
+                            <label className="text-executive-label opacity-40 ml-2">Adresse Email</label>
                             <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors duration-300">
-                                    <Mail className="size-4.5" />
+                                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
+                                    <Mail className="size-5" />
                                 </div>
                                 <input
                                     name="email"
                                     value={formData.email}
                                     onChange={handleChange}
-                                    className="block w-full rounded-2xl border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 overflow-hidden py-4.5 pl-12 pr-4 shadow-sm focus:ring-2 focus:ring-primary/20 focus:outline-none placeholder:text-slate-300 text-xs font-bold transition-all duration-300"
-                                    placeholder="votre@email.com"
+                                    className="block w-full h-16 rounded-[1.5rem] border-2 border-border bg-accent/30 py-4 pl-14 pr-4 shadow-inner focus:border-primary focus:bg-background focus:outline-none placeholder:text-muted-foreground/30 text-sm font-black italic transition-all duration-300"
+                                    placeholder="corporate@email.com"
                                     type="email"
                                     required
                                 />
@@ -218,17 +218,17 @@ const Register = () => {
                         </div>
 
                         {/* Telephone */}
-                        <div className="space-y-2.5">
-                            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Téléphone</label>
+                        <div className="space-y-3">
+                            <label className="text-executive-label opacity-40 ml-2">Canal Téléphonique</label>
                             <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors duration-300">
-                                    <Truck className="size-4.5" />
+                                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
+                                    <Truck className="size-5" />
                                 </div>
                                 <input
                                     name="telephone"
                                     value={formData.telephone}
                                     onChange={handleChange}
-                                    className="block w-full rounded-2xl border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 overflow-hidden py-4.5 pl-12 pr-4 shadow-sm focus:ring-2 focus:ring-primary/20 focus:outline-none placeholder:text-slate-300 text-xs font-bold transition-all duration-300"
+                                    className="block w-full h-16 rounded-[1.5rem] border-2 border-border bg-accent/30 py-4 pl-14 pr-4 shadow-inner focus:border-primary focus:bg-background focus:outline-none placeholder:text-muted-foreground/30 text-sm font-black italic transition-all duration-300"
                                     placeholder="+224 6XX XX XX XX"
                                     type="tel"
                                     required
@@ -238,41 +238,41 @@ const Register = () => {
 
                         {/* Passwords */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2.5">
-                                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Mot de passe</label>
+                            <div className="space-y-3">
+                                <label className="text-executive-label opacity-40 ml-2">Clef d'Accès</label>
                                 <div className="relative group">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors duration-300">
-                                        <Lock className="size-4.5" />
+                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
+                                        <Lock className="size-5" />
                                     </div>
                                     <input
                                         name="password"
                                         value={formData.password}
                                         onChange={handleChange}
-                                        className="block w-full rounded-2xl border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 overflow-hidden py-4.5 pl-12 pr-12 shadow-sm focus:ring-2 focus:ring-primary/20 focus:outline-none placeholder:text-slate-300 text-xs font-bold transition-all duration-300"
+                                        className="block w-full h-16 rounded-[1.5rem] border-2 border-border bg-accent/30 py-4 pl-14 pr-12 shadow-inner focus:border-primary focus:bg-background focus:outline-none placeholder:text-muted-foreground/30 text-sm font-black italic transition-all duration-300 tracking-[0.3em]"
                                         placeholder="••••••••"
                                         type={showPassword ? 'text' : 'password'}
                                         required
                                     />
                                     <button
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-primary transition-colors"
+                                        className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
                                     >
-                                        {showPassword ? <EyeOff className="size-4.5" /> : <Eye className="size-4.5" />}
+                                        {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                                     </button>
                                 </div>
                             </div>
-                            <div className="space-y-2.5">
-                                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">Confirmer</label>
+                            <div className="space-y-3">
+                                <label className="text-executive-label opacity-40 ml-2">Validation</label>
                                 <div className="relative group">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors duration-300">
-                                        <ArrowRight className="size-4.5" />
+                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
+                                        <ArrowRight className="size-5" />
                                     </div>
                                     <input
                                         name="confirmPassword"
                                         value={formData.confirmPassword}
                                         onChange={handleChange}
-                                        className="block w-full rounded-2xl border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 overflow-hidden py-4.5 pl-12 pr-4 shadow-sm focus:ring-2 focus:ring-primary/20 focus:outline-none placeholder:text-slate-300 text-xs font-bold transition-all duration-300"
+                                        className="block w-full h-16 rounded-[1.5rem] border-2 border-border bg-accent/30 py-4 pl-14 pr-4 shadow-inner focus:border-primary focus:bg-background focus:outline-none placeholder:text-muted-foreground/30 text-sm font-black italic transition-all duration-300 tracking-[0.3em]"
                                         placeholder="••••••••"
                                         type="password"
                                         required
@@ -281,29 +281,29 @@ const Register = () => {
                             </div>
                         </div>
 
-                        <div className="flex items-start gap-4 py-2 ml-1">
-                            <input className="mt-1 size-5 shrink-0 rounded-lg border-border bg-muted/30 text-primary focus:ring-primary/20 transition-all cursor-pointer" id="terms" type="checkbox" required />
-                            <label className="text-xs text-muted-foreground font-semibold leading-relaxed" htmlFor="terms">
-                                J'accepte les <button type="button" className="text-primary font-black hover:text-accent transition-colors hover:underline">Conditions d'Utilisation</button> et la <button type="button" className="text-primary font-black hover:text-accent transition-colors hover:underline">Politique de Confidentialité</button>.
+                        <div className="flex items-start gap-5 py-2 ml-1">
+                            <input className="mt-1 size-6 shrink-0 rounded-lg border-2 border-border bg-accent text-primary focus:ring-primary/20 transition-all cursor-pointer" id="terms" type="checkbox" required />
+                            <label className="text-executive-label opacity-60 leading-relaxed italic" htmlFor="terms">
+                                J'accepte les <button type="button" className="text-primary font-black hover:text-foreground transition-colors underline decoration-primary/30 underline-offset-4">Protocoles d'Utilisation</button> et la <button type="button" className="text-primary font-black hover:text-foreground transition-colors underline decoration-primary/30 underline-offset-4">Politique de Confidentialité</button>.
                             </label>
                         </div>
 
                         <Button
                             type="submit"
-                            className="w-full py-7 rounded-2xl font-bold text-xs uppercase tracking-[0.2em] group shadow-2xl shadow-primary/20 relative overflow-hidden active:scale-[0.98] transition-transform"
-                            disabled={isSubmitting}
+                            isLoading={isSubmitting}
+                            className="w-full h-20 rounded-2xl font-black text-sm uppercase tracking-[0.4em] group shadow-premium relative overflow-hidden active-press transition-transform"
                         >
-                            <span className="relative z-10 flex items-center justify-center gap-3">
-                                {isSubmitting ? 'Finalisation...' : 'Créer mon compte'}
-                                {!isSubmitting && <ArrowRight className="size-4 group-hover:translate-x-2 transition-transform duration-300" />}
+                            <span className="relative z-10 flex items-center justify-center gap-6">
+                                {isSubmitting ? 'FINALISATION...' : 'CRÉER MON COMPTE'}
+                                {!isSubmitting && <ArrowRight className="size-5 group-hover:translate-x-3 transition-transform duration-300" />}
                             </span>
                         </Button>
                     </form>
 
-                    <p className="mt-10 text-center text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                    <p className="mt-12 text-center text-executive-label opacity-50 italic">
                         Déjà inscrit ?{' '}
-                        <Link className="text-primary hover:underline underline-offset-4 decoration-2" to="/login">
-                            Se connecter
+                        <Link className="text-primary hover:text-foreground transition-all underline decoration-primary/30 underline-offset-8" to="/login">
+                            Se connecter au Portail
                         </Link>
                     </p>
                 </div>

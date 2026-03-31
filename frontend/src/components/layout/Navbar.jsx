@@ -28,8 +28,8 @@ const Navbar = () => {
     ];
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md transition-all">
-            <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
+        <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-2xl shadow-premium transition-all duration-500">
+            <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-8">
                 <div className="flex items-center gap-8">
                     <Link className="flex items-center gap-2 group" to="/">
                         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white shadow-md shadow-primary/20 group-hover:scale-105 transition-transform">
@@ -68,7 +68,7 @@ const Navbar = () => {
                             className={cn(
                                 "h-11 w-full rounded-xl border bg-slate-50 dark:bg-slate-900 pl-10 pr-10 text-sm transition-all duration-300",
                                 isSearchFocused 
-                                    ? "border-primary ring-4 ring-primary/10 bg-white dark:bg-slate-950 scale-[1.02] shadow-lg" 
+                                    ? "border-primary ring-4 ring-primary/10 bg-white dark:bg-background scale-[1.02] shadow-lg" 
                                     : "border-slate-100 dark:border-slate-800 focus:outline-none"
                             )}
                             placeholder="Chercher un article, une catégorie..."
@@ -105,7 +105,7 @@ const Navbar = () => {
 
                 {/* Dark Overlay when search is active */}
                 {isSearchFocused && (
-                    <div className="fixed inset-0 bg-slate-950/20 backdrop-blur-[2px] z-40 animate-in fade-in duration-300" />
+                    <div className="fixed inset-0 bg-background/20 backdrop-blur-[2px] z-40 animate-in fade-in duration-300" />
                 )}
 
                 <div className="flex items-center gap-2 sm:gap-4">
@@ -122,7 +122,7 @@ const Navbar = () => {
                         <ShoppingCart className="h-5.5 w-5.5" />
                         {cartItems.length > 0 && (
                             <span className={cn(
-                                "absolute -top-1 -right-1 h-5 w-5 bg-primary text-[10px] font-bold text-white flex items-center justify-center rounded-full border-2 border-white dark:border-slate-950 transition-transform duration-500",
+                                "absolute -top-1 -right-1 h-5 w-5 bg-primary text-[10px] font-bold text-white flex items-center justify-center rounded-full border-2 border-white dark:border-background transition-transform duration-500",
                                 shouldPulse && "scale-125"
                             )}>
                                 {cartItems.length}

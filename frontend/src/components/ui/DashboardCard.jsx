@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './Card';
 import { cn } from '../../lib/utils';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
@@ -11,67 +10,111 @@ const DashboardCard = ({
     trendValue,
     icon: Icon,
     className,
-    variant = "default", // default, simple, glass
-    color = "primary" // primary, emerald, amber, rose
+    badge, // { label, color }
+    impact, // { value, label, type }
+    variant = "default", // default, glass
+    color = "primary"
 }) => {
-    const colorClasses = {
-        primary: "text-primary bg-primary/10 border-primary/20",
-        emerald: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
-        amber: "text-amber-500 bg-amber-500/10 border-amber-500/20",
-        rose: "text-rose-500 bg-rose-500/10 border-rose-500/20"
-    };
+    const isGlass = variant === "glass";
 
     return (
         <div className={cn(
-            "group relative overflow-hidden rounded-[2rem] border transition-all duration-500",
-            variant === "glass" 
-                ? "bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border-white/20 dark:border-slate-800/50 shadow-2xl shadow-black/5" 
-                : "bg-card border-slate-100 dark:border-slate-800 shadow-xl shadow-black/[0.02] hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-1",
+            "group relative overflow-hidden rounded-2xl border transition-all duration-200",
+            isGlass
+                ? "bg-slate-950 text-white border-slate-800 shadow-lg"
+                : "bg-card border-slate-100 dark:border-white/5 text-slate-900 dark:text-white shadow-sm hover:border-primary/20 hover:shadow-md",
             className
         )}>
-            {/* Background Accent Gradient */}
-            <div className={cn(
-                "absolute -right-4 -top-4 size-24 blur-3xl opacity-0 group-hover:opacity-20 transition-opacity duration-700",
-                `bg-${color}`
-            )}></div>
-
-            <div className="p-8">
+            <div className="p-6">
                 <div className="flex items-start justify-between mb-6">
+                    {/* Icon */}
                     <div className={cn(
-                        "size-12 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-3",
-                        colorClasses[color] || colorClasses.primary
+                        "size-11 rounded-xl flex items-center justify-center border transition-all duration-200 group-hover:scale-105",
+                        isGlass
+                            ? "bg-white/10 border-white/10 text-primary"
+                            : "bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5 text-primary group-hover:bg-primary group-hover:text-white"
                     )}>
-                        {Icon && <Icon className="size-6" />}
+                        {Icon && <Icon className="size-5" />}
                     </div>
-                    {trendValue && (
+
+                    {/* Badge */}
+                    {badge && (
                         <div className={cn(
-                            "flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
-                            trend === "up" ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
+                            "px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wider border",
+                            badge.color === 'rose' ? "bg-rose-500/10 border-rose-500/20 text-rose-500" :
+                            badge.color === 'amber' ? "bg-amber-500/10 border-amber-500/20 text-amber-500" :
+                            badge.color === 'emerald' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400" :
+                            "bg-primary/10 border-primary/20 text-primary"
                         )}>
-                            {trend === "up" ? <TrendingUp className="size-3 mr-1" /> : <TrendingDown className="size-3 mr-1" />}
+                            {badge.label}
+                        </div>
+                    )}
+
+                    {/* Trend — only if no badge */}
+                    {trendValue && !badge && (
+                        <div className={cn(
+                            "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border",
+                            trend === "up"
+                                ? "bg-emerald-500/10 border-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                                : "bg-rose-500/10 border-rose-500/15 text-rose-600 dark:text-rose-400"
+                        )}>
+                            {trend === "up" ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
                             {trendValue}
                         </div>
                     )}
                 </div>
 
                 <div className="space-y-1.5">
-                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 leading-none">
+                    {/* Label */}
+                    <p className={cn(
+                        "text-executive-label",
+                        isGlass ? "text-slate-500" : ""
+                    )}>
                         {title}
                     </p>
-                    <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic">
+
+                    {/* Value */}
+                    <p className={cn(
+                        "text-3xl font-bold tracking-tight tabular-nums",
+                        isGlass ? "text-white" : "text-slate-900 dark:text-white"
+                    )}>
                         {value}
-                    </h3>
+                    </p>
+
+                    {/* Trend shown below value if badge is present */}
+                    {trendValue && badge && (
+                        <div className={cn(
+                            "inline-flex items-center gap-1.5 text-[11px] font-semibold mt-1",
+                            trend === "up" ? "text-emerald-500" : "text-rose-500"
+                        )}>
+                            {trend === "up" ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
+                            {trendValue} vs mois dernier
+                        </div>
+                    )}
+
+                    {/* Impact Tag */}
+                    {impact && (
+                        <div className={cn(
+                            "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wide mt-2",
+                            impact.type === 'risk' ? "bg-rose-500/10 text-rose-500" :
+                            impact.type === 'growth' ? "bg-emerald-500/10 text-emerald-500" :
+                            "bg-slate-500/10 text-slate-500"
+                        )}>
+                            <span className="opacity-60">{impact.label}:</span>
+                            <span className="font-bold">{impact.value}</span>
+                        </div>
+                    )}
+
+                    {/* Description */}
                     {description && (
-                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 opacity-80 pt-1">
+                        <p className={cn(
+                            "text-[12px] font-medium mt-3 leading-relaxed opacity-50",
+                            isGlass ? "text-slate-400" : "text-slate-500"
+                        )}>
                             {description}
                         </p>
                     )}
                 </div>
-            </div>
-
-            {/* Micro-sparkle Effect */}
-            <div className="absolute bottom-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-1000">
-                <div className="size-1 rounded-full bg-primary/40 animate-ping"></div>
             </div>
         </div>
     );

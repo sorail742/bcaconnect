@@ -21,38 +21,49 @@ export default {
                 background: "hsl(var(--background))",
                 foreground: "hsl(var(--foreground))",
                 primary: {
-                    DEFAULT: "hsl(221.2 83.2% 53.3%)", // Professional Blue
-                    foreground: "white",
+                    DEFAULT: "hsl(var(--primary))",
+                    foreground: "hsl(var(--primary-foreground))",
                 },
                 secondary: {
-                    DEFAULT: "hsl(210 40% 96.1%)",
-                    foreground: "hsl(222.2 47.4% 11.2%)",
-                },
-                destructive: {
-                    DEFAULT: "hsl(0 84.2% 60.2%)",
-                    foreground: "hsl(210 40% 98%)",
+                    DEFAULT: "hsl(var(--secondary))",
+                    foreground: "hsl(var(--secondary-foreground))",
                 },
                 muted: {
-                    DEFAULT: "hsl(210 40% 96.1%)",
-                    foreground: "hsl(215.4 16.3% 46.9%)",
+                    DEFAULT: "hsl(var(--muted))",
+                    foreground: "hsl(var(--muted-foreground))",
                 },
                 accent: {
-                    DEFAULT: "hsl(210 40% 96.1%)",
-                    foreground: "hsl(222.2 47.4% 11.2%)",
+                    DEFAULT: "hsl(var(--accent))",
+                    foreground: "hsl(var(--accent-foreground))",
                 },
-                popover: {
-                    DEFAULT: "white",
-                    foreground: "hsl(222.2 84% 4.9%)",
+                destructive: {
+                    DEFAULT: "hsl(var(--destructive))",
+                    foreground: "hsl(var(--destructive-foreground))",
                 },
                 card: {
-                    DEFAULT: "white",
-                    foreground: "hsl(222.2 84% 4.9%)",
+                    DEFAULT: "hsl(var(--card))",
+                    foreground: "hsl(var(--card-foreground))",
+                },
+                popover: {
+                    DEFAULT: "hsl(var(--popover))",
+                    foreground: "hsl(var(--popover-foreground))",
                 },
             },
             borderRadius: {
-                lg: "0.5rem", // Standard modern radius
-                md: "0.375rem",
-                sm: "0.25rem",
+                lg: "var(--radius)",
+                md: "calc(var(--radius) - 2px)",
+                sm: "calc(var(--radius) - 4px)",
+            },
+            boxShadow: {
+                'glow-sm': '0 0 10px rgba(59, 130, 246, 0.15)',
+                'glow-md': '0 0 20px rgba(59, 130, 246, 0.3)',
+                'glow-lg': '0 0 40px rgba(59, 130, 246, 0.5)',
+                'premium': '0 10px 30px -10px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.02)',
+                'premium-dark': '0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 1px 10px rgba(0, 0, 0, 0.1)',
+            },
+            backgroundImage: {
+                'glass-gradient': 'linear-gradient(to bottom right, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05))',
+                'premium-gradient': 'linear-gradient(to br, var(--tw-gradient-stops))',
             },
             keyframes: {
                 "accordion-down": {
@@ -63,10 +74,25 @@ export default {
                     from: { height: "var(--radix-accordion-content-height)" },
                     to: { height: "0" },
                 },
+                fadeInUp: {
+                    '0%': { opacity: '0', transform: 'translateY(20px)' },
+                    '100%': { opacity: '1', transform: 'translateY(0)' },
+                },
+                float: {
+                    '0%, 100%': { transform: 'translateY(0)' },
+                    '50%': { transform: 'translateY(-10px)' },
+                },
+                pulseGlow: {
+                    '0%, 100%': { opacity: '0.4', transform: 'scale(1)' },
+                    '50%': { opacity: '0.6', transform: 'scale(1.1)' },
+                }
             },
             animation: {
                 "accordion-down": "accordion-down 0.2s ease-out",
                 "accordion-up": "accordion-up 0.2s ease-out",
+                'fade-in-up': 'fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                'float': 'float 6s ease-in-out infinite',
+                'pulse-glow': 'pulseGlow 4s ease-in-out infinite',
             },
         },
     },

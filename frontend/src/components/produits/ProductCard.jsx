@@ -42,11 +42,11 @@ const ProductCard = ({ product, compact = false }) => {
 
     return (
         <div className={cn(
-            "group relative bg-white dark:bg-slate-900 rounded-[2rem] overflow-hidden border border-slate-100 dark:border-slate-800 transition-all duration-700 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-2 flex flex-col h-full",
+            "group relative bg-card rounded-[2.5rem] overflow-hidden border border-border transition-all duration-700 hover:shadow-premium hover:-translate-y-2 flex flex-col h-full",
             compact ? "max-w-sm" : ""
         )}>
             {/* ── Image Zone ── */}
-            <div className="relative aspect-[4/5] overflow-hidden bg-slate-50 dark:bg-slate-950">
+            <div className="relative aspect-[4/5] overflow-hidden bg-accent/30">
                 <Link to={`/product/${id}`} className="block h-full">
                     <img
                         src={image}
@@ -75,13 +75,13 @@ const ProductCard = ({ product, compact = false }) => {
                 <button
                     onClick={handleWishlist}
                     className={cn(
-                        "absolute top-4 right-4 h-10 w-10 rounded-2xl flex items-center justify-center transition-all duration-500 z-10",
+                        "absolute top-5 right-5 h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-500 z-10 shadow-premium",
                         isWishlisted
-                            ? "bg-rose-500 text-white shadow-xl shadow-rose-500/20"
-                            : "bg-white/80 dark:bg-slate-800/80 backdrop-blur-md text-slate-400 hover:text-rose-500 hover:bg-white dark:hover:bg-slate-800 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0"
+                            ? "bg-red-500 text-white shadow-red-500/30"
+                            : "bg-background/80 backdrop-blur-md text-muted-foreground hover:text-red-500 hover:bg-background opacity-0 translate-y-3 group-hover:opacity-100 group-hover:translate-y-0"
                     )}
                 >
-                    <Heart className={cn("size-5 transition-transform duration-500", isWishlisted ? "fill-current" : "group-hover:scale-110")} />
+                    <Heart className={cn("size-6 transition-transform duration-500", isWishlisted ? "fill-current" : "group-hover:scale-110")} />
                 </button>
 
                 <div className="absolute bottom-4 left-4 right-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 z-10">
@@ -96,39 +96,39 @@ const ProductCard = ({ product, compact = false }) => {
             </div>
 
             {/* ── Info Zone ── */}
-            <div className="p-6 flex flex-col flex-1 gap-3">
+            <div className="p-8 flex flex-col flex-1 gap-4">
                 <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] opacity-80">
+                    <span className="text-executive-label text-primary italic uppercase opacity-80">
                         {product.categorie?.nom_categorie || 'Premium Collection'}
                     </span>
-                    <div className="flex items-center px-1.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-600 border border-amber-500/10">
-                        <Star className="size-3 fill-amber-500 text-amber-500" />
-                        <span className="text-[10px] font-black ml-1">{rating || '4.8'}</span>
+                    <div className="flex items-center px-2 py-1 rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/10 shadow-sm">
+                        <Star className="size-3.5 fill-amber-500 text-amber-500" />
+                        <span className="text-executive-label ml-1.5">{rating || '4.8'}</span>
                     </div>
                 </div>
 
                 <Link to={`/product/${id}`} className="block group/title">
-                    <h3 className="font-black text-slate-900 dark:text-white text-base tracking-tight hover:text-primary transition-colors line-clamp-2 italic leading-tight">
+                    <h3 className="font-black text-foreground text-lg tracking-tight hover:text-primary transition-colors line-clamp-2 italic leading-tight uppercase">
                         {name}
                     </h3>
                 </Link>
 
-                <div className="flex items-center gap-2 py-1">
-                    <div className="size-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-3 py-1">
+                    <div className="size-6 rounded-full bg-accent flex items-center justify-center overflow-hidden border border-border shadow-sm">
                          <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${vendor || 'BCA'}`} className="w-full h-full" alt="V" />
                     </div>
-                    <p className="text-[11px] font-bold text-slate-500">
-                        Par <span className="text-slate-800 dark:text-slate-300 hover:text-primary transition-colors cursor-pointer">{vendor || 'BCA Partner'}</span>
+                    <p className="text-executive-label text-muted-foreground italic">
+                        Par <span className="text-foreground hover:text-primary transition-colors cursor-pointer">{vendor || 'BCA Partner'}</span>
                     </p>
                 </div>
 
-                <div className="mt-auto pt-4 flex items-center justify-between border-t border-slate-50 dark:border-slate-800/50">
+                <div className="mt-auto pt-6 flex items-center justify-between border-t border-border">
                     <div className="flex flex-col">
-                        <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter italic">
-                            {price.toLocaleString('fr-FR')} <span className="text-[10px] font-bold text-primary not-italic tracking-normal">GNF</span>
+                        <span className="text-2xl font-black text-foreground tracking-tighter italic">
+                            {price.toLocaleString('fr-FR')} <span className="text-sm font-bold text-primary not-italic tracking-normal">GNF</span>
                         </span>
                         {oldPrice && (
-                            <span className="text-[10px] text-slate-400 font-bold line-through tracking-tight opacity-60">
+                            <span className="text-executive-label text-muted-foreground/60 line-through tracking-tight">
                                 {oldPrice.toLocaleString('fr-FR')}
                             </span>
                         )}
@@ -137,17 +137,17 @@ const ProductCard = ({ product, compact = false }) => {
                     <button
                         onClick={handleAddToCart}
                         className={cn(
-                            "group/cart h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-500 relative overflow-hidden",
+                            "group/cart h-14 w-14 rounded-2xl flex items-center justify-center transition-all duration-500 relative overflow-hidden active-press shadow-premium",
                             isAdded
-                                ? "bg-emerald-500 text-white shadow-xl shadow-emerald-500/20"
-                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary hover:text-white hover:shadow-xl hover:shadow-primary/20"
+                                ? "bg-emerald-500 text-white shadow-emerald-500/30"
+                                : "bg-accent text-muted-foreground hover:bg-primary hover:text-white"
                         )}
                     >
                         <div className={cn("transition-all duration-500", isAdded ? "scale-0 rotate-90" : "scale-100 group-hover/cart:rotate-12")}>
-                             <ShoppingCart className="size-5" />
+                             <ShoppingCart className="size-6" />
                         </div>
                         <div className={cn("absolute inset-0 flex items-center justify-center transition-all duration-500", isAdded ? "scale-100 rotate-0" : "scale-0 -rotate-90")}>
-                             <CheckCircle2 className="size-6" />
+                             <CheckCircle2 className="size-8" />
                         </div>
                     </button>
                 </div>

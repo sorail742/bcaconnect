@@ -194,32 +194,32 @@ const UserOrders = () => {
 
     return (
         <DashboardLayout title="Historique des Commandes">
-            <div className="w-full space-y-12 animate-in fade-in duration-1000 font-inter pb-24 px-6 md:px-10 pt-10">
+            <div className="w-full space-y-12 animate-in fade-in duration-1000 font-inter pb-24 px-6 md:px-10 pt-16">
                 {/* ══════════════════════════════════════════════════
                     SECTION 1 — EXECUTIVE HEADER
                 ══════════════════════════════════════════════════ */}
-                <div className="flex flex-col gap-4 border-b border-slate-100 dark:border-slate-800 pb-10">
-                    <div className="flex items-center gap-3">
-                        <div className="size-2 rounded-full bg-primary animate-pulse" />
-                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Tableau de Bord Client Premium</span>
+                <div className="flex flex-col gap-6 border-b-2 border-border pb-12">
+                    <div className="flex items-center gap-4">
+                        <div className="size-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_15px_rgba(43,90,255,0.4)]" />
+                        <span className="text-executive-label text-primary">Tableau de Bord Client Elite</span>
                     </div>
-                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8">
-                        <div className="space-y-3">
-                            <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter italic">
+                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
+                        <div className="space-y-4">
+                            <h1 className="text-5xl md:text-7xl font-black text-foreground tracking-tighter italic uppercase">
                                 Mes <span className="text-primary italic">Commandes</span>
                             </h1>
-                            <p className="text-slate-500 text-sm font-bold max-w-2xl leading-relaxed">
-                                Suivez vos acquisitions BCA en temps réel. Gérez vos expéditions, factures et remboursements depuis votre interface sécurisée.
+                            <p className="text-executive-label opacity-60 max-w-2xl leading-relaxed italic">
+                                Suivez l'évolution de vos actifs BCA. Gérez vos expéditions et flux financiers avec une visibilité totale.
                             </p>
                         </div>
-                        <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-900 p-2 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-inner">
-                             <div className="flex flex-col items-center px-6 py-2 border-r border-slate-200 dark:border-slate-800">
-                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Actives</span>
-                                 <span className="text-xl font-black italic text-primary">{orders.filter(o => o.statut !== 'livré' && o.statut !== 'annulé').length}</span>
+                        <div className="flex items-center gap-6 bg-accent/30 p-3 rounded-[2rem] border-2 border-border shadow-inner">
+                             <div className="flex flex-col items-center px-8 py-3 border-r-2 border-border">
+                                 <span className="text-executive-label opacity-50">Actives</span>
+                                 <span className="text-executive-data text-2xl text-primary">{orders.filter(o => o.statut !== 'livré' && o.statut !== 'annulé').length}</span>
                              </div>
-                             <div className="flex flex-col items-center px-6 py-2">
-                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total</span>
-                                 <span className="text-xl font-black italic text-slate-900 dark:text-white">{orders.length}</span>
+                             <div className="flex flex-col items-center px-8 py-3">
+                                 <span className="text-executive-label opacity-50">Total</span>
+                                 <span className="text-executive-data text-2xl text-foreground">{orders.length}</span>
                              </div>
                         </div>
                     </div>
@@ -233,20 +233,20 @@ const UserOrders = () => {
                         [1, 2, 3].map(i => <CardSkeleton key={i} />)
                     ) : (
                         stats.map((stat, idx) => (
-                            <div key={idx} className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl shadow-slate-200/40 dark:shadow-none group hover:border-primary/40 transition-all duration-500 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 size-24 bg-primary/5 rounded-full blur-3xl -mr-12 -mt-12 group-hover:bg-primary/10 transition-colors" />
-                                <div className="flex justify-between items-start mb-8">
-                                    <div className={cn("size-14 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center border border-slate-100 dark:border-slate-700 transition-all duration-500 group-hover:bg-primary group-hover:text-white group-hover:shadow-lg group-hover:shadow-primary/20", stat.color)}>
-                                        <stat.icon className="size-7" />
+                            <div key={idx} className="bg-card p-12 rounded-[3.5rem] border-2 border-border shadow-premium group hover:border-primary/30 transition-all duration-500 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 size-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:opacity-20 transition-opacity" />
+                                <div className="flex justify-between items-start mb-10">
+                                    <div className={cn("size-16 rounded-[1.2rem] bg-accent flex items-center justify-center border-2 border-border transition-all duration-500 group-hover:bg-primary group-hover:text-white group-hover:shadow-lg group-hover:shadow-primary/20", stat.color.includes('primary') ? 'text-primary' : 'text-foreground')}>
+                                        <stat.icon className="size-8" />
                                     </div>
-                                    <div className="flex items-center gap-1 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/10">
-                                        <TrendingUp className="size-3 text-emerald-500" />
-                                        <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">+12%</span>
+                                    <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-500/5 rounded-full border-2 border-emerald-500/10">
+                                        <TrendingUp className="size-4 text-emerald-500" />
+                                        <span className="text-executive-label text-emerald-500 italic">+12%</span>
                                     </div>
                                 </div>
-                                <div className="space-y-1 relative z-10">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] italic">{stat.title}</p>
-                                    <h4 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic">{stat.value}</h4>
+                                <div className="space-y-2 relative z-10">
+                                    <p className="text-executive-label opacity-60">{stat.title}</p>
+                                    <h4 className="text-executive-data text-4xl">{stat.value}</h4>
                                 </div>
                             </div>
                         ))
@@ -254,30 +254,30 @@ const UserOrders = () => {
                 </div>
 
                 {/* Filter & Search Bar — Premium Surface */}
-                <div className="rounded-[2.5rem] border border-slate-100 dark:border-slate-800 overflow-hidden shadow-2xl shadow-slate-200/30 dark:shadow-none bg-white dark:bg-slate-900">
-                    <div className="p-10 border-b border-slate-50 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-10">
-                        <div className="flex items-center gap-4 overflow-x-auto pb-4 lg:pb-0 scrollbar-hide">
+                <div className="rounded-[3.5rem] border-2 border-border overflow-hidden shadow-premium bg-card">
+                    <div className="p-10 border-b-2 border-border flex flex-col lg:flex-row lg:items-center justify-between gap-12 bg-accent/10">
+                        <div className="flex items-center gap-5 overflow-x-auto pb-4 lg:pb-0 scrollbar-hide">
                             {filters.map((filter, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => setActiveFilter(filter)}
                                     className={cn(
-                                        "px-7 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all whitespace-nowrap border-2",
+                                        "px-8 py-3.5 rounded-[1.2rem] text-executive-label transition-all whitespace-nowrap border-2",
                                         activeFilter === filter
-                                            ? "bg-slate-950 dark:bg-white text-white dark:text-slate-950 border-slate-950 dark:border-white shadow-xl shadow-slate-950/20 dark:shadow-white/10 scale-105"
-                                            : "bg-slate-50/50 dark:bg-slate-900/50 border-transparent text-slate-400 hover:border-primary/30 hover:text-primary hover:bg-white dark:hover:bg-slate-800"
+                                            ? "bg-foreground text-background border-foreground shadow-[0_15px_30px_-10px_rgba(0,0,0,0.3)] scale-105"
+                                            : "bg-accent/50 border-transparent text-muted-foreground hover:border-primary/40 hover:text-primary"
                                     )}
                                 >
-                                    {filter === 'Tout' ? 'Tous les statuts' : filter.replace(/_/g, ' ')}
+                                    {filter === 'Tout' ? 'Alpha View' : filter.replace(/_/g, ' ').toUpperCase()}
                                 </button>
                             ))}
                         </div>
   
-                        <div className="relative group/search w-full lg:w-96">
-                            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 size-5 group-focus-within/search:text-primary transition-colors" />
+                        <div className="relative group/search w-full lg:w-[450px]">
+                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground size-5 group-focus-within/search:text-primary transition-colors" />
                             <input
-                                className="w-full pl-14 pr-6 h-14 bg-slate-50 dark:bg-slate-800 border-transparent focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all rounded-[1.5rem] text-sm font-bold placeholder:text-slate-400/70 shadow-inner"
-                                placeholder="Recherche par ID de commande..."
+                                className="w-full pl-16 pr-8 h-16 bg-accent border-2 border-transparent focus:border-primary/20 focus:bg-background transition-all rounded-[1.5rem] text-sm font-black italic placeholder:text-muted-foreground/40 shadow-inner"
+                                placeholder="TRACKING ID: RECHERCHE CRITIQUE..."
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -315,7 +315,7 @@ const UserOrders = () => {
                     SECTION 3 — PREMIUM INVOICE MODAL
                 ══════════════════════════════════════════════════ */}
                 {isModalOpen && selectedOrder && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/60 backdrop-blur-xl animate-in fade-in duration-500">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-xl animate-in fade-in duration-500">
                         <div className="bg-white dark:bg-slate-900 w-full max-w-3xl rounded-[3rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.4)] overflow-hidden border border-slate-200/50 dark:border-slate-800 animate-in zoom-in-95 duration-500 relative">
                             {/* Decorative background element */}
                             <div className="absolute top-0 right-0 size-64 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32" />

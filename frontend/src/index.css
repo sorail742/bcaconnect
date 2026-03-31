@@ -4,74 +4,109 @@
 
 @layer base {
     :root {
-        --background: 0 0% 100%;
+        /* Premium Light Theme - Soft Slate with Blue Accents */
+        --background: 210 40% 98%;
         --foreground: 222.2 84% 4.9%;
+        
         --card: 0 0% 100%;
         --card-foreground: 222.2 84% 4.9%;
+        
         --popover: 0 0% 100%;
         --popover-foreground: 222.2 84% 4.9%;
-        /* Blue Professional */
+        
         --primary: 221.2 83.2% 53.3%;
-        --primary-foreground: 0 0% 100%;
+        --primary-foreground: 210 40% 98%;
+        
         --secondary: 210 40% 96.1%;
         --secondary-foreground: 222.2 47.4% 11.2%;
+        
         --muted: 210 40% 96.1%;
         --muted-foreground: 215.4 16.3% 46.9%;
+        
         --accent: 210 40% 96.1%;
         --accent-foreground: 222.2 47.4% 11.2%;
+        
         --destructive: 0 84.2% 60.2%;
         --destructive-foreground: 210 40% 98%;
+        
         --border: 214.3 31.8% 91.4%;
         --input: 214.3 31.8% 91.4%;
         --ring: 221.2 83.2% 53.3%;
-        --radius: 0.5rem;
+        
+        --radius: 0.75rem;
     }
 
     .dark {
-        --background: 222.2 84% 4.9%;
+        /* Premium Dark Theme - Pure Black (#000000) */
+        --background: 0 0% 0%;
         --foreground: 210 40% 98%;
-        --card: 222.2 84% 4.9%;
+        
+        --card: 0 0% 3%; /* Very dark gray for subtle depth */
         --card-foreground: 210 40% 98%;
-        --popover: 222.2 84% 4.9%;
+        
+        --popover: 0 0% 2%;
         --popover-foreground: 210 40% 98%;
+        
         --primary: 217.2 91.2% 59.8%;
         --primary-foreground: 222.2 47.4% 11.2%;
-        --secondary: 217.2 32.6% 17.5%;
+        
+        --secondary: 217.2 32.6% 12%;
         --secondary-foreground: 210 40% 98%;
-        --muted: 217.2 32.6% 17.5%;
+        
+        --muted: 217.2 32.6% 12%;
         --muted-foreground: 215 20.2% 65.1%;
-        --accent: 217.2 32.6% 17.5%;
+        
+        --accent: 217.2 32.6% 12%;
         --accent-foreground: 210 40% 98%;
+        
         --destructive: 0 62.8% 30.6%;
         --destructive-foreground: 210 40% 98%;
-        --border: 217.2 32.6% 17.5%;
-        --input: 217.2 32.6% 17.5%;
+        
+        --border: 217.2 32.6% 12%;
+        --input: 217.2 32.6% 12%;
         --ring: 224.3 76.3% 48%;
     }
 }
 
 @layer components {
-    /* Subtle Glassmorphism for a more professional look */
+    /* Glassmorphism — reduced blur for sharpness */
     .glass {
-        @apply bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-sm;
+        @apply bg-white/80 dark:bg-black/60 backdrop-blur-2xl border border-slate-200/50 dark:border-white/10 shadow-premium;
     }
 
     .glass-card {
-        @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-primary/30 transition-all duration-200 shadow-sm hover:shadow-md;
+        @apply bg-white/60 dark:bg-white/5 border border-slate-100 dark:border-white/5 backdrop-blur-xl hover:border-primary/30 transition-all duration-300 shadow-premium;
     }
 
-    /* Clean Blue Gradients */
-    .bg-vibrant {
-        @apply bg-gradient-to-r from-blue-600 to-indigo-600;
+    /* Executive Typography — cleaner, less decorative */
+    .text-executive-title {
+        @apply font-bold tracking-tight uppercase leading-tight not-italic;
     }
 
-    .text-gradient {
-        @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600;
+    .text-executive-label {
+        @apply text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground;
     }
 
-    /* Minimalist Lift */
-    .hover-lift {
-        @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/10;
+    .text-executive-data {
+        @apply font-bold tracking-tight tabular-nums;
+    }
+
+    /* Premium Gradients */
+    .bg-premium-gradient {
+        @apply bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700;
+    }
+
+    .text-premium-gradient {
+        @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-500 to-violet-600 dark:from-blue-400 dark:via-blue-300 dark:to-indigo-400;
+    }
+
+    /* Interaction */
+    .hover-premium {
+        @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10;
+    }
+
+    .active-press {
+        @apply active:scale-95 transition-transform duration-100;
     }
 }
 
@@ -81,52 +116,36 @@
     }
 
     body {
-        @apply bg-[#f8fafc] dark:bg-background text-foreground antialiased;
+        @apply bg-slate-50 text-foreground antialiased selection:bg-primary/20;
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
 
+    .dark body {
+        background: radial-gradient(circle at 20% 20%, rgba(59,130,246,0.08), transparent 50%),
+                    radial-gradient(circle at 80% 80%, rgba(99,102,241,0.08), transparent 50%),
+                    #020617;
+        background-attachment: fixed;
+    }
+
     h1, h2, h3, h4, h5, h6 {
-        @apply font-semibold tracking-tight;
+        @apply font-bold tracking-tight text-slate-900 dark:text-slate-50;
+    }
+    
+    section {
+        @apply relative py-20 lg:py-32 overflow-clip;
     }
 }
 
-    /* Scrollbar stylisée */
-    ::-webkit-scrollbar {
-        width: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-        @apply bg-muted;
-    }
-
-    ::-webkit-scrollbar-thumb {
-        @apply bg-primary/20 rounded-full hover:bg-primary/40 transition-colors;
-    }
-
-@keyframes drawPath {
-    from {
-        stroke-dashoffset: 1000;
-    }
-
-    to {
-        stroke-dashoffset: 0;
-    }
+/* Custom Utilities for Depth */
+.shadow-premium {
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.02);
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
+.dark .shadow-premium {
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 1px 10px rgba(0, 0, 0, 0.1);
 }
 
-.animate-draw-path {
-    animation: drawPath 3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.fade-in-delayed {
-    animation: fadeIn 1s ease-out 2s forwards;
+/* Smooth Tabular Numbers for Stats */
+.tabular-nums {
+    font-variant-numeric: tabular-nums;
 }

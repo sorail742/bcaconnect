@@ -33,17 +33,19 @@ export function Header() {
         { to: "/terms", label: "Conditions", icon: FileText, desc: "Règles d'utilisation" },
         { to: "/privacy", label: "Confidentialité", icon: ShieldCheck, desc: "Protection de vos données" },
     ]
-
     return (
-        <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border shadow-sm">
+        <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border transition-all duration-500">
             <div className="container mx-auto px-4">
-                <div className="flex items-center justify-between h-16">
+                <div className="flex items-center justify-between h-20">
                     {/* Logo */}
-                    <Link to="/" className="flex items-center gap-2.5 group" translate="no">
-                        <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
-                            <span className="text-primary-foreground font-black text-sm italic">BC</span>
+                    <Link to="/" className="flex items-center gap-4 group px-3 py-2 rounded-2xl hover:bg-accent/40 transition-all" translate="no">
+                        <div className="w-12 h-12 rounded-2xl bg-foreground text-background flex items-center justify-center shadow-premium group-hover:scale-105 group-hover:rotate-3 transition-all duration-500">
+                            <span className="font-black text-lg italic tracking-tighter">BC</span>
                         </div>
-                        <span className="font-black text-xl text-foreground italic tracking-tight">BCA Connect</span>
+                        <div className="flex flex-col">
+                            <span className="font-black text-2xl text-foreground italic tracking-tighter leading-none uppercase">BCA Connect</span>
+                            <span className="text-executive-label text-primary opacity-80">Fintech Marketplace</span>
+                        </div>
                     </Link>
 
                     {/* Desktop Nav */}
@@ -54,29 +56,30 @@ export function Header() {
                             onMouseEnter={() => setIsShopDropdownOpen(true)}
                             onMouseLeave={() => setIsShopDropdownOpen(false)}
                         >
-                            <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-primary hover:bg-primary/10 transition-all">
-                                <Store className="size-4" />
-                                Marketplace
-                                <ChevronDown className={`size-3.5 transition-transform duration-300 ${isShopDropdownOpen ? 'rotate-180' : ''}`} />
+                            <button className="relative flex items-center gap-3 px-5 py-3 rounded-xl text-executive-label text-foreground/60 hover:text-foreground hover:bg-accent/50 transition-all duration-500 group">
+                                <Store className="size-4.5" />
+                                MARKETPLACE
+                                <ChevronDown className={`size-4 transition-transform duration-500 ${isShopDropdownOpen ? 'rotate-180 text-primary' : ''}`} />
+                                <div className={`absolute bottom-2 left-1/2 -translate-x-1/2 h-1 bg-primary transition-all duration-500 rounded-full shadow-premium ${isShopDropdownOpen ? 'w-1/3 opacity-100' : 'w-0 opacity-0'}`} />
                             </button>
                             {isShopDropdownOpen && (
-                                <div className="absolute top-full left-0 pt-2 w-72 animate-in fade-in slide-in-from-top-2 duration-200">
-                                    <div className="bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-2xl shadow-slate-900/20 p-2 overflow-hidden">
-                                        <div className="px-3 py-2 mb-1">
-                                            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground">Explorer</span>
+                                <div className="absolute top-full left-0 pt-3 w-80 animate-in fade-in slide-in-from-top-4 duration-300 scale-100 origin-top">
+                                    <div className="glass border border-white/20 dark:border-white/10 rounded-3xl shadow-2xl shadow-slate-900/10 dark:shadow-black/20 p-2 overflow-hidden">
+                                        <div className="px-4 py-3 mb-2 border-b border-white/10">
+                                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground opacity-60">Solutions Digitales</span>
                                         </div>
                                         {shopLinks.map(link => (
                                             <Link
                                                 key={link.to}
                                                 to={link.to}
-                                                className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted/60 transition-all group/item"
+                                                className="flex items-center gap-4 px-3 py-3 rounded-2xl hover:bg-primary/5 dark:hover:bg-white/5 transition-all group/item active-press"
                                             >
-                                                <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover/item:bg-primary group-hover/item:text-white transition-all">
-                                                    <link.icon className="size-4" />
+                                                <div className="size-11 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover/item:bg-primary group-hover/item:text-white transition-all shadow-sm">
+                                                    <link.icon className="size-5" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-black text-foreground">{link.label}</p>
-                                                    <p className="text-[10px] text-muted-foreground font-medium">{link.desc}</p>
+                                                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{link.label}</p>
+                                                    <p className="text-[11px] text-muted-foreground font-medium mt-0.5">{link.desc}</p>
                                                 </div>
                                             </Link>
                                         ))}
@@ -87,21 +90,22 @@ export function Header() {
 
                         {/* Support Dropdown */}
                         <div className="relative group/help">
-                            <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all">
-                                <HelpCircle className="size-4" />
-                                Aide
-                                <ChevronDown className="size-3 group-hover/help:rotate-180 transition-transform" />
+                            <button className="relative flex items-center gap-3 px-5 py-3 rounded-xl text-executive-label text-foreground/60 hover:text-foreground hover:bg-accent/50 transition-all duration-500 group">
+                                <HelpCircle className="size-4.5" />
+                                AIDE
+                                <ChevronDown className="size-4 group-hover/help:rotate-180 transition-transform duration-500" />
+                                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-0 h-1 bg-primary group-hover/help:w-1/3 transition-all duration-500 opacity-0 group-hover/help:opacity-100 rounded-full shadow-premium" />
                             </button>
-                            <div className="absolute top-full left-0 pt-2 opacity-0 translate-y-2 pointer-events-none group-hover/help:opacity-100 group-hover/help:translate-y-0 group-hover/help:pointer-events-auto transition-all duration-200 z-50">
-                                <div className="w-64 bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-2xl p-2 font-inter">
+                            <div className="absolute top-full left-0 pt-4 opacity-0 translate-y-4 pointer-events-none group-hover/help:opacity-100 group-hover/help:translate-y-0 group-hover/help:pointer-events-auto transition-all duration-500 z-50 origin-top">
+                                <div className="w-80 glass border-2 border-border rounded-[2rem] shadow-premium p-3">
                                     {supportLinks.map((link) => (
-                                        <Link key={link.to} to={link.to} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted/60 transition-all group/item">
-                                            <div className="size-9 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover/item:bg-blue-500 group-hover/item:text-white transition-all">
-                                                <link.icon className="size-4" />
+                                        <Link key={link.to} to={link.to} className="flex items-center gap-5 px-4 py-4 rounded-2xl hover:bg-accent transition-all group/item active-press">
+                                            <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover/item:bg-primary group-hover/item:text-background transition-all">
+                                                <link.icon className="size-6" />
                                             </div>
                                             <div>
-                                                <p className="text-xs font-black text-foreground">{link.label}</p>
-                                                <p className="text-[9px] text-muted-foreground font-medium">{link.desc}</p>
+                                                <p className="text-sm font-black text-foreground italic">{link.label}</p>
+                                                <p className="text-executive-label opacity-40 mt-1">{link.desc}</p>
                                             </div>
                                         </Link>
                                     ))}
@@ -109,51 +113,26 @@ export function Header() {
                             </div>
                         </div>
 
-                        {/* Company Dropdown */}
-                        <div className="relative group/comp">
-                            <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all">
-                                <Info className="size-4" />
-                                Entreprise
-                                <ChevronDown className="size-3 group-hover/comp:rotate-180 transition-transform" />
-                            </button>
-                            <div className="absolute top-full left-0 pt-2 opacity-0 translate-y-2 pointer-events-none group-hover/comp:opacity-100 group-hover/comp:translate-y-0 group-hover/comp:pointer-events-auto transition-all duration-200 z-50">
-                                <div className="w-64 bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-2xl p-2 font-inter">
-                                    {companyLinks.map((link) => (
-                                        <Link key={link.to} to={link.to} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted/60 transition-all group/item">
-                                            <div className="size-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover/item:bg-emerald-500 group-hover/item:text-white transition-all">
-                                                <link.icon className="size-4" />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-black text-foreground">{link.label}</p>
-                                                <p className="text-[9px] text-muted-foreground font-medium">{link.desc}</p>
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        <a href="/#features" className="px-4 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all font-medium whitespace-nowrap">
-                            Fonctionnalités
-                        </a>
-                        <a href="/#how-it-works" className="px-4 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all font-medium whitespace-nowrap">
-                            Mode d'emploi
+                        <a href="/#features" className="relative px-5 py-3 rounded-xl text-executive-label text-foreground/60 hover:text-foreground hover:bg-accent/50 transition-all duration-500 group whitespace-nowrap">
+                            FONCTIONNALITÉS
+                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-0 h-1 bg-primary group-hover:w-1/3 transition-all duration-500 opacity-0 group-hover:opacity-100 rounded-full shadow-premium" />
                         </a>
                     </nav>
 
                     {/* Right Side Actions */}
-                    <div className="hidden md:flex items-center gap-2">
+                    <div className="hidden md:flex items-center gap-4">
+                        <div className="w-px h-8 bg-border mx-2" />
                         <ThemeToggle minimal />
 
                         {/* Cart Button */}
                         <div className="relative">
                             <button
                                 onClick={() => setIsCartOpen(!isCartOpen)}
-                                className="relative flex items-center gap-2 px-4 py-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all group"
+                                className="relative flex items-center justify-center size-12 rounded-2xl text-foreground/60 hover:bg-accent hover:text-primary transition-all group active-press"
                             >
-                                <ShoppingCart className="size-5 group-hover:scale-110 transition-transform" />
+                                <ShoppingCart className="size-6 group-hover:scale-110 transition-transform duration-300" />
                                 {cartCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 size-5 bg-primary text-primary-foreground text-[9px] font-black rounded-full flex items-center justify-center shadow-md shadow-primary/30 border-2 border-background animate-bounce">
+                                    <span className="absolute -top-1.5 -right-1.5 size-6 bg-primary text-background text-[11px] font-black rounded-lg flex items-center justify-center shadow-premium border-2 border-background animate-pulse">
                                         {cartCount}
                                     </span>
                                 )}
@@ -161,40 +140,46 @@ export function Header() {
 
                             {/* Cart Dropdown */}
                             {isCartOpen && (
-                                <div className="absolute top-full right-0 pt-2 w-80 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                                    <div className="bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-2xl shadow-slate-900/20 overflow-hidden">
-                                        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+                                <div className="absolute top-full right-0 pt-4 w-[420px] z-50 animate-in fade-in slide-in-from-top-4 duration-500 origin-top-right">
+                                    <div className="glass border-2 border-border rounded-[2.5rem] shadow-premium overflow-hidden">
+                                        <div className="flex items-center justify-between px-8 py-6 border-b-2 border-border">
                                             <div>
-                                                <p className="text-[10px] font-black text-primary uppercase tracking-widest">Panier</p>
-                                                <p className="text-sm font-black text-foreground italic">{cartCount} article(s)</p>
+                                                <p className="text-executive-label text-primary opacity-80">VOTRE PANIER</p>
+                                                <p className="text-lg font-black text-foreground italic uppercase">{cartCount} article(s) sélectionnés</p>
                                             </div>
-                                            <button onClick={() => setIsCartOpen(false)} className="p-1 rounded-lg hover:bg-muted transition-all">
-                                                <X className="size-4 text-muted-foreground" />
+                                            <button onClick={() => setIsCartOpen(false)} className="p-3 rounded-2xl hover:bg-accent transition-all active-press">
+                                                <X className="size-6 text-muted-foreground" />
                                             </button>
                                         </div>
 
                                         {cartItems.length === 0 ? (
-                                            <div className="py-12 text-center space-y-3">
-                                                <div className="size-16 mx-auto rounded-full bg-muted flex items-center justify-center">
-                                                    <ShoppingCart className="size-7 text-muted-foreground/40" />
+                                            <div className="py-20 text-center space-y-6">
+                                                <div className="size-24 mx-auto rounded-[2rem] bg-accent/30 flex items-center justify-center border-2 border-dashed border-border shadow-inner">
+                                                    <ShoppingCart className="size-10 text-muted-foreground/20" />
                                                 </div>
-                                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Panier vide</p>
+                                                <p className="text-executive-label text-muted-foreground italic">LE PANIER EST ENCORE VIDE</p>
                                             </div>
                                         ) : (
-                                            <div className="max-h-64 overflow-y-auto">
+                                            <div className="max-h-[500px] overflow-y-auto px-6 py-4 scrollbar-thin">
                                                 {cartItems.map((item, i) => {
                                                     const name = item.nom_produit || item.name || 'Produit';
                                                     const price = parseFloat(item.prix_unitaire || item.price || 0);
                                                     const img = item.image || 'https://images.unsplash.com/photo-1523275319145-80b01958f7a2?auto=format&fit=crop&q=80&w=60';
                                                     return (
-                                                        <div key={i} className="flex items-center gap-3 px-5 py-3 hover:bg-muted/30 transition-all group border-b border-border/30 last:border-0">
-                                                            <img src={img} className="size-12 rounded-xl object-cover border border-border" alt={name} />
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="text-xs font-black text-foreground truncate">{name}</p>
-                                                                <p className="text-[10px] text-primary font-black italic">{(price * (item.quantity || 1)).toLocaleString('fr-FR')} GNF</p>
+                                                        <div key={i} className="flex items-center gap-6 p-4 rounded-[1.5rem] hover:bg-accent transition-all group border-b border-transparent last:border-0 my-2">
+                                                            <div className="relative shrink-0">
+                                                                <img src={img} className="size-20 rounded-2xl object-cover border-2 border-border shadow-premium" alt={name} />
+                                                                <div className="absolute inset-0 rounded-2xl bg-foreground/0 group-hover:bg-foreground/5 transition-colors" />
                                                             </div>
-                                                            <button onClick={() => removeFromCart(item.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-destructive/10 text-destructive transition-all">
-                                                                <X className="size-3" />
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-base font-black text-foreground italic truncate leading-tight uppercase">{name}</p>
+                                                                <div className="flex items-center gap-3 mt-2">
+                                                                    <span className="text-executive-label px-2 py-0.5 rounded bg-primary/10 text-primary italic font-black">QTE: {item.quantity || 1}</span>
+                                                                    <p className="text-sm text-primary font-black italic">{(price * (item.quantity || 1)).toLocaleString('fr-FR')} GNF</p>
+                                                                </div>
+                                                            </div>
+                                                            <button onClick={() => removeFromCart(item.id)} className="p-3 rounded-2xl hover:bg-destructive/10 text-destructive/30 hover:text-destructive transition-all active-press">
+                                                                <X className="size-5" />
                                                             </button>
                                                         </div>
                                                     );
@@ -203,20 +188,20 @@ export function Header() {
                                         )}
 
                                         {cartItems.length > 0 && (
-                                            <div className="p-4 border-t border-border bg-muted/30 space-y-2">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total</span>
-                                                    <span className="text-sm font-black text-foreground italic">{cartTotal.toLocaleString('fr-FR')} GNF</span>
+                                            <div className="p-10 border-t-2 border-border bg-accent/30 space-y-8">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-executive-label text-muted-foreground italic uppercase">Sous-total</span>
+                                                    <span className="text-3xl font-black text-foreground italic tabular-nums tracking-tighter">{cartTotal.toLocaleString('fr-FR')} <span className="text-sm not-italic opacity-50">GNF</span></span>
                                                 </div>
-                                                <div className="grid grid-cols-1 gap-2">
+                                                <div className="grid grid-cols-2 gap-6">
                                                     <Link to="/cart" onClick={() => setIsCartOpen(false)}>
-                                                        <Button variant="outline" className="w-full h-10 rounded-xl font-black uppercase tracking-widest text-[9px] border-border hover:bg-muted transition-all">
-                                                            Voir le panier
+                                                        <Button variant="outline" className="w-full h-16 rounded-[1.25rem] font-black uppercase tracking-widest text-executive-label">
+                                                            VOIR PANIER
                                                         </Button>
                                                     </Link>
                                                     <Link to="/checkout" onClick={() => setIsCartOpen(false)}>
-                                                        <Button className="w-full h-11 rounded-xl font-black uppercase tracking-widest text-[9px] shadow-lg shadow-primary/20">
-                                                            Paiement sécurisé
+                                                        <Button className="w-full h-16 rounded-[1.25rem] font-black uppercase tracking-widest text-executive-label shadow-premium">
+                                                            PAIEMENT
                                                         </Button>
                                                     </Link>
                                                 </div>
@@ -228,29 +213,34 @@ export function Header() {
                         </div>
 
                         {/* Auth Buttons */}
+                        <div className="w-px h-8 bg-border mx-2" />
                         {user ? (
-                            <div className="flex items-center gap-2 pl-2 border-l border-border">
-                                <div className="hidden sm:flex flex-col items-end">
-                                    <p className="text-[10px] font-black text-foreground leading-none">{user.nom_complet?.split(' ')[0]}</p>
-                                    <p className="text-[9px] text-primary font-black uppercase tracking-widest mt-0.5 italic">{user.role}</p>
+                            <div className="flex items-center gap-4 pl-2">
+                                <div className="hidden lg:flex flex-col items-end">
+                                    <p className="text-sm font-black text-foreground italic leading-none truncate max-w-[120px]">{user.nom_complet}</p>
+                                    <div className="flex items-center gap-2 mt-1.5">
+                                        <div className="size-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                        <p className="text-executive-label text-primary italic uppercase">{user.role}</p>
+                                    </div>
                                 </div>
-                                <Link to="/dashboard">
-                                    <div className="size-9 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center text-primary hover:border-primary hover:bg-primary hover:text-white transition-all">
-                                        <User className="size-4" />
+                                <Link to="/dashboard" className="active-press">
+                                    <div className="size-14 rounded-2xl bg-foreground text-background p-[2px] shadow-premium hover:shadow-primary/30 transition-all group">
+                                        <div className="w-full h-full rounded-[14px] bg-background flex items-center justify-center overflow-hidden">
+                                            <User className="size-6 text-foreground group-hover:scale-110 transition-transform duration-500" />
+                                        </div>
                                     </div>
                                 </Link>
                             </div>
                         ) : (
-                            <div className="flex items-center gap-2 pl-2 border-l border-border">
+                            <div className="flex items-center gap-4">
                                 <Link to="/login">
-                                    <Button variant="ghost" size="sm" className="font-bold rounded-xl gap-2">
-                                        <LogIn className="size-4" />
-                                        Connexion
+                                    <Button variant="ghost" className="font-black text-foreground/60 hover:text-foreground hover:bg-accent rounded-[1.25rem] px-8 h-12 text-executive-label uppercase tracking-widest">
+                                        CONNEXION
                                     </Button>
                                 </Link>
                                 <Link to="/register">
-                                    <Button size="sm" className="font-black rounded-xl shadow-lg shadow-primary/20">
-                                        S'inscrire
+                                    <Button className="font-black rounded-[1.25rem] px-10 h-12 text-executive-label uppercase tracking-widest shadow-premium">
+                                        DÉMARRER
                                     </Button>
                                 </Link>
                             </div>
@@ -258,74 +248,51 @@ export function Header() {
                     </div>
 
                     {/* Mobile Menu Toggle */}
-                    <div className="md:hidden flex items-center gap-2">
-                        {/* Mobile Cart */}
+                    <div className="md:hidden flex items-center gap-3">
+                        <ThemeToggle minimal />
                         <button
-                            onClick={() => setIsCartOpen(!isCartOpen)}
-                            className="relative p-2 text-muted-foreground hover:text-foreground"
-                        >
-                            <ShoppingCart className="size-5" />
-                            {cartCount > 0 && (
-                                <span className="absolute top-0.5 right-0.5 size-4 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center">
-                                    {cartCount}
-                                </span>
-                            )}
-                        </button>
-                        <button
-                            className="p-2 text-foreground"
+                            className="p-3 rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white active-press"
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
                             aria-label="Toggle menu"
                         >
-                            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                            {isMenuOpen ? <X className="size-6" /> : <Menu className="size-6" />}
                         </button>
                     </div>
                 </div>
 
                 {/* Mobile Drawer */}
                 {isMenuOpen && (
-                    <div className="md:hidden py-4 border-t border-border">
-                        <nav className="flex flex-col gap-1">
-                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground px-3 py-2">Marketplace</p>
+                    <div className="md:hidden py-6 animate-in slide-in-from-top-4 duration-300">
+                        <nav className="flex flex-col gap-2">
+                            <div className="px-4 py-2">
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary opacity-80">Navigation Principale</span>
+                            </div>
                             {shopLinks.map(link => (
                                 <Link
                                     key={link.to}
                                     to={link.to}
                                     onClick={() => setIsMenuOpen(false)}
-                                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+                                    className="flex items-center gap-4 px-4 py-4 rounded-2xl text-slate-600 dark:text-slate-300 hover:bg-primary/5 hover:text-primary transition-all active-press"
                                 >
-                                    <link.icon className="size-4 text-primary" />
-                                    <span className="text-sm font-bold">{link.label}</span>
+                                    <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                                        <link.icon className="size-5 text-primary" />
+                                    </div>
+                                    <span className="text-base font-bold">{link.label}</span>
                                 </Link>
                             ))}
-                            <div className="h-px bg-border my-2 mx-3"></div>
-                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground px-3 py-2">Support & Aide</p>
-                            {supportLinks.map(link => (
-                                <Link key={link.to} to={link.to} onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-muted-foreground hover:bg-muted transition-all font-medium">
-                                    <link.icon className="size-4" /> {link.label}
-                                </Link>
-                            ))}
-                            <div className="h-px bg-border my-2 mx-3"></div>
-                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground px-3 py-2">Entreprise</p>
-                            {companyLinks.map(link => (
-                                <Link key={link.to} to={link.to} onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-muted-foreground hover:bg-muted transition-all font-medium">
-                                    <link.icon className="size-4" /> {link.label}
-                                </Link>
-                            ))}
-                            <div className="h-px bg-border my-2 mx-3"></div>
-                            <a href="/#features" onClick={() => setIsMenuOpen(false)} className="px-3 py-3 rounded-xl text-sm text-muted-foreground hover:bg-muted transition-all font-medium">✨ Fonctionnalités</a>
-                            <a href="/#how-it-works" onClick={() => setIsMenuOpen(false)} className="px-3 py-3 rounded-xl text-sm text-muted-foreground hover:bg-muted transition-all font-medium">🚀 Comment ça marche</a>
-                            <div className="flex flex-col gap-2 pt-4 px-3">
+                            <div className="h-px bg-white/10 dark:bg-white/5 my-4 mx-4"></div>
+                            <div className="grid grid-cols-1 gap-3 px-4 pt-2">
                                 {user ? (
-                                    <Link to="/dashboard">
-                                        <Button className="w-full font-black">Mon Dashboard</Button>
+                                    <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
+                                        <Button className="w-full h-14 rounded-2xl font-black text-base shadow-xl shadow-primary/20">Mon Dashboard</Button>
                                     </Link>
                                 ) : (
                                     <>
-                                        <Link to="/login">
-                                            <Button variant="ghost" size="sm" className="w-full font-bold">Se connecter</Button>
+                                        <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                                            <Button variant="outline" className="w-full h-14 rounded-2xl font-black text-base">Se connecter</Button>
                                         </Link>
-                                        <Link to="/register">
-                                            <Button size="sm" className="w-full font-black">Commencer</Button>
+                                        <Link to="/register" onClick={() => setIsMenuOpen(false)}>
+                                            <Button variant="premium" className="w-full h-14 rounded-2xl font-black text-base shadow-xl shadow-blue-500/20">Commencer l'aventure</Button>
                                         </Link>
                                     </>
                                 )}

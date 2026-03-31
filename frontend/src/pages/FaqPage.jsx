@@ -60,21 +60,32 @@ const FAQ_CATEGORIES = [
 const FaqItem = ({ question, answer }) => {
     const [isOpen, setIsOpen] = useState(false);
     return (
-        <div className={cn("border border-border rounded-2xl overflow-hidden transition-all duration-300", isOpen && "border-primary/30 shadow-lg shadow-primary/5")}>
+        <div className={cn(
+            "glass-card border-4 border-border rounded-[2rem] overflow-hidden transition-all duration-700 shadow-premium group",
+            isOpen && "border-primary/40 scale-[1.02] shadow-primary/10"
+        )}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between p-6 text-left gap-4 hover:bg-muted/30 transition-colors"
+                className="w-full flex items-center justify-between p-10 text-left gap-8 hover:bg-primary/5 transition-colors group/btn"
             >
-                <span className="text-sm font-black text-foreground">{question}</span>
-                <span className={cn("size-8 rounded-xl flex items-center justify-center shrink-0 border transition-all", isOpen ? "bg-primary border-primary text-white" : "border-border text-muted-foreground")}>
-                    {isOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-                </span>
-            </button>
-            {isOpen && (
-                <div className="px-6 pb-6 text-muted-foreground font-medium leading-relaxed text-sm border-t border-border pt-4">
-                    {answer}
+                <span className="text-xl font-black text-foreground italic tracking-tighter uppercase leading-tight group-hover/btn:translate-x-2 transition-transform duration-500">{question}</span>
+                <div className={cn(
+                    "size-14 rounded-2xl flex items-center justify-center shrink-0 border-4 transition-all duration-500 shadow-premium",
+                    isOpen ? "bg-primary border-primary text-white rotate-180" : "bg-background border-border text-primary group-hover/btn:scale-110"
+                )}>
+                    {isOpen ? <ChevronUp className="size-6" /> : <ChevronDown className="size-6" />}
                 </div>
-            )}
+            </button>
+            <div className={cn(
+                "grid transition-all duration-700 ease-in-out",
+                isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+            )}>
+                <div className="overflow-hidden">
+                    <div className="px-10 pb-10 text-muted-foreground/60 font-black uppercase tracking-[0.2em] text-xs leading-relaxed italic border-t-4 border-border pt-8 mt-2 mx-10 border-l-8 border-l-primary/20 pl-8">
+                        {answer}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
@@ -94,90 +105,126 @@ const FaqPage = () => {
 
     return (
         <PublicLayout>
-            <div className="font-inter pb-20">
+            <div className="font-inter pb-32">
 
-                {/* ══ HERO ══ */}
-                <section className="relative py-24 bg-slate-950 overflow-hidden text-center">
-                    <div className="absolute top-0 left-1/3 size-96 bg-primary/10 rounded-full blur-[150px]" />
-                    <div className="absolute inset-0 opacity-5 bg-[radial-gradient(#ea580c_1px,transparent_1px)] bg-[size:32px_32px]" />
-                    <div className="relative z-10 max-w-3xl mx-auto px-4 space-y-8">
-                        <span className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.3em] rounded-full border border-primary/20">
-                            <HelpCircle className="size-3" /> Centre d'Aide BCA Connect
-                        </span>
-                        <h1 className="text-6xl md:text-7xl font-black text-white tracking-tighter leading-none uppercase">
-                            Des Questions ?<br />
-                            <span className="text-primary">On a les réponses.</span>
-                        </h1>
-                        {/* Barre de recherche */}
-                        <div className="relative max-w-xl mx-auto">
-                            <Search className="absolute left-5 top-1/2 -translate-y-1/2 size-5 text-slate-400" />
-                            <input
-                                type="text"
-                                placeholder="Rechercher dans la FAQ..."
-                                value={search}
-                                onChange={e => setSearch(e.target.value)}
-                                className="w-full h-16 pl-14 pr-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-white placeholder:text-slate-400 font-medium text-base focus:outline-none focus:border-primary/50 focus:bg-white/15 transition-all"
-                            />
+                {/* ══ EXECUTIVE HERO ══ */}
+                <section className="relative py-40 overflow-hidden text-center group">
+                    {/* Background layers */}
+                    <div className="absolute inset-0 bg-slate-950" />
+                    <div className="absolute top-0 left-1/4 size-[40rem] bg-primary/10 rounded-full blur-[150px] group-hover:bg-primary/20 transition-colors duration-1000" />
+                    <div className="absolute bottom-0 right-1/4 size-[40rem] bg-blue-600/5 rounded-full blur-[150px]" />
+                    <div className="absolute inset-0 opacity-10 bg-[radial-gradient(var(--primary)_1.5px,transparent_1.5px)] bg-[size:48px_48px]" />
+                    
+                    <div className="relative z-10 max-w-5xl mx-auto px-6 space-y-12 animate-in fade-in slide-in-from-bottom-12 duration-1000">
+                        <div className="flex flex-col items-center gap-6">
+                            <div className="flex items-center gap-4">
+                                <div className="size-3 rounded-full bg-primary animate-pulse" />
+                                <span className="text-executive-label font-black text-primary uppercase tracking-[0.6em] italic leading-none pt-0.5">ACADÉMIE & SUPPORT BCA CONNECT</span>
+                            </div>
+                            <h1 className="text-7xl md:text-9xl font-black text-white tracking-tighter leading-[0.85] uppercase italic">
+                                PROTOCOLE <br />
+                                <span className="text-primary not-italic underline decoration-white/10 underline-offset-[-12px]">D'ASSISTANCE.</span>
+                            </h1>
+                        </div>
+
+                        {/* Executive Search Hub */}
+                        <div className="relative max-w-2xl mx-auto group/search">
+                            <div className="absolute -inset-2 bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20 rounded-[2.5rem] blur-xl opacity-0 group-focus-within/search:opacity-100 transition-opacity duration-700" />
+                            <div className="relative glass-card border-4 border-white/10 rounded-[2rem] overflow-hidden shadow-premium-lg">
+                                <Search className="absolute left-8 top-1/2 -translate-y-1/2 size-8 text-primary group-focus-within/search:scale-125 transition-transform" />
+                                <input
+                                    type="text"
+                                    placeholder="IDENTIFIER UNE SOLUTION, UN PROCESSUS, UN CONTRAT..."
+                                    value={search}
+                                    onChange={e => setSearch(e.target.value)}
+                                    className="w-full h-24 pl-22 pr-10 bg-transparent border-none text-white placeholder:text-white/20 font-black text-lg italic tracking-widest focus:ring-0 uppercase"
+                                />
+                            </div>
                         </div>
                     </div>
                 </section>
 
-                <div className="max-w-5xl mx-auto px-4 md:px-8 py-16 space-y-10">
-                    {/* Filtres par catégorie */}
-                    <div className="flex items-center gap-3 flex-wrap">
+                <div className="max-w-6xl mx-auto px-6 md:px-12 py-24 space-y-24">
+                    {/* Integrated Control Panel (Categories) */}
+                    <div className="flex flex-wrap items-center justify-center gap-6">
                         <button
                             onClick={() => setActiveCategory(null)}
-                            className={cn("px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border",
-                                !activeCategory ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" : "border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                            className={cn(
+                                "h-16 px-10 rounded-[1.2rem] font-black text-[11px] uppercase tracking-[0.4em] transition-all border-4 italic leading-none pt-1",
+                                !activeCategory 
+                                    ? "bg-primary text-white border-primary shadow-premium-lg shadow-primary/40 scale-105" 
+                                    : "glass-card border-border text-muted-foreground/60 hover:border-primary/40 hover:text-primary"
                             )}
                         >
-                            Toutes les catégories
+                            ACCÈS TOTAL
                         </button>
                         {FAQ_CATEGORIES.map(cat => (
                             <button
                                 key={cat.label}
                                 onClick={() => setActiveCategory(cat.label === activeCategory ? null : cat.label)}
-                                className={cn("px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border gap-2 flex items-center",
-                                    activeCategory === cat.label ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" : "border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                                className={cn(
+                                    "h-16 px-8 rounded-[1.2rem] font-black text-[11px] uppercase tracking-[0.3em] transition-all border-4 flex items-center gap-4 italic leading-none pt-1",
+                                    activeCategory === cat.label 
+                                        ? "bg-primary text-white border-primary shadow-premium-lg shadow-primary/40 scale-105" 
+                                        : "glass-card border-border text-muted-foreground/60 hover:border-primary/40 hover:text-primary"
                                 )}
                             >
-                                <span>{cat.icon}</span> {cat.label}
+                                <span className="text-xl filter grayscale active:grayscale-0">{cat.icon}</span> 
+                                {cat.label}
                             </button>
                         ))}
                     </div>
 
-                    {/* Questions */}
-                    {filteredCategories.length > 0 ? (
-                        filteredCategories.map(cat => (
-                            <div key={cat.label} className="space-y-4">
-                                <h2 className="text-sm font-black uppercase tracking-[0.25em] text-primary flex items-center gap-2">
-                                    <span className="text-xl">{cat.icon}</span> {cat.label}
-                                </h2>
-                                <div className="space-y-3">
-                                    {cat.questions.map((item, i) => (
-                                        <FaqItem key={i} question={item.q} answer={item.a} />
-                                    ))}
+                    {/* Content Engine */}
+                    <div className="space-y-20">
+                        {filteredCategories.length > 0 ? (
+                            filteredCategories.map(cat => (
+                                <div key={cat.label} className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                                    <div className="flex items-center gap-8 group/title">
+                                        <div className="size-2 bg-primary rounded-full group-hover:scale-[10] transition-transform duration-700 opacity-20" />
+                                        <h2 className="text-executive-label font-black uppercase tracking-[0.5em] text-primary flex items-center gap-6 italic leading-none pt-1">
+                                            <span className="text-4xl">{cat.icon}</span> {cat.label}
+                                        </h2>
+                                        <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-8">
+                                        {cat.questions.map((item, i) => (
+                                            <FaqItem key={i} question={item.q} answer={item.a} />
+                                        ))}
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="py-40 text-center space-y-8 glass-card border-4 border-dashed border-border rounded-[3rem]">
+                                <div className="size-32 rounded-[2.5rem] bg-muted/10 flex items-center justify-center mx-auto border-4 border-dashed border-border group">
+                                    <Search className="size-16 text-muted-foreground/20 animate-pulse" />
+                                </div>
+                                <div className="space-y-4">
+                                    <p className="text-4xl font-black italic tracking-tighter text-foreground uppercase">Protocole Infructueux</p>
+                                    <p className="text-muted-foreground/60 font-black uppercase tracking-[0.3em] text-xs max-w-lg mx-auto italic border-r-8 border-primary/20 pr-10 text-right">
+                                        Aucune donnée n'a été identifiée pour les critères spécifiés dans notre base de connaissances.
+                                    </p>
                                 </div>
                             </div>
-                        ))
-                    ) : (
-                        <div className="py-20 text-center space-y-4">
-                            <p className="text-2xl font-black italic tracking-tighter text-foreground">Aucun résultat</p>
-                            <p className="text-muted-foreground font-medium">Aucune réponse ne correspond à votre recherche.</p>
-                        </div>
-                    )}
+                        )}
+                    </div>
 
-                    {/* CTA Pas trouvé */}
-                    <div className="relative p-10 rounded-[2rem] bg-gradient-to-br from-primary/10 via-card to-card border border-primary/20 text-center space-y-5 overflow-hidden">
-                        <div className="absolute top-0 right-0 size-48 bg-primary/5 rounded-full blur-[80px] -mt-20 -mr-20" />
-                        <MessageSquare className="size-12 text-primary mx-auto" />
-                        <div>
-                            <h3 className="text-2xl font-black italic tracking-tighter text-foreground">Vous n'avez pas trouvé votre réponse ?</h3>
-                            <p className="text-muted-foreground font-medium mt-2">Notre équipe est disponible pour répondre à toutes vos questions.</p>
+                    {/* Executive Support CTA */}
+                    <div className="relative p-20 rounded-[4rem] glass-card border-4 border-primary/20 text-center space-y-10 overflow-hidden shadow-premium-lg group">
+                        <div className="absolute top-0 right-0 size-96 bg-primary/10 rounded-full blur-[120px] -mt-48 -mr-48 group-hover:scale-125 transition-transform duration-[2s]" />
+                        <div className="relative z-10 size-24 bg-primary rounded-[2rem] flex items-center justify-center mx-auto shadow-premium-lg group-hover:rotate-12 transition-transform">
+                            <MessageSquare className="size-12 text-white" />
                         </div>
-                        <Link to="/contact">
-                            <Button className="h-14 px-10 rounded-2xl font-black uppercase tracking-widest text-sm gap-2 shadow-xl shadow-primary/20">
-                                Contacter le support <ArrowRight className="size-4" />
+                        <div className="relative z-10 space-y-6">
+                            <h3 className="text-4xl md:text-5xl font-black italic tracking-tighter text-foreground uppercase leading-none">Besoin d'une <span className="text-primary not-italic">Intervention Directe ?</span></h3>
+                            <p className="text-muted-foreground/60 font-black uppercase tracking-[0.3em] text-sm italic max-w-2xl mx-auto leading-relaxed border-l-8 border-primary/20 pl-10">
+                                Nos agents de liaison stratégique sont prêts à résoudre vos problématiques opérationnelles les plus complexes en un temps record.
+                            </p>
+                        </div>
+                        <Link to="/contact" className="relative z-10 inline-block">
+                            <Button className="h-20 px-14 rounded-[1.5rem] font-black uppercase tracking-[0.4em] text-xs shadow-premium-lg shadow-primary/40 bg-primary hover:bg-primary text-white border-0 hover:scale-105 active:scale-95 transition-all group/btn relative overflow-hidden italic leading-none pt-1">
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_2s_infinite]" />
+                                OUVRIR UN CANAL DE SUPPORT <ArrowRight className="size-5 ml-4 group-hover/btn:translate-x-2 transition-transform" />
                             </Button>
                         </Link>
                     </div>

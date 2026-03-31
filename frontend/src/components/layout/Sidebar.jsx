@@ -95,9 +95,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                 <div className="flex flex-col gap-12">
                     {/* Logo Section */}
                     <div className="flex items-center gap-4 px-2 group cursor-default" translate="no">
-                        <div className="shrink-0 relative">
-                            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full scale-0 group-hover:scale-150 transition-transform duration-700"></div>
-                            <BcaLogo className="size-12 relative z-10 drop-shadow-md" />
+                        <div className="shrink-0">
+                            <BcaLogo className="size-10 drop-shadow-sm" />
                         </div>
                         <div className="flex flex-col min-w-0">
                             <h1 className="text-slate-900 dark:text-white text-lg font-black leading-none tracking-tight">BCA Connect</h1>
@@ -127,7 +126,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                                 }
                             >
                                 <item.icon className={cn("size-5 transition-transform duration-500 group-hover:scale-110")} />
-                                <span className="text-[14px] font-black tracking-tight">{item.label}</span>
+                                <span className="text-[13px] font-semibold tracking-tight">{item.label}</span>
                                 
                                 {/* Active Indicator Dot */}
                                 <span className={cn(

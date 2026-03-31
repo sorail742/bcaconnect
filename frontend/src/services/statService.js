@@ -18,6 +18,15 @@ const statService = {
             console.error('Error fetching financial stats:', error);
             throw error;
         }
+    },
+    getVendorStats: async () => {
+        try {
+            const response = await api.get('/stats/vendor');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching vendor stats:', error);
+            throw error;
+        }
     }
 };
 

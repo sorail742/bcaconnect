@@ -36,76 +36,79 @@ const VendorsList = () => {
 
     const columns = [
         {
-            label: 'Marchand',
+            label: 'MARCHAND / ENTITÉ',
             render: (row) => (
-                <div className="flex items-center gap-4 py-2">
-                    <div className="size-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-primary group-hover:scale-105 transition-all duration-500 border border-border group-hover:border-primary/30 relative">
-                        <Store className="size-6" />
+                <div className="flex items-center gap-6 py-4 group/vendor">
+                    <div className="size-16 rounded-[1.5rem] bg-background border-4 border-border flex items-center justify-center text-primary group-hover/vendor:rotate-6 group-hover/vendor:scale-110 transition-all duration-500 shadow-inner relative overflow-hidden">
+                        <div className="absolute inset-0 bg-primary/5 group-hover/vendor:bg-primary/10 transition-colors" />
+                        <Store className="size-8 relative z-10" />
                         {row.status === 'Vérifié' && (
-                            <div className="absolute -top-1 -right-1 size-5 bg-primary text-white rounded-full flex items-center justify-center shadow-lg border-2 border-background">
+                            <div className="absolute -top-1 -right-1 size-6 bg-primary text-white rounded-full flex items-center justify-center shadow-premium border-4 border-background z-20">
                                 <ShieldCheck className="size-3" />
                             </div>
                         )}
                     </div>
-                    <div className="space-y-1">
-                        <p className="text-base font-black text-foreground leading-none italic tracking-tight">{row.nom_boutique}</p>
-                        <div className="flex items-center gap-2">
-                            <span className="text-[9px] text-muted-foreground uppercase font-black tracking-widest">{row.id.slice(0, 8)}</span>
-                            <span className="text-[9px] px-1.5 py-0.5 bg-muted rounded text-muted-foreground font-bold uppercase">{row.User?.nom_complet || 'Marchand BCA'}</span>
+                    <div className="space-y-1.5 focus-ring rounded-lg p-1">
+                        <p className="text-lg font-black text-foreground leading-none italic tracking-tighter uppercase">{row.nom_boutique}</p>
+                        <div className="flex items-center gap-3">
+                            <span className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.2em] italic border-l-2 border-primary/20 pl-2">ID: {row.id.slice(0, 8)}</span>
+                            <span className="text-[10px] px-3 py-1 bg-primary/10 rounded-full text-primary font-black uppercase tracking-widest italic">{row.User?.nom_complet || 'MARCHAND BCA'}</span>
                         </div>
                     </div>
                 </div>
             )
         },
         {
-            label: 'Localisation',
+            label: 'LOCALISATION',
             render: (row) => (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="size-3 text-primary" />
-                    <span className="text-xs font-bold uppercase tracking-widest">{row.description?.split(',')[row.description?.split(',').length - 1] || 'Conakry, Guinée'}</span>
+                <div className="flex items-center gap-3 text-muted-foreground group/loc">
+                    <div className="p-2 rounded-xl bg-background border-2 border-border group-hover/loc:border-primary/40 transition-colors">
+                        <MapPin className="size-4 text-primary" />
+                    </div>
+                    <span className="text-xs font-black uppercase tracking-[0.2em] italic">{row.description?.split(',')[row.description?.split(',').length - 1] || 'CONAKRY, GUINÉE'}</span>
                 </div>
             )
         },
         {
-            label: 'Performances',
+            label: 'PERFORMANCES',
             render: (row) => (
-                <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm font-black text-foreground italic">{row.sales || Math.floor(Math.random() * 500)}</span>
-                        <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">ventes</span>
+                <div className="flex flex-col gap-3 group/perf">
+                    <div className="flex items-center gap-3">
+                        <span className="text-lg font-black text-foreground italic tracking-tighter">{row.sales || Math.floor(Math.random() * 500)}</span>
+                        <span className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.3em] italic">Unités Sorties</span>
                     </div>
-                    <div className="w-24 h-1 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: '70%' }}></div>
-                    </div>
-                </div>
-            )
-        },
-        {
-            label: 'Confiance',
-            render: (row) => (
-                <div className="flex items-center gap-2 group/score">
-                    <div className="flex items-center gap-1 px-2 py-1 bg-amber-500/10 text-amber-500 rounded-lg border border-amber-500/20">
-                        <Star className="size-3 fill-amber-500" />
-                        <span className="text-xs font-black italic">{row.rating || (4.5 + Math.random() * 0.5).toFixed(1)}</span>
+                    <div className="w-32 h-2 bg-background border-2 border-border rounded-full overflow-hidden shadow-inner">
+                        <div className="h-full bg-primary rounded-full animate-in slide-in-from-left duration-1000" style={{ width: '70%' }}></div>
                     </div>
                 </div>
             )
         },
         {
-            label: 'Statut',
+            label: 'INDICE DE CONFIANCE',
+            render: (row) => (
+                <div className="flex items-center gap-3 group/score">
+                    <div className="flex items-center gap-3 px-4 py-2 bg-amber-500/10 text-amber-500 rounded-[1rem] border-2 border-amber-500/20 shadow-premium group-hover/score:scale-110 transition-transform">
+                        <Star className="size-4 fill-amber-500" />
+                        <span className="text-sm font-black italic tracking-tighter">{row.rating || (4.5 + Math.random() * 0.5).toFixed(1)}</span>
+                    </div>
+                </div>
+            )
+        },
+        {
+            label: 'STATUT OPÉRATIONNEL',
             render: (row) => (
                 <div className="flex items-center gap-2">
-                    <StatusBadge status={row.statut === 'actif' ? 'Vérifié' : row.statut} variant={row.statut === 'actif' ? 'success' : 'warning'} />
+                    <StatusBadge status={row.statut === 'actif' ? 'Vérifié' : row.statut} variant={row.statut === 'actif' ? 'success' : 'warning'} className="px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.3em] border-2 italic shadow-sm" />
                 </div>
             )
         },
         {
-            label: 'Action',
+            label: 'ACTIONS',
             render: (row) => (
-                <Button asChild variant="ghost" className="h-10 px-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] text-primary hover:bg-primary/10 group/btn border border-transparent hover:border-primary/20 transition-all">
-                    <Link to={`/shop/${row.slug}`}>
-                        Profil Marchand
-                        <ArrowRight className="size-3 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                <Button asChild variant="ghost" className="h-12 px-6 rounded-[1rem] font-black text-[11px] uppercase tracking-[0.3em] text-primary hover:bg-primary/10 group/btn border-2 border-transparent hover:border-primary/20 transition-all italic shadow-premium hover:shadow-primary/10">
+                    <Link to={`/shop/${row.slug}`} className="flex items-center gap-3">
+                        ANALYSER PROFIL
+                        <ArrowRight className="size-4 group-hover/btn:translate-x-2 transition-transform" />
                     </Link>
                 </Button>
             )
@@ -119,87 +122,99 @@ const VendorsList = () => {
 
     return (
         <PublicLayout>
-            <div className="w-full space-y-10 animate-in fade-in duration-700 font-inter pb-20 px-4 md:px-8 max-w-7xl mx-auto pt-10">
-                {/* Premium Header */}
-                <div className="relative py-12 px-10 rounded-[2rem] bg-card border border-border overflow-hidden">
-                    <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 rounded-full blur-[80px] -mr-32 -mt-32"></div>
-                    <div className="relative z-10 flex flex-col md:flex-row justify-between gap-8 items-start md:items-end">
-                        <div className="space-y-4">
-                            <span className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-primary/20">Annuaire des Marchands</span>
-                            <h2 className="text-4xl md:text-5xl font-black text-foreground italic tracking-tighter leading-none">
-                                Collaborez avec les leaders <br />
-                                <span className="text-primary not-italic text-3xl md:text-4xl">du commerce guinéen.</span>
+            <div className="w-full space-y-16 animate-in fade-in duration-1000 font-inter pb-32 px-6 md:px-12 max-w-7xl mx-auto pt-20">
+                {/* Executive Header */}
+                <div className="glass-card border border-border rounded-2xl p-8 md:p-12 relative overflow-visible group">
+                    <div className="absolute top-0 right-0 size-96 bg-primary/5 rounded-full blur-[120px] -mr-48 -mt-48 group-hover:bg-primary/10 transition-colors duration-1000 pointer-events-none"></div>
+                    <div className="relative z-10 flex flex-col lg:flex-row justify-between gap-8 items-start lg:items-end">
+                        <div className="space-y-6 max-w-2xl">
+                            <div className="flex items-center gap-3">
+                                <div className="size-2 rounded-full bg-primary animate-pulse" />
+                                <span className="text-[11px] font-semibold text-primary uppercase tracking-[0.2em]">Centre d'accréditation des marchands</span>
+                            </div>
+                            <h2 className="text-5xl md:text-7xl font-bold text-foreground tracking-tight leading-[0.9] uppercase">
+                                Collaborez avec <br />
+                                <span className="text-primary">L'Élite Business.</span>
                             </h2>
-                            <p className="text-muted-foreground font-medium max-w-xl">Chaque vendeur sur BCA Connect est rigoureusement vérifié pour garantir une expérience d'achat sécurisée et de haute qualité.</p>
+                            <p className="text-muted-foreground text-sm max-w-xl leading-relaxed border-l-4 border-primary/30 pl-6">
+                                Chaque entité sur BCA Connect subit un audit rigoureux pour garantir une intégrité transactionnelle absolue et une qualité de service premium.
+                            </p>
                         </div>
-                        <div className="flex gap-4">
-                            <Button variant="outline" className="h-14 px-6 rounded-2xl font-bold uppercase tracking-widest text-[10px] gap-3 border-border hover:border-primary hover:text-primary transition-all shadow-sm">
+                        <div className="flex flex-wrap gap-4 shrink-0 pt-4 lg:pt-0">
+                            <Button variant="outline" className="h-12 px-6 rounded-xl font-semibold text-sm gap-3 border border-border hover:border-primary/50 hover:text-primary transition-all">
                                 <ExternalLink className="size-4" />
-                                Guide Vendeur
+                                Protocole Vendeur
                             </Button>
-                            <Button className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-primary/20">
+                            <Button className="h-12 px-6 rounded-xl font-semibold text-sm bg-primary hover:bg-primary/90 text-white border-0 transition-all relative overflow-hidden group/btn">
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
                                 Devenir Partenaire
                             </Button>
                         </div>
                     </div>
                 </div>
 
-                {/* Search & Stats Bar */}
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                    <Card className="lg:col-span-2 p-4 rounded-2xl border-border bg-card/50 backdrop-blur-sm shadow-sm group">
-                        <div className="relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground size-5 group-focus-within:text-primary transition-colors" />
+                {/* Intelligence Bar */}
+                <div className="grid grid-cols-1 lg:grid-cols-6 gap-8">
+                    <div className="lg:col-span-3 glass-card p-6 rounded-[2rem] border-4 border-border shadow-premium group relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                        <div className="relative z-20 flex items-center h-full">
+                            <Search className="absolute left-8 top-1/2 -translate-y-1/2 text-primary size-7 group-focus-within:scale-125 transition-transform" />
                             <Input
                                 type="text"
-                                placeholder="Rechercher un marchand, une catégorie, une ville..."
-                                className="pl-12 h-14 bg-transparent border-none focus:ring-0 text-base font-medium placeholder:text-muted-foreground/60 shadow-none"
+                                placeholder="IDENTIFIER UN MARCHAND, UNE CATÉGORIE, UNE ZONE D'INFLUENCE..."
+                                className="pl-20 h-16 bg-transparent border-none focus:ring-0 text-lg font-black italic tracking-widest placeholder:text-muted-foreground/20 shadow-none uppercase"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                    </Card>
-                    <Card className="p-4 rounded-2xl border-border bg-card flex items-center gap-4 group hover:border-primary/30 transition-all cursor-default overflow-hidden relative">
-                        <div className="absolute top-0 right-0 size-24 bg-primary/5 rounded-full -mr-12 -mt-12 group-hover:scale-125 transition-transform duration-700"></div>
-                        <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary relative z-10">
-                            <Users className="size-6" />
-                        </div>
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Marchands Actifs</p>
-                            <h4 className="text-xl font-black italic tracking-tighter text-foreground">1.250 +</h4>
-                        </div>
-                    </Card>
-                    <Card className="p-4 rounded-2xl border-border bg-card flex items-center gap-4 group hover:border-primary/30 transition-all cursor-default overflow-hidden relative">
-                        <div className="absolute top-0 right-0 size-24 bg-emerald-500/5 rounded-full -mr-12 -mt-12 group-hover:scale-125 transition-transform duration-700"></div>
-                        <div className="size-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 relative z-10">
-                            <ShieldCheck className="size-6" />
-                        </div>
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Taux de Confiance</p>
-                            <h4 className="text-xl font-black italic tracking-tighter text-foreground">98.4%</h4>
-                        </div>
-                    </Card>
-                </div>
-
-                {/* Directory Table */}
-                <Card className="rounded-[2rem] border-border overflow-hidden shadow-xl shadow-slate-200/50 dark:shadow-none bg-card">
-                    <CardHeader className="border-b border-border py-6 bg-muted/20 px-8">
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="text-sm font-black uppercase tracking-[0.2em] text-foreground flex items-center gap-3">
-                                <Users className="size-4 text-primary" /> Annuaire Interactif
-                            </CardTitle>
-                            <div className="flex items-center gap-2">
-                                <span className="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Temps réel</span>
+                    </div>
+                    <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="glass-card p-8 rounded-[2rem] border-4 border-border flex items-center gap-8 group hover:border-primary/30 transition-all cursor-default overflow-hidden relative shadow-premium">
+                            <div className="absolute top-0 right-0 size-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-1000"></div>
+                            <div className="size-16 rounded-[1.2rem] bg-background border-4 border-border flex items-center justify-center text-primary relative z-10 shadow-inner group-hover:rotate-12 transition-transform">
+                                <Users className="size-8" />
+                            </div>
+                            <div className="relative z-10 space-y-1">
+                                <p className="text-executive-label font-black uppercase tracking-[0.3em] text-muted-foreground/40 italic leading-none pt-0.5">Unités Commerciales</p>
+                                <h4 className="text-3xl font-black italic tracking-tighter text-foreground uppercase">1.250 +</h4>
                             </div>
                         </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
+                        <div className="glass-card p-8 rounded-[2rem] border-4 border-border flex items-center gap-8 group hover:border-primary/30 transition-all cursor-default overflow-hidden relative shadow-premium">
+                            <div className="absolute top-0 right-0 size-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-1000"></div>
+                            <div className="size-16 rounded-[1.2rem] bg-background border-4 border-border flex items-center justify-center text-emerald-500 relative z-10 shadow-inner group-hover:rotate-12 transition-transform">
+                                <ShieldCheck className="size-8" />
+                            </div>
+                            <div className="relative z-10 space-y-1">
+                                <p className="text-executive-label font-black uppercase tracking-[0.3em] text-muted-foreground/40 italic leading-none pt-0.5">Indice de Confiance</p>
+                                <h4 className="text-3xl font-black italic tracking-tighter text-foreground uppercase">98.4%</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Directory Engine */}
+                <div className="glass-card rounded-[3rem] border-4 border-border overflow-hidden shadow-premium-lg">
+                    <div className="border-b-4 border-border py-10 px-12 bg-muted/20">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-executive-label font-black uppercase tracking-[0.4em] text-foreground flex items-center gap-6 italic leading-none pt-1">
+                                <div className="p-3 bg-primary rounded-xl text-white shadow-premium">
+                                    <Users className="size-6" />
+                                </div>
+                                ANNUAIRE INTERACTIF DES LEADERS
+                            </h3>
+                            <div className="flex items-center gap-4 px-6 py-3 bg-background rounded-full border-2 border-border italic transform hover:scale-105 transition-transform cursor-default">
+                                <div className="size-2 rounded-full bg-emerald-500 animate-ping shadow-[0_0_12px_rgba(16,185,129,0.4)]"></div>
+                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">FLUX ACTIF TEMPS RÉEL</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="p-0">
                         {isLoading ? (
-                            <div className="divide-y divide-border/50">
+                            <div className="divide-y-4 divide-border/50">
                                 {[1, 2, 3, 4, 5].map(i => <TableRowSkeleton key={i} />)}
                             </div>
                         ) : hasError ? (
-                            <div className="p-10">
+                            <div className="p-20">
                                 <ErrorState />
                             </div>
                         ) : filteredVendors.length > 0 ? (
@@ -209,28 +224,30 @@ const VendorsList = () => {
                                 className="border-none shadow-none"
                             />
                         ) : (
-                            <div className="p-10">
+                            <div className="p-20">
                                 <EmptyState
-                                    title="Aucun marchand"
-                                    description="Aucun marchand ne correspond à votre recherche."
+                                    title="PROTOCOLE SANS RÉSULTAT"
+                                    description="Aucune entité ne correspond aux critères de recherche identifiés."
                                     icon={Store}
                                 />
                             </div>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                {/* Premium Pagination */}
-                <div className="flex items-center justify-between px-8">
-                    <p className="text-sm text-muted-foreground font-medium">Affichage de <span className="text-foreground font-black italic">1-5</span> sur 42 marchands sélectionnés</p>
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" className="rounded-xl h-10 px-4 border-border font-bold">Précédent</Button>
-                        <div className="flex items-center gap-1">
-                            <Button size="sm" className="rounded-xl size-10 font-black italic">1</Button>
-                            <Button variant="ghost" size="sm" className="rounded-xl size-10 font-bold hover:bg-muted">2</Button>
-                            <Button variant="ghost" size="sm" className="rounded-xl size-10 font-bold hover:bg-muted">3</Button>
+                {/* Premium Pagination Control */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-8 px-12">
+                    <p className="text-sm text-muted-foreground font-black uppercase tracking-[0.2em] italic border-l-4 border-primary/20 pl-6">
+                        Affichage de <span className="text-primary font-black">1-5</span> sur {filteredVendors.length} marchands identifiés
+                    </p>
+                    <div className="flex items-center gap-4">
+                        <Button variant="outline" size="sm" className="rounded-[1rem] h-12 px-8 border-4 border-border font-black uppercase tracking-widest text-[10px] italic hover:border-primary/40 transition-colors">PRÉCÉDENT</Button>
+                        <div className="flex items-center gap-3">
+                            <Button size="sm" className="rounded-[1rem] size-12 font-black italic shadow-premium bg-primary text-white border-0">1</Button>
+                            <Button variant="ghost" size="sm" className="rounded-[1rem] size-12 font-black italic hover:bg-muted text-muted-foreground">2</Button>
+                            <Button variant="ghost" size="sm" className="rounded-[1rem] size-12 font-black italic hover:bg-muted text-muted-foreground">3</Button>
                         </div>
-                        <Button variant="outline" size="sm" className="rounded-xl h-10 px-4 border-border font-bold">Suivant</Button>
+                        <Button variant="outline" size="sm" className="rounded-[1rem] h-12 px-8 border-4 border-border font-black uppercase tracking-widest text-[10px] italic hover:border-primary/40 transition-colors">SUIVANT</Button>
                     </div>
                 </div>
             </div>

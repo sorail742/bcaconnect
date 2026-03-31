@@ -25,19 +25,17 @@ function App() {
   }, []);
 
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <CartProvider>
-          <BrowserRouter>
-            <div className="min-h-screen">
-              <OfflineBanner />
-              <AppRoutes />
-            </div>
-            <AIChat />
-          </BrowserRouter>
-        </CartProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <AuthProvider>
+      <CartProvider>
+        <BrowserRouter>
+          <div className="min-h-screen">
+            <OfflineBanner />
+            <AppRoutes />
+          </div>
+          <AIChat />
+        </BrowserRouter>
+      </CartProvider>
+    </AuthProvider>
   );
 }
 

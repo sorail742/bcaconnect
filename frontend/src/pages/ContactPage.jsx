@@ -4,7 +4,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import {
     Mail, Phone, MapPin, MessageSquare, Send, CheckCircle2,
-    Clock, Headphones, Zap, ArrowRight, Loader2
+    Clock, Headphones, Zap, ArrowRight, Loader2, ChevronDown
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -16,7 +16,6 @@ const CONTACT_REASONS = [
     'Questions sur BCA Connect',
     'Autre',
 ];
-
 const ContactPage = () => {
     const [form, setForm] = useState({
         nom: '', email: '', telephone: '', raison: '', message: ''
@@ -32,40 +31,40 @@ const ContactPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!form.nom || !form.email || !form.message) {
-            return toast.error("Veuillez remplir tous les champs obligatoires.");
+            return toast.error("Protocole incomplet. Veuillez renseigner les champs obligatoires.");
         }
         setIsSending(true);
-        // Simulation d'envoi
-        await new Promise(r => setTimeout(r, 1500));
+        // Simulation d'envoi chiffré
+        await new Promise(r => setTimeout(r, 2000));
         setIsSending(false);
         setSent(true);
-        toast.success("Message envoyé ! Nous vous répondrons dans les 24h.");
+        toast.success("Dossier transmis au Pôle Exécutif. Réponse sous 24h.");
     };
 
     return (
         <PublicLayout>
-            <div className="font-inter pb-32 animate-in fade-in duration-1000">
+            <div className="font-inter pb-40 animate-in fade-in duration-1000">
 
                 {/* ══════════════════════════════════════════════════
                     EXECUTIVE HERO
                 ══════════════════════════════════════════════════ */}
-                <section className="relative pt-32 pb-24 bg-slate-950 overflow-hidden text-center border-b-4 border-primary">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 size-[40rem] bg-primary/20 rounded-full blur-[150px] mix-blend-screen pointer-events-none" />
-                    <div className="absolute inset-0 opacity-[0.03]" style={{
+                <section className="relative pt-40 pb-32 bg-foreground overflow-hidden text-center border-b-8 border-primary">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 size-[50rem] bg-primary/20 rounded-full blur-[180px] mix-blend-screen pointer-events-none" />
+                    <div className="absolute inset-0 opacity-[0.05]" style={{
                         backgroundImage: `linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)`,
-                        backgroundSize: '4rem 4rem'
+                        backgroundSize: '5rem 5rem'
                     }} />
                     
-                    <div className="relative z-10 max-w-4xl mx-auto px-4 space-y-8 animate-in slide-in-from-bottom duration-1000 delay-200">
-                        <span className="inline-flex items-center gap-3 px-5 py-2.5 bg-white/5 border border-white/10 text-primary text-[9px] font-black uppercase tracking-[0.4em] rounded-full backdrop-blur-md shadow-2xl">
-                            <Headphones className="size-3.5" /> Support BCA Service Privilège
+                    <div className="relative z-10 max-w-5xl mx-auto px-6 space-y-12 animate-in slide-in-from-bottom duration-1000">
+                        <span className="inline-flex items-center gap-4 px-6 py-3 bg-white/5 border border-white/10 text-primary text-executive-label font-black uppercase tracking-[0.5em] rounded-full backdrop-blur-3xl shadow-premium italic leading-none pt-0.5">
+                            <Headphones className="size-4 animate-pulse" /> Support BCA Service Privilège v4.1
                         </span>
-                        <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter leading-[0.9] uppercase italic">
-                            Parlons-nous. <br />
-                            <span className="text-primary italic">Maintenant.</span>
+                        <h1 className="text-7xl md:text-9xl font-black text-background tracking-tighter leading-[0.85] uppercase italic drop-shadow-2xl">
+                            Liaison <br />
+                            <span className="text-primary not-italic underline decoration-primary/20 decoration-8 underline-offset-[-4px]">Directe.</span>
                         </h1>
-                        <p className="text-white/50 text-base font-bold tracking-widest uppercase max-w-2xl mx-auto leading-relaxed">
-                            Notre équipe exécutive basée à Conakry vous répond en moins de 24h. Assurance qualité certifiée.
+                        <p className="text-background/40 text-sm font-black uppercase tracking-[0.4em] max-w-2xl mx-auto leading-relaxed italic border-l-4 border-primary/20 pl-8">
+                            Notre directoire opérationnel basé à Conakry assure une veille stratégique 24/7. Assurance qualité certifiée ISO-9001.
                         </p>
                     </div>
                 </section>
@@ -73,49 +72,50 @@ const ContactPage = () => {
                 {/* ══════════════════════════════════════════════════
                     CONTACT GRID
                 ══════════════════════════════════════════════════ */}
-                <section className="max-w-7xl mx-auto px-4 md:px-8 py-24">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                <section className="max-w-7xl mx-auto px-6 md:px-12 py-32">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-20">
 
                         {/* Sidebar Infos */}
-                        <div className="lg:col-span-4 space-y-8">
-                            <div className="mb-12">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="size-2 rounded-full bg-primary animate-pulse" />
-                                    <span className="text-[9px] font-black text-primary uppercase tracking-[0.3em]">Directoire BCA</span>
+                        <div className="lg:col-span-4 space-y-12">
+                            <div className="mb-16">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="size-3 rounded-full bg-primary animate-ping shadow-[0_0_12px_rgba(37,99,235,0.4)]" />
+                                    <span className="text-executive-label font-black text-primary uppercase tracking-[0.4em] italic leading-none pt-0.5">Directoire BCA</span>
                                 </div>
-                                <h2 className="text-4xl font-black italic tracking-tighter text-slate-900 dark:text-white uppercase leading-none">Nous<br/>Trouver.</h2>
+                                <h2 className="text-5xl font-black italic tracking-tighter text-foreground uppercase leading-[0.9]">Localisations<br/>Stratégiques.</h2>
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="space-y-6">
                                 {[
-                                    { icon: Mail, label: "Canal Électronique", value: "support@bcaconnect.gn", sub: "Réponse sous 24h garantie" },
-                                    { icon: Phone, label: "Ligne Directe", value: "+224 621 000 000", sub: "Lun–Sam, 8h–18h (GMT)" },
-                                    { icon: MapPin, label: "Siège Social", value: "Kaloum, Conakry", sub: "République de Guinée 🇬🇳" },
+                                    { icon: Mail, label: "Canal Électronique", value: "SUPPORT@BCACONNECT.GN", sub: "RÉPONSE SOUS 24H GARANTIE" },
+                                    { icon: Phone, label: "Ligne Directe Sécurisée", value: "+224 621 000 000", sub: "LUN–SAM, 8H–18H (GMT)" },
+                                    { icon: MapPin, label: "Siège Social Exécutif", value: "KABOUM, CONAKRY", sub: "RÉPUBLIQUE DE GUINÉE 🇬🇳" },
                                 ].map((item, i) => (
-                                    <div key={i} className="flex items-start gap-5 p-6 rounded-[2rem] bg-white dark:bg-slate-900 border-2 border-slate-50 dark:border-slate-800 hover:border-primary/30 transition-all group shadow-sm hover:shadow-xl hover:shadow-primary/5 duration-500">
-                                        <div className="size-14 rounded-2xl bg-slate-50 dark:bg-slate-950 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-500 shadow-inner">
-                                            <item.icon className="size-6 text-slate-400 group-hover:text-white transition-colors" />
+                                    <div key={i} className="flex items-start gap-8 p-10 rounded-[3rem] bg-card border-4 border-border hover:border-primary/40 transition-all group shadow-premium hover:shadow-premium-lg duration-700 relative overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                        <div className="size-20 rounded-[1.5rem] bg-background border-4 border-border flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white group-hover:scale-110 group-hover:rotate-6 transition-all duration-700 shadow-inner relative z-10">
+                                            <item.icon className="size-8 text-muted-foreground/30 group-hover:text-white transition-colors" />
                                         </div>
-                                        <div>
-                                            <p className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-400">{item.label}</p>
-                                            <p className="font-black text-slate-900 dark:text-white italic mt-1 text-sm tracking-tight">{item.value}</p>
-                                            <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase">{item.sub}</p>
+                                        <div className="relative z-10 flex flex-col justify-center min-h-[5rem]">
+                                            <p className="text-executive-label font-black uppercase tracking-[0.3em] text-muted-foreground/40 italic leading-none mb-2">{item.label}</p>
+                                            <p className="font-black text-foreground italic mt-2 text-xl tracking-tighter leading-none">{item.value}</p>
+                                            <p className="text-[10px] text-primary font-black mt-3 uppercase tracking-widest leading-none italic">{item.sub}</p>
                                         </div>
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="p-8 rounded-[2.5rem] bg-primary/5 border-2 border-primary/10 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 size-32 bg-primary/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-primary/20 transition-colors" />
-                                <div className="relative z-10 space-y-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-primary/10 rounded-xl">
-                                            <Zap className="size-5 text-primary" />
+                            <div className="p-12 rounded-[4rem] bg-primary/5 border-4 border-primary/10 relative overflow-hidden group/card shadow-premium hover:shadow-premium-lg transition-all duration-700">
+                                <div className="absolute top-0 right-0 size-48 bg-primary/10 rounded-full blur-[80px] -mr-24 -mt-24 group-hover/card:bg-primary/20 transition-colors duration-1000" />
+                                <div className="relative z-10 space-y-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-3 bg-primary/10 rounded-2xl border-2 border-primary/20 shadow-inner">
+                                            <Zap className="size-6 text-primary" />
                                         </div>
-                                        <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Assistance Live</p>
+                                        <p className="text-executive-label font-black text-foreground uppercase tracking-[0.3em] italic leading-none pt-0.5">Assistance Live v2</p>
                                     </div>
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-loose">
-                                        Pour une assistance immédiate, déverrouillez votre accès via le portail exécutif pour utiliser le chat sécurisé.
+                                    <p className="text-[11px] text-muted-foreground font-black uppercase tracking-[0.2em] leading-loose italic border-l-4 border-primary pl-6">
+                                        Pour une assistance immédiate, déverrouillez votre accès via le portail exécutif pour utiliser le protocole de chat sécurisé de bout en bout.
                                     </p>
                                 </div>
                             </div>
@@ -124,77 +124,79 @@ const ContactPage = () => {
                         {/* Formulaire (Executive Card) */}
                         <div className="lg:col-span-8">
                             {sent ? (
-                                <div className="h-full flex flex-col items-center justify-center gap-8 text-center p-16 rounded-[3rem] bg-white dark:bg-slate-900 border-2 border-emerald-500/20 shadow-2xl shadow-emerald-500/10 animate-in zoom-in duration-500">
-                                    <div className="size-32 rounded-[2.5rem] bg-emerald-500 text-white flex items-center justify-center shadow-2xl shadow-emerald-500/30">
-                                        <CheckCircle2 className="size-16" />
+                                <div className="h-full flex flex-col items-center justify-center gap-12 text-center p-20 rounded-[4rem] bg-card border-4 border-emerald-500/20 shadow-premium-lg animate-in zoom-in duration-1000 relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent" />
+                                    <div className="size-40 rounded-[3rem] bg-emerald-500 text-white flex items-center justify-center shadow-premium-lg shadow-emerald-500/40 relative z-10 animate-bounce">
+                                        <CheckCircle2 className="size-20" />
                                     </div>
-                                    <div className="space-y-4">
-                                        <h3 className="text-5xl font-black italic tracking-tighter text-slate-900 dark:text-white uppercase">Transmission Confirmée.</h3>
-                                        <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] max-w-lg mx-auto leading-relaxed">
-                                            Protocole sécurisé initié. {form.nom}, notre pôle exécutif a bien reçu votre dossier et vous répondra sur <strong className="text-primary italic">{form.email}</strong> d'ici la prochaine fenêtre de 24h.
+                                    <div className="space-y-8 relative z-10">
+                                        <h3 className="text-6xl font-black italic tracking-tighter text-foreground uppercase leading-tight">Transmission <br /> <span className="text-emerald-500 not-italic uppercase">Confirmée.</span></h3>
+                                        <p className="text-muted-foreground/60 font-black uppercase tracking-[0.3em] text-sm max-w-xl mx-auto leading-loose italic border-l-8 border-emerald-500/20 pl-10">
+                                            Protocole de sécurité initié. {form.nom.split(' ')[0]}, notre pôle exécutif a bien reçu votre dossier et vous répondra sur <strong className="text-primary italic border-b-2 border-primary/20">{form.email.toUpperCase()}</strong> d'ici la prochaine fenêtre opérationnelle de 24h.
                                         </p>
                                     </div>
-                                    <Button onClick={() => setSent(false)} variant="outline" className="h-16 px-10 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-sm border-2">
+                                    <Button onClick={() => setSent(false)} variant="outline" className="h-20 px-16 rounded-[1.5rem] font-black uppercase tracking-[0.3em] text-xs shadow-premium border-4 border-border hover:border-primary/40 hover:scale-105 transition-all italic active:scale-95 leading-none pt-0.5">
                                         Initier un nouveau dossier
                                     </Button>
                                 </div>
                             ) : (
-                                <form onSubmit={handleSubmit} className="p-10 md:p-14 rounded-[3rem] bg-white dark:bg-slate-900 border-2 border-slate-50 dark:border-slate-800 space-y-10 shadow-2xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 size-64 bg-slate-100 dark:bg-slate-800/50 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-110 transition-transform duration-1000" />
+                                <form onSubmit={handleSubmit} className="p-12 md:p-20 rounded-[4rem] bg-card border-4 border-border space-y-16 shadow-premium hover:shadow-premium-lg transition-all duration-1000 relative overflow-hidden group/form">
+                                    <div className="absolute top-0 right-0 size-96 bg-primary/5 rounded-full blur-[150px] -mr-48 -mt-48 group-hover/form:bg-primary/10 transition-colors duration-1000" />
+                                    <div className="absolute inset-x-0 top-0 h-2 bg-primary/0 group-hover/form:bg-primary transition-all duration-1000"></div>
                                     
                                     <div className="relative z-10">
-                                        <h3 className="text-3xl lg:text-4xl font-black italic tracking-tighter text-slate-900 dark:text-white uppercase leading-none">Formulaire de<br/>Requête Officielle.</h3>
-                                        <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.3em] mt-4">Les champs munis d'un astérisque (*) sont requis pour la procédure.</p>
+                                        <h3 className="text-5xl lg:text-7xl font-black italic tracking-tighter text-foreground uppercase leading-[0.85]">Formulaire de<br/>Requête <span className="text-primary not-italic">Officielle.</span></h3>
+                                        <p className="text-muted-foreground/30 text-executive-label font-black uppercase tracking-[0.4em] mt-8 italic leading-none pt-0.5">Phase III: Soumission des paramètres de contact et nature du dossier.</p>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
-                                        <div className="space-y-3">
-                                            <label className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 ml-2">Identité Légale *</label>
-                                            <Input name="nom" value={form.nom} onChange={handleChange} placeholder="Ex: Elhadj Mamadou Diallo" className="h-16 rounded-[1.5rem] border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 font-bold text-sm shadow-inner px-6" />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 relative z-10">
+                                        <div className="space-y-4">
+                                            <label className="text-executive-label font-black uppercase tracking-[0.3em] text-muted-foreground/40 ml-4 italic leading-none pt-0.5">Identité Légale Officielle *</label>
+                                            <Input name="nom" value={form.nom} onChange={handleChange} placeholder="EX: ELHADJ MAMADOU DIALLO" className="h-20 rounded-[1.5rem] border-4 border-border bg-background focus:border-primary/50 focus:ring-8 focus:ring-primary/5 font-black text-base shadow-inner px-10 placeholder:text-muted-foreground/20 uppercase tracking-widest italic" />
                                         </div>
-                                        <div className="space-y-3">
-                                            <label className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 ml-2">Contact Électronique *</label>
-                                            <Input name="email" type="email" value={form.email} onChange={handleChange} placeholder="direction@entreprise.com" className="h-16 rounded-[1.5rem] border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 font-bold text-sm shadow-inner px-6 tracking-widest" />
+                                        <div className="space-y-4">
+                                            <label className="text-executive-label font-black uppercase tracking-[0.3em] text-muted-foreground/40 ml-4 italic leading-none pt-0.5">Contact Électronique Certifié *</label>
+                                            <Input name="email" type="email" value={form.email} onChange={handleChange} placeholder="DIRECTION@ENTREPRISE.GN" className="h-20 rounded-[1.5rem] border-4 border-border bg-background focus:border-primary/50 focus:ring-8 focus:ring-primary/5 font-black text-base shadow-inner px-10 placeholder:text-muted-foreground/20 uppercase tracking-widest italic" />
                                         </div>
-                                        <div className="space-y-3">
-                                            <label className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 ml-2">Ligne Téléphonique</label>
-                                            <Input name="telephone" value={form.telephone} onChange={handleChange} placeholder="+224 6XX XX XX XX" className="h-16 rounded-[1.5rem] border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 font-bold text-sm shadow-inner px-6" />
+                                        <div className="space-y-4">
+                                            <label className="text-executive-label font-black uppercase tracking-[0.3em] text-muted-foreground/40 ml-4 italic leading-none pt-0.5">Ligne Téléphonique de Liaison</label>
+                                            <Input name="telephone" value={form.telephone} onChange={handleChange} placeholder="+224 6XX XX XX XX" className="h-20 rounded-[1.5rem] border-4 border-border bg-background focus:border-primary/50 focus:ring-8 focus:ring-primary/5 font-black text-base shadow-inner px-10 placeholder:text-muted-foreground/20 uppercase tracking-widest italic" />
                                         </div>
-                                        <div className="space-y-3">
-                                            <label className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 ml-2">Nature du Dossier</label>
-                                            <div className="relative">
+                                        <div className="space-y-4">
+                                            <label className="text-executive-label font-black uppercase tracking-[0.3em] text-muted-foreground/40 ml-4 italic leading-none pt-0.5">Nature Stratégique du Dossier</label>
+                                            <div className="relative group/select">
                                                 <select
                                                     name="raison"
                                                     value={form.raison}
                                                     onChange={handleChange}
-                                                    className="w-full h-16 rounded-[1.5rem] border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-6 text-sm font-bold focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-inner appearance-none uppercase tracking-widest text-slate-600 dark:text-slate-300"
+                                                    className="w-full h-20 rounded-[1.5rem] border-4 border-border bg-background px-10 text-base font-black italic focus:outline-none focus:border-primary/50 focus:ring-8 focus:ring-primary/5 shadow-inner appearance-none uppercase tracking-widest text-foreground transition-all"
                                                 >
-                                                    <option value="" className="bg-white dark:bg-slate-900">CLASSIFICATION...</option>
-                                                    {CONTACT_REASONS.map(r => <option key={r} value={r} className="bg-white dark:bg-slate-900">{r}</option>)}
+                                                    <option value="" className="bg-background">SÉLECTIONNER CLASSIFICATION...</option>
+                                                    {CONTACT_REASONS.map(r => <option key={r} value={r} className="bg-background">{r.toUpperCase()}</option>)}
                                                 </select>
-                                                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                                    ▼
+                                                <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none text-primary group-hover/select:scale-125 transition-transform">
+                                                    <ChevronDown className="size-6" />
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-3 relative z-10">
-                                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 ml-2">Corps de la Requête *</label>
+                                    <div className="space-y-4 relative z-10">
+                                        <label className="text-executive-label font-black uppercase tracking-[0.3em] text-muted-foreground/40 ml-4 italic leading-none pt-0.5">Corps de la Requête / Exposé des Motifs *</label>
                                         <textarea
                                             name="message"
                                             value={form.message}
                                             onChange={handleChange}
-                                            placeholder="Détaillez votre requête avec précision..."
-                                            className="w-full min-h-[200px] rounded-[2rem] border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-8 py-6 text-sm font-bold focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-inner placeholder:text-slate-300 resize-none leading-relaxed"
+                                            placeholder="Détaillez votre requête avec précision stratégique..."
+                                            className="w-full min-h-[250px] rounded-[2.5rem] border-4 border-border bg-background px-10 py-10 text-base font-black italic focus:outline-none focus:border-primary/50 focus:ring-8 focus:ring-primary/5 shadow-inner placeholder:text-muted-foreground/20 resize-none leading-relaxed transition-all scrollbar-hide uppercase tracking-widest"
                                         />
                                     </div>
 
-                                    <Button type="submit" disabled={isSending} className="w-full h-20 rounded-[2rem] font-black uppercase tracking-[0.3em] text-[11px] gap-4 shadow-2xl shadow-primary/30 relative overflow-hidden group/btn hover:scale-[1.01] active:scale-[0.98] transition-all">
+                                    <Button type="submit" isLoading={isSending} className="w-full h-24 rounded-[2.5rem] font-black uppercase tracking-[0.4em] text-sm gap-8 shadow-premium-lg shadow-primary/40 relative overflow-hidden group/btn hover:scale-[1.02] active:scale-[0.98] transition-all border-4 border-primary bg-primary text-white">
                                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_2s_infinite]" />
-                                        <div className="relative z-10 flex items-center gap-4">
-                                            {isSending ? <Loader2 className="size-5 animate-spin" /> : <Send className="size-5 group-hover/btn:-translate-y-1 group-hover/btn:translate-x-1 transition-transform" />}
-                                            {isSending ? 'Transmission Chiffrée...' : 'Soumettre le Dossier'}
+                                        <div className="relative z-10 flex items-center justify-center gap-8">
+                                            {!isSending && <Send className="size-8 group-hover/btn:-translate-y-2 group-hover/btn:translate-x-2 transition-transform" />}
+                                            <span className="leading-none pt-1">{isSending ? 'Transmission Chiffrée...' : 'Soumettre le Dossier'}</span>
                                         </div>
                                     </Button>
                                 </form>

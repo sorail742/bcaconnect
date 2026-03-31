@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import {
     Package, Image as ImageIcon, Tag, Layers, ArrowLeft,
     Save, AlertCircle, CheckCircle2, Loader2, Eye,
-    Store, Star, ShoppingCart, Truck, ShieldCheck, Sparkles, TrendingDown, Hash, Wand2
+    Sparkles, TrendingDown, Hash, Wand2, Activity,
+    ShieldCheck, Zap, ChevronRight, Info
 } from 'lucide-react';
 import { toast } from 'sonner';
 import productService from '../../services/productService';
@@ -15,26 +13,26 @@ import categoryService from '../../services/categoryService';
 import aiService from '../../services/aiService';
 import { cn } from '../../lib/utils';
 
-// ── Composant : Champ formulaire stylisé ─────────────────────────────────────
+// ── Executive Form Field ─────────────────────────────────────
 const FormField = ({ label, hint, required, children, error }) => (
-    <div className="space-y-2">
-        <div className="flex items-center justify-between">
-            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+    <div className="space-y-4">
+        <div className="flex items-center justify-between ml-2">
+            <label className="text-executive-label font-black uppercase tracking-[0.3em] text-muted-foreground/40 italic flex items-center gap-3">
                 {label}
-                {required && <span className="text-primary">*</span>}
+                {required && <span className="text-primary text-xl">·</span>}
             </label>
-            {hint && <span className="text-[9px] text-muted-foreground font-medium">{hint}</span>}
+            {hint && <span className="text-[10px] text-muted-foreground/20 font-black uppercase tracking-widest italic">{hint}</span>}
         </div>
         {children}
         {error && (
-            <p className="text-[10px] text-destructive font-bold flex items-center gap-1">
+            <p className="text-[10px] text-rose-500 font-black uppercase tracking-widest italic flex items-center gap-2 ml-4">
                 <AlertCircle className="size-3" /> {error}
             </p>
         )}
     </div>
 );
 
-// ── Composant : Preview live du produit ──────────────────────────────────────
+// ── Executive Product Preview ──────────────────────────────────────
 const ProductPreview = ({ data, categories }) => {
     const cat = categories.find(c => c.id === data.categorie_id);
     const price = parseFloat(data.prix_unitaire || 0);
@@ -44,119 +42,106 @@ const ProductPreview = ({ data, categories }) => {
         : null;
 
     return (
-        <div className="sticky top-28 space-y-4">
-            <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-                <Eye className="size-4 text-primary" /> Aperçu en temps réel
-            </h3>
-            {/* Carte Produit Preview */}
-            <div className="rounded-[2rem] overflow-hidden border border-border bg-card shadow-2xl hover:-translate-y-1 transition-transform duration-300">
-                {/* Image */}
-                <div className="relative aspect-[4/3] bg-muted/30 overflow-hidden">
+        <div className="sticky top-28 space-y-8">
+            <div className="flex items-center gap-4">
+                <div className="size-3 bg-primary rounded-full animate-pulse shadow-[0_0_10px_rgba(43,90,255,0.6)]" />
+                <h3 className="text-executive-label font-black text-primary uppercase tracking-[0.4em] italic">Rendu Temps Réel v2</h3>
+            </div>
+            
+            {/* High-Fidelity Product Card Preview */}
+            <div className="glass-card rounded-[3.5rem] overflow-hidden border-4 border-border shadow-premium hover:shadow-premium-lg transition-all duration-700 group">
+                <div className="relative aspect-[4/3] bg-accent/20 overflow-hidden">
                     {data.image_url ? (
                         <img
                             src={data.image_url}
                             alt={data.nom_produit || 'Aperçu'}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2s]"
                             onError={e => { e.target.onerror = null; e.target.src = ''; }}
                         />
                     ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted-foreground/30">
-                            <ImageIcon className="size-16" />
-                            <p className="text-xs font-black uppercase tracking-widest">Aucune image</p>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 text-muted-foreground/10">
+                            <ImageIcon className="size-20" />
+                            <p className="text-[10px] font-black uppercase tracking-[0.4em] italic">Visuel Non Référencé</p>
                         </div>
                     )}
-                    {/* Badges overlay */}
-                    <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                    
+                    <div className="absolute top-6 left-6 flex flex-col gap-3">
                         {discount && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg">
-                                <TrendingDown className="size-2.5" /> -{discount}%
-                            </span>
+                            <div className="px-5 py-2 bg-primary text-white text-[10px] font-black uppercase tracking-widest italic rounded-full shadow-premium-lg shadow-primary/30">
+                                <TrendingUp className="size-3 inline-block mr-2" /> -{discount}%
+                            </div>
                         )}
                         {data.est_local && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg">
-                                🇬🇳 Local
-                            </span>
+                            <div className="px-5 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest italic rounded-full shadow-premium-lg shadow-emerald-500/30">
+                                🇬🇳 Origine Guinéenne
+                            </div>
                         )}
                     </div>
-                    {cat && (
-                        <div className="absolute top-3 right-3">
-                            <span className="px-2.5 py-1 bg-black/60 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-widest rounded-full">
-                                {cat.nom_categorie}
-                            </span>
-                        </div>
-                    )}
                 </div>
 
-                {/* Infos */}
-                <div className="p-5 space-y-4">
-                    <div>
-                        <h4 className="font-black text-foreground italic tracking-tight text-lg leading-tight line-clamp-2">
-                            {data.nom_produit || <span className="text-muted-foreground/30 not-italic">Nom du produit...</span>}
+                <div className="p-10 space-y-6">
+                    <div className="space-y-2">
+                        <div className={cn(
+                            "inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest italic border-2 mb-2",
+                            cat ? "bg-primary/5 border-primary/20 text-primary" : "bg-accent border-border text-muted-foreground/20"
+                        )}>
+                            {cat ? cat.nom_categorie : 'CLASSIFICATION EN ATTENTE'}
+                        </div>
+                        <h4 className="text-3xl font-black text-foreground italic tracking-tighter uppercase leading-none line-clamp-2 group-hover:text-primary transition-colors">
+                            {data.nom_produit || <span className="opacity-10 not-italic">NOM DE L'ACTIF...</span>}
                         </h4>
-                        <p className="text-muted-foreground text-xs font-medium mt-1.5 line-clamp-2 leading-relaxed">
-                            {data.description || <span className="text-muted-foreground/30">Description du produit...</span>}
-                        </p>
                     </div>
 
-                    {/* Prix */}
-                    <div className="flex items-end gap-3">
-                        <span className="text-2xl font-black italic tracking-tighter text-foreground">
-                            {price > 0 ? price.toLocaleString('fr-FR') : '---'} <span className="text-sm font-bold text-muted-foreground">GNF</span>
+                    <div className="flex items-end gap-4">
+                        <span className="text-3xl font-black italic tracking-tighter text-foreground text-executive-data">
+                            {price > 0 ? price.toLocaleString() : '0'} <small className="text-[10px] font-black not-italic opacity-30">GNF</small>
                         </span>
                         {oldPrice > price && oldPrice > 0 && (
-                            <span className="text-sm text-muted-foreground line-through font-medium">
-                                {oldPrice.toLocaleString('fr-FR')} GNF
+                            <span className="text-xs text-muted-foreground/30 line-through font-black italic uppercase tracking-widest mb-1.5">
+                                {oldPrice.toLocaleString()} GNF
                             </span>
                         )}
                     </div>
 
-                    {/* Stock */}
-                    <div className={cn(
-                        "flex items-center gap-2 text-[10px] font-black uppercase tracking-widest",
-                        parseInt(data.stock_quantite) > 5 ? "text-emerald-500" :
-                            parseInt(data.stock_quantite) > 0 ? "text-amber-500" : "text-destructive"
-                    )}>
-                        <span className={cn(
-                            "size-2 rounded-full",
-                            parseInt(data.stock_quantite) > 5 ? "bg-emerald-500" :
-                                parseInt(data.stock_quantite) > 0 ? "bg-amber-500 animate-pulse" : "bg-destructive"
-                        )} />
-                        {parseInt(data.stock_quantite) > 5 ? `${data.stock_quantite} en stock` :
-                            parseInt(data.stock_quantite) > 0 ? `Stock faible (${data.stock_quantite})` :
-                                'Rupture de stock'}
-                    </div>
-
-                    {/* Trust badges */}
-                    <div className="border-t border-border pt-4 grid grid-cols-2 gap-2">
-                        {[
-                            { icon: Truck, label: 'Livraison 48h' },
-                            { icon: ShieldCheck, label: 'Sécurisé BCA' },
-                        ].map((b, i) => (
-                            <div key={i} className="flex items-center gap-1.5 text-[9px] font-black text-muted-foreground uppercase tracking-wide">
-                                <b.icon className="size-3 text-primary" /> {b.label}
-                            </div>
-                        ))}
+                    <div className="pt-6 border-t-2 border-border/50 flex items-center justify-between">
+                        <div className={cn(
+                            "flex items-center gap-2 text-[10px] font-black uppercase tracking-widest italic",
+                            parseInt(data.stock_quantite) > 10 ? "text-emerald-500" :
+                                parseInt(data.stock_quantite) > 0 ? "text-amber-500" : "text-rose-500"
+                        )}>
+                            <span className={cn(
+                                "size-2 rounded-full",
+                                parseInt(data.stock_quantite) > 10 ? "bg-emerald-500" :
+                                    parseInt(data.stock_quantite) > 0 ? "bg-amber-500 animate-pulse" : "bg-rose-500"
+                            )} />
+                            {parseInt(data.stock_quantite) > 10 ? 'Stock Sécurisé' :
+                                parseInt(data.stock_quantite) > 0 ? `Flux Restreint (${data.stock_quantite})` :
+                                    'Rupture Certifiée'}
+                        </div>
+                        <ShieldCheck className="size-5 text-primary opacity-20" />
                     </div>
                 </div>
             </div>
 
-            {/* Conseils Rédaction */}
-            <div className="p-5 rounded-2xl bg-primary/5 border border-primary/20 space-y-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                    <Sparkles className="size-3.5" /> Conseils de vente
-                </p>
-                <ul className="space-y-2 text-[10px] text-muted-foreground font-medium">
-                    <li className="flex items-start gap-2"><span className="text-primary mt-0.5">→</span> Un titre clair et précis attire 3× plus de clics</li>
-                    <li className="flex items-start gap-2"><span className="text-primary mt-0.5">→</span> Ajoutez une vraie photo du produit (pas de logo)</li>
-                    <li className="flex items-start gap-2"><span className="text-primary mt-0.5">→</span> Prix barré = impression de promo, booste les ventes</li>
-                    <li className="flex items-start gap-2"><span className="text-primary mt-0.5">→</span> Stock &gt; 10 = badge "En stock" visible sur le catalogue</li>
-                </ul>
+            {/* AI Sales Insights */}
+            <div className="p-8 rounded-[2.5rem] bg-slate-950 text-white border-4 border-slate-900 shadow-2xl relative overflow-hidden group/tip">
+                <div className="absolute top-0 right-0 size-32 bg-primary/10 rounded-full blur-[60px] -mr-16 -mt-16 opacity-50 transition-transform group-hover/tip:scale-150" />
+                <div className="relative z-10 space-y-4">
+                    <p className="text-executive-label font-black uppercase tracking-[0.3em] text-primary italic flex items-center gap-3">
+                        <Sparkles className="size-4" /> Optimisation de Vente
+                    </p>
+                    <ul className="space-y-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">
+                        <li className="flex items-start gap-3"><ChevronRight className="size-3 text-primary mt-0.5" /> Titre précis = +300% de clics</li>
+                        <li className="flex items-start gap-3"><ChevronRight className="size-3 text-primary mt-0.5" /> Visuel HD obligatoire pour conversion</li>
+                        <li className="flex items-start gap-3"><ChevronRight className="size-3 text-primary mt-0.5" /> Prix barré stimule l'engagement achat</li>
+                    </ul>
+                </div>
             </div>
         </div>
     );
 };
 
-// ── Composant Principal ───────────────────────────────────────────────────────
+// ── Main Controller ───────────────────────────────────────────────────────
 const AddProduct = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -180,7 +165,6 @@ const AddProduct = () => {
     const [priceSuggestion, setPriceSuggestion] = useState(null);
     const [errors, setErrors] = useState({});
 
-    // ── Initialisation ────────────────────────────────────────────────────────
     useEffect(() => {
         const init = async () => {
             try {
@@ -201,7 +185,7 @@ const AddProduct = () => {
                     });
                 }
             } catch (err) {
-                toast.error("Impossible de charger les données du formulaire.");
+                toast.error("Échec de l'accès à la base de données.");
             } finally {
                 setIsInitializing(false);
             }
@@ -209,18 +193,15 @@ const AddProduct = () => {
         init();
     }, [id, isEditMode]);
 
-    // ── Handlers ──────────────────────────────────────────────────────────────
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-        // Effacer l'erreur du champ modifié
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
     };
 
-    // ── Suggestion de prix IA ─────────────────────────────────────────────────
     const handleSuggestPrice = async () => {
         if (!formData.nom_produit.trim()) {
-            toast.warning("Saisissez d'abord le nom du produit.");
+            toast.warning("Désignation de l'actif requise pour l'analyse.");
             return;
         }
         const cat = categories.find(c => c.id === formData.categorie_id);
@@ -233,8 +214,9 @@ const AddProduct = () => {
                 formData.description
             );
             setPriceSuggestion(suggestion);
+            toast.success("Analyse IA terminée.");
         } catch (err) {
-            toast.error("L'IA n'a pas pu suggérer un prix. Réessayez.");
+            toast.error("Le protocole IA a échoué.");
         } finally {
             setIsSuggestingPrice(false);
         }
@@ -244,35 +226,34 @@ const AddProduct = () => {
         if (!priceSuggestion) return;
         setFormData(prev => ({ ...prev, prix_unitaire: priceSuggestion.prix_recommande.toString() }));
         setPriceSuggestion(null);
-        toast.success("Prix suggéré par l'IA appliqué ✅");
+        toast.success("Cotation IA appliquée.");
     };
-    // ── Validation ────────────────────────────────────────────────────────────
+
     const validate = () => {
         const newErrors = {};
         if (!formData.nom_produit.trim() || formData.nom_produit.trim().length < 3) {
-            newErrors.nom_produit = "Le nom doit contenir au moins 3 caractères.";
+            newErrors.nom_produit = "Désignation invalide ou trop courte.";
         }
         if (!formData.prix_unitaire || parseFloat(formData.prix_unitaire) <= 0) {
-            newErrors.prix_unitaire = "Le prix doit être supérieur à 0 GNF.";
+            newErrors.prix_unitaire = "Cotation monétaire requise.";
         }
         if (formData.prix_ancien && parseFloat(formData.prix_ancien) <= parseFloat(formData.prix_unitaire)) {
-            newErrors.prix_ancien = "Le prix barré doit être supérieur au prix de vente.";
+            newErrors.prix_ancien = "La référence haute doit excéder la cotation.";
         }
         if (formData.stock_quantite === '' || parseInt(formData.stock_quantite) < 0) {
-            newErrors.stock_quantite = "Le stock doit être un nombre positif ou nul.";
+            newErrors.stock_quantite = "Volume d'inventaire non conforme.";
         }
         if (!formData.categorie_id) {
-            newErrors.categorie_id = "Veuillez sélectionner une catégorie pour votre produit.";
+            newErrors.categorie_id = "Classification obligatoire.";
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    // ── Soumission ────────────────────────────────────────────────────────────
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validate()) {
-            toast.error("Veuillez corriger les erreurs avant de publier.");
+            toast.error("Paramètres non validés.");
             return;
         }
 
@@ -291,22 +272,14 @@ const AddProduct = () => {
 
             if (isEditMode) {
                 await productService.update(id, payload);
-                toast.success("✅ Produit mis à jour avec succès !");
+                toast.success("Référence actualisée.");
             } else {
                 await productService.create(payload);
-                toast.success("🎉 Produit publié sur le catalogue !");
+                toast.success("Produit référencé avec succès.");
             }
-
-            setTimeout(() => navigate('/vendor/products'), 800);
+            setTimeout(() => navigate('/vendor/products'), 1000);
         } catch (err) {
-            const msg = err.response?.data?.message;
-            if (msg?.includes('boutique')) {
-                toast.error("⚠️ Créez d'abord votre boutique avant d'ajouter des produits.", {
-                    action: { label: 'Créer ma boutique', onClick: () => navigate('/vendor/store') }
-                });
-            } else {
-                toast.error(msg || "Erreur lors de l'enregistrement du produit.");
-            }
+            toast.error(err.response?.data?.message || "Échec de l'enregistrement.");
         } finally {
             setIsLoading(false);
         }
@@ -314,370 +287,253 @@ const AddProduct = () => {
 
     if (isInitializing) {
         return (
-            <DashboardLayout title={isEditMode ? "Modifier le produit" : "Ajouter un produit"}>
+            <DashboardLayout title={isEditMode ? "RÉVISION D'ACTIF" : "RÉFÉRENCEMENT"}>
                 <div className="flex items-center justify-center min-h-[40vh]">
-                    <Loader2 className="size-10 text-primary animate-spin" />
+                    <div className="size-16 border-8 border-primary border-t-transparent rounded-full animate-spin shadow-premium-lg shadow-primary/20" />
                 </div>
             </DashboardLayout>
         );
     }
 
     return (
-        <DashboardLayout title={isEditMode ? "Modifier le produit" : "Ajouter un produit"}>
-            <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 font-inter pb-12">
+        <DashboardLayout title={isEditMode ? "RÉVISION DE RÉFÉRENCE" : "INITIATION DE PRODUIT"}>
+            <div className="space-y-12 animate-in fade-in duration-1000 pb-20">
 
-                {/* ── Header Page ── */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
+                {/* ── Executive Header ─────────────────────────────── */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 border-b-4 border-border pb-12">
+                    <div className="space-y-4">
                         <button
                             onClick={() => navigate('/vendor/products')}
-                            className="flex items-center gap-2 text-muted-foreground hover:text-foreground text-xs font-black uppercase tracking-widest transition-colors mb-3 group"
+                            className="flex items-center gap-3 text-muted-foreground/30 hover:text-primary text-[10px] font-black uppercase tracking-[0.3em] transition-all group mb-4 italic"
                         >
-                            <ArrowLeft className="size-3.5 group-hover:-translate-x-1 transition-transform" />
-                            Mes produits
+                            <ArrowLeft className="size-4 group-hover:-translate-x-2 transition-transform" />
+                            RETOUR VERS L'INVENTAIRE
                         </button>
-                        <h1 className="text-3xl font-black italic tracking-tighter text-foreground uppercase">
-                            {isEditMode ? "Modifier le produit" : "Nouveau Produit"}
-                        </h1>
-                        <p className="text-muted-foreground text-sm font-medium mt-1">
-                            {isEditMode
-                                ? "Modifiez les informations et sauvegardez."
-                                : "Remplissez le formulaire pour publier votre produit sur le catalogue BCA."}
-                        </p>
+                        <h2 className="text-5xl md:text-7xl font-black text-foreground italic tracking-tighter uppercase leading-[0.85]">
+                            {isEditMode ? "Mise à Jour <br />" : "Nouvelle <br />"}
+                            <span className="text-primary not-italic underline decoration-primary/20 decoration-8 underline-offset-[-4px]">Référence.</span>
+                        </h2>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <Button
-                            variant="outline"
+                    <div className="flex gap-4">
+                        <button
                             onClick={() => navigate('/vendor/products')}
-                            className="h-11 px-6 rounded-xl font-black uppercase tracking-widest text-xs"
+                            className="h-24 px-10 bg-background border-4 border-border rounded-[2.5rem] font-black uppercase tracking-[0.3em] text-[10px] text-muted-foreground/30 hover:text-foreground hover:border-foreground/20 transition-all active-press"
                         >
-                            Annuler
-                        </Button>
-                        <Button
+                            ANNULER
+                        </button>
+                        <button
                             onClick={handleSubmit}
                             disabled={isLoading}
-                            className="h-11 px-8 rounded-xl font-black uppercase tracking-widest text-xs gap-2 shadow-xl shadow-primary/20"
+                            className="h-24 px-12 bg-primary text-white rounded-[2.5rem] font-black uppercase tracking-[0.4em] text-[12px] flex items-center gap-6 shadow-premium-lg shadow-primary/30 hover:scale-105 active:scale-95 transition-all group relative overflow-hidden"
                         >
-                            {isLoading ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                            {isLoading ? 'Publication...' : (isEditMode ? 'Enregistrer' : 'Publier')}
-                        </Button>
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
+                            {isLoading ? <Loader2 className="size-6 animate-spin" /> : <Save className="size-6" />}
+                            <span className="relative z-10 leading-none pt-1">{isLoading ? 'SYCHRONISATION...' : (isEditMode ? 'SCELLER' : 'PUBLIER')}</span>
+                        </button>
                     </div>
                 </div>
 
-                {/* ── Grille : Formulaire + Preview ── */}
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-12">
+                    
+                    {/* ── Form Section ─────────────────────────────────── */}
+                    <div className="xl:col-span-8 space-y-10">
+                        {/* Information Grid */}
+                        <div className="glass-card rounded-[3.5rem] border-4 border-border p-12 space-y-12 shadow-premium">
+                            <div className="flex items-center gap-6 border-b-4 border-border pb-8">
+                                <div className="size-16 rounded-[1.5rem] bg-primary text-white flex items-center justify-center shadow-premium-lg shadow-primary/20">
+                                    <Package className="size-8" />
+                                </div>
+                                <h3 className="text-2xl font-black italic tracking-tighter uppercase">Spécifications Techniques</h3>
+                            </div>
 
-                    {/* ─ Colonne Gauche : Formulaire ──────────────────────── */}
-                    <div className="xl:col-span-2 space-y-6">
-
-                        {/* Section 1 : Informations de base */}
-                        <Card>
-                            <CardHeader className="flex flex-row items-center gap-3 border-b border-border py-4">
-                                <Package className="size-5 text-primary" />
-                                <CardTitle className="text-sm font-black text-foreground uppercase tracking-widest">
-                                    Informations de base
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-8 space-y-6">
-                                <FormField label="Nom du produit" required error={errors.nom_produit}
+                            <div className="grid grid-cols-1 gap-12">
+                                <FormField label="Désignation de l'Actif" required error={errors.nom_produit}
                                     hint={`${formData.nom_produit.length}/100`}>
-                                    <Input
+                                    <input
                                         name="nom_produit"
                                         value={formData.nom_produit}
                                         onChange={handleChange}
                                         maxLength={100}
-                                        placeholder="Ex: Téléphone Samsung Galaxy A54"
-                                        className={cn("h-12 rounded-xl", errors.nom_produit && "border-destructive focus:ring-destructive/20")}
+                                        placeholder="EX: ÉCOUTEURS SANS FIL ALPHA GEN-4"
+                                        className="h-20 px-8 rounded-[2rem] border-4 border-border bg-background focus:border-primary/40 text-lg font-black italic uppercase tracking-tighter outline-none transition-all shadow-inner"
                                     />
                                 </FormField>
 
-                                <FormField label="Description" hint="Décrivez les caractéristiques principales">
+                                <FormField label="Analytique & Détails (Description)">
                                     <textarea
                                         name="description"
                                         value={formData.description}
                                         onChange={handleChange}
-                                        rows={5}
-                                        placeholder="Modèle 2024, processeur Exynos, 128Go de stockage, écran AMOLED 6.4 pouces..."
-                                        className="w-full px-5 py-4 rounded-xl border border-input bg-transparent text-sm font-medium focus:ring-2 focus:ring-ring outline-none transition-all placeholder:text-muted-foreground min-h-[130px] resize-none"
+                                        rows={6}
+                                        placeholder="DÉCRIVEZ LES SPÉCIFICITÉS, PERFORMANCES ET CAPACITÉS..."
+                                        className="w-full px-8 py-8 rounded-[2rem] border-4 border-border bg-background text-sm font-bold italic uppercase tracking-widest focus:border-primary/40 outline-none transition-all shadow-inner resize-none placeholder:text-muted-foreground/10"
                                     />
                                 </FormField>
 
-                                <FormField label="Catégorie" required error={errors.categorie_id}>
-                                    <div className="relative flex-1">
-                                        <Layers className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-                                        <select
-                                            name="categorie_id"
-                                            value={formData.categorie_id}
-                                            onChange={handleChange}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                                    <FormField label="Classification Taxonomique" required error={errors.categorie_id}>
+                                        <div className="relative group">
+                                            <Layers className="absolute left-6 top-1/2 -translate-y-1/2 size-5 text-muted-foreground/20 group-focus-within:text-primary transition-colors pointer-events-none" />
+                                            <select
+                                                name="categorie_id"
+                                                value={formData.categorie_id}
+                                                onChange={handleChange}
+                                                className="w-full h-20 pl-16 pr-8 rounded-[2rem] border-4 border-border bg-background text-[10px] font-black uppercase tracking-[0.2em] italic focus:border-primary/40 outline-none transition-all shadow-inner appearance-none"
+                                            >
+                                                <option value="">— SÉLECTIONNER CLASSE —</option>
+                                                {categories.map(cat => (
+                                                    <option key={cat.id} value={cat.id}>{cat.nom_categorie.toUpperCase()}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </FormField>
+
+                                    <div className="p-6 rounded-[2rem] bg-accent/20 border-4 border-border flex items-center justify-between group hover:border-emerald-500/20 transition-all">
+                                        <div className="flex items-center gap-6">
+                                            <div className="size-16 rounded-[1.2rem] bg-background border-4 border-border flex items-center justify-center text-3xl shadow-inner group-hover:scale-110 group-hover:rotate-6 transition-all">🇬🇳</div>
+                                            <div>
+                                                <p className="text-executive-label font-black text-foreground uppercase tracking-widest italic mb-1">Actif Local</p>
+                                                <p className="text-[10px] text-muted-foreground/40 font-black uppercase italic">Certification Guinée</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({ ...prev, est_local: !prev.est_local }))}
                                             className={cn(
-                                                "w-full h-12 pl-11 pr-4 rounded-xl border border-input bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring transition-all",
-                                                errors.categorie_id && "border-destructive focus:ring-destructive/20"
+                                                "relative w-16 h-8 rounded-full transition-all duration-300",
+                                                formData.est_local ? "bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]" : "bg-border"
                                             )}
                                         >
-                                            <option value="">— Sélectionner une catégorie —</option>
-                                            {categories.map(cat => (
-                                                <option key={cat.id} value={cat.id}>{cat.nom_categorie}</option>
-                                            ))}
-                                        </select>
+                                            <span className={cn(
+                                                "absolute size-6 top-1 rounded-full bg-white shadow-xl transition-all duration-300",
+                                                formData.est_local ? "left-9" : "left-1"
+                                            )} />
+                                        </button>
                                     </div>
-                                    {categories.length === 0 && (
-                                        <p className="text-[10px] text-amber-500 font-bold bg-amber-500/10 p-2 rounded-lg flex items-center gap-2 mt-2">
-                                            <AlertCircle className="size-3" /> Aucune catégorie n'a encore été créée par l'administrateur.
-                                        </p>
-                                    )}
-                                </FormField>
+                                </div>
+                            </div>
+                        </div>
 
-                                {/* Toggle Produit Local */}
-                                <div className="flex items-center justify-between p-5 rounded-2xl bg-muted/30 border border-border">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-2xl">🇬🇳</span>
-                                        <div>
-                                            <p className="text-sm font-black text-foreground">Produit guinéen local</p>
-                                            <p className="text-xs text-muted-foreground font-medium">Affiche le badge "Local" sur votre fiche produit</p>
+                        {/* Pricing & Stock Card */}
+                        <div className="glass-card rounded-[3.5rem] border-4 border-border p-12 space-y-10 shadow-premium">
+                            <div className="flex items-center justify-between border-b-4 border-border pb-8">
+                                <div className="flex items-center gap-6">
+                                    <div className="size-16 rounded-[1.5rem] bg-amber-500 text-white flex items-center justify-center shadow-premium-lg shadow-amber-500/20">
+                                        <Tag className="size-8" />
+                                    </div>
+                                    <h3 className="text-2xl font-black italic tracking-tighter uppercase">Cotation & Logistique</h3>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleSuggestPrice}
+                                    disabled={isSuggestingPrice || !formData.nom_produit.trim()}
+                                    className="h-16 px-8 bg-slate-950 text-white rounded-2xl flex items-center gap-4 hover:scale-105 active:scale-95 transition-all shadow-2xl disabled:opacity-20 group/ai"
+                                >
+                                    {isSuggestingPrice ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4 text-primary group-hover:animate-pulse" />}
+                                    <span className="text-[10px] font-black uppercase tracking-widest italic pt-0.5">Audit IA Prix</span>
+                                </button>
+                            </div>
+
+                            {priceSuggestion && (
+                                <div className="p-8 rounded-[2.5rem] bg-emerald-500/5 border-4 border-emerald-500/10 space-y-6 animate-in slide-in-from-top-4 duration-500">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <Zap className="size-5 text-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500 italic">Protocole de Suggestion Groq LPU</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={applyPriceSuggestion}
+                                            className="h-12 px-6 bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-premium-lg shadow-emerald-500/20"
+                                        >
+                                            APPLIQUER LA COTATION
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-10">
+                                        <div className="space-y-2">
+                                            <p className="text-executive-label text-muted-foreground/30 font-black uppercase tracking-widest italic">Fourchette Marché</p>
+                                            <p className="text-2xl font-black text-foreground italic tracking-tighter">
+                                                {priceSuggestion.fourchette_min?.toLocaleString()} — {priceSuggestion.fourchette_max?.toLocaleString()} <small className="text-[8px] font-black not-italic opacity-30">GNF</small>
+                                            </p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <p className="text-executive-label text-emerald-500 font-black uppercase tracking-widest italic">Optimale</p>
+                                            <p className="text-4xl font-black text-emerald-500 italic tracking-tighter text-executive-data">
+                                                {priceSuggestion.prix_recommande?.toLocaleString()} <small className="text-[8px] font-black not-italic">GNF</small>
+                                            </p>
                                         </div>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData(prev => ({ ...prev, est_local: !prev.est_local }))}
-                                        className={cn(
-                                            "relative w-12 h-6 rounded-full transition-all duration-300 shrink-0",
-                                            formData.est_local ? "bg-emerald-500" : "bg-muted border border-border"
-                                        )}
-                                    >
-                                        <span className={cn(
-                                            "absolute size-5 top-0.5 rounded-full bg-white shadow transition-all duration-300",
-                                            formData.est_local ? "left-6" : "left-0.5"
-                                        )} />
-                                    </button>
                                 </div>
-                            </CardContent>
-                        </Card>
+                            )}
 
-                        {/* Section 2 : Médias */}
-                        <Card>
-                            <CardHeader className="flex flex-row items-center gap-3 border-b border-border py-4">
-                                <ImageIcon className="size-5 text-primary" />
-                                <CardTitle className="text-sm font-black text-foreground uppercase tracking-widest">
-                                    Image du produit
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-8 space-y-5">
-                                <FormField label="URL de l'image" hint="Format HTTPS recommandé">
-                                    <Input
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                                <FormField label="Valeur de Marché (GNF)" required error={errors.prix_unitaire}>
+                                    <input
+                                        name="prix_unitaire"
+                                        type="number"
+                                        value={formData.prix_unitaire}
+                                        onChange={handleChange}
+                                        placeholder="EX: 250000"
+                                        className="h-20 px-8 rounded-[2rem] border-4 border-border bg-background focus:border-primary/40 text-2xl font-black italic tracking-tighter outline-none transition-all shadow-inner text-executive-data"
+                                    />
+                                </FormField>
+
+                                <FormField label="Réf. Avant Promo (Optionnel)" error={errors.prix_ancien}>
+                                    <input
+                                        name="prix_ancien"
+                                        type="number"
+                                        value={formData.prix_ancien}
+                                        onChange={handleChange}
+                                        placeholder="EX: 350000"
+                                        className="h-20 px-8 rounded-[2rem] border-4 border-border bg-background focus:border-amber-500/20 text-lg font-black italic text-muted-foreground/30 line-through tracking-tighter outline-none transition-all shadow-inner"
+                                    />
+                                </FormField>
+                            </div>
+
+                            <FormField label="Volume d'Inventaire Actif" required error={errors.stock_quantite} hint="Capacité logistique">
+                                <div className="relative group">
+                                    <Hash className="absolute left-6 top-1/2 -translate-y-1/2 size-5 text-muted-foreground/20 group-focus-within:text-primary transition-colors pointer-events-none" />
+                                    <input
+                                        name="stock_quantite"
+                                        type="number"
+                                        value={formData.stock_quantite}
+                                        onChange={handleChange}
+                                        placeholder="50"
+                                        className="h-20 pl-16 pr-8 rounded-[2rem] border-4 border-border bg-background text-xl font-black italic outline-none transition-all shadow-inner"
+                                    />
+                                </div>
+                            </FormField>
+                        </div>
+
+                        {/* Media Asset Card */}
+                        <div className="glass-card rounded-[3.5rem] border-4 border-border p-12 space-y-10 shadow-premium">
+                            <div className="flex items-center gap-6 border-b-4 border-border pb-8">
+                                <div className="size-16 rounded-[1.5rem] bg-indigo-500 text-white flex items-center justify-center shadow-premium-lg shadow-indigo-500/20">
+                                    <ImageIcon className="size-8" />
+                                </div>
+                                <h3 className="text-2xl font-black italic tracking-tighter uppercase">Rendu Visuel (HD)</h3>
+                            </div>
+                            <FormField label="Protocole d'Asset Médias (URL)" hint="Visuel haute-fidélité requis">
+                                <div className="relative group">
+                                    <ImageIcon className="absolute left-6 top-1/2 -translate-y-1/2 size-5 text-muted-foreground/20 group-focus-within:text-primary transition-colors pointer-events-none" />
+                                    <input
                                         name="image_url"
                                         type="url"
                                         value={formData.image_url}
                                         onChange={handleChange}
-                                        placeholder="https://exemple.com/photo-produit.jpg"
-                                        className="h-12 rounded-xl"
+                                        placeholder="HTTPS://ASSETS.BCA.GN/PRODUCTS/GEN-ALPHA.JPG"
+                                        className="h-20 pl-16 pr-8 rounded-[2rem] border-4 border-border bg-background text-[10px] font-black uppercase tracking-widest italic focus:border-primary/40 outline-none transition-all shadow-inner"
                                     />
-                                </FormField>
-
-                                {/* Preview image */}
-                                {formData.image_url && (
-                                    <div className="relative aspect-video rounded-2xl overflow-hidden bg-muted/30 border border-border">
-                                        <img
-                                            src={formData.image_url}
-                                            alt="Aperçu"
-                                            className="w-full h-full object-contain"
-                                            onError={e => { e.target.style.display = 'none'; }}
-                                        />
-                                        <div className="absolute top-3 left-3 px-2.5 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[9px] font-black text-white uppercase tracking-widest">
-                                            Aperçu image
-                                        </div>
-                                    </div>
-                                )}
-
-                                {!formData.image_url && (
-                                    <div className="border-2 border-dashed border-border rounded-2xl aspect-video flex flex-col items-center justify-center gap-3 text-muted-foreground/40">
-                                        <ImageIcon className="size-12" />
-                                        <p className="text-xs font-black uppercase tracking-widest">Collez une URL pour prévisualiser</p>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        {/* Section 3 : Prix & Stock */}
-                        <Card>
-                            <CardHeader className="flex flex-row items-center gap-3 border-b border-border py-4">
-                                <Tag className="size-5 text-primary" />
-                                <CardTitle className="text-sm font-black text-foreground uppercase tracking-widest">
-                                    Prix & Stock
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-8 space-y-6">
-
-                                {/* ── Bouton suggestion IA ── */}
-                                <div className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20">
-                                    <div className="flex items-center gap-3">
-                                        <div className="size-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                                            <Sparkles className="size-4 text-primary" />
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-black text-foreground">Prix suggéré par l'IA</p>
-                                            <p className="text-[10px] text-muted-foreground font-medium">Basé sur le marché guinéen (Groq)</p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={handleSuggestPrice}
-                                        disabled={isSuggestingPrice || !formData.nom_produit.trim()}
-                                        className={cn(
-                                            "flex items-center gap-2 h-9 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                                            formData.nom_produit.trim()
-                                                ? "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
-                                                : "bg-muted text-muted-foreground cursor-not-allowed"
-                                        )}
-                                    >
-                                        {isSuggestingPrice
-                                            ? <><Loader2 className="size-3 animate-spin" /> Analyse...</>
-                                            : <><Wand2 className="size-3" /> Suggérer</>
-                                        }
-                                    </button>
                                 </div>
-
-                                {/* ── Résultat suggestion IA ── */}
-                                {priceSuggestion && (
-                                    <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-3 animate-in slide-in-from-top-2 duration-300">
-                                        <div className="flex items-center justify-between">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
-                                                <Sparkles className="size-3" /> Recommandation IA (Groq)
-                                            </p>
-                                            <button
-                                                type="button"
-                                                onClick={applyPriceSuggestion}
-                                                className="flex items-center gap-1.5 h-8 px-4 rounded-xl bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20"
-                                            >
-                                                <CheckCircle2 className="size-3" /> Appliquer
-                                            </button>
-                                        </div>
-                                        <div className="flex items-center gap-6">
-                                            <div>
-                                                <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">Prix recommandé</p>
-                                                <p className="text-2xl font-black text-foreground italic">
-                                                    {priceSuggestion.prix_recommande?.toLocaleString('fr-FR')} <span className="text-sm font-bold text-muted-foreground">GNF</span>
-                                                </p>
-                                            </div>
-                                            <div className="h-10 w-px bg-border" />
-                                            <div>
-                                                <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">Fourchette</p>
-                                                <p className="text-xs font-black text-foreground">
-                                                    {priceSuggestion.fourchette_min?.toLocaleString('fr-FR')} — {priceSuggestion.fourchette_max?.toLocaleString('fr-FR')} GNF
-                                                </p>
-                                            </div>
-                                        </div>
-                                        {priceSuggestion.justification && (
-                                            <p className="text-[10px] text-muted-foreground font-medium leading-relaxed border-t border-emerald-500/20 pt-3">
-                                                💡 {priceSuggestion.justification}
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                    <FormField label="Prix de vente (GNF)" required error={errors.prix_unitaire}>
-                                        <div className="relative">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-black text-muted-foreground">GNF</span>
-                                            <Input
-                                                name="prix_unitaire"
-                                                type="number"
-                                                min="0"
-                                                step="1000"
-                                                value={formData.prix_unitaire}
-                                                onChange={handleChange}
-                                                placeholder="150000"
-                                                className={cn("h-12 pl-12 rounded-xl font-black italic text-lg", errors.prix_unitaire && "border-destructive")}
-                                            />
-                                        </div>
-                                        {formData.prix_unitaire > 0 && (
-                                            <p className="text-[10px] text-emerald-500 font-bold mt-1">
-                                                ≈ {(parseFloat(formData.prix_unitaire) / 10000000).toFixed(2)} USD
-                                            </p>
-                                        )}
-                                    </FormField>
-
-                                    <FormField label="Prix barré (optionnel)" hint="Pour afficher une promo" error={errors.prix_ancien}>
-                                        <div className="relative">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-black text-muted-foreground line-through opacity-60">GNF</span>
-                                            <Input
-                                                name="prix_ancien"
-                                                type="number"
-                                                min="0"
-                                                step="1000"
-                                                value={formData.prix_ancien}
-                                                onChange={handleChange}
-                                                placeholder="200000"
-                                                className={cn("h-12 pl-12 rounded-xl text-muted-foreground", errors.prix_ancien && "border-destructive")}
-                                            />
-                                        </div>
-                                    </FormField>
-                                </div>
-
-                                {/* Calcul promo live */}
-                                {formData.prix_ancien && formData.prix_unitaire &&
-                                    parseFloat(formData.prix_ancien) > parseFloat(formData.prix_unitaire) && (
-                                        <div className="flex items-center gap-3 px-5 py-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
-                                            <CheckCircle2 className="size-5 text-emerald-500 shrink-0" />
-                                            <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">
-                                                Économie de {(parseFloat(formData.prix_ancien) - parseFloat(formData.prix_unitaire)).toLocaleString('fr-FR')} GNF
-                                                {' '}(<span className="italic">-{Math.round(((parseFloat(formData.prix_ancien) - parseFloat(formData.prix_unitaire)) / parseFloat(formData.prix_ancien)) * 100)}%</span>)
-                                                → Badge PROMO actif sur le catalogue ✅
-                                            </p>
-                                        </div>
-                                    )}
-
-                                <FormField label="Quantité en stock" required error={errors.stock_quantite}
-                                    hint="Mis à jour automatiquement après chaque vente">
-                                    <div className="relative">
-                                        <Hash className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                                        <Input
-                                            name="stock_quantite"
-                                            type="number"
-                                            min="0"
-                                            value={formData.stock_quantite}
-                                            onChange={handleChange}
-                                            placeholder="50"
-                                            className={cn("h-12 pl-11 rounded-xl", errors.stock_quantite && "border-destructive")}
-                                        />
-                                    </div>
-                                    {/* Indicateur de niveau stock */}
-                                    {formData.stock_quantite !== '' && (
-                                        <div className={cn(
-                                            "flex items-center gap-2 text-[10px] font-black uppercase tracking-widest mt-1",
-                                            parseInt(formData.stock_quantite) > 10 ? "text-emerald-500" :
-                                                parseInt(formData.stock_quantite) > 0 ? "text-amber-500" : "text-destructive"
-                                        )}>
-                                            <span className={cn("size-2 rounded-full",
-                                                parseInt(formData.stock_quantite) > 10 ? "bg-emerald-500" :
-                                                    parseInt(formData.stock_quantite) > 0 ? "bg-amber-500 animate-pulse" : "bg-destructive"
-                                            )} />
-                                            {parseInt(formData.stock_quantite) > 10 ? 'Bon niveau de stock' :
-                                                parseInt(formData.stock_quantite) > 0 ? 'Stock faible — pensez à réapprovisionner' :
-                                                    'Rupture de stock — produit non visible sur le catalogue'}
-                                        </div>
-                                    )}
-                                </FormField>
-                            </CardContent>
-                        </Card>
-
-                        {/* Bouton Submit Mobile */}
-                        <div className="xl:hidden">
-                            <Button
-                                type="submit"
-                                disabled={isLoading}
-                                className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-sm gap-2 shadow-xl shadow-primary/20"
-                            >
-                                {isLoading ? <Loader2 className="size-5 animate-spin" /> : <Save className="size-5" />}
-                                {isLoading ? 'Publication...' : (isEditMode ? 'Enregistrer les modifications' : 'Publier le produit')}
-                            </Button>
+                            </FormField>
                         </div>
                     </div>
 
-                    {/* ─ Colonne Droite : Preview ─────────────────────────── */}
-                    <div className="hidden xl:block">
+                    {/* ── Preview Section ──────────────────────────────── */}
+                    <div className="xl:col-span-4 h-full">
                         <ProductPreview data={formData} categories={categories} />
                     </div>
-                </form>
+                </div>
             </div>
         </DashboardLayout>
     );

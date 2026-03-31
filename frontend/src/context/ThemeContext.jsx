@@ -4,10 +4,13 @@ const ThemeContext = createContext();
 export { ThemeContext };
 
 export const ThemeProvider = ({ children }) => {
-    // Default to dark theme as per user preference
     const [theme, setTheme] = useState(() => {
-        const saved = localStorage.getItem('bca-theme');
-        return saved || 'dark';
+        try {
+            const saved = localStorage.getItem('bca-theme');
+            return saved || 'dark';
+        } catch (e) {
+            return 'dark';
+        }
     });
 
     useEffect(() => {
@@ -17,11 +20,15 @@ export const ThemeProvider = ({ children }) => {
         } else {
             root.classList.remove('dark');
         }
-        localStorage.setItem('bca-theme', theme);
+        try {
+            localStorage.setItem('bca-theme', theme);
+        } catch (e) {
+            // Ignore quota errors
+        }
     }, [theme]);
 
     const toggleTheme = () => {
-        setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+        setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
     };
 
     return (

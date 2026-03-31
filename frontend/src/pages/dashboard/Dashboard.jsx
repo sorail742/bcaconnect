@@ -32,7 +32,7 @@ const orderColumns = [
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         return (
-            <div className="bg-slate-950 border-2 border-slate-800 rounded-2xl p-5 shadow-2xl">
+            <div className="bg-background border-2 border-border rounded-2xl p-5 shadow-2xl">
                 <p className="text-[9px] font-black text-primary uppercase tracking-[0.3em] mb-2">{label}</p>
                 <p className="text-lg font-black text-white italic tracking-tight">
                     {parseFloat(payload[0].value).toLocaleString('fr-GN')} <span className="text-[9px] text-primary font-bold not-italic">GNF</span>
@@ -96,34 +96,33 @@ const Dashboard = () => {
                 {/* ══════════════════════════════════════════════════
                     SECTOR 1 — EXECUTIVE HERO COMMAND CENTER
                 ══════════════════════════════════════════════════ */}
-                <div className="relative overflow-hidden rounded-[3.5rem] bg-slate-950 border-2 border-slate-800 p-10 md:p-16 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)]">
+                <div className="relative overflow-hidden rounded-[4rem] bg-background border-2 border-border p-12 md:p-20 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)]">
                     <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_0%,rgba(43,90,255,0.15),transparent_60%)]"></div>
                     <div className="absolute bottom-0 left-0 -ml-20 -mb-20 size-96 bg-primary/5 rounded-full blur-[150px] animate-pulse"></div>
-                    <div className="absolute top-1/2 right-1/4 size-2 bg-primary rounded-full animate-ping opacity-40"></div>
                     
-                    <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-12">
-                        <div className="space-y-6">
-                            <div className="inline-flex items-center gap-3 px-5 py-2 rounded-xl bg-primary/10 border border-primary/20 text-primary text-[9px] font-black uppercase tracking-[0.3em]">
-                                <span className="size-2 rounded-full bg-primary animate-ping"></span>
-                                Session Active — {user?.role === 'admin' ? 'Administrateur' : user?.role === 'fournisseur' ? 'Marchand' : 'Investisseur'}
+                    <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-16">
+                        <div className="space-y-10">
+                            <div className="inline-flex items-center gap-4 px-6 py-2.5 rounded-2xl bg-white/5 border-2 border-white/5 text-primary text-[10px] font-black uppercase tracking-[0.4em] italic shadow-2xl">
+                                <span className="size-2.5 rounded-full bg-primary animate-ping"></span>
+                                Session Prioritaire — {user?.role === 'admin' ? 'Administrateur Elite' : user?.role === 'fournisseur' ? 'Marchand Partenaire' : 'Membre BCA'}
                             </div>
-                            <h3 className="text-4xl md:text-6xl font-black tracking-tighter text-white leading-none italic uppercase">
+                            <h3 className="text-5xl md:text-8xl font-black tracking-tighter text-white leading-none italic uppercase">
                                 Bienvenue, <br />
                                 <span className="text-primary">{user?.nom_complet?.split(' ')[0] || 'Partenaire'}</span>.
                             </h3>
-                            <p className="text-slate-400 font-bold max-w-lg text-sm leading-relaxed italic opacity-80">
-                                Votre activité commerciale en Guinée progresse. Voici les insights clés pour piloter votre croissance aujourd'hui.
+                            <p className="text-slate-400 font-bold max-w-xl text-lg leading-relaxed italic opacity-70">
+                                Le réseau BCA Connect est à votre service. Pilotez vos opérations avec une précision chirurgicale.
                             </p>
                         </div>
-                        <div className="flex flex-col items-center xl:items-end gap-6">
-                             <div className="text-center xl:text-right space-y-2">
-                                <p className="text-[8px] font-black text-slate-600 uppercase tracking-[0.4em]">Dernière Synchronisation</p>
-                                <p className="text-white font-black text-xl italic tracking-tight">{new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}</p>
+                        <div className="flex flex-col items-center xl:items-end gap-10">
+                             <div className="text-center xl:text-right space-y-4">
+                                <p className="text-executive-label text-slate-600">Dernier Flux</p>
+                                <p className="text-white font-black text-4xl italic tracking-tighter tabular-nums">{new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}</p>
                              </div>
                              <Link to="/profile">
-                                 <button className="px-10 py-4 bg-white text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] hover:bg-primary hover:text-white transition-all duration-500 shadow-2xl active:scale-95 hover:scale-[1.03]">
-                                     Mon Identité
-                                     <ArrowRight className="inline-block ml-3 size-4" />
+                                 <button className="px-12 h-20 bg-white text-black rounded-[2rem] font-black text-[12px] uppercase tracking-[0.4em] hover:bg-primary hover:text-white transition-all duration-700 shadow-[0_20px_40px_-5px_rgba(255,255,255,0.1)] active-press hover:scale-[1.03]">
+                                     Identité BCA
+                                     <ArrowRight className="inline-block ml-4 size-5" />
                                  </button>
                              </Link>
                         </div>
@@ -148,49 +147,51 @@ const Dashboard = () => {
                 ══════════════════════════════════════════════════ */}
                 <div className="grid grid-cols-1 lg:grid-cols-10 gap-8">
                     {/* Recharts Activity Graph */}
-                    <div className="lg:col-span-7 bg-white dark:bg-slate-900 border-2 border-slate-50 dark:border-slate-800 rounded-[3rem] overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.05)] p-10">
-                        <div className="flex items-center justify-between mb-8">
-                            <div className="flex items-center gap-4">
-                                <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/10">
-                                    <Activity className="size-5" />
+                    <div className="lg:col-span-7 bg-card border-2 border-border rounded-[3.5rem] overflow-hidden shadow-premium p-12">
+                        <div className="flex items-center justify-between mb-12">
+                            <div className="flex items-center gap-6">
+                                <div className="size-14 rounded-2xl bg-primary/5 flex items-center justify-center text-primary border-2 border-primary/10">
+                                    <Activity className="size-6" />
                                 </div>
                                 <div>
-                                    <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-900 dark:text-white">Performance Hebdo</h3>
-                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Volume des transactions — 7 jours</p>
+                                    <h3 className="text-executive-title text-sm tracking-widest">Performance Flux</h3>
+                                    <p className="text-executive-label mt-1.5 opacity-60">Volume Transactionnel — 7 Jours</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                                <TrendingUp className="size-4 text-emerald-500" />
-                                <span className="text-[10px] font-black text-emerald-500 italic">+23.8%</span>
+                            <div className="flex items-center gap-4 px-5 py-2 bg-emerald-500/5 border-2 border-emerald-500/10 rounded-2xl">
+                                <TrendingUp className="size-5 text-emerald-500" />
+                                <span className="text-executive-data text-xs text-emerald-500">+23.8%</span>
                             </div>
                         </div>
-                        <div className="h-64">
+                        <div className="h-72">
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={weeklyData} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
                                     <defs>
                                         <linearGradient id="gradientPrimary" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="hsl(222, 80%, 55%)" stopOpacity={0.3}/>
-                                            <stop offset="95%" stopColor="hsl(222, 80%, 55%)" stopOpacity={0}/>
+                                            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.2}/>
+                                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                                         </linearGradient>
                                     </defs>
                                     <XAxis 
                                         dataKey="jour" 
                                         axisLine={false} 
                                         tickLine={false} 
-                                        tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
+                                        tick={{ fill: 'currentColor', opacity: 0.4, fontSize: 10, fontWeight: 900 }}
+                                        className="text-foreground italic uppercase tracking-widest"
                                     />
                                     <YAxis 
                                         axisLine={false} 
                                         tickLine={false} 
-                                        tick={{ fill: '#64748b', fontSize: 9, fontWeight: 700 }}
+                                        tick={{ fill: 'currentColor', opacity: 0.4, fontSize: 9, fontWeight: 700 }}
                                         tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                                        className="text-foreground"
                                     />
                                     <Tooltip content={<CustomTooltip />} />
                                     <Area 
                                         type="monotone" 
                                         dataKey="montant" 
-                                        stroke="hsl(222, 80%, 55%)" 
-                                        strokeWidth={3} 
+                                        stroke="hsl(var(--primary))" 
+                                        strokeWidth={4} 
                                         fill="url(#gradientPrimary)"
                                         animationDuration={2000}
                                     />
@@ -201,44 +202,44 @@ const Dashboard = () => {
 
                     {/* Security & Trust Widget */}
                     <div className="lg:col-span-3 flex flex-col gap-8">
-                        <div className="flex-1 bg-slate-950 text-white rounded-[3rem] p-10 relative overflow-hidden border-2 border-slate-800 shadow-2xl">
+                        <div className="flex-1 bg-background text-white rounded-[3.5rem] p-12 relative overflow-hidden border-2 border-border shadow-2xl">
                             <div className="absolute top-0 right-0 size-48 bg-primary/10 rounded-full blur-[80px] -mr-24 -mt-24 opacity-50" />
                             <div className="relative z-10 flex flex-col h-full justify-between">
-                                <div className="space-y-6">
-                                    <div className="size-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-primary">
-                                        <Shield className="size-6" />
+                                <div className="space-y-8">
+                                    <div className="size-16 rounded-2xl bg-white/5 border-2 border-white/5 flex items-center justify-center text-primary shadow-2xl">
+                                        <Shield className="size-7" />
                                     </div>
                                     <div>
-                                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-3">Niveau Sécurité</h4>
-                                        <div className="flex items-baseline gap-3">
-                                            <span className="text-5xl font-black italic tracking-tighter">AA+</span>
-                                            <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Optimal</span>
+                                        <h4 className="text-executive-label text-slate-500 mb-4">Niveau Sécurité BCA</h4>
+                                        <div className="flex items-baseline gap-4">
+                                            <span className="text-6xl font-black italic tracking-tighter tabular-nums text-white">AA+</span>
+                                            <span className="text-executive-label text-emerald-400">Optimal</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="space-y-3 mt-8">
-                                    <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
-                                        <span className="text-slate-500">Score confiance</span>
-                                        <span className="text-primary italic">96%</span>
+                                <div className="space-y-4 mt-12">
+                                    <div className="flex justify-between text-executive-label">
+                                        <span className="text-slate-500">Score de Confiance</span>
+                                        <span className="text-primary italic font-black">96.4%</span>
                                     </div>
-                                    <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5 p-0.5">
-                                        <div className="bg-primary h-full w-[96%] rounded-full shadow-[0_0_20px_rgba(43,90,255,0.5)]" />
+                                    <div className="h-3 bg-white/5 rounded-full overflow-hidden border-2 border-white/5 p-0.5 shadow-inner">
+                                        <div className="bg-primary h-full w-[96.4%] rounded-full shadow-[0_0_30px_rgba(43,90,255,0.6)]" />
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <Link to="/wallet" className="block">
-                            <div className="bg-gradient-to-br from-primary via-blue-600 to-indigo-700 p-8 rounded-[2rem] text-white relative overflow-hidden group cursor-pointer active:scale-[0.97] transition-all duration-500 shadow-2xl shadow-primary/20 hover:shadow-primary/40">
-                                <div className="absolute top-0 right-0 size-32 bg-white/10 rounded-full blur-2xl -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-1000" />
-                                <div className="relative z-10 flex items-center gap-5">
-                                    <div className="size-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center">
-                                        <Wallet className="size-5" />
+                        <Link to="/wallet" className="block group">
+                            <div className="bg-primary p-10 rounded-[2.5rem] text-white relative overflow-hidden active-press transition-all duration-500 shadow-premium hover:shadow-primary/40 border-2 border-primary/20">
+                                <div className="absolute top-0 right-0 size-40 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-1000" />
+                                <div className="relative z-10 flex items-center gap-6">
+                                    <div className="size-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border-2 border-white/10">
+                                        <Wallet className="size-6" />
                                     </div>
                                     <div>
-                                        <p className="text-[8px] font-black uppercase tracking-[0.3em] text-white/60">Accès Rapide</p>
-                                        <p className="text-sm font-black italic tracking-tight">Mon Portefeuille</p>
+                                        <p className="text-executive-label text-white/60">Mon Portefeuille</p>
+                                        <p className="text-executive-data text-xl text-white">Gestion Flux</p>
                                     </div>
-                                    <ArrowRight className="size-5 ml-auto opacity-60 group-hover:translate-x-2 transition-transform" />
+                                    <ArrowRight className="size-6 ml-auto opacity-60 group-hover:translate-x-3 transition-transform duration-500" />
                                 </div>
                             </div>
                         </Link>
@@ -251,28 +252,28 @@ const Dashboard = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-10 gap-8">
                     
                     {/* Catalog Exploration */}
-                    <div className="lg:col-span-6 space-y-8">
-                        <div className="flex items-center justify-between px-2">
-                            <div className="flex items-center gap-4">
-                                <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/10">
-                                    <ShoppingBag className="size-5" />
+                    <div className="lg:col-span-6 space-y-10">
+                        <div className="flex items-center justify-between px-4">
+                            <div className="flex items-center gap-6">
+                                <div className="size-12 rounded-2xl bg-primary/5 flex items-center justify-center text-primary border-2 border-primary/10">
+                                    <ShoppingBag className="size-6" />
                                 </div>
-                                <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-900 dark:text-white">Catalogue Recommandé</h3>
+                                <h3 className="text-executive-title text-sm tracking-widest">Recommandations BCA</h3>
                             </div>
-                            <Link className="text-[9px] font-black text-primary hover:bg-primary/10 px-4 py-2 rounded-xl border border-primary/20 uppercase tracking-[0.2em] transition-all" to="/marketplace">Marché Complet</Link>
+                            <Link className="text-executive-label text-primary hover:bg-primary/5 px-6 py-2.5 rounded-2xl border-2 border-primary/10 transition-all active-press" to="/marketplace">Flux Complet</Link>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                             {isLoading ? (
                                 [1, 2, 3, 4].map(i => <TableRowSkeleton key={i} />)
                             ) : (
                                 quickProducts.map((product, idx) => (
-                                    <Link to={`/product/${product.id}`} key={idx} className="group relative bg-white dark:bg-slate-900/50 rounded-[2rem] border-2 border-slate-50 dark:border-slate-800 p-6 flex gap-5 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 cursor-pointer overflow-hidden">
-                                        <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <div className="size-2 rounded-full bg-primary animate-ping"></div>
+                                    <Link to={`/product/${product.id}`} key={idx} className="group relative bg-card rounded-[2.5rem] border-2 border-border p-8 flex gap-6 hover:border-primary/20 hover:shadow-premium transition-all duration-500 cursor-pointer overflow-hidden">
+                                        <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="size-2.5 rounded-full bg-primary animate-ping"></div>
                                         </div>
                                         
-                                        <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden flex-shrink-0 border border-slate-50 dark:border-slate-800">
+                                        <div className="w-28 h-28 bg-accent rounded-2xl overflow-hidden flex-shrink-0 border-2 border-border shadow-inner">
                                             <img
                                                 src={product.images?.[0]?.url_image || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&q=80&w=300'}
                                                 alt={product.nom_produit}
@@ -280,16 +281,16 @@ const Dashboard = () => {
                                             />
                                         </div>
                                         <div className="flex flex-col justify-between py-1 flex-1">
-                                            <div>
-                                                <h5 className="text-[13px] font-black text-slate-900 dark:text-white tracking-tight group-hover:text-primary transition-colors italic">{product.nom_produit}</h5>
-                                                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-2 line-clamp-2 font-bold leading-relaxed">{product.description}</p>
+                                            <div className="space-y-2">
+                                                <h5 className="text-executive-data text-[15px] group-hover:text-primary transition-colors italic">{product.nom_produit}</h5>
+                                                <p className="text-executive-label opacity-60 line-clamp-2 leading-relaxed italic">{product.description}</p>
                                             </div>
-                                            <div className="flex items-center justify-between mt-3">
-                                                <span className="text-base font-black text-slate-900 dark:text-white italic tracking-tighter">
-                                                    {parseFloat(product.prix_unitaire).toLocaleString('fr-FR')} <span className="text-[9px] font-bold text-primary not-italic tracking-widest">GNF</span>
+                                            <div className="flex items-center justify-between mt-4">
+                                                <span className="text-executive-data text-lg tabular-nums">
+                                                    {parseFloat(product.prix_unitaire).toLocaleString('fr-FR')} <span className="text-[10px] font-black text-primary not-italic tracking-[0.2em] ml-1">GNF</span>
                                                 </span>
-                                                <div className="size-10 bg-slate-50 dark:bg-slate-800 group-hover:bg-primary group-hover:text-white rounded-xl transition-all duration-500 flex items-center justify-center shadow-lg shadow-black/[0.02] border border-slate-100 dark:border-slate-700">
-                                                    <Plus className="size-5" />
+                                                <div className="size-12 bg-accent group-hover:bg-primary group-hover:text-white rounded-2xl transition-all duration-500 flex items-center justify-center shadow-lg border-2 border-border group-hover:border-primary/20">
+                                                    <Plus className="size-6" />
                                                 </div>
                                             </div>
                                         </div>
@@ -300,8 +301,8 @@ const Dashboard = () => {
                     </div>
 
                     {/* Orders Table + Promo */}
-                    <div className="lg:col-span-4 space-y-8">
-                        <div className="flex flex-col h-full gap-8">
+                    <div className="lg:col-span-4 space-y-10">
+                        <div className="flex flex-col h-full gap-10">
                             <div className="flex-1">
                                 {isLoading ? (
                                     <CardSkeleton />
@@ -309,32 +310,34 @@ const Dashboard = () => {
                                     <ErrorState />
                                 ) : (
                                     <DataTable
-                                        title={<span className="text-[11px] font-black italic tracking-[0.3em] uppercase">Activité Récente</span>}
+                                        title="Flux Récent"
                                         columns={orderColumns}
                                         data={orders.slice(0, 4)}
-                                        className="rounded-[2.5rem] border-2 border-slate-50 dark:border-slate-800 shadow-xl"
+                                        className="shadow-premium border-2 border-border"
                                         actions={
-                                            <Link className="text-[9px] font-black text-primary hover:bg-primary/10 px-4 py-2 rounded-xl border border-primary/20 uppercase tracking-[0.2em] transition-all" to="/orders">Historique</Link>
+                                            <Link className="text-executive-label text-primary hover:bg-primary/5 px-6 py-2.5 rounded-2xl border-2 border-primary/10 transition-all active-press" to="/orders">Elite History</Link>
                                         }
                                     />
                                 )}
                             </div>
 
                             {/* Premium Promo Banner */}
-                            <div className="bg-gradient-to-br from-indigo-600 via-primary to-blue-500 p-10 rounded-[3rem] text-primary-foreground relative overflow-hidden shadow-2xl shadow-primary/20 group cursor-pointer active:scale-[0.97] transition-all duration-500 border-2 border-primary/20">
-                                <div className="absolute top-0 right-0 -mr-16 -mt-16 size-56 bg-white/15 rounded-full blur-3xl transition-transform duration-1000 group-hover:scale-150 opacity-50"></div>
-                                <div className="absolute bottom-0 left-0 -ml-10 -mb-10 size-40 bg-black/10 rounded-full blur-2xl"></div>
+                            <div 
+                                onClick={() => toast.info("Accès Privilège BCA+", { description: "Ce programme est actuellement sur invitation uniquement. Nos conseillers vous contacteront si vous êtes éligible." })}
+                                className="bg-background p-12 rounded-[3.5rem] text-white relative overflow-hidden shadow-2xl shadow-black/40 group cursor-pointer active-press transition-all duration-500 border-2 border-border"
+                            >
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-full bg-[radial-gradient(circle_at_50%_50%,rgba(43,90,255,0.1),transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
                                 
-                                <div className="relative z-10 space-y-6">
-                                    <div className="size-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/10">
-                                        <Award className="size-7 text-white" />
+                                <div className="relative z-10 space-y-8">
+                                    <div className="size-16 rounded-[1.2rem] bg-white/5 backdrop-blur-xl flex items-center justify-center border-2 border-white/5 shadow-2xl">
+                                        <Award className="size-8 text-primary shadow-[0_0_20px_rgba(43,90,255,0.5)]" />
                                     </div>
-                                    <div>
-                                        <h4 className="text-2xl font-black italic tracking-tighter mb-2 uppercase">BCA Premium+</h4>
-                                        <p className="text-white/70 text-[10px] font-bold leading-relaxed max-w-[220px] italic">Activez le mode expert : Statistiques avancées, livraisons prioritaires et accès au crédit marchand.</p>
+                                    <div className="space-y-3">
+                                        <h4 className="text-3xl font-black italic tracking-tighter uppercase text-white">BCA Privilege+</h4>
+                                        <p className="text-slate-400 text-[10px] font-black leading-relaxed max-w-[260px] italic uppercase tracking-widest opacity-60">Insight Exécutif • Crédit Illimité • Logistique Prioritaire</p>
                                     </div>
-                                    <button className="px-10 py-4 bg-white text-primary text-[9px] font-black uppercase tracking-[0.3em] rounded-2xl hover:bg-slate-900 hover:text-white transition-all duration-500 shadow-2xl">
-                                        Découvrir l'Offre
+                                    <button className="h-16 w-full bg-white text-black text-[11px] font-black uppercase tracking-[0.4em] rounded-2xl hover:bg-primary hover:text-white transition-all duration-700 shadow-2xl shadow-white/5">
+                                        Adhésion Réseau
                                     </button>
                                 </div>
                             </div>

@@ -1,214 +1,199 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import {
-    RotateCcw,
-    CheckCircle2,
-    XCircle,
-    Eye,
-    Mail,
-    AlertCircle,
-    Clock,
-    Plus,
-    Search,
-    MessageSquare,
-    TrendingDown
+import { 
+    RotateCcw, 
+    CheckCircle, 
+    XCircle, 
+    Package, 
+    Calendar, 
+    AlertTriangle, 
+    Search, 
+    Filter,
+    RefreshCcw,
+    ChevronRight,
+    ArrowRightLeft
 } from 'lucide-react';
-import Button from '../../components/ui/Button';
+import { toast } from 'sonner';
+import { cn } from '../../lib/utils';
 
-const AdminDisputes = () => {
-    const [activeTab, setActiveTab] = useState('returns');
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-    const stats = [
-        { label: 'En attente', value: '12', icon: Clock, color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
-        { label: 'Approuvées (24h)', value: '48', icon: CheckCircle2, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
-        { label: 'Taux de litige', value: '1.2%', icon: TrendingDown, color: 'text-rose-500', bgColor: 'bg-rose-500/10' }
-    ];
+const Returns = () => {
+    const [returns, setReturns] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState('');
 
-    const requests = [
-        {
-            id: '#BC-9821',
-            product: 'Casque Audio Sans Fil',
-            client: 'Jean Dupont',
-            email: 'jean.dupont@email.com',
-            reason: 'Produit défectueux',
-            status: 'En attente',
-            date: '12 Oct 2023',
-            image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBwgIssunMUrFCrSVbpJn7ZBVeTrNGzQyEdVrircWpaI07t9xuGud6ee3Q68LXnqvTc9LPLoMGtyFSVFHSfTPlD6KsISQZ-TjnVChl0GBtrXhSNX-D1FdDvbp4kq1jasCC5lFs0EirDFl9RaQI1W3wRgD9gI31t4tsGfZADU9pozSs7dahGsYb2F8gQlXyomzvrVqXLt1Lh1o-f8rWEXNGg0KcYfX9nR98UGBBhff1KAoKBT4fpiKmicQvAxVIUjK43lIQjKLsTxS3N'
-        },
-        {
-            id: '#BC-9815',
-            product: 'Clavier Mécanique RGB',
-            client: 'Marie Lavoie',
-            email: 'm.lavoie@email.com',
-            reason: "Erreur d'article",
-            status: 'Approuvé',
-            date: '11 Oct 2023',
-            image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDg2exFobLnSt2aZkng5Ls1u8brnyWE-_xycAxO9TBhvLh5SV7z0-b0jIsr4y79NuR95Vnm721tfCOC7jxRT48hBoT7IT3ZqsRwuJmBs2A4ihS3uDk2IZAvwLXrxs5ZsXwX49RSMk5xqHJgcQ27bCGTZ4bay8t08BLGCGjw55K_SF0G3Z6R6_aleYdyihellqRgsbquA2oTpaowJ3GOKtC15kOv2FyCYvu2IJbqsd-i90i4HghjMqQfxadaT0gvE_CBQLgcGIu9oTvB'
-        },
-        {
-            id: '#BC-9802',
-            product: 'Souris Gaming Pro',
-            client: 'Lucas Martin',
-            email: 'lucas.m@email.com',
-            reason: "Changement d'avis",
-            status: 'Rejeté',
-            date: '10 Oct 2023',
-            image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBOreOoOE6vPsz9evNxQ7XRc21yYGmzNb78VBc3DvAZo5bV2gkVd2Bo1ErbvV0PaQ5bk6cWers2BjRBYrGNFBs05b7R_tW6VsW3tYOf-bRcDPArWE5wpMjgqFft_DjbSv6OTmXg-GHvFZLwEQPw0IPKIvv79PSXGECyj8z32Q-cOC6P_tE2kUOGfKOEsr8iEbto6HRDNDClb4wxzIREoUspyQuse8iID-q3wdm4r3eHzlNhWf5gF96WEqqNc95pQkz5H2mhB154ZtDy'
+    const fetchReturns = async () => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${API_URL}/returns/admin`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setReturns(response.data);
+        } catch (error) {
+            toast.error("Échec de la synchronisation des dossiers retours.");
+        } finally {
+            setLoading(false);
         }
-    ];
+    };
+
+    useEffect(() => {
+        fetchReturns();
+    }, []);
+
+    const handleAction = async (id, status) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put(`${API_URL}/returns/${id}/status`, { statut: status }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.success(`Dossier ${status === 'approuve' ? 'validé' : 'révoqué'}.`);
+            fetchReturns();
+        } catch (error) {
+            toast.error("Échec du changement de protocole.");
+        }
+    };
+
+    const filtered = returns.filter(r => 
+        r.id.toLowerCase().includes(search.toLowerCase()) ||
+        r.User?.nom_complet?.toLowerCase().includes(search.toLowerCase())
+    );
 
     return (
-        <DashboardLayout title="Retours & Litiges">
-            <div className="space-y-8 animate-in fade-in duration-500 font-inter pb-12">
-
-                {/* Header Actions */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div>
-                        <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic">Retours & Litiges</h2>
-                        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 font-medium">Gérez le SAV et les contentieux clients en temps réel.</p>
-                    </div>
-                    <Button className="bg-primary text-white font-black text-xs uppercase tracking-widest px-8 py-3 rounded-xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3">
-                        <Plus className="size-4" />
-                        Nouveau Litige
-                    </Button>
-                </div>
-
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {stats.map((stat, idx) => (
-                        <div key={idx} className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-5 transition-transform hover:scale-[1.02]">
-                            <div className={`size-14 rounded-xl ${stat.bgColor} flex items-center justify-center ${stat.color}`}>
-                                <stat.icon className="size-7" />
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{stat.label}</p>
-                                <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic mt-1">{stat.value}</p>
-                            </div>
+        <DashboardLayout title="GESTION DES FLUX INVERSES">
+            <div className="space-y-12 animate-in fade-in duration-700 pb-20">
+                
+                {/* ── Header Executive ──────────────────────────────── */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 border-b-4 border-border pb-12">
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-4">
+                            <div className="size-3 bg-rose-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.6)]" />
+                            <span className="text-executive-label font-black text-rose-500 uppercase tracking-[0.4em] italic leading-none pt-0.5">Logistique des Réversibilités BCA</span>
                         </div>
-                    ))}
-                </div>
-
-                {/* Tabs & Search */}
-                <div className="bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <div className="flex flex-col xl:flex-row items-center justify-between gap-4 p-2">
-                        <nav className="flex gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full xl:w-auto overflow-x-auto scrollbar-hide">
-                            <button
-                                onClick={() => setActiveTab('returns')}
-                                className={`whitespace-nowrap px-8 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeTab === 'returns' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                            >
-                                Demandes de retour
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('refunds')}
-                                className={`whitespace-nowrap px-8 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeTab === 'refunds' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                            >
-                                Remboursements
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('disputes')}
-                                className={`whitespace-nowrap px-8 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeTab === 'disputes' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                            >
-                                Litiges Clients
-                            </button>
-                        </nav>
-                        <div className="relative w-full xl:w-80 group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 size-4 group-focus-within:text-primary transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="Rechercher #BC-9XXX..."
-                                className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-transparent rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm font-bold dark:text-white placeholder:text-slate-400 placeholder:italic"
-                            />
-                        </div>
+                        <h2 className="text-5xl md:text-7xl font-black text-foreground italic tracking-tighter uppercase leading-[0.85]">Dossiers de <br /><span className="text-primary not-italic underline decoration-primary/20 decoration-8 underline-offset-[-4px]">Retours.</span></h2>
+                        <p className="text-muted-foreground/60 font-medium text-lg italic border-l-4 border-primary/20 pl-8 max-w-xl">Audit et validation des demandes de remboursement et retours de marchandises certifiées.</p>
                     </div>
+                    <button 
+                        onClick={fetchReturns}
+                        className="h-24 w-24 bg-background border-4 border-border rounded-[2.5rem] flex items-center justify-center text-muted-foreground/30 hover:border-primary/40 hover:text-primary transition-all shadow-premium group"
+                    >
+                        <RefreshCcw className="size-8 group-hover:rotate-180 transition-transform duration-700" />
+                    </button>
                 </div>
 
-                {/* Table Container */}
-                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto italic">
-                        <table className="w-full text-left">
-                            <thead>
-                                <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-100 dark:border-slate-800">
-                                    <th className="px-8 py-5">ID Commande</th>
-                                    <th className="px-8 py-5">Produit</th>
-                                    <th className="px-8 py-5">Client</th>
-                                    <th className="px-8 py-5">Motif</th>
-                                    <th className="px-8 py-5">Statut</th>
-                                    <th className="px-8 py-5">Date</th>
-                                    <th className="px-8 py-5 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                {requests.map((req, idx) => (
-                                    <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
-                                        <td className="px-8 py-5 text-xs font-black text-primary tracking-tighter italic">{req.id}</td>
-                                        <td className="px-8 py-5">
-                                            <div className="flex items-center gap-4">
-                                                <div className="size-10 rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm transition-transform group-hover:scale-110">
-                                                    <img src={req.image} alt={req.product} className="size-full object-cover" />
+                {/* ── Filter Bar ────────────────────────────────────── */}
+                <div className="glass-card p-4 rounded-[2.5rem] border-4 border-border flex flex-col md:flex-row gap-4 bg-accent/10">
+                    <div className="relative group/search flex-1">
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground/30 size-6 group-focus-within/search:text-primary transition-all" />
+                        <input
+                            className="w-full h-20 pl-16 pr-8 bg-background border-4 border-transparent focus:border-primary/40 rounded-[1.8rem] text-sm font-black italic uppercase tracking-widest placeholder:text-muted-foreground/20 shadow-inner outline-none transition-all"
+                            placeholder="RECHERCHER DOSSIER OU CLIENT..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
+                    <button className="h-20 w-20 bg-background border-4 border-border rounded-[1.8rem] flex items-center justify-center text-muted-foreground/30 hover:border-primary/40 hover:text-primary transition-all shadow-inner group">
+                        <Filter className="size-6 group-hover:scale-110 transition-transform" />
+                    </button>
+                </div>
+
+                {/* ── Display Grid ─────────────────────────────────── */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    {loading ? (
+                        [1, 2, 3, 4].map(n => <div key={n} className="h-96 bg-accent/20 rounded-[3rem] animate-pulse border-4 border-border" />)
+                    ) : filtered.length === 0 ? (
+                        <div className="lg:col-span-2 py-40 flex flex-col items-center gap-8 opacity-20">
+                            <ArrowRightLeft className="size-20" />
+                            <p className="text-2xl font-black italic tracking-tighter uppercase">Registre de Retour Vierge</p>
+                        </div>
+                    ) : (
+                        filtered.map(item => (
+                            <div
+                                key={item.id}
+                                className="glass-card border-4 border-border rounded-[3rem] p-10 shadow-premium hover:shadow-premium-lg hover:border-primary/20 transition-all duration-500 relative overflow-hidden group"
+                            >
+                                <div className="absolute top-0 right-0 p-8">
+                                    <div className={cn(
+                                        "px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest italic border-2",
+                                        item.statut === 'approuve' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" :
+                                        item.statut === 'rejete' ? "bg-rose-500/10 border-rose-500/20 text-rose-500" :
+                                        "bg-amber-500/10 border-amber-500/20 text-amber-500 animate-pulse"
+                                    )}>
+                                        {item.statut === 'en_attente' ? 'Analyse en Cours' : item.statut.toUpperCase()}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-8">
+                                    <div className="flex items-center gap-6">
+                                        <div className="size-20 rounded-[2rem] bg-accent border-4 border-border flex items-center justify-center shadow-premium group-hover:rotate-6 transition-transform overflow-hidden">
+                                            <Package className="size-10 text-muted-foreground/20" />
+                                        </div>
+                                        <div>
+                                            <p className="text-executive-label font-black text-muted-foreground/20 uppercase tracking-[0.2em] italic mb-1">Dossier Retour</p>
+                                            <h4 className="text-3xl font-black text-foreground italic tracking-tighter uppercase leading-none truncate max-w-[250px]">
+                                                {item.User?.nom_complet || "Client Inconnu"}
+                                            </h4>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-8 bg-background border-4 border-border rounded-[2rem] shadow-inner space-y-6">
+                                        <div className="flex items-start gap-4">
+                                            <AlertTriangle className="size-5 text-amber-500 shrink-0 mt-1" />
+                                            <div>
+                                                <p className="text-[10px] font-black text-muted-foreground/30 uppercase tracking-widest mb-1 italic">Motif de Réversibilité</p>
+                                                <p className="text-sm font-bold text-foreground italic leading-relaxed">"{item.motif || "Non spécifié"}"</p>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-8 border-t-2 border-border/50 pt-6">
+                                            <div>
+                                                <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] mb-1 italic">Commandé le</p>
+                                                <div className="flex items-center gap-2 text-xs font-black italic">
+                                                    <Calendar className="size-3 opacity-30" />
+                                                    {new Date(item.createdAt).toLocaleDateString('fr-GN')}
                                                 </div>
-                                                <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight">{req.product}</span>
                                             </div>
-                                        </td>
-                                        <td className="px-8 py-5">
-                                            <div className="flex flex-col">
-                                                <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight">{req.client}</span>
-                                                <span className="text-[10px] text-slate-400 font-bold lowercase tracking-tighter mt-0.5">{req.email}</span>
+                                            <div>
+                                                <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] mb-1 italic">ID Référence</p>
+                                                <p className="text-xs font-black italic text-primary">#{item.id.slice(0, 8).toUpperCase()}</p>
                                             </div>
-                                        </td>
-                                        <td className="px-8 py-5 text-xs font-bold text-slate-500 uppercase tracking-tighter">{req.reason}</td>
-                                        <td className="px-8 py-5">
-                                            <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${req.status === 'En attente'
-                                                    ? 'bg-blue-500/10 text-blue-600 border border-blue-500/20'
-                                                    : req.status === 'Approuvé'
-                                                        ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
-                                                        : 'bg-rose-500/10 text-rose-600 border border-rose-500/20'
-                                                }`}>
-                                                <div className={`size-1.5 rounded-full ${req.status === 'En attente' ? 'bg-blue-500 animate-pulse' :
-                                                        req.status === 'Approuvé' ? 'bg-emerald-500' : 'bg-rose-500'
-                                                    }`}></div>
-                                                {req.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-8 py-5 text-[11px] text-slate-400 font-bold">{req.date}</td>
-                                        <td className="px-8 py-5 text-right">
-                                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-0 translate-x-4">
-                                                {req.status === 'En attente' && (
-                                                    <>
-                                                        <button className="p-2.5 bg-emerald-500/10 text-emerald-600 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm" title="Approuver">
-                                                            <CheckCircle2 className="size-4" />
-                                                        </button>
-                                                        <button className="p-2.5 bg-rose-500/10 text-rose-600 rounded-xl hover:bg-rose-500 hover:text-white transition-all shadow-sm" title="Rejeter">
-                                                            <XCircle className="size-4" />
-                                                        </button>
-                                                    </>
-                                                )}
-                                                <button className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-primary rounded-xl transition-all shadow-sm" title="Détails">
-                                                    <Eye className="size-4" />
-                                                </button>
-                                                <button className="p-2.5 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm" title="Contacter">
-                                                    <MessageSquare className="size-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    {/* Pagination */}
-                    <div className="px-8 py-5 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Affichage de 1 à 3 sur 12 demandes</span>
-                        <div className="flex gap-2">
-                            <button className="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 disabled:opacity-30 transition-all" disabled>Précédent</button>
-                            <button className="px-3 py-1.5 text-[9px] font-black uppercase tracking-widest bg-primary text-white rounded-lg shadow-lg shadow-primary/20">1</button>
-                            <button className="px-3 py-1.5 text-[9px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-all">2</button>
-                            <button className="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-all">Suivant</button>
-                        </div>
-                    </div>
+                                        </div>
+                                    </div>
+
+                                    {item.statut === 'en_attente' && (
+                                        <div className="flex gap-4 pt-4">
+                                            <button
+                                                onClick={() => handleAction(item.id, 'rejete')}
+                                                className="flex-1 h-20 bg-background border-4 border-border text-rose-500 rounded-[1.5rem] font-black uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-4 hover:border-rose-500/40 hover:bg-rose-500/5 transition-all active:scale-95 group/btn"
+                                            >
+                                                <XCircle className="size-4 group-hover/btn:scale-125 transition-transform" />
+                                                RÉVOQUER
+                                            </button>
+                                            <button
+                                                onClick={() => handleAction(item.id, 'approuve')}
+                                                className="flex-1 h-20 bg-primary text-white rounded-[1.5rem] font-black uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-4 shadow-premium-lg shadow-primary/20 hover:scale-[1.03] active:scale-95 transition-all group/btn"
+                                            >
+                                                <CheckCircle className="size-4 group-hover/btn:scale-125 transition-transform" />
+                                                APPROUVER
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {item.statut !== 'en_attente' && (
+                                        <div className="pt-4 flex items-center justify-between text-muted-foreground/30">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] italic">Dossier Archivé</p>
+                                            <RotateCcw className="size-5 opacity-20" />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
         </DashboardLayout>
     );
 };
 
-export default AdminDisputes;
+export default Returns;

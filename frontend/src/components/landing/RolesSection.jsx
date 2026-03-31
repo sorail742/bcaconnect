@@ -1,4 +1,5 @@
 import { User, Store, Truck, Building2, Settings } from "lucide-react"
+import { cn } from "../../lib/utils"
 
 const roles = [
     {
@@ -35,31 +36,42 @@ const roles = [
 
 export function RolesSection() {
     return (
-        <section id="roles" className="py-20 md:py-32 bg-secondary/30">
-            <div className="container mx-auto px-4">
-                <div className="max-w-3xl mx-auto text-center mb-16">
-                    <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-                        Les rôles
-                    </span>
-                    <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4 text-balance">
-                        Un écosystème multi-acteurs
+                <section id="roles" className="relative py-32 md:py-48 overflow-hidden isolate">
+            <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-purple-500/10 dark:bg-purple-500/5 blur-[150px] rounded-full pointer-events-none -z-10" />
+            <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] bg-indigo-500/5 blur-[120px] rounded-full pointer-events-none -z-10" />
+
+            <div className="container mx-auto px-4 relative z-10">
+                <div className="max-w-3xl mx-auto text-center mb-24 animate-fade-in-up">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-purple-500/5 border border-purple-500/20 text-[10px] font-black text-purple-600 dark:text-purple-400 mb-8 uppercase tracking-[0.3em] shadow-sm">
+                        Diversité des Acteurs
+                    </div>
+                    <h2 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white mb-8 tracking-tighter leading-[1.1]">
+                        Un écosystème{" "}
+                        <span className="text-transparent bg-clip-text bg-gradient-to-br from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400 italic">
+                            multi-acteurs
+                        </span>
                     </h2>
-                    <p className="text-lg text-muted-foreground text-pretty">
-                        Chaque acteur dispose d'un espace dédié avec des outils adaptés à ses besoins spécifiques.
+                    <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 text-pretty font-medium leading-relaxed opacity-80">
+                        Des espaces de travail sur-mesure pour chaque intervenant de la chaîne de valeur.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto animate-fade-in-up" style={{ animationDelay: '200ms' }}>
                     {roles.map((role, index) => (
                         <div
                             key={index}
-                            className={`group p-6 rounded-xl bg-card border border-border hover:border-primary/50 transition-all ${index === 4 ? 'md:col-span-2 lg:col-span-1 lg:col-start-2' : ''}`}
+                            className={cn(
+                                "group relative p-10 rounded-[2.5rem] glass-card transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl border-white/20 dark:border-white/5 active-press",
+                                index === 4 ? 'md:col-span-2 lg:col-span-1 lg:col-start-2' : ''
+                            )}
                         >
-                            <div className={`w-12 h-12 rounded-lg ${role.color} flex items-center justify-center mb-4`}>
-                                <role.icon className="w-6 h-6 text-white" />
+                            <div className={cn("size-16 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500 shadow-lg border border-white/10", role.color)}>
+                                <role.icon className="size-8 text-white" />
                             </div>
-                            <h3 className="text-xl font-semibold text-foreground mb-2">{role.title}</h3>
-                            <p className="text-muted-foreground">{role.description}</p>
+                            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">{role.title}</h3>
+                            <p className="text-base text-slate-600 dark:text-slate-400 leading-relaxed font-medium opacity-80">{role.description}</p>
+                            
+                            <div className="mt-8 size-1.5 rounded-full bg-slate-200 dark:bg-white/10 group-hover:w-8 group-hover:bg-primary transition-all duration-500" />
                         </div>
                     ))}
                 </div>
