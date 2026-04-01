@@ -83,7 +83,7 @@ const productController = {
         try {
             const products = await Product.findAll({
                 include: [
-                    { model: Store, attributes: ['nom_boutique'] },
+                    { model: Store, attributes: ['nom_boutique', 'slug', 'id'] },
                     { model: Category, as: 'categorie', attributes: ['nom_categorie'] }
                 ],
                 order: [['createdAt', 'DESC']]
@@ -102,7 +102,10 @@ const productController = {
 
             const products = await Product.findAll({
                 where: { boutique_id: store.id },
-                include: [{ model: Category, as: 'categorie', attributes: ['nom_categorie'] }],
+                include: [
+                    { model: Store, attributes: ['nom_boutique', 'slug', 'id'] },
+                    { model: Category, as: 'categorie', attributes: ['nom_categorie'] }
+                ],
                 order: [['createdAt', 'DESC']]
             });
             res.json(products);
@@ -114,7 +117,10 @@ const productController = {
     getById: async (req, res, next) => {
         try {
             const product = await Product.findByPk(req.params.id, {
-                include: ['categorie']
+                include: [
+                    { model: Category, as: 'categorie' },
+                    { model: Store, attributes: ['nom_boutique', 'slug', 'id'] }
+                ]
             });
             if (!product) return res.status(404).json({ message: "Produit non trouvé." });
             res.json(product);
