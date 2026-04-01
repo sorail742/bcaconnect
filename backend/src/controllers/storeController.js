@@ -1,5 +1,6 @@
-const { Store, User, Product, Category } = require('../models');
+const { Store, User, Product, Category, sequelize } = require('../models');
 const { v4: uuidv4 } = require('uuid');
+const { Op } = require('sequelize');
 
 // Génère un slug unique à partir du nom de boutique
 const generateSlug = (name) => {
@@ -117,7 +118,12 @@ const storeController = {
         try {
             const { slug } = req.params;
             const store = await Store.findOne({
-                where: { slug },
+                where: {
+                    [Op.or]: [
+                        { slug: slug },
+                        { id: slug }
+                    ]
+                },
                 include: [
                     {
                         model: Product,
