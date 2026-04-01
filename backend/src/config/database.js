@@ -23,12 +23,12 @@ if (useLocalDB || isTest) {
     sequelize = new Sequelize(process.env.DATABASE_URL, {
         dialect: 'postgres',
         logging: false,
-        /* dialectOptions: {
-            ssl: {
+        dialectOptions: {
+            ssl: process.env.DATABASE_URL.includes('localhost') ? false : {
                 require: true,
                 rejectUnauthorized: false
             }
-        }, */
+        },
         pool: {
             max: 5,
             min: 0,
