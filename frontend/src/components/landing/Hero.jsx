@@ -4,7 +4,7 @@ import { Link } from "react-router-dom"
 
 export function Hero() {
     return (
-                <section className="relative w-full pt-12 pb-20 md:pt-28 md:pb-40 isolate">
+        <section className="relative w-full pt-12 pb-20 md:pt-28 md:pb-40 isolate">
             {/* High-Impact Atmospheric Glows */}
             <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-blue-500/20 dark:bg-primary/10 blur-[160px] rounded-full pointer-events-none -z-10 animate-pulse-glow" />
             <div className="absolute top-[20%] right-[-10%] w-[400px] h-[400px] bg-indigo-500/10 dark:bg-indigo-500/5 blur-[120px] rounded-full pointer-events-none -z-10" />
@@ -14,38 +14,35 @@ export function Hero() {
 
             <div className="container mx-auto px-4 relative">
                 <div className="max-w-5xl mx-auto text-center">
-                    <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl glass border border-white/20 text-xs font-bold text-primary mb-10 animate-fade-in-up shadow-premium">
+                    <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-primary/10 border border-primary/20 text-xs font-bold text-primary mb-10 animate-fade-in-up">
                         <div className="relative flex h-2.5 w-2.5">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
                         </div>
-                        <span className="uppercase tracking-[0.2em]">L'excellence Fintech en Afrique</span>
+                        <span className="uppercase tracking-widest font-bold">L'écosystème commercial de demain</span>
                     </div>
 
-                    <h1 className="text-4xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.9] mb-8 animate-fade-in-up text-wrap-balance">
-                        L'écosystème qui{" "}
-                        <span className="text-premium-gradient italic block md:inline">
-                            révolutionne
-                        </span>{" "}
-                        le futur du commerce.
+                    <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-tight mb-8 animate-fade-in-up">
+                        L'écosystème qui <br />
+                        <span className="text-primary">révolutionne</span> votre business.
                     </h1>
 
-                    <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-12 text-pretty font-medium leading-relaxed animate-fade-in-up opacity-90" style={{ animationDelay: '200ms' }}>
-                        BCA Connect unifie clients, vendeurs, livreurs et institutions financières dans un hub digital ultra-performant. 
-                        Passez à la vitesse supérieure.
+                    <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-12 font-medium leading-relaxed animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+                        BCA Connect réunit clients, détaillants, grossistes et livreurs dans un environnement sécurisé et performant.
+                        Simplifiez vos transactions dès aujourd'hui.
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-5 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
                         <Link to="/register" className="w-full sm:w-auto">
-                            <Button variant="premium" size="lg" className="w-full h-14 rounded-2xl gap-3 text-base shadow-2xl shadow-blue-500/20">
+                            <Button size="lg" className="w-full h-14 rounded-xl gap-3 text-base font-bold shadow-xl shadow-primary/20 hover:scale-105 transition-all">
                                 Commencer maintenant
                                 <ArrowRight className="size-5" />
                             </Button>
                         </Link>
-                        <Link to="/catalog" className="w-full sm:w-auto">
-                            <Button variant="outline" size="lg" className="w-full h-14 rounded-2xl gap-3 text-base glass border-white/20">
+                        <Link to="/marketplace" className="w-full sm:w-auto">
+                            <Button variant="outline" size="lg" className="w-full h-14 rounded-xl gap-3 text-base font-bold hover:bg-primary/5">
                                 <Play className="size-5 fill-current" />
-                                Découvrir la démo
+                                Découvrir le catalogue
                             </Button>
                         </Link>
                     </div>
@@ -55,13 +52,13 @@ export function Hero() {
                             { label: "Utilisateurs", val: "10K+" },
                             { label: "Vendeurs", val: "500+" },
                             { label: "Transactions", val: "50K+" },
-                            { label: "Satisfaction", val: "98%", highlight: true },
+                            { label: "Satisfaction", val: "99%", highlight: true },
                         ].map((stat, i) => (
                             <div key={i} className="text-center group">
-                                <p className={`text-3xl md:text-4xl font-bold tabular-nums tracking-tight leading-normal pb-1 transition-all duration-300 group-hover:scale-105 ${stat.highlight ? 'text-premium-gradient' : 'text-slate-900 dark:text-white'}`}>
+                                <p className={`text-3xl md:text-4xl font-bold tabular-nums tracking-tight pb-1 transition-all duration-300 group-hover:scale-110 ${stat.highlight ? 'text-primary' : 'text-slate-900 dark:text-white'}`}>
                                     {stat.val}
                                 </p>
-                                <p className="text-[11px] uppercase tracking-[0.15em] font-semibold text-slate-400 dark:text-slate-500 mt-2">{stat.label}</p>
+                                <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400 dark:text-slate-500 mt-2">{stat.label}</p>
                             </div>
                         ))}
                     </div>
