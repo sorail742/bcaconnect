@@ -3,36 +3,33 @@ import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import {
     Package, Image as ImageIcon, Tag, Layers, ArrowLeft,
-    Save, AlertCircle, CheckCircle2, Loader2, Eye,
-    Sparkles, TrendingDown, Hash, Wand2, Activity,
-    ShieldCheck, Zap, ChevronRight, Info
+    Save, AlertCircle, Loader2, Sparkles, TrendingDown,
+    Hash, ShieldCheck, Zap, ChevronRight, Info, CheckCircle2,
+    X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
 import aiService from '../../services/aiService';
 import { cn } from '../../lib/utils';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 
-// ── Executive Form Field ─────────────────────────────────────
-const FormField = ({ label, hint, required, children, error }) => (
-    <div className="space-y-4">
-        <div className="flex items-center justify-between ml-2">
-            <label className="text-executive-label font-black uppercase tracking-[0.3em] text-muted-foreground/40 italic flex items-center gap-3">
-                {label}
-                {required && <span className="text-primary text-xl">·</span>}
-            </label>
-            {hint && <span className="text-[10px] text-muted-foreground/20 font-black uppercase tracking-widest italic">{hint}</span>}
-        </div>
+const FormField = ({ label, required, children, error }) => (
+    <div className="space-y-3">
+        <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1 flex items-center gap-2">
+            {label}
+            {required && <span className="text-primary text-lg leading-none">·</span>}
+        </label>
         {children}
         {error && (
-            <p className="text-[10px] text-rose-500 font-black uppercase tracking-widest italic flex items-center gap-2 ml-4">
+            <p className="text-[10px] text-red-500 font-bold uppercase tracking-widest italic flex items-center gap-2 ml-2">
                 <AlertCircle className="size-3" /> {error}
             </p>
         )}
     </div>
 );
 
-// ── Executive Product Preview ──────────────────────────────────────
 const ProductPreview = ({ data, categories }) => {
     const cat = categories.find(c => c.id === data.categorie_id);
     const price = parseFloat(data.prix_unitaire || 0);
@@ -42,106 +39,71 @@ const ProductPreview = ({ data, categories }) => {
         : null;
 
     return (
-        <div className="sticky top-28 space-y-8">
-            <div className="flex items-center gap-4">
-                <div className="size-3 bg-primary rounded-full animate-pulse shadow-[0_0_10px_rgba(43,90,255,0.6)]" />
-                <h3 className="text-executive-label font-black text-primary uppercase tracking-[0.4em] italic">Rendu Temps Réel v2</h3>
-            </div>
-            
-            {/* High-Fidelity Product Card Preview */}
-            <div className="glass-card rounded-[3.5rem] overflow-hidden border-4 border-border shadow-premium hover:shadow-premium-lg transition-all duration-700 group">
-                <div className="relative aspect-[4/3] bg-accent/20 overflow-hidden">
+        <div className="sticky top-28 space-y-8 animate-fade-in">
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-xl group">
+                <div className="relative aspect-square bg-slate-50 dark:bg-slate-800/50 overflow-hidden flex items-center justify-center">
                     {data.image_url ? (
                         <img
                             src={data.image_url}
-                            alt={data.nom_produit || 'Aperçu'}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2s]"
-                            onError={e => { e.target.onerror = null; e.target.src = ''; }}
+                            alt=""
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         />
                     ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 text-muted-foreground/10">
-                            <ImageIcon className="size-20" />
-                            <p className="text-[10px] font-black uppercase tracking-[0.4em] italic">Visuel Non Référencé</p>
+                        <div className="flex flex-col items-center gap-4 text-slate-200">
+                            <ImageIcon className="size-16" />
+                            <p className="text-[10px] font-bold uppercase tracking-widest">Aperçu Visuel</p>
                         </div>
                     )}
-                    
-                    <div className="absolute top-6 left-6 flex flex-col gap-3">
+
+                    <div className="absolute top-4 left-4 flex flex-col gap-2">
                         {discount && (
-                            <div className="px-5 py-2 bg-primary text-white text-[10px] font-black uppercase tracking-widest italic rounded-full shadow-premium-lg shadow-primary/30">
-                                <TrendingUp className="size-3 inline-block mr-2" /> -{discount}%
+                            <div className="px-3 py-1 bg-primary text-white text-[9px] font-bold uppercase tracking-widest rounded-lg shadow-lg">
+                                -{discount}%
                             </div>
                         )}
                         {data.est_local && (
-                            <div className="px-5 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest italic rounded-full shadow-premium-lg shadow-emerald-500/30">
-                                🇬🇳 Origine Guinéenne
+                            <div className="px-3 py-1 bg-emerald-500 text-white text-[9px] font-bold uppercase tracking-widest rounded-lg shadow-lg">
+                                Local 🇬🇳
                             </div>
                         )}
                     </div>
                 </div>
 
-                <div className="p-10 space-y-6">
-                    <div className="space-y-2">
-                        <div className={cn(
-                            "inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest italic border-2 mb-2",
-                            cat ? "bg-primary/5 border-primary/20 text-primary" : "bg-accent border-border text-muted-foreground/20"
-                        )}>
-                            {cat ? cat.nom_categorie : 'CLASSIFICATION EN ATTENTE'}
-                        </div>
-                        <h4 className="text-3xl font-black text-foreground italic tracking-tighter uppercase leading-none line-clamp-2 group-hover:text-primary transition-colors">
-                            {data.nom_produit || <span className="opacity-10 not-italic">NOM DE L'ACTIF...</span>}
+                <div className="p-8 space-y-4">
+                    <div className="space-y-1">
+                        <p className="text-[9px] font-bold text-primary uppercase tracking-[0.2em]">{cat ? cat.nom_categorie : 'Catégorie'}</p>
+                        <h4 className="text-xl font-bold text-slate-900 dark:text-white uppercase truncate">
+                            {data.nom_produit || 'Nom de l\'article'}
                         </h4>
                     </div>
 
-                    <div className="flex items-end gap-4">
-                        <span className="text-3xl font-black italic tracking-tighter text-foreground text-executive-data">
-                            {price > 0 ? price.toLocaleString() : '0'} <small className="text-[10px] font-black not-italic opacity-30">GNF</small>
+                    <div className="flex items-baseline gap-3">
+                        <span className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                            {price.toLocaleString('fr-GN')} <small className="text-[10px] font-bold text-primary not-italic">GNF</small>
                         </span>
                         {oldPrice > price && oldPrice > 0 && (
-                            <span className="text-xs text-muted-foreground/30 line-through font-black italic uppercase tracking-widest mb-1.5">
-                                {oldPrice.toLocaleString()} GNF
+                            <span className="text-xs text-slate-400 line-through font-bold">
+                                {oldPrice.toLocaleString('fr-GN')}
                             </span>
                         )}
-                    </div>
-
-                    <div className="pt-6 border-t-2 border-border/50 flex items-center justify-between">
-                        <div className={cn(
-                            "flex items-center gap-2 text-[10px] font-black uppercase tracking-widest italic",
-                            parseInt(data.stock_quantite) > 10 ? "text-emerald-500" :
-                                parseInt(data.stock_quantite) > 0 ? "text-amber-500" : "text-rose-500"
-                        )}>
-                            <span className={cn(
-                                "size-2 rounded-full",
-                                parseInt(data.stock_quantite) > 10 ? "bg-emerald-500" :
-                                    parseInt(data.stock_quantite) > 0 ? "bg-amber-500 animate-pulse" : "bg-rose-500"
-                            )} />
-                            {parseInt(data.stock_quantite) > 10 ? 'Stock Sécurisé' :
-                                parseInt(data.stock_quantite) > 0 ? `Flux Restreint (${data.stock_quantite})` :
-                                    'Rupture Certifiée'}
-                        </div>
-                        <ShieldCheck className="size-5 text-primary opacity-20" />
                     </div>
                 </div>
             </div>
 
-            {/* AI Sales Insights */}
-            <div className="p-8 rounded-[2.5rem] bg-slate-950 text-white border-4 border-slate-900 shadow-2xl relative overflow-hidden group/tip">
-                <div className="absolute top-0 right-0 size-32 bg-primary/10 rounded-full blur-[60px] -mr-16 -mt-16 opacity-50 transition-transform group-hover/tip:scale-150" />
-                <div className="relative z-10 space-y-4">
-                    <p className="text-executive-label font-black uppercase tracking-[0.3em] text-primary italic flex items-center gap-3">
-                        <Sparkles className="size-4" /> Optimisation de Vente
-                    </p>
-                    <ul className="space-y-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">
-                        <li className="flex items-start gap-3"><ChevronRight className="size-3 text-primary mt-0.5" /> Titre précis = +300% de clics</li>
-                        <li className="flex items-start gap-3"><ChevronRight className="size-3 text-primary mt-0.5" /> Visuel HD obligatoire pour conversion</li>
-                        <li className="flex items-start gap-3"><ChevronRight className="size-3 text-primary mt-0.5" /> Prix barré stimule l'engagement achat</li>
-                    </ul>
+            <div className="p-8 rounded-[2rem] bg-slate-900 text-white space-y-4 shadow-xl border border-slate-800">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                    <Sparkles className="size-4" /> Conseil Marchand
+                </p>
+                <div className="text-[11px] text-slate-400 font-medium leading-relaxed italic space-y-3">
+                    <p>• Un titre clair augmente le taux de clic de 45%.</p>
+                    <p>• Les articles avec description détaillée se vendent 2x mieux.</p>
+                    <p>• L'origine locale 🇬🇳 est un atout majeur pour nos clients.</p>
                 </div>
             </div>
         </div>
     );
 };
 
-// ── Main Controller ───────────────────────────────────────────────────────
 const AddProduct = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -169,7 +131,7 @@ const AddProduct = () => {
         const init = async () => {
             try {
                 const cats = await categoryService.getAll();
-                setCategories(cats);
+                setCategories(cats || []);
 
                 if (isEditMode) {
                     const p = await productService.getById(id);
@@ -185,7 +147,7 @@ const AddProduct = () => {
                     });
                 }
             } catch (err) {
-                toast.error("Échec de l'accès à la base de données.");
+                toast.error("Impossible de récupérer les données.");
             } finally {
                 setIsInitializing(false);
             }
@@ -201,7 +163,7 @@ const AddProduct = () => {
 
     const handleSuggestPrice = async () => {
         if (!formData.nom_produit.trim()) {
-            toast.warning("Désignation de l'actif requise pour l'analyse.");
+            toast.warning("Nom requis pour l'analyse.");
             return;
         }
         const cat = categories.find(c => c.id === formData.categorie_id);
@@ -214,9 +176,9 @@ const AddProduct = () => {
                 formData.description
             );
             setPriceSuggestion(suggestion);
-            toast.success("Analyse IA terminée.");
+            toast.success("Analyse IA complétée.");
         } catch (err) {
-            toast.error("Le protocole IA a échoué.");
+            toast.error("Le service d'audit IA est temporairement indisponible.");
         } finally {
             setIsSuggestingPrice(false);
         }
@@ -226,26 +188,15 @@ const AddProduct = () => {
         if (!priceSuggestion) return;
         setFormData(prev => ({ ...prev, prix_unitaire: priceSuggestion.prix_recommande.toString() }));
         setPriceSuggestion(null);
-        toast.success("Cotation IA appliquée.");
+        toast.success("Prix suggéré appliqué.");
     };
 
     const validate = () => {
         const newErrors = {};
-        if (!formData.nom_produit.trim() || formData.nom_produit.trim().length < 3) {
-            newErrors.nom_produit = "Désignation invalide ou trop courte.";
-        }
-        if (!formData.prix_unitaire || parseFloat(formData.prix_unitaire) <= 0) {
-            newErrors.prix_unitaire = "Cotation monétaire requise.";
-        }
-        if (formData.prix_ancien && parseFloat(formData.prix_ancien) <= parseFloat(formData.prix_unitaire)) {
-            newErrors.prix_ancien = "La référence haute doit excéder la cotation.";
-        }
-        if (formData.stock_quantite === '' || parseInt(formData.stock_quantite) < 0) {
-            newErrors.stock_quantite = "Volume d'inventaire non conforme.";
-        }
-        if (!formData.categorie_id) {
-            newErrors.categorie_id = "Classification obligatoire.";
-        }
+        if (!formData.nom_produit.trim()) newErrors.nom_produit = "Nom requis.";
+        if (!formData.prix_unitaire || parseFloat(formData.prix_unitaire) <= 0) newErrors.prix_unitaire = "Prix invalide.";
+        if (formData.stock_quantite === '' || parseInt(formData.stock_quantite) < 0) newErrors.stock_quantite = "Stock invalide.";
+        if (!formData.categorie_id) newErrors.categorie_id = "Catégorie requise.";
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -253,7 +204,7 @@ const AddProduct = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validate()) {
-            toast.error("Paramètres non validés.");
+            toast.error("Veuillez corriger les erreurs.");
             return;
         }
 
@@ -272,14 +223,14 @@ const AddProduct = () => {
 
             if (isEditMode) {
                 await productService.update(id, payload);
-                toast.success("Référence actualisée.");
+                toast.success("Produit mis à jour.");
             } else {
                 await productService.create(payload);
-                toast.success("Produit référencé avec succès.");
+                toast.success("Produit créé.");
             }
-            setTimeout(() => navigate('/vendor/products'), 1000);
+            navigate('/vendor/products');
         } catch (err) {
-            toast.error(err.response?.data?.message || "Échec de l'enregistrement.");
+            toast.error("Une erreur est survenue lors de l'enregistrement.");
         } finally {
             setIsLoading(false);
         }
@@ -287,126 +238,103 @@ const AddProduct = () => {
 
     if (isInitializing) {
         return (
-            <DashboardLayout title={isEditMode ? "RÉVISION D'ACTIF" : "RÉFÉRENCEMENT"}>
+            <DashboardLayout title={isEditMode ? "Edition" : "Référencement"}>
                 <div className="flex items-center justify-center min-h-[40vh]">
-                    <div className="size-16 border-8 border-primary border-t-transparent rounded-full animate-spin shadow-premium-lg shadow-primary/20" />
+                    <Loader2 className="size-10 text-primary animate-spin" />
                 </div>
             </DashboardLayout>
         );
     }
 
     return (
-        <DashboardLayout title={isEditMode ? "RÉVISION DE RÉFÉRENCE" : "INITIATION DE PRODUIT"}>
-            <div className="space-y-12 animate-in fade-in duration-1000 pb-20">
+        <DashboardLayout title={isEditMode ? "Modifier le Produit" : "Ajouter un Produit"}>
+            <div className="max-w-7xl mx-auto space-y-10 animate-fade-in pb-24 px-6 md:px-10 pt-10">
 
-                {/* ── Executive Header ─────────────────────────────── */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 border-b-4 border-border pb-12">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-100 dark:border-slate-800 pb-8">
                     <div className="space-y-4">
-                        <button
-                            onClick={() => navigate('/vendor/products')}
-                            className="flex items-center gap-3 text-muted-foreground/30 hover:text-primary text-[10px] font-black uppercase tracking-[0.3em] transition-all group mb-4 italic"
-                        >
-                            <ArrowLeft className="size-4 group-hover:-translate-x-2 transition-transform" />
-                            RETOUR VERS L'INVENTAIRE
+                        <button onClick={() => navigate('/vendor/products')} className="flex items-center gap-2 text-[10px] font-bold text-slate-500 hover:text-primary uppercase tracking-widest transition-all group">
+                            <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform" /> Retour
                         </button>
-                        <h2 className="text-5xl md:text-7xl font-black text-foreground italic tracking-tighter uppercase leading-[0.85]">
-                            {isEditMode ? "Mise à Jour <br />" : "Nouvelle <br />"}
-                            <span className="text-primary not-italic underline decoration-primary/20 decoration-8 underline-offset-[-4px]">Référence.</span>
+                        <h2 className="text-4xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">
+                            {isEditMode ? "Révision d'Actif" : "Nouvel Article"}
                         </h2>
                     </div>
                     <div className="flex gap-4">
-                        <button
-                            onClick={() => navigate('/vendor/products')}
-                            className="h-24 px-10 bg-background border-4 border-border rounded-[2.5rem] font-black uppercase tracking-[0.3em] text-[10px] text-muted-foreground/30 hover:text-foreground hover:border-foreground/20 transition-all active-press"
-                        >
-                            ANNULER
-                        </button>
-                        <button
+                        <Button
                             onClick={handleSubmit}
                             disabled={isLoading}
-                            className="h-24 px-12 bg-primary text-white rounded-[2.5rem] font-black uppercase tracking-[0.4em] text-[12px] flex items-center gap-6 shadow-premium-lg shadow-primary/30 hover:scale-105 active:scale-95 transition-all group relative overflow-hidden"
+                            className="h-14 px-10 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center gap-3 shadow-xl"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
-                            {isLoading ? <Loader2 className="size-6 animate-spin" /> : <Save className="size-6" />}
-                            <span className="relative z-10 leading-none pt-1">{isLoading ? 'SYCHRONISATION...' : (isEditMode ? 'SCELLER' : 'PUBLIER')}</span>
-                        </button>
+                            {isLoading ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+                            {isEditMode ? "Sauvegarder" : "Publier l'Article"}
+                        </Button>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 xl:grid-cols-12 gap-12">
-                    
-                    {/* ── Form Section ─────────────────────────────────── */}
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
                     <div className="xl:col-span-8 space-y-10">
-                        {/* Information Grid */}
-                        <div className="glass-card rounded-[3.5rem] border-4 border-border p-12 space-y-12 shadow-premium">
-                            <div className="flex items-center gap-6 border-b-4 border-border pb-8">
-                                <div className="size-16 rounded-[1.5rem] bg-primary text-white flex items-center justify-center shadow-premium-lg shadow-primary/20">
-                                    <Package className="size-8" />
-                                </div>
-                                <h3 className="text-2xl font-black italic tracking-tighter uppercase">Spécifications Techniques</h3>
+                        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] p-10 space-y-10 shadow-sm">
+                            <div className="flex items-center gap-4 text-primary">
+                                <Package className="size-6" />
+                                <h3 className="text-sm font-bold uppercase tracking-widest">Fiche Descriptive</h3>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-12">
-                                <FormField label="Désignation de l'Actif" required error={errors.nom_produit}
-                                    hint={`${formData.nom_produit.length}/100`}>
-                                    <input
+                            <div className="grid grid-cols-1 gap-8">
+                                <FormField label="Désignation" required error={errors.nom_produit}>
+                                    <Input
                                         name="nom_produit"
                                         value={formData.nom_produit}
                                         onChange={handleChange}
-                                        maxLength={100}
-                                        placeholder="EX: ÉCOUTEURS SANS FIL ALPHA GEN-4"
-                                        className="h-20 px-8 rounded-[2rem] border-4 border-border bg-background focus:border-primary/40 text-lg font-black italic uppercase tracking-tighter outline-none transition-all shadow-inner"
+                                        placeholder="NOM DU PRODUIT..."
+                                        className="h-14 px-6 rounded-xl font-bold text-sm uppercase tracking-tight"
                                     />
                                 </FormField>
 
-                                <FormField label="Analytique & Détails (Description)">
+                                <FormField label="Description">
                                     <textarea
                                         name="description"
                                         value={formData.description}
                                         onChange={handleChange}
-                                        rows={6}
-                                        placeholder="DÉCRIVEZ LES SPÉCIFICITÉS, PERFORMANCES ET CAPACITÉS..."
-                                        className="w-full px-8 py-8 rounded-[2rem] border-4 border-border bg-background text-sm font-bold italic uppercase tracking-widest focus:border-primary/40 outline-none transition-all shadow-inner resize-none placeholder:text-muted-foreground/10"
+                                        rows={4}
+                                        placeholder="DÉCRIRE LES CARACTÉRISTIQUES..."
+                                        className="w-full px-6 py-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold uppercase tracking-widest focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none"
                                     />
                                 </FormField>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                                    <FormField label="Classification Taxonomique" required error={errors.categorie_id}>
-                                        <div className="relative group">
-                                            <Layers className="absolute left-6 top-1/2 -translate-y-1/2 size-5 text-muted-foreground/20 group-focus-within:text-primary transition-colors pointer-events-none" />
-                                            <select
-                                                name="categorie_id"
-                                                value={formData.categorie_id}
-                                                onChange={handleChange}
-                                                className="w-full h-20 pl-16 pr-8 rounded-[2rem] border-4 border-border bg-background text-[10px] font-black uppercase tracking-[0.2em] italic focus:border-primary/40 outline-none transition-all shadow-inner appearance-none"
-                                            >
-                                                <option value="">— SÉLECTIONNER CLASSE —</option>
-                                                {categories.map(cat => (
-                                                    <option key={cat.id} value={cat.id}>{cat.nom_categorie.toUpperCase()}</option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <FormField label="Catégorie" required error={errors.categorie_id}>
+                                        <select
+                                            name="categorie_id"
+                                            value={formData.categorie_id}
+                                            onChange={handleChange}
+                                            className="w-full h-14 px-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-bold uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none"
+                                        >
+                                            <option value="">SÉLECTIONNER...</option>
+                                            {categories.map(cat => (
+                                                <option key={cat.id} value={cat.id}>{cat.nom_categorie.toUpperCase()}</option>
+                                            ))}
+                                        </select>
                                     </FormField>
 
-                                    <div className="p-6 rounded-[2rem] bg-accent/20 border-4 border-border flex items-center justify-between group hover:border-emerald-500/20 transition-all">
-                                        <div className="flex items-center gap-6">
-                                            <div className="size-16 rounded-[1.2rem] bg-background border-4 border-border flex items-center justify-center text-3xl shadow-inner group-hover:scale-110 group-hover:rotate-6 transition-all">🇬🇳</div>
+                                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className="text-2xl">🇬🇳</div>
                                             <div>
-                                                <p className="text-executive-label font-black text-foreground uppercase tracking-widest italic mb-1">Actif Local</p>
-                                                <p className="text-[10px] text-muted-foreground/40 font-black uppercase italic">Certification Guinée</p>
+                                                <p className="text-[10px] font-bold text-slate-900 dark:text-white uppercase tracking-widest">Origine Locale</p>
+                                                <p className="text-[8px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-0.5">Produit en Guinée</p>
                                             </div>
                                         </div>
                                         <button
                                             type="button"
                                             onClick={() => setFormData(prev => ({ ...prev, est_local: !prev.est_local }))}
                                             className={cn(
-                                                "relative w-16 h-8 rounded-full transition-all duration-300",
-                                                formData.est_local ? "bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]" : "bg-border"
+                                                "relative w-12 h-6 rounded-full transition-all duration-300 border border-slate-200",
+                                                formData.est_local ? "bg-primary" : "bg-slate-300"
                                             )}
                                         >
                                             <span className={cn(
-                                                "absolute size-6 top-1 rounded-full bg-white shadow-xl transition-all duration-300",
-                                                formData.est_local ? "left-9" : "left-1"
+                                                "absolute size-4 top-1/2 -translate-y-1/2 rounded-full bg-white shadow-sm transition-all",
+                                                formData.est_local ? "right-1" : "left-1"
                                             )} />
                                         </button>
                                     </div>
@@ -414,123 +342,110 @@ const AddProduct = () => {
                             </div>
                         </div>
 
-                        {/* Pricing & Stock Card */}
-                        <div className="glass-card rounded-[3.5rem] border-4 border-border p-12 space-y-10 shadow-premium">
-                            <div className="flex items-center justify-between border-b-4 border-border pb-8">
-                                <div className="flex items-center gap-6">
-                                    <div className="size-16 rounded-[1.5rem] bg-amber-500 text-white flex items-center justify-center shadow-premium-lg shadow-amber-500/20">
-                                        <Tag className="size-8" />
-                                    </div>
-                                    <h3 className="text-2xl font-black italic tracking-tighter uppercase">Cotation & Logistique</h3>
+                        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] p-10 space-y-10 shadow-sm">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4 text-emerald-500">
+                                    <Tag className="size-6" />
+                                    <h3 className="text-sm font-bold uppercase tracking-widest">Cotation & Stock</h3>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={handleSuggestPrice}
                                     disabled={isSuggestingPrice || !formData.nom_produit.trim()}
-                                    className="h-16 px-8 bg-slate-950 text-white rounded-2xl flex items-center gap-4 hover:scale-105 active:scale-95 transition-all shadow-2xl disabled:opacity-20 group/ai"
+                                    className="h-10 px-5 bg-slate-900 text-white rounded-xl flex items-center gap-3 hover:scale-105 active:scale-95 transition-all text-[9px] font-bold uppercase tracking-widest disabled:opacity-30"
                                 >
-                                    {isSuggestingPrice ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4 text-primary group-hover:animate-pulse" />}
-                                    <span className="text-[10px] font-black uppercase tracking-widest italic pt-0.5">Audit IA Prix</span>
+                                    {isSuggestingPrice ? <Loader2 className="size-3 animate-spin" /> : <Sparkles className="size-4 text-primary" />}
+                                    Audit Prix IA
                                 </button>
                             </div>
 
                             {priceSuggestion && (
-                                <div className="p-8 rounded-[2.5rem] bg-emerald-500/5 border-4 border-emerald-500/10 space-y-6 animate-in slide-in-from-top-4 duration-500">
+                                <div className="p-6 bg-primary/5 rounded-2xl border border-primary/20 space-y-6 animate-fade-in">
                                     <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-4">
-                                            <Zap className="size-5 text-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500 italic">Protocole de Suggestion Groq LPU</p>
-                                        </div>
+                                        <p className="text-[9px] font-bold uppercase tracking-widest text-primary italic">Recommandations Strategiques Groq LPU</p>
                                         <button
                                             type="button"
                                             onClick={applyPriceSuggestion}
-                                            className="h-12 px-6 bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-premium-lg shadow-emerald-500/20"
+                                            className="text-[9px] font-bold text-white bg-primary px-4 py-2 rounded-lg uppercase tracking-widest shadow-lg"
                                         >
-                                            APPLIQUER LA COTATION
+                                            Appliquer
                                         </button>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-10">
-                                        <div className="space-y-2">
-                                            <p className="text-executive-label text-muted-foreground/30 font-black uppercase tracking-widest italic">Fourchette Marché</p>
-                                            <p className="text-2xl font-black text-foreground italic tracking-tighter">
-                                                {priceSuggestion.fourchette_min?.toLocaleString()} — {priceSuggestion.fourchette_max?.toLocaleString()} <small className="text-[8px] font-black not-italic opacity-30">GNF</small>
+                                    <div className="grid grid-cols-2 gap-8">
+                                        <div>
+                                            <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest mb-1">Marché Local</p>
+                                            <p className="text-sm font-bold text-slate-900 dark:text-white italic">
+                                                {priceSuggestion.fourchette_min?.toLocaleString()} — {priceSuggestion.fourchette_max?.toLocaleString()} GNF
                                             </p>
                                         </div>
-                                        <div className="space-y-2">
-                                            <p className="text-executive-label text-emerald-500 font-black uppercase tracking-widest italic">Optimale</p>
-                                            <p className="text-4xl font-black text-emerald-500 italic tracking-tighter text-executive-data">
-                                                {priceSuggestion.prix_recommande?.toLocaleString()} <small className="text-[8px] font-black not-italic">GNF</small>
+                                        <div className="text-right">
+                                            <p className="text-[8px] text-primary font-bold uppercase tracking-widest mb-1">Prix Recommandé</p>
+                                            <p className="text-xl font-bold text-primary italic">
+                                                {priceSuggestion.prix_recommande?.toLocaleString()} GNF
                                             </p>
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                                <FormField label="Valeur de Marché (GNF)" required error={errors.prix_unitaire}>
-                                    <input
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <FormField label="Prix Actuel (GNF)" required error={errors.prix_unitaire}>
+                                    <Input
                                         name="prix_unitaire"
                                         type="number"
                                         value={formData.prix_unitaire}
                                         onChange={handleChange}
-                                        placeholder="EX: 250000"
-                                        className="h-20 px-8 rounded-[2rem] border-4 border-border bg-background focus:border-primary/40 text-2xl font-black italic tracking-tighter outline-none transition-all shadow-inner text-executive-data"
+                                        placeholder="0"
+                                        className="h-14 px-6 rounded-xl font-bold text-lg tracking-tight"
                                     />
                                 </FormField>
 
-                                <FormField label="Réf. Avant Promo (Optionnel)" error={errors.prix_ancien}>
-                                    <input
+                                <FormField label="Prix Avant (Optionnel)" error={errors.prix_ancien}>
+                                    <Input
                                         name="prix_ancien"
                                         type="number"
                                         value={formData.prix_ancien}
                                         onChange={handleChange}
-                                        placeholder="EX: 350000"
-                                        className="h-20 px-8 rounded-[2rem] border-4 border-border bg-background focus:border-amber-500/20 text-lg font-black italic text-muted-foreground/30 line-through tracking-tighter outline-none transition-all shadow-inner"
+                                        placeholder="0"
+                                        className="h-14 px-6 rounded-xl font-bold text-sm text-slate-400 line-through tracking-tight"
                                     />
                                 </FormField>
                             </div>
 
-                            <FormField label="Volume d'Inventaire Actif" required error={errors.stock_quantite} hint="Capacité logistique">
+                            <FormField label="Quantité en Stock" required error={errors.stock_quantite}>
                                 <div className="relative group">
-                                    <Hash className="absolute left-6 top-1/2 -translate-y-1/2 size-5 text-muted-foreground/20 group-focus-within:text-primary transition-colors pointer-events-none" />
-                                    <input
+                                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+                                    <Input
                                         name="stock_quantite"
                                         type="number"
                                         value={formData.stock_quantite}
                                         onChange={handleChange}
-                                        placeholder="50"
-                                        className="h-20 pl-16 pr-8 rounded-[2rem] border-4 border-border bg-background text-xl font-black italic outline-none transition-all shadow-inner"
+                                        placeholder="0"
+                                        className="h-14 pl-12 pr-6 rounded-xl font-bold text-sm"
                                     />
                                 </div>
                             </FormField>
                         </div>
 
-                        {/* Media Asset Card */}
-                        <div className="glass-card rounded-[3.5rem] border-4 border-border p-12 space-y-10 shadow-premium">
-                            <div className="flex items-center gap-6 border-b-4 border-border pb-8">
-                                <div className="size-16 rounded-[1.5rem] bg-indigo-500 text-white flex items-center justify-center shadow-premium-lg shadow-indigo-500/20">
-                                    <ImageIcon className="size-8" />
-                                </div>
-                                <h3 className="text-2xl font-black italic tracking-tighter uppercase">Rendu Visuel (HD)</h3>
+                        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] p-10 space-y-10 shadow-sm">
+                            <div className="flex items-center gap-4 text-indigo-500">
+                                <ImageIcon className="size-6" />
+                                <h3 className="text-sm font-bold uppercase tracking-widest">Média</h3>
                             </div>
-                            <FormField label="Protocole d'Asset Médias (URL)" hint="Visuel haute-fidélité requis">
-                                <div className="relative group">
-                                    <ImageIcon className="absolute left-6 top-1/2 -translate-y-1/2 size-5 text-muted-foreground/20 group-focus-within:text-primary transition-colors pointer-events-none" />
-                                    <input
-                                        name="image_url"
-                                        type="url"
-                                        value={formData.image_url}
-                                        onChange={handleChange}
-                                        placeholder="HTTPS://ASSETS.BCA.GN/PRODUCTS/GEN-ALPHA.JPG"
-                                        className="h-20 pl-16 pr-8 rounded-[2rem] border-4 border-border bg-background text-[10px] font-black uppercase tracking-widest italic focus:border-primary/40 outline-none transition-all shadow-inner"
-                                    />
-                                </div>
+                            <FormField label="URL de l'Image HD">
+                                <Input
+                                    name="image_url"
+                                    type="url"
+                                    value={formData.image_url}
+                                    onChange={handleChange}
+                                    placeholder="https://..."
+                                    className="h-14 px-6 rounded-xl font-bold text-[10px] tracking-widest"
+                                />
                             </FormField>
                         </div>
                     </div>
 
-                    {/* ── Preview Section ──────────────────────────────── */}
-                    <div className="xl:col-span-4 h-full">
+                    <div className="xl:col-span-4">
                         <ProductPreview data={formData} categories={categories} />
                     </div>
                 </div>

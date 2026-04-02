@@ -2,10 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import DataTable from '../components/ui/DataTable';
 import StatusBadge from '../components/ui/StatusBadge';
-import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { cn } from '../lib/utils';
-import { Skeleton, TableRowSkeleton, CardSkeleton } from '../components/ui/Loader';
+import { TableRowSkeleton, CardSkeleton } from '../components/ui/Loader';
 import { ErrorState, EmptyState } from '../components/ui/StatusStates';
 import { toast } from 'sonner';
 import {
@@ -16,13 +15,17 @@ import {
     PackageCheck,
     Search,
     ChevronRight,
-    ChevronDown,
     ShoppingBag,
     Filter,
     X,
-    RefreshCw,
-    XCircle,
-    ShieldCheck
+    ShieldCheck,
+    Activity,
+    Zap,
+    Sparkles,
+    Satellite,
+    FileText,
+    MapPin,
+    Smartphone
 } from 'lucide-react';
 import orderService from '../services/orderService';
 
@@ -32,14 +35,13 @@ const UserOrders = () => {
     const [hasError, setHasError] = useState(false);
     const [activeFilter, setActiveFilter] = useState('Tout');
     const [searchQuery, setSearchQuery] = useState('');
-    const [isCancelling, setIsCancelling] = useState(null); // ID de la commande en cours d'annulation
+    const [isCancelling, setIsCancelling] = useState(null);
 
     const fetchOrders = useCallback(async () => {
         setIsLoading(true);
         setHasError(false);
         try {
             const data = await orderService.getMyOrders();
-            // Le backend retourne { orders: [...], total, pages } — on s'adapte
             const list = Array.isArray(data) ? data : (data?.orders || []);
             setOrders(list);
         } catch (err) {
@@ -52,25 +54,30 @@ const UserOrders = () => {
 
     useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
-    // ── Annuler une commande avec remboursement automatique ───────────────────
-    const handleStatusUpdate = async (orderId, newStatus) => {
-        if (newStatus === 'annulé') {
-            const confirmed = window.confirm('Confirmer l\'annulation ? Le montant sera remboursé dans votre portefeuille.');
-            if (!confirmed) return;
-        }
+    const handleCancelOrder = async (orderId) => {
+        const confirmed = window.confirm('CONFIRMER L\'ANNULATION ? LE MONTANT SERA REMBOURSÉ DANS VOTRE PORTEFEUILLE EXÉCUTIF.');
+        if (!confirmed) return;
+
         setIsCancelling(orderId);
         try {
-            await orderService.updateOrderStatus(orderId, newStatus);
-            toast.success(`Commande ${newStatus === 'annulé' ? 'annulée' : 'mise à jour'}. ${newStatus === 'annulé' ? 'Remboursement en cours.' : ''}`);
-            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, statut: newStatus } : o));
+            await orderService.updateOrderStatus(orderId, 'annulé');
+            toast.success('COMMANDE RÉVOQUÉE. REMBOURSEMENT INTÉGRAL EFFECTUÉ.');
+            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, statut: 'annulé' } : o));
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Impossible de mettre à jour la commande.');
+            toast.error(err.response?.data?.message || 'IMPOSSIBLE DE RÉVOQUER LA COMMANDE.');
         } finally {
             setIsCancelling(null);
         }
     };
 
-    const filters = ["Tout", "en_attente_paiement", "payé", "expédié", "livré", "annulé"];
+    const filters = [
+        { key: "Tout", label: "FLUX GLOBAL" },
+        { key: "en_attente_paiement", label: "PENDING" },
+        { key: "payé", label: "INDEXÉ" },
+        { key: "expédié", label: "TRANSIT" },
+        { key: "livré", label: "ARCHIVÉ" },
+        { key: "annulé", label: "RÉVOQUÉ" }
+    ];
 
     const getStatusVariant = (status) => {
         switch (status) {
@@ -78,7 +85,6 @@ const UserOrders = () => {
             case 'expédié': return 'primary';
             case 'livré': return 'success';
             case 'annulé': return 'danger';
-            case 'en_attente':
             case 'en_attente_paiement': return 'warning';
             default: return 'neutral';
         }
@@ -88,27 +94,6 @@ const UserOrders = () => {
         (activeFilter === 'Tout' || o.statut === activeFilter) &&
         (String(o.id || '').toLowerCase().includes(searchQuery.toLowerCase()))
     );
-
-    const stats = [
-        {
-            title: 'Dépenses Totales',
-            value: `${orders.reduce((acc, o) => acc + parseFloat(o.total_ttc || 0), 0).toLocaleString('fr-GN')} GNF`,
-            icon: TrendingUp,
-            color: 'text-primary'
-        },
-        {
-            title: 'Commandes Actives',
-            value: orders.filter(o => o.statut !== 'livré' && o.statut !== 'annulé').length.toString(),
-            icon: PackageCheck,
-            color: 'text-amber-500'
-        },
-        {
-            title: 'Total Commandes',
-            value: orders.length.toString(),
-            icon: Clock,
-            color: 'text-slate-400'
-        },
-    ];
 
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -120,307 +105,268 @@ const UserOrders = () => {
 
     const columns = [
         {
-            label: 'ID Commande',
+            label: 'IDENTIFIANT FLUX',
             render: (row) => (
-                <div className="flex items-center gap-4 py-2">
-                    <div className="size-11 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-slate-800 transition-transform group-hover:scale-110 group-hover:bg-primary group-hover:text-white group-hover:border-primary">
-                        <ShoppingBag className="size-5" />
+                <div className="flex items-center gap-6 py-3 group/item">
+                    <div className="size-14 rounded-2xl bg-white/[0.03] border-4 border-white/5 flex items-center justify-center text-slate-600 transition-all duration-700 group-hover/item:bg-[#FF6600]/10 group-hover/item:text-[#FF6600] group-hover/item:border-[#FF6600]/20 shadow-2xl relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-[#FF6600]/20 to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                        <ShoppingBag className="size-6 relative z-10" />
                     </div>
-                    <div>
-                        <span className="font-black text-slate-900 dark:text-white text-xs tracking-tight italic">#{(row.id || '...').slice(0, 8).toUpperCase()}</span>
-                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] mt-0.5">{row.details?.length || 0} Article(s)</p>
+                    <div className="min-w-[120px]">
+                        <span className="font-black text-white text-sm tracking-tighter italic uppercase pt-1 inline-block">NODE: {(row.id || '...').slice(0, 8).toUpperCase()}</span>
+                        <p className="text-[10px] text-[#FF6600] font-black uppercase tracking-[0.3em] mt-2 italic opacity-60 flex items-center gap-2">
+                            <Activity className="size-3" />
+                            {row.details?.length || 0} UNITÉS
+                        </p>
                     </div>
                 </div>
             )
         },
         {
-            label: 'Horodatage',
+            label: 'INDEX TEMPOREL',
             render: (row) => (
-                <div className="flex flex-col gap-1">
-                    <span className="text-[11px] font-black italic text-slate-900 dark:text-white uppercase tracking-tight">{new Date(row.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-                    <div className="flex items-center gap-1.5 opacity-60">
-                        <Clock className="size-3" />
-                        <span className="text-[10px] font-bold text-slate-400">{new Date(row.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
+                <div className="flex flex-col gap-1.5 py-1">
+                    <span className="text-[12px] font-black text-white uppercase tracking-wider italic">
+                        {new Date(row.createdAt).toLocaleDateString('fr-GN')}
+                    </span>
+                    <span className="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em] italic flex items-center gap-2">
+                        <Clock className="size-3 text-[#FF6600]" />
+                        {new Date(row.createdAt).toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                 </div>
             )
         },
         {
-            label: 'Investissement',
+            label: 'INVESTISSEMENT',
             render: (row) => (
                 <div className="flex flex-col">
-                    <span className="text-sm font-black text-slate-900 dark:text-white italic tracking-tighter">{parseFloat(row.total_ttc).toLocaleString('fr-GN')} <span className="text-[10px] not-italic text-primary">GNF</span></span>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                        <div className="size-1 rounded-full bg-emerald-500" />
-                        <span className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em]">Taxes Incluses</span>
-                    </div>
+                    <span className="text-sm font-black text-white tracking-tighter italic uppercase tabular-nums">
+                        {parseFloat(row.total_ttc).toLocaleString('fr-GN')} <small className="text-[10px] font-black text-[#FF6600] non-italic">GNF</small>
+                    </span>
                 </div>
             )
         },
         {
-            label: 'État Actuel',
+            label: 'STATUT RÉSEAU',
             render: (row) => (
-                <div className="flex justify-start">
-                     <StatusBadge status={row.statut} variant={getStatusVariant(row.statut)} className="px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.15em] border-2" />
-                </div>
+                <StatusBadge status={row.statut} variant={getStatusVariant(row.statut)} className="text-[9px] font-black italic uppercase tracking-widest border-2" />
             )
         },
         {
-            label: 'Actions',
+            label: 'GOUVERNANCE',
             render: (row) => (
-                <div className="flex items-center justify-end gap-5">
+                <div className="flex items-center justify-end gap-6 pr-6">
                     {row.statut === 'payé' && (
                         <button
                             disabled={isCancelling === row.id}
-                            onClick={(e) => { e.stopPropagation(); handleStatusUpdate(row.id, 'annulé'); }}
-                            className="text-[9px] font-black text-slate-400 hover:text-rose-500 transition-all uppercase tracking-[0.2em] italic underline decoration-2 decoration-rose-500/0 hover:decoration-rose-500/100"
+                            onClick={(e) => { e.stopPropagation(); handleCancelOrder(row.id); }}
+                            className="text-[10px] font-black text-slate-600 hover:text-rose-500 transition-all duration-700 uppercase tracking-[0.4em] italic border-b-2 border-transparent hover:border-rose-500 pb-1"
                         >
-                            {isCancelling === row.id ? 'Annulation...' : 'Rembourser'}
+                            {isCancelling === row.id ? 'ANNULATION...' : ' RÉVOQUER'}
                         </button>
                     )}
-                    <Button
-                        variant="outline"
-                        size="sm"
+                    <button
                         onClick={() => openOrderDetails(row)}
-                        className="h-10 px-5 rounded-xl font-black text-[9px] uppercase tracking-[0.2em] text-slate-900 dark:text-white hover:bg-slate-950 dark:hover:bg-white hover:text-white dark:hover:text-slate-950 border-2 border-slate-100 dark:border-slate-800 transition-all flex items-center gap-2 group/btn shadow-sm"
+                        className="h-11 px-8 rounded-xl bg-white/[0.03] border-2 border-white/5 font-black text-[10px] uppercase tracking-[0.4em] text-slate-400 hover:text-white hover:border-[#FF6600]/40 transition-all duration-700 flex items-center gap-3 italic group/btn shadow-3xl"
                     >
-                        Expertise
-                        <ChevronRight className="size-3 group-hover/btn:translate-x-1 transition-transform" />
-                    </Button>
+                        DOSSIER
+                        <ChevronRight className="size-4 group-hover/btn:translate-x-2 transition-transform duration-700" />
+                    </button>
                 </div>
             )
         }
     ];
 
+    const totalInvested = orders.reduce((acc, o) => acc + parseFloat(o.total_ttc || 0), 0);
+    const activeOrders = orders.filter(o => !['livré', 'annulé'].includes(o.statut)).length;
+
     return (
-        <DashboardLayout title="Historique des Commandes">
-            <div className="w-full space-y-12 animate-in fade-in duration-1000 font-inter pb-24 px-6 md:px-10 pt-16">
-                {/* ══════════════════════════════════════════════════
-                    SECTION 1 — EXECUTIVE HEADER
-                ══════════════════════════════════════════════════ */}
-                <div className="flex flex-col gap-6 border-b-2 border-border pb-12">
-                    <div className="flex items-center gap-4">
-                        <div className="size-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_15px_rgba(43,90,255,0.4)]" />
-                        <span className="text-executive-label text-primary">Tableau de Bord Client Elite</span>
-                    </div>
-                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
-                        <div className="space-y-4">
-                            <h1 className="text-5xl md:text-7xl font-black text-foreground tracking-tighter italic uppercase">
-                                Mes <span className="text-primary italic">Commandes</span>
-                            </h1>
-                            <p className="text-executive-label opacity-60 max-w-2xl leading-relaxed italic">
-                                Suivez l'évolution de vos actifs BCA. Gérez vos expéditions et flux financiers avec une visibilité totale.
-                            </p>
+        <DashboardLayout title="CENTRE DE SUIVI TRANSACTIONNEL">
+            <div className="w-full space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-1000 pb-32">
+
+                {/* Stats Header */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                    <div className="p-10 bg-white/[0.02] rounded-[4rem] border-4 border-white/5 shadow-3xl group relative overflow-hidden flex items-center gap-8 border-l-[16px] border-l-[#FF6600]">
+                        <div className="absolute inset-x-0 bottom-0 h-1 bg-[#FF6600]/20 group-hover:h-full transition-all duration-700 opacity-20 pointer-events-none" />
+                        <div className="size-16 rounded-[1.5rem] bg-[#FF6600]/10 flex items-center justify-center text-[#FF6600] border-2 border-[#FF6600]/20 shadow-3xl group-hover:rotate-12 transition-transform duration-700 relative z-10">
+                            <TrendingUp className="size-8" />
                         </div>
-                        <div className="flex items-center gap-6 bg-accent/30 p-3 rounded-[2rem] border-2 border-border shadow-inner">
-                             <div className="flex flex-col items-center px-8 py-3 border-r-2 border-border">
-                                 <span className="text-executive-label opacity-50">Actives</span>
-                                 <span className="text-executive-data text-2xl text-primary">{orders.filter(o => o.statut !== 'livré' && o.statut !== 'annulé').length}</span>
-                             </div>
-                             <div className="flex flex-col items-center px-8 py-3">
-                                 <span className="text-executive-label opacity-50">Total</span>
-                                 <span className="text-executive-data text-2xl text-foreground">{orders.length}</span>
-                             </div>
+                        <div className="relative z-10">
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-3 italic">VALEUR TOTALE INDEXÉE</p>
+                            <p className="text-4xl font-black text-white uppercase italic tracking-tighter tabular-nums">{totalInvested.toLocaleString('fr-GN')} <small className="text-xs opacity-40 font-black italic">GNF</small></p>
+                        </div>
+                    </div>
+                    <div className="p-10 bg-white/[0.02] rounded-[4rem] border-4 border-white/5 shadow-3xl group relative overflow-hidden flex items-center gap-8 border-l-[16px] border-l-amber-500">
+                        <div className="absolute inset-x-0 bottom-0 h-1 bg-amber-500/20 group-hover:h-full transition-all duration-700 opacity-20 pointer-events-none" />
+                        <div className="size-16 rounded-[1.5rem] bg-amber-500/10 flex items-center justify-center text-amber-500 border-2 border-amber-500/20 shadow-3xl group-hover:rotate-12 transition-transform duration-700 relative z-10">
+                            <Zap className="size-8" />
+                        </div>
+                        <div className="relative z-10">
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-3 italic">FLUX ACTIFS</p>
+                            <p className="text-4xl font-black text-white uppercase italic tracking-tighter">{activeOrders}</p>
+                        </div>
+                    </div>
+                    <div className="p-10 bg-white/[0.02] rounded-[4rem] border-4 border-white/5 shadow-3xl group relative overflow-hidden flex items-center gap-8 border-l-[16px] border-l-slate-700">
+                        <div className="absolute inset-x-0 bottom-0 h-1 bg-white/10 group-hover:h-full transition-all duration-700 opacity-20 pointer-events-none" />
+                        <div className="size-16 rounded-[1.5rem] bg-white/5 flex items-center justify-center text-slate-400 border-2 border-white/10 shadow-3xl group-hover:rotate-12 transition-transform duration-700 relative z-10">
+                            <Clock className="size-8" />
+                        </div>
+                        <div className="relative z-10">
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-3 italic">ARCHIVES RÉSEAU</p>
+                            <p className="text-4xl font-black text-white uppercase italic tracking-tighter">{orders.length}</p>
                         </div>
                     </div>
                 </div>
 
-                {/* ══════════════════════════════════════════════════
-                    SECTION 2 — EXECUTIVE STATS
-                ══════════════════════════════════════════════════ */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {isLoading ? (
-                        [1, 2, 3].map(i => <CardSkeleton key={i} />)
-                    ) : (
-                        stats.map((stat, idx) => (
-                            <div key={idx} className="bg-card p-12 rounded-[3.5rem] border-2 border-border shadow-premium group hover:border-primary/30 transition-all duration-500 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 size-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:opacity-20 transition-opacity" />
-                                <div className="flex justify-between items-start mb-10">
-                                    <div className={cn("size-16 rounded-[1.2rem] bg-accent flex items-center justify-center border-2 border-border transition-all duration-500 group-hover:bg-primary group-hover:text-white group-hover:shadow-lg group-hover:shadow-primary/20", stat.color.includes('primary') ? 'text-primary' : 'text-foreground')}>
-                                        <stat.icon className="size-8" />
-                                    </div>
-                                    <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-500/5 rounded-full border-2 border-emerald-500/10">
-                                        <TrendingUp className="size-4 text-emerald-500" />
-                                        <span className="text-executive-label text-emerald-500 italic">+12%</span>
-                                    </div>
-                                </div>
-                                <div className="space-y-2 relative z-10">
-                                    <p className="text-executive-label opacity-60">{stat.title}</p>
-                                    <h4 className="text-executive-data text-4xl">{stat.value}</h4>
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-
-                {/* Filter & Search Bar — Premium Surface */}
-                <div className="rounded-[3.5rem] border-2 border-border overflow-hidden shadow-premium bg-card">
-                    <div className="p-10 border-b-2 border-border flex flex-col lg:flex-row lg:items-center justify-between gap-12 bg-accent/10">
-                        <div className="flex items-center gap-5 overflow-x-auto pb-4 lg:pb-0 scrollbar-hide">
-                            {filters.map((filter, idx) => (
+                {/* Main Table Surface */}
+                <div className="bg-white/[0.01] border-4 border-white/5 rounded-[4rem] overflow-hidden shadow-3xl">
+                    <div className="p-12 border-b-4 border-white/5 bg-white/[0.02] flex flex-col lg:flex-row lg:items-center justify-between gap-12">
+                        <div className="flex items-center gap-6 overflow-x-auto pb-4 lg:pb-0 scrollbar-hide py-2">
+                            {filters.map((f, idx) => (
                                 <button
                                     key={idx}
-                                    onClick={() => setActiveFilter(filter)}
+                                    onClick={() => setActiveFilter(f.key)}
                                     className={cn(
-                                        "px-8 py-3.5 rounded-[1.2rem] text-executive-label transition-all whitespace-nowrap border-2",
-                                        activeFilter === filter
-                                            ? "bg-foreground text-background border-foreground shadow-[0_15px_30px_-10px_rgba(0,0,0,0.3)] scale-105"
-                                            : "bg-accent/50 border-transparent text-muted-foreground hover:border-primary/40 hover:text-primary"
+                                        "px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] italic transition-all duration-700 border-4 whitespace-nowrap",
+                                        activeFilter === f.key
+                                            ? "bg-[#FF6600] text-white border-[#FF6600] shadow-3xl scale-110"
+                                            : "bg-white/5 border-transparent text-slate-600 hover:text-white"
                                     )}
                                 >
-                                    {filter === 'Tout' ? 'Alpha View' : filter.replace(/_/g, ' ').toUpperCase()}
+                                    {f.label}
                                 </button>
                             ))}
                         </div>
-  
-                        <div className="relative group/search w-full lg:w-[450px]">
-                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground size-5 group-focus-within/search:text-primary transition-colors" />
+
+                        <div className="relative group w-full lg:w-[32rem]">
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#FF6600]/20 to-transparent blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-1000" />
+                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 size-6 group-focus-within:text-[#FF6600] transition-all duration-700 relative z-10" />
                             <input
-                                className="w-full pl-16 pr-8 h-16 bg-accent border-2 border-transparent focus:border-primary/20 focus:bg-background transition-all rounded-[1.5rem] text-sm font-black italic placeholder:text-muted-foreground/40 shadow-inner"
-                                placeholder="TRACKING ID: RECHERCHE CRITIQUE..."
+                                className="w-full pl-16 pr-8 h-16 bg-white/[0.03] border-4 border-white/5 group-focus-within:border-[#FF6600]/40 rounded-2xl text-sm font-black uppercase tracking-[0.2em] italic placeholder:text-slate-700 outline-none relative z-10 transition-all duration-700 text-white"
+                                placeholder="REHERCHER IDENTIFIANT RÉSEAU..."
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
                     </div>
-                    <CardContent className="p-0">
+
+                    <div className="p-4">
                         {isLoading ? (
-                            <div className="divide-y divide-border/50">
-                                {[1, 2, 3, 4, 5].map(i => <TableRowSkeleton key={i} />)}
+                            <div className="p-12 space-y-8">
+                                {[1, 2, 3, 4, 5].map(i => <TableRowSkeleton key={i} className="h-20 bg-white/[0.02] rounded-2xl" />)}
                             </div>
                         ) : hasError ? (
-                            <div className="p-20 text-center">
+                            <div className="p-24 text-center">
                                 <ErrorState />
                             </div>
                         ) : filteredOrders.length > 0 ? (
                             <DataTable
                                 columns={columns}
                                 data={filteredOrders}
-                                className="border-none shadow-none"
+                                className="bg-transparent border-0"
                             />
                         ) : (
-                            <div className="p-20">
-                                <EmptyState
-                                    title="Silence radio"
-                                    description="Aucune commande ne correspond à vos critères de recherche pour le moment."
-                                    icon={ShoppingBag}
-                                />
+                            <div className="py-40 text-center opacity-20 flex flex-col items-center gap-10">
+                                <ShoppingBag className="size-24 animate-pulse text-slate-500" />
+                                <p className="text-[12px] font-black uppercase tracking-[0.6em] italic">AUCUN FLUX IDENTIFIÉ POUR CE FILTRE</p>
                             </div>
                         )}
-                    </CardContent>
+                    </div>
                 </div>
 
-                {/* ══════════════════════════════════════════════════
-                    SECTION 3 — PREMIUM INVOICE MODAL
-                ══════════════════════════════════════════════════ */}
+                {/* Detailed Modal Premium Design */}
                 {isModalOpen && selectedOrder && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-xl animate-in fade-in duration-500">
-                        <div className="bg-white dark:bg-slate-900 w-full max-w-3xl rounded-[3rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.4)] overflow-hidden border border-slate-200/50 dark:border-slate-800 animate-in zoom-in-95 duration-500 relative">
-                            {/* Decorative background element */}
-                            <div className="absolute top-0 right-0 size-64 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32" />
-                            
-                            <div className="p-10 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between relative z-10">
-                                <div className="flex items-center gap-6">
-                                    <div className="size-16 rounded-[1.5rem] bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/20 rotate-3">
-                                        <PackageCheck className="size-8" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter italic">Expertise Commande</h3>
-                                        <div className="flex items-center gap-3 mt-1.5">
-                                            <span className="text-[11px] font-black text-primary uppercase tracking-[0.2em]">#{(selectedOrder.id || '').slice(0, 12).toUpperCase()}</span>
-                                            <div className="size-1 rounded-full bg-slate-300" />
-                                            <StatusBadge status={selectedOrder.statut} variant={getStatusVariant(selectedOrder.statut)} className="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border-2" />
-                                        </div>
-                                    </div>
-                                </div>
-                                <button onClick={() => setIsModalOpen(false)} className="size-12 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 transition-colors">
-                                    <X className="size-6" />
-                                </button>
-                            </div>
- 
-                            <div className="p-12 space-y-12 max-h-[65vh] overflow-y-auto scrollbar-hide relative z-10">
-                                {/* Logistic Dispatch */}
-                                <div className="space-y-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="px-4 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700">
-                                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 italic">01. Logistique de Livraison</span>
-                                        </div>
-                                    </div>
-                                    <div className="p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/20 grid grid-cols-2 gap-10">
-                                        <div className="space-y-2">
-                                            <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em]">Destinataire Final</p>
-                                            <p className="text-sm font-black text-slate-900 dark:text-white uppercase italic tracking-tight">{selectedOrder.nom_destinataire || 'Client BCA'}</p>
-                                        </div>
-                                        <div className="space-y-2 text-right">
-                                            <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em]">Canal Mobile</p>
-                                            <p className="text-sm font-black text-slate-900 dark:text-white italic tracking-tight">{selectedOrder.telephone_livraison || '---'}</p>
-                                        </div>
-                                        <div className="col-span-2 space-y-2 pt-4 border-t border-slate-100 dark:border-slate-800">
-                                            <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em]">Point de Chute Certifié</p>
-                                            <p className="text-sm font-black text-slate-900 dark:text-white leading-relaxed italic tracking-tight">{selectedOrder.adresse_livraison || 'Libre-service (Aéroport GBE)'}</p>
-                                        </div>
-                                    </div>
-                                </div>
- 
-                                {/* Asset manifest */}
-                                <div className="space-y-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="px-4 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700">
-                                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 italic">02. Manifeste des Articles</span>
-                                        </div>
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-8 bg-black/80 backdrop-blur-3xl animate-in fade-in duration-500">
+                        <div className="bg-white group rounded-[4rem] border-x-[16px] border-[#FF6600] w-full max-w-4xl shadow-3xl animate-in zoom-in-95 duration-700 relative overflow-hidden flex flex-col lg:flex-row max-h-[90vh]">
+                            <div className="absolute top-0 right-0 size-[40rem] bg-[#FF6600]/10 rounded-full blur-[150px] -mr-64 -mt-64 transition-transform group-hover:scale-125 duration-[4s]" />
+
+                            {/* Left Side: Summary Card */}
+                            <div className="lg:w-2/5 bg-black p-12 flex flex-col justify-between relative z-10">
+                                <div className="space-y-12">
+                                    <div className="size-24 rounded-[2.5rem] bg-[#FF6600] flex items-center justify-center text-white shadow-3xl shadow-[#FF6600]/20 rotate-3 group-hover:rotate-12 transition-transform duration-1000">
+                                        <PackageCheck className="size-12" />
                                     </div>
                                     <div className="space-y-4">
+                                        <h3 className="text-4xl font-black text-white uppercase tracking-tighter leading-none italic">DOSSIER <br /> TRANSACTION</h3>
+                                        <div className="inline-flex items-center gap-4 px-6 py-2 bg-[#FF6600]/10 border-2 border-[#FF6600]/20 rounded-2xl text-[#FF6600] text-[10px] font-black uppercase tracking-[0.3em] italic">
+                                            #{(selectedOrder.id || '').slice(0, 12).toUpperCase()}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-10 pt-12 border-t border-white/10">
+                                    <div className="flex items-center gap-6">
+                                        <div className="size-12 rounded-xl bg-white/5 flex items-center justify-center text-[#FF6600] border-2 border-white/10">
+                                            <MapPin className="size-6" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.3em] italic mb-1">DESTINATION FLUX</p>
+                                            <p className="text-[12px] font-black text-white uppercase italic tracking-wider leading-relaxed">{selectedOrder.adresse_livraison}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-6">
+                                        <div className="size-12 rounded-xl bg-white/5 flex items-center justify-center text-[#FF6600] border-2 border-white/10">
+                                            <Smartphone className="size-6" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.3em] italic mb-1">CANAL CONTACT</p>
+                                            <p className="text-[14px] font-black text-white font-mono">{selectedOrder.telephone_livraison}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right Side: List & Totals */}
+                            <div className="flex-1 bg-white p-12 lg:p-16 flex flex-col justify-between relative z-10 overflow-hidden">
+                                <button onClick={() => setIsModalOpen(false)} className="absolute top-10 right-10 size-14 rounded-2xl hover:bg-black/5 flex items-center justify-center text-slate-400 hover:text-black transition-all">
+                                    <X className="size-8" />
+                                </button>
+
+                                <div className="space-y-10 flex-1 overflow-y-auto pr-6 scrollbar-hide mb-12">
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-4">
+                                            <FileText className="size-5 text-[#FF6600]" />
+                                            <h4 className="text-[11px] font-black text-black uppercase tracking-[0.5em] italic">COMPOSITION DE L'EXPÉDITION</h4>
+                                        </div>
                                         {selectedOrder.details?.map((item, idx) => (
-                                            <div key={idx} className="flex items-center gap-6 p-6 rounded-[1.5rem] border border-slate-50 dark:border-slate-800 hover:border-primary/30 transition-all group/item bg-white dark:bg-slate-900 shadow-sm">
-                                                <div className="size-16 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-100 dark:border-slate-700 transition-transform group-hover/item:scale-110">
-                                                    {item.produit?.image_url ? (
-                                                        <img src={item.produit.image_url} className="w-full h-full object-cover" />
-                                                    ) : <ShoppingBag className="text-slate-200 size-8" />}
+                                            <div key={idx} className="flex items-center gap-8 p-6 rounded-3xl border-4 border-black/5 bg-slate-50/50 group/item hover:bg-black hover:border-black transition-all duration-700 shadow-xl">
+                                                <div className="size-20 rounded-2xl bg-white border-2 border-black/5 flex items-center justify-center overflow-hidden shrink-0 group-hover/item:scale-110 transition-transform duration-700">
+                                                    {item.produit?.image_url ? <img src={item.produit.image_url} className="w-full h-full object-cover" /> : <ShoppingBag className="size-8 text-slate-300" />}
                                                 </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="font-black text-slate-900 dark:text-white text-sm truncate italic tracking-tight">{item.produit?.nom_produit || 'Article BCA Connect'}</p>
-                                                    <div className="flex items-center gap-3 mt-1.5">
-                                                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-lg">Unité × {item.quantite}</span>
-                                                    </div>
+                                                <div className="flex-1 space-y-2">
+                                                    <p className="font-black text-black text-sm uppercase tracking-tighter italic group-hover/item:text-[#FF6600] transition-colors">{item.produit?.nom_produit}</p>
+                                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em] italic group-hover/item:text-white/40">QUANTITÉ: {item.quantite} UNITÉS</p>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="font-black text-slate-900 dark:text-white text-sm italic tracking-tight">{parseFloat(item.prix_unitaire_achat).toLocaleString('fr-GN')} <span className="text-[9px] not-italic text-primary">GNF</span></p>
+                                                    <p className="font-black text-black text-lg tracking-tighter italic uppercase tabular-nums group-hover/item:text-white">{parseFloat(item.prix_unitaire_achat).toLocaleString('fr-GN')} <small className="text-[10px] font-black text-[#FF6600] non-italic">GNF</small></p>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
- 
-                                {/* Fiscal Settlement */}
-                                <div className="pt-10 border-t border-slate-100 dark:border-slate-800 space-y-4">
-                                    <div className="flex justify-between items-center text-xs">
-                                        <span className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">Valeur Marchande (HT)</span>
-                                        <span className="text-slate-900 dark:text-white font-black italic">{parseFloat(selectedOrder.total_ht || 0).toLocaleString('fr-GN')} GNF</span>
+
+                                <div className="pt-10 border-t-8 border-black space-y-6">
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.4em] italic text-slate-400">
+                                            <span>VALEUR BRUTE (HT)</span>
+                                            <span>{parseFloat(selectedOrder.total_ht || 0).toLocaleString('fr-GN')} GNF</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.4em] italic text-slate-400">
+                                            <span>TAXE INDEXÉE (GVT)</span>
+                                            <span>{parseFloat(selectedOrder.total_ttc - (selectedOrder.total_ht || 0)).toLocaleString('fr-GN')} GNF</span>
+                                        </div>
                                     </div>
-                                    <div className="flex justify-between items-center text-xs">
-                                        <span className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">Taxes & Frais Service</span>
-                                        <span className="text-slate-900 dark:text-white font-black italic">{parseFloat(selectedOrder.total_ttc - (selectedOrder.total_ht || 0)).toLocaleString('fr-GN')} GNF</span>
-                                    </div>
-                                    <div className="flex justify-between items-center pt-6 border-t-2 border-slate-950 dark:border-white animate-in slide-in-from-bottom-2">
-                                        <div className="flex flex-col">
-                                             <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.3em] italic">Règlement Final</span>
-                                             <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mt-1">Transaction Libérée</span>
+                                    <div className="flex justify-between items-end bg-black p-8 rounded-[2rem] text-white shadow-3xl">
+                                        <div className="space-y-1">
+                                            <span className="text-[10px] font-black text-[#FF6600] uppercase tracking-[0.5em] italic">MONTANT TOTAL RÉGLÉ</span>
+                                            <p className="text-sm font-black text-white/40 uppercase tracking-[0.2em] italic">TRANSACTION CERTIFIÉE BCA</p>
                                         </div>
                                         <div className="flex flex-col items-end leading-none">
-                                            <span className="text-3xl font-black text-primary tracking-tighter italic">{parseFloat(selectedOrder.total_ttc).toLocaleString('fr-GN')}</span>
-                                            <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mt-1">GNF</span>
+                                            <span className="text-5xl font-black text-white tracking-tighter tabular-nums italic uppercase">{parseFloat(selectedOrder.total_ttc).toLocaleString('fr-GN')} <small className="text-xl font-black text-[#FF6600] non-italic">GNF</small></span>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
- 
-                            <div className="p-10 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 flex justify-between items-center relative z-10">
-                                <div className="flex items-center gap-3">
-                                     <ShieldCheck className="size-5 text-emerald-500 animate-pulse" />
-                                     <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest italic">Certifié par l'Algorithme BCA Guard</span>
-                                </div>
-                                <Button onClick={() => setIsModalOpen(false)} className="rounded-[1.2rem] px-10 h-14 font-black uppercase tracking-[0.2em] text-[10px] shadow-xl shadow-slate-900/10 hover:scale-105 transition-transform">Fermer le Dossier</Button>
                             </div>
                         </div>
                     </div>

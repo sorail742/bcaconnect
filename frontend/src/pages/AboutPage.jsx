@@ -4,25 +4,26 @@ import PublicLayout from '../components/layout/PublicLayout';
 import { Button } from '../components/ui/Button';
 import {
     ShieldCheck, Zap, Users, TrendingUp, Heart,
-    MapPin, ArrowRight, Star, Award, Globe, Smartphone
+    MapPin, ArrowRight, Star, Award, Globe, Smartphone,
+    ChevronRight, Sparkles
 } from 'lucide-react';
 
 const STATS = [
-    { val: '50K+', label: 'Utilisateurs Actifs', icon: Users, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
-    { val: '1.2K+', label: 'Boutiques Partenaires', icon: Award, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
+    { val: '50K+', label: 'Utilisateurs Actifs', icon: Users, color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
+    { val: '1.2K+', label: 'Boutiques Partenaires', icon: Award, color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
     { val: '98.4%', label: 'Taux de Satisfaction', icon: Star, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-    { val: '15M+', label: 'Transactions Sécurisées', icon: ShieldCheck, color: 'text-primary', bg: 'bg-primary/10 border-primary/20' },
+    { val: '15M+', label: 'Transactions Sécurisées', icon: ShieldCheck, color: 'text-[#FF6600]', bg: 'bg-[#FF6600]/10 border-[#FF6600]/20' },
 ];
 
 const TEAM = [
-    { name: 'Mamadou Keita', role: 'Fondateur & CEO', expertise: 'Fintech & Innovation', img: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200' },
-    { name: 'Fatoumata Diallo', role: 'Directrice Produit', expertise: 'UX & Marketplace', img: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200' },
-    { name: 'Ibrahim Camara', role: 'CTO', expertise: 'Architecture & IA', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200' },
+    { name: 'Mamadou Keita', role: 'Fondateur & CEO', expertise: 'Fintech & Innovation', img: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400' },
+    { name: 'Fatoumata Diallo', role: 'Directrice Produit', expertise: 'UX & Marketplace', img: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400' },
+    { name: 'Ibrahim Camara', role: 'CTO', expertise: 'Architecture & IA', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400' },
 ];
 
 const VALUES = [
     { icon: ShieldCheck, title: 'Confiance & Transparence', desc: 'Chaque transaction est auditée et chaque marchand est rigoureusement vérifié avant d\'accéder à la plateforme.', color: 'text-emerald-400' },
-    { icon: Zap, title: 'Innovation Africaine', desc: 'Nous construisons des solutions technologiques pensées pour les réalités africaines, incluant le mode hors-ligne.', color: 'text-primary' },
+    { icon: Zap, title: 'Innovation Africaine', desc: 'Nous construisons des solutions technologiques pensées pour les réalités africaines, incluant le mode hors-ligne.', color: 'text-[#FF6600]' },
     { icon: Heart, title: 'Impact Local', desc: 'Notre mission est de créer 100 000 emplois indirects en numérisant le commerce informel en Guinée.', color: 'text-rose-400' },
     { icon: Globe, title: 'Inclusion Financière', desc: 'Notre portefeuille virtuel intégré permet à tous, bancarisés ou non, de participer à l\'économie numérique.', color: 'text-blue-400' },
 ];
@@ -30,51 +31,49 @@ const VALUES = [
 const AboutPage = () => {
     return (
         <PublicLayout>
-            <div className="font-inter pb-32 bg-background animate-in fade-in duration-1000">
+            <div className="bg-[#0A0D14] min-h-screen text-white font-inter">
 
                 {/* ══════════════════════════════════════════════════
                     EXECUTIVE HERO
                 ══════════════════════════════════════════════════ */}
-                <section className="relative min-h-[85vh] flex items-center overflow-hidden bg-background border-b-8 border-primary shadow-premium-lg">
+                <section className="relative min-h-[90vh] flex items-center overflow-hidden border-b-8 border-white/5">
                     <div className="absolute inset-0 z-0">
-                        {/* Dark radial gradient for contrast */}
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,theme(colors.primary.DEFAULT/0.2),transparent_70%)] opacity-40" />
-                        <div className="absolute top-[-20%] left-[-10%] size-[60rem] bg-primary/10 blur-[180px] rounded-full mix-blend-screen pointer-events-none" />
-                        <div className="absolute bottom-[-20%] right-[-10%] size-[60rem] bg-blue-600/5 blur-[180px] rounded-full mix-blend-screen pointer-events-none" />
-                        
-                        {/* Premium Grid Pattern (Targeting Dark Mode Parity) */}
-                        <div className="absolute inset-0 opacity-[0.05] dark:opacity-[0.02]" style={{
-                            backgroundImage: `linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)`,
+                        <div className="absolute top-[-10%] left-[-10%] size-[60rem] bg-[#FF6600]/10 blur-[180px] rounded-full mix-blend-screen pointer-events-none" />
+                        <div className="absolute bottom-[-10%] right-[-10%] size-[60rem] bg-[#FF6600]/5 blur-[180px] rounded-full mix-blend-screen pointer-events-none" />
+
+                        {/* Premium Grid Pattern */}
+                        <div className="absolute inset-0 opacity-[0.03]" style={{
+                            backgroundImage: `linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)`,
                             backgroundSize: '5rem 5rem'
                         }} />
-                        <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-background to-transparent" />
+                        <div className="absolute inset-x-0 bottom-0 h-96 bg-gradient-to-t from-[#0A0D14] to-transparent" />
                     </div>
 
-                    <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-40 text-center space-y-12 animate-in slide-in-from-bottom-12 duration-1000 delay-200">
-                        <span className="inline-flex items-center gap-4 px-6 py-3 bg-card/40 border-2 border-border text-primary text-executive-label font-black uppercase tracking-[0.4em] rounded-full backdrop-blur-3xl shadow-premium italic">
-                            <MapPin className="size-4 animate-bounce" /> CONAKRY, GUINÉE · PROTOCOLE ÉTABLI 2024
+                    <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-40 text-center space-y-16 animate-in slide-in-from-bottom-12 duration-1000 delay-200">
+                        <span className="inline-flex items-center gap-4 px-8 py-3 bg-white/5 border-2 border-white/10 text-[#FF6600] text-[11px] font-black uppercase tracking-[0.5em] rounded-full backdrop-blur-3xl italic">
+                            <MapPin className="size-4" /> CONAKRY · GUINÉE · PROTOCOLE EST. 2024
                         </span>
-                        
-                        <h1 className="text-7xl md:text-9xl lg:text-[10rem] font-black text-foreground tracking-tighter leading-[0.8] uppercase italic drop-shadow-2xl">
-                            L'Avenir du <br />
-                            <span className="text-primary not-italic underline decoration-border/20 decoration-8 underline-offset-[-4px]">Commerce B2B.</span>
+
+                        <h1 className="text-7xl md:text-9xl lg:text-[11rem] font-black tracking-tighter leading-[0.8] uppercase italic text-white drop-shadow-2xl">
+                            L'AVENIR DU <br />
+                            <span className="text-[#FF6600] not-italic">COMMERCE B2B.</span>
                         </h1>
-                        
-                        <p className="text-muted-foreground/60 text-lg md:text-2xl font-bold tracking-widest uppercase max-w-4xl mx-auto leading-relaxed border-l-8 border-primary/20 pl-10 italic">
+
+                        <p className="text-slate-400 text-lg md:text-2xl font-bold tracking-widest uppercase max-w-4xl mx-auto leading-relaxed border-l-8 border-[#FF6600]/20 pl-10 italic">
                             BCA Connect est la première marketplace Fintech de Guinée combinant un écosystème de paiement sécurisé,
-                            une IA de confiance, et une infrastructure haute disponibilité. L'excellence pour les entrepreneurs modernes.
+                            une IA de confiance, et une infrastructure haute disponibilité.
                         </p>
-                        
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-8 pt-12">
+
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-10 pt-8">
                             <Link to="/register">
-                                <Button className="h-20 px-16 rounded-[2rem] font-black uppercase tracking-[0.3em] text-xs shadow-premium-lg shadow-primary/30 gap-6 hover:shadow-primary/50 transition-all hover:scale-105 active:scale-95 group overflow-hidden relative border-2 border-primary">
+                                <Button className="h-24 px-16 rounded-[2.5rem] font-black uppercase tracking-[0.4em] text-xs bg-[#FF6600] border-4 border-[#FF6600] shadow-2xl shadow-[#FF6600]/30 gap-8 hover:scale-110 active:scale-95 transition-all group overflow-hidden relative">
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
-                                    Rejoindre l'Élite <ArrowRight className="size-6 group-hover:translate-x-2 transition-transform" />
+                                    Initialiser l'Adhésion <ArrowRight className="size-6 group-hover:translate-x-2 transition-transform" />
                                 </Button>
                             </Link>
                             <Link to="/catalog">
-                                <Button variant="outline" className="h-20 px-16 rounded-[2rem] font-black uppercase tracking-[0.3em] text-xs border-4 border-border text-foreground hover:bg-card/40 hover:border-primary/40 transition-all hover:scale-105 active:scale-95 bg-card/20 backdrop-blur-xl">
-                                    Accéder au Catalogue Officiel
+                                <Button variant="outline" className="h-24 px-16 rounded-[2.5rem] font-black uppercase tracking-[0.4em] text-xs border-4 border-white/5 text-white hover:border-[#FF6600]/40 transition-all hover:scale-105 active:scale-95 bg-white/5 backdrop-blur-3xl italic">
+                                    Accéder au Catalogue
                                 </Button>
                             </Link>
                         </div>
@@ -84,18 +83,18 @@ const AboutPage = () => {
                 {/* ══════════════════════════════════════════════════
                     EXECUTIVE STATS
                 ══════════════════════════════════════════════════ */}
-                <section className="bg-background border-b-4 border-border py-28 relative z-20">
+                <section className="py-32 relative z-20 border-b-8 border-white/5">
                     <div className="max-w-7xl mx-auto px-6 md:px-12">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
                             {STATS.map((stat, i) => (
-                                <div key={i} className="p-10 rounded-[3rem] bg-card border-4 border-border flex flex-col items-center text-center gap-6 hover:scale-105 transition-all duration-700 shadow-premium group relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                    <div className={`size-20 rounded-[1.5rem] ${stat.bg} flex items-center justify-center group-hover:-translate-y-4 transition-all duration-700 shadow-lg border-2 border-current/10 relative z-10`}>
+                                <div key={i} className="p-12 rounded-[4rem] bg-white/[0.02] border-4 border-white/5 flex flex-col items-center text-center gap-8 hover:scale-105 hover:bg-white/[0.04] transition-all duration-700 shadow-2xl group relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-[#FF6600]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                    <div className={`size-20 rounded-[1.5rem] ${stat.bg} flex items-center justify-center group-hover:-translate-y-4 transition-all duration-700 shadow-xl border-2 border-current/10 relative z-10`}>
                                         <stat.icon className={`size-10 ${stat.color}`} />
                                     </div>
                                     <div className="relative z-10">
-                                        <p className={`text-6xl font-black italic tracking-tighter ${stat.color} leading-none`}>{stat.val}</p>
-                                        <p className="text-executive-label font-black uppercase tracking-[0.3em] text-muted-foreground/40 mt-4 italic">{stat.label}</p>
+                                        <p className="text-6xl font-black italic tracking-tighter text-white leading-none">{stat.val}</p>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mt-6 italic">{stat.label}</p>
                                     </div>
                                 </div>
                             ))}
@@ -104,62 +103,59 @@ const AboutPage = () => {
                 </section>
 
                 {/* ══════════════════════════════════════════════════
-                    NOTRE HISTOIRE (EXECUTIVE LAYOUT)
+                    NOTRE HISTOIRE
                 ══════════════════════════════════════════════════ */}
-                <section className="py-40 max-w-7xl mx-auto px-6 md:px-12">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
-                        <div className="space-y-12">
+                <section className="py-48 max-w-7xl mx-auto px-6 md:px-12">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-40 items-center">
+                        <div className="space-y-16">
                             <div>
-                                <div className="flex items-center gap-4 mb-6">
-                                    <div className="size-4 rounded-full bg-primary animate-pulse shadow-[0_0_12px_rgba(43,90,255,0.6)]" />
-                                    <span className="text-executive-label font-black text-primary uppercase tracking-[0.4em] italic">Genèse Mutuelle</span>
+                                <div className="flex items-center gap-6 mb-8">
+                                    <div className="size-4 rounded-full bg-[#FF6600] animate-pulse shadow-[0_0_20px_rgba(255,102,0,0.4)]" />
+                                    <span className="text-[10px] font-black text-[#FF6600] uppercase tracking-[0.5em] italic">NOTRE PHILOSOPHIE</span>
                                 </div>
-                                <h2 className="text-6xl md:text-8xl font-black italic tracking-tighter text-foreground leading-[0.85] uppercase">
-                                    Une vision <br /> <span className="text-primary underline decoration-primary/20 decoration-8 underline-offset-4 inline-block mt-4">radicale.</span>
+                                <h2 className="text-6xl md:text-9xl font-black italic tracking-tighter text-white leading-[0.8] uppercase">
+                                    UNE VISION <br /> <span className="text-[#FF6600] not-italic">RADICALE.</span>
                                 </h2>
                             </div>
-                            
-                            <div className="space-y-8 text-muted-foreground/60 font-bold uppercase tracking-widest text-sm leading-relaxed border-l-8 border-primary/20 pl-10 italic max-w-2xl">
+
+                            <div className="space-y-10 text-slate-400 font-bold uppercase tracking-[0.2em] text-sm leading-relaxed border-l-8 border-[#FF6600]/20 pl-12 italic max-w-2xl">
                                 <p>
-                                    Fondée sur l'analyse approfondie des frictions de l'e-commerce en Afrique de l'Ouest, BCA Connect n'est pas qu'une plateforme, c'est une <strong className="text-foreground">infrastructure de souveraineté numérique</strong>.
+                                    Fondée sur l'analyse approfondie des frictions de l'e-commerce en Afrique de l'Ouest, BCA Connect n'est pas qu'une plateforme, c'est une <strong className="text-white">infrastructure de souveraineté numérique</strong>.
                                 </p>
                                 <p>
                                     Notre protocole d'ingénierie résout la volatilité des réseaux télécoms via un système de synchronisation asynchrone propriétaire, garantissant l'intégrité des transactions même hors-ligne.
                                 </p>
-                                <p className="text-foreground mt-6 text-lg border-t-2 border-border pt-6">
-                                    Aujourd'hui, nous redéfinissons les standards : <strong className="text-primary italic">fluidité absolue, sécurité cryptographique, et architecture hautement résiliente.</strong>
+                                <p className="text-white mt-10 text-lg border-t-4 border-white/5 pt-10">
+                                    NOUS REDÉFINISSONS LES STANDARDS : <span className="text-[#FF6600] italic">FLUIDITÉ ABSOLUE, SÉCURITÉ CRYPTOGRAPHIQUE ET RÉSILIENCE.</span>
                                 </p>
                             </div>
-                            <Link to="/register" className="inline-block pt-6">
-                                <Button className="h-20 px-12 rounded-[2rem] font-black uppercase tracking-[0.3em] text-xs gap-6 shadow-premium-lg shadow-primary/20 hover:scale-110 transition-transform bg-foreground text-background border-4 border-foreground hover:bg-background hover:text-foreground">
-                                    Integrer l'Écosystème <ArrowRight className="size-6" />
+                            <Link to="/register" className="inline-block">
+                                <Button className="h-24 px-16 rounded-[2.5rem] font-black uppercase tracking-[0.4em] text-xs gap-8 shadow-2xl shadow-[#FF6600]/20 hover:scale-110 transition-all bg-white text-black border-4 border-white hover:bg-transparent hover:text-white">
+                                    INFILTRER L'ÉCOSYSTÈME <ArrowRight className="size-7" />
                                 </Button>
                             </Link>
                         </div>
-                        
-                        {/* Executive Image Container */}
+
                         <div className="relative group">
-                            <div className="absolute inset-0 bg-primary/20 blur-[150px] rounded-full group-hover:bg-primary/30 transition-colors duration-1000 opacity-40" />
-                            <div className="aspect-[4/5] rounded-[4rem] bg-card border-4 border-border overflow-hidden relative z-10 shadow-premium-lg">
-                                <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=800"
-                                    alt="L'équipe fondatrice BCA Connect" 
-                                    className="w-full h-full object-cover opacity-60 mix-blend-luminosity group-hover:scale-105 group-hover:opacity-80 transition-all duration-1000" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-                                
-                                {/* Overlay Content */}
+                            <div className="absolute inset-0 bg-[#FF6600]/10 blur-[150px] rounded-full group-hover:bg-[#FF6600]/20 transition-all duration-1000 opacity-40" />
+                            <div className="aspect-[4/5] rounded-[5rem] bg-white/[0.02] border-4 border-white/5 overflow-hidden relative z-10 shadow-3xl">
+                                <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=1200"
+                                    alt=""
+                                    className="w-full h-full object-cover mix-blend-luminosity grayscale group-hover:grayscale-0 group-hover:scale-110 group-hover:rotate-1 transition-all duration-1000" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0D14] via-transparent to-transparent" />
+
                                 <div className="absolute bottom-16 left-16 right-16">
-                                    <div className="w-20 h-2 bg-primary mb-8 rounded-full" />
-                                    <p className="text-executive-label font-black uppercase tracking-[0.4em] text-primary italic">Board Fondateur</p>
-                                    <p className="text-4xl font-black italic text-foreground mt-4 leading-[1.1] tracking-tighter uppercase underline decoration-primary/20 decoration-4">Bâtir l'infrastructure de la confiance.</p>
+                                    <div className="w-24 h-3 bg-[#FF6600] mb-10 rounded-full" />
+                                    <p className="text-[11px] font-black uppercase tracking-[0.5em] text-[#FF6600] italic mb-4">BOARD FONDATEUR</p>
+                                    <p className="text-4xl font-black italic text-white leading-tight tracking-tighter uppercase underline decoration-[#FF6600]/20 decoration-8 underline-offset-4">BÂTIR L'INFRASTRUCTURE DE LA CONFIANCE.</p>
                                 </div>
                             </div>
-                            
-                            {/* Floating Executive Badge */}
-                            <div className="absolute top-12 -right-12 bg-card border-4 border-border rounded-[3rem] p-10 shadow-premium-lg z-20 animate-bounce duration-[6000ms] backdrop-blur-3xl">
-                                <p className="text-executive-label font-black uppercase tracking-[0.4em] text-muted-foreground/30 italic">Quartier Général</p>
-                                <p className="font-black text-foreground italic text-3xl mt-4 tracking-tighter uppercase leading-none">Conakry, GN</p>
-                                <div className="mt-6 flex gap-2">
-                                    {[1,2,3].map(i => <div key={i} className="size-2 rounded-full bg-primary" />)}
+
+                            <div className="absolute top-12 -right-12 bg-[#0A0D14] border-4 border-white/5 rounded-[4rem] p-12 shadow-3xl z-20 animate-bounce duration-[8s] backdrop-blur-3xl">
+                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 italic mb-4">QUARTIER GÉNÉRAL</p>
+                                <p className="font-black text-white italic text-3xl mt-4 tracking-tighter uppercase leading-none">CONAKRY, GN</p>
+                                <div className="mt-8 flex gap-4">
+                                    {[1, 2, 3].map(i => <div key={i} className="size-2 rounded-full bg-[#FF6600]" />)}
                                 </div>
                             </div>
                         </div>
@@ -169,29 +165,28 @@ const AboutPage = () => {
                 {/* ══════════════════════════════════════════════════
                     NOS VALEURS (EXECUTIVE)
                 ══════════════════════════════════════════════════ */}
-                <section className="bg-card border-y-8 border-border py-40 relative overflow-hidden">
-                     {/* Background Decorative */}
-                     <div className="absolute right-0 top-1/2 -translate-y-1/2 size-[70rem] bg-primary/5 rounded-full blur-[200px] -z-10" />
-                     
-                    <div className="max-w-7xl mx-auto px-6 md:px-12 space-y-28 relative z-10">
-                        <div className="text-center space-y-6">
-                            <span className="text-executive-label font-black text-primary uppercase tracking-[0.4em] italic leading-none">Principes Cardinaux</span>
-                            <h2 className="text-6xl md:text-9xl font-black italic tracking-tighter text-foreground uppercase leading-[0.8] drop-shadow-xl">
-                                Fondations <br/> <span className="text-primary underline decoration-primary/10 decoration-8 underline-offset-[-8px]">Inébranlables.</span>
+                <section className="bg-white/[0.01] border-y-8 border-white/5 py-48 relative overflow-hidden">
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 size-[70rem] bg-[#FF6600]/5 rounded-full blur-[200px] -z-10" />
+
+                    <div className="max-w-7xl mx-auto px-6 md:px-12 space-y-32 relative z-10">
+                        <div className="text-center space-y-8">
+                            <span className="text-[11px] font-black text-[#FF6600] uppercase tracking-[0.6em] italic leading-none">PRINCIPES CARDINAUX</span>
+                            <h2 className="text-6xl md:text-[8rem] font-black italic tracking-tighter text-white uppercase leading-[0.8] drop-shadow-2xl">
+                                FONDATIONS <br /> <span className="text-[#FF6600]">INÉBRANLABLES.</span>
                             </h2>
                         </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
                             {VALUES.map((v, i) => (
-                                <div key={i} className="p-10 rounded-[3.5rem] bg-background border-4 border-border hover:border-primary/50 transition-all duration-700 group hover:shadow-premium-lg hover:-translate-y-4 flex flex-col justify-between h-full relative overflow-hidden">
-                                    <div className="absolute inset-x-0 bottom-0 h-2 bg-primary/0 group-hover:bg-primary transition-all duration-700"></div>
+                                <div key={i} className="p-12 rounded-[4.5rem] bg-[#0A0D14] border-4 border-white/5 hover:border-[#FF6600]/40 transition-all duration-700 group hover:shadow-3xl hover:-translate-y-6 flex flex-col justify-between h-full relative overflow-hidden">
+                                    <div className="absolute inset-x-0 bottom-0 h-2 bg-[#FF6600]/0 group-hover:bg-[#FF6600] transition-all duration-700"></div>
                                     <div className="relative z-10">
-                                        <div className={`size-20 rounded-[1.5rem] bg-card border-2 border-border flex items-center justify-center mb-10 group-hover:bg-primary/5 group-hover:border-primary/20 transition-all duration-700 shadow-inner`}>
+                                        <div className={`size-20 rounded-2xl bg-white/5 border-2 border-white/5 flex items-center justify-center mb-12 group-hover:bg-[#FF6600]/10 group-hover:border-[#FF6600]/20 transition-all duration-700 shadow-inner`}>
                                             <v.icon className={`size-10 ${v.color} group-hover:scale-110 transition-transform`} />
                                         </div>
-                                        <h3 className="text-3xl font-black italic tracking-tight text-foreground mb-6 uppercase leading-tight">{v.title}</h3>
-                                        <div className="w-12 h-2 bg-primary/10 mb-8 rounded-full group-hover:w-20 group-hover:bg-primary transition-all duration-700" />
-                                        <p className="text-muted-foreground/60 text-sm font-bold uppercase tracking-widest leading-loose italic">{v.desc}</p>
+                                        <h3 className="text-3xl font-black italic tracking-tight text-white mb-8 uppercase leading-tight">{v.title}</h3>
+                                        <div className="w-16 h-2 bg-[#FF6600]/10 mb-10 rounded-full group-hover:w-24 group-hover:bg-[#FF6600] transition-all duration-700" />
+                                        <p className="text-slate-500 text-sm font-bold uppercase tracking-[0.1em] leading-loose italic">{v.desc}</p>
                                     </div>
                                 </div>
                             ))}
@@ -200,41 +195,36 @@ const AboutPage = () => {
                 </section>
 
                 {/* ══════════════════════════════════════════════════
-                    L'ÉQUIPE DIRIGEANTE
+                    L'ÉQUIPE (EXECUTIVE)
                 ══════════════════════════════════════════════════ */}
-                <section className="py-40 max-w-7xl mx-auto px-6 md:px-12">
-                    <div className="text-center space-y-6 mb-32">
-                        <span className="text-executive-label font-black text-primary uppercase tracking-[0.4em] italic leading-none">Directoire</span>
-                        <h2 className="text-6xl md:text-9xl font-black italic tracking-tighter text-foreground uppercase leading-[0.8] drop-shadow-2xl">
-                            L'Élite <br /> Opérationnelle.
+                <section className="py-48 max-w-7xl mx-auto px-6 md:px-12">
+                    <div className="text-center space-y-10 mb-40">
+                        <span className="text-[11px] font-black text-[#FF6600] uppercase tracking-[0.6em] italic leading-none">LE CONSEIL</span>
+                        <h2 className="text-6xl md:text-9xl font-black italic tracking-tighter text-white uppercase leading-[0.8] drop-shadow-2xl">
+                            L'ÉLITE <br /> OPÉRATIONNELLE.
                         </h2>
                     </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-16 lg:gap-12">
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-20">
                         {TEAM.map((member, i) => (
                             <div key={i} className="group text-center">
-                                <div className="relative mx-auto w-72 h-80 mb-12">
-                                    {/* Abstract background shape */}
-                                    <div className="absolute inset-0 bg-accent/20 rounded-[4rem] rotate-6 group-hover:rotate-12 transition-all duration-1000 border-4 border-border shadow-inner" />
-                                    
-                                    <div className="relative w-full h-full rounded-[3.5rem] overflow-hidden border-8 border-background shadow-premium-lg z-10">
-                                        <img src={member.img} alt={member.name} className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-1000 brightness-90 group-hover:brightness-110" />
-                                        <div className="absolute inset-0 bg-primary/10 opacity-40 mix-blend-overlay group-hover:opacity-0 transition-opacity"></div>
+                                <div className="relative mx-auto w-80 h-96 mb-16">
+                                    <div className="absolute inset-0 bg-[#FF6600]/20 rounded-[5rem] rotate-6 group-hover:rotate-12 transition-all duration-1000 border-4 border-white/5" />
+                                    <div className="relative w-full h-full rounded-[4.5rem] overflow-hidden border-8 border-[#0A0D14] shadow-3xl z-10">
+                                        <img src={member.img} alt={member.name} className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-1000 brightness-75 group-hover:brightness-100" />
+                                        <div className="absolute inset-0 bg-[#FF6600]/10 mix-blend-overlay group-hover:opacity-0 transition-opacity"></div>
                                     </div>
-                                    
-                                    {/* Role Badge */}
-                                    <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-foreground text-background px-10 py-4 rounded-[1.5rem] z-20 shadow-premium-lg whitespace-nowrap border-4 border-background italic tracking-[0.2em] font-black text-xs uppercase">
+                                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-white text-black px-12 py-5 rounded-[2rem] z-20 shadow-3xl whitespace-nowrap border-4 border-[#0A0D14] italic tracking-[0.3em] font-black text-[10px] uppercase">
                                         {member.role}
                                     </div>
                                 </div>
-                                
                                 <div className="pt-4">
-                                    <h3 className="text-4xl font-black italic tracking-tighter text-foreground uppercase drop-shadow-sm leading-none">{member.name}</h3>
-                                    <div className="flex items-center justify-center gap-4 mt-6">
-                                        <div className="w-8 h-1 bg-primary rounded-full group-hover:w-12 transition-all" />
-                                        <p className="text-muted-foreground/40 text-executive-label font-black uppercase tracking-widest italic">{member.expertise}</p>
-                                        <div className="w-8 h-1 bg-primary rounded-full group-hover:w-12 transition-all" />
-                                    </div>
+                                    <h3 className="text-4xl font-black italic tracking-tighter text-white uppercase leading-none drop-shadow-sm">{member.name}</h3>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mt-8 italic flex items-center justify-center gap-4">
+                                        <div className="w-8 h-px bg-[#FF6600]/40" />
+                                        {member.expertise}
+                                        <div className="w-8 h-px bg-[#FF6600]/40" />
+                                    </p>
                                 </div>
                             </div>
                         ))}
@@ -242,39 +232,37 @@ const AboutPage = () => {
                 </section>
 
                 {/* ══════════════════════════════════════════════════
-                    EXECUTIVE CTA
+                    ULTIMATE CTA
                 ══════════════════════════════════════════════════ */}
-                <section className="relative bg-foreground py-40 overflow-hidden mx-6 md:mx-12 rounded-[5rem] mb-20 shadow-premium-lg border-x-8 border-primary/20">
+                <section className="relative py-48 overflow-hidden mx-6 md:mx-12 rounded-[6rem] mb-20 bg-white group border-x-[12px] border-[#FF6600]">
                     <div className="absolute inset-0">
-                        {/* Dark radial gradient for contrast */}
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,theme(colors.primary.DEFAULT/0.3),transparent_70%)] opacity-30" />
-                        <div className="absolute inset-0 opacity-[0.05]" style={{
-                            backgroundImage: `linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)`,
-                            backgroundSize: '6rem 6rem'
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,102,0,0.1),transparent_70%)]" />
+                        <div className="absolute inset-0 opacity-[0.03]" style={{
+                            backgroundImage: `linear-gradient(to right, black 1px, transparent 1px), linear-gradient(to bottom, black 1px, transparent 1px)`,
+                            backgroundSize: '5rem 5rem'
                         }} />
-                        <div className="absolute top-0 right-0 size-[50rem] bg-primary/20 rounded-full blur-[200px] mix-blend-screen opacity-40" />
                     </div>
-                    
+
                     <div className="relative z-10 text-center space-y-16 px-10 max-w-5xl mx-auto">
-                        <span className="inline-flex items-center gap-4 px-8 py-4 bg-background/5 border-2 border-background/10 text-background text-executive-label font-black uppercase tracking-[0.5em] rounded-full backdrop-blur-3xl italic">
-                            <Smartphone className="size-6 text-primary animate-pulse" /> L'EXCELLENCE N'ATTEND PAS
+                        <span className="inline-flex items-center gap-6 px-10 py-5 bg-black/5 border-2 border-black/10 text-black text-[11px] font-black uppercase tracking-[0.6em] rounded-full backdrop-blur-3xl italic">
+                            <Sparkles className="size-6 text-[#FF6600] animate-pulse" /> L'EXCELLENCE VOUS ATTEND
                         </span>
-                        
-                        <h2 className="text-7xl md:text-9xl font-black text-background italic tracking-tighter uppercase leading-[0.8] drop-shadow-2xl">
-                            Déployez la <br />
-                            <span className="text-primary not-italic underline decoration-primary/30 decoration-8 underline-offset-[-4px]">Puissance.</span>
+
+                        <h2 className="text-7xl md:text-[10rem] font-black text-black italic tracking-tighter uppercase leading-[0.8] drop-shadow-2xl">
+                            DÉPLOYEZ LA <br />
+                            <span className="text-[#FF6600] not-italic underline decoration-black/10 decoration-8 underline-offset-[-4px]">PUISSANCE.</span>
                         </h2>
-                        
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-10 pt-12">
+
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-12 pt-12">
                             <Link to="/register">
-                                <Button className="h-24 px-20 rounded-[2.5rem] font-black uppercase tracking-[0.4em] text-sm shadow-premium-lg shadow-primary/20 gap-8 hover:scale-110 transition-transform group relative overflow-hidden bg-background text-foreground border-4 border-background hover:bg-transparent hover:text-background active:scale-95 duration-500">
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/30 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
-                                    Initialiser le Compte <ArrowRight className="size-8 group-hover:translate-x-4 transition-transform" />
+                                <Button className="h-28 px-20 rounded-[3rem] font-black uppercase tracking-[0.5em] text-sm shadow-3xl shadow-[#FF6600]/20 gap-10 hover:scale-110 active:scale-95 transition-all bg-black text-white border-4 border-black group relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
+                                    INITIALISER LE COMPTE <ArrowRight className="size-8 group-hover:translate-x-4 transition-transform" />
                                 </Button>
                             </Link>
                             <Link to="/contact">
-                                <Button variant="outline" className="h-24 px-20 rounded-[2.5rem] font-black uppercase tracking-[0.4em] text-sm border-4 border-background/20 text-background hover:bg-background/10 hover:border-background transition-all hover:scale-105 active:scale-95 duration-500 italic">
-                                    Contacter le Support
+                                <Button variant="outline" className="h-28 px-20 rounded-[3rem] font-black uppercase tracking-[0.5em] text-sm border-4 border-black/10 text-black hover:border-black transition-all hover:scale-105 active:scale-95 italic">
+                                    CONTACT CONSULAIRE
                                 </Button>
                             </Link>
                         </div>

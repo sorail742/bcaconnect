@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Search, User, ShoppingCart, Menu, X, ChevronDown,
     Store, Users, Package, Truck, HelpCircle, BookOpen,
-    MessageSquare, Info, FileText, ShieldCheck, LogOut, LayoutDashboard
+    MessageSquare, Info, FileText, ShieldCheck, LogOut, LayoutDashboard,
+    Moon, LogIn
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useCart } from '../../context/CartContext';
@@ -20,6 +21,7 @@ const Navbar = () => {
     const [activeDropdown, setActiveDropdown] = useState(null);
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [lang, setLang] = useState('FR');
 
     const cartCount = cartItems.reduce((acc, item) => acc + (item.quantity || 1), 0);
 
@@ -59,17 +61,17 @@ const Navbar = () => {
     ];
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-all duration-300">
-            <div className="container mx-auto px-4 h-20 flex items-center justify-between">
+        <header className="fixed top-0 left-0 right-0 z-50 bg-[#0A0D14]/80 dark:bg-[#0A0D14]/80 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
+            <div className="container mx-auto px-4 h-24 flex items-center justify-between">
 
                 {/* Logo & Desktop Nav */}
-                <div className="flex items-center gap-10">
-                    <Link to="/" className="flex items-center gap-3 group">
-                        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
-                            <span className="font-bold text-lg">BC</span>
+                <div className="flex items-center gap-12">
+                    <Link to="/" className="flex items-center gap-3 group shrink-0">
+                        <div className="size-11 rounded-xl bg-[#FF6600] flex items-center justify-center text-white shadow-lg shadow-[#FF6600]/20 group-hover:scale-105 transition-transform">
+                            <span className="font-black text-lg">BC</span>
                         </div>
-                        <span className="text-xl font-bold text-slate-900 dark:text-white hidden sm:block">
-                            BCA<span className="text-primary">Connect</span>
+                        <span className="text-2xl font-black text-white italic tracking-tighter">
+                            BCA Connect
                         </span>
                     </Link>
 
@@ -82,29 +84,29 @@ const Navbar = () => {
                                 onMouseLeave={() => setActiveDropdown(null)}
                             >
                                 <button className={cn(
-                                    "flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300",
-                                    activeDropdown === menu.label ? "text-primary bg-primary/5" : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                                    "flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl transition-all duration-300",
+                                    activeDropdown === menu.label ? "text-[#FF6600] bg-[#FF6600]/5" : "text-slate-400 hover:text-white"
                                 )}>
-                                    <menu.icon className="size-4" />
+                                    <menu.icon className={cn("size-4", activeDropdown === menu.label ? "text-[#FF6600]" : "text-[#FF6600]/60")} />
                                     {menu.label}
-                                    <ChevronDown className={cn("size-4 opacity-50 transition-transform duration-300", activeDropdown === menu.label && "rotate-180 text-primary")} />
+                                    <ChevronDown className={cn("size-3.5 opacity-40 transition-transform duration-300", activeDropdown === menu.label && "rotate-180 text-primary")} />
                                 </button>
 
                                 {activeDropdown === menu.label && (
                                     <div className="absolute top-full left-0 pt-2 w-80 animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-2">
+                                        <div className="bg-[#0F1219] border border-white/5 rounded-3xl shadow-2xl p-2 backdrop-blur-2xl">
                                             {menu.children.map(child => (
                                                 <Link
                                                     key={child.to}
                                                     to={child.to}
-                                                    className="flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group/item"
+                                                    className="flex items-center gap-4 p-3 rounded-2xl hover:bg-white/5 transition-all group/item"
                                                 >
-                                                    <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover/item:bg-primary group-hover/item:text-white transition-all">
+                                                    <div className="size-10 rounded-xl bg-[#FF6600]/10 flex items-center justify-center text-[#FF6600] group-hover/item:bg-[#FF6600] group-hover/item:text-white transition-all">
                                                         <child.icon className="size-5" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-bold text-slate-900 dark:text-white">{child.label}</p>
-                                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">{child.desc}</p>
+                                                        <p className="text-sm font-bold text-white">{child.label}</p>
+                                                        <p className="text-[11px] text-slate-500 font-medium">{child.desc}</p>
                                                     </div>
                                                 </Link>
                                             ))}
@@ -117,7 +119,7 @@ const Navbar = () => {
                             <a
                                 key={link.label}
                                 href={link.to}
-                                className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
+                                className="px-5 py-2 text-sm font-bold text-slate-400 hover:text-white transition-all"
                             >
                                 {link.label}
                             </a>
@@ -126,103 +128,79 @@ const Navbar = () => {
                 </div>
 
                 {/* Right Actions */}
-                <div className="flex items-center gap-3 sm:gap-6">
-                    {/* Search - Icon only on mobile/tablet */}
-                    <div className="hidden lg:flex relative w-64 group">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within:text-primary transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Rechercher..."
-                            className="h-10 w-full pl-10 pr-4 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-primary/20 transition-all"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+                <div className="flex items-center gap-6">
+                    {/* Language Switcher */}
+                    <div className="hidden lg:flex items-center bg-[#151921] rounded-full p-1 border border-white/5">
+                        <button
+                            onClick={() => setLang('FR')}
+                            className={cn(
+                                "px-3 py-1 text-[10px] font-black rounded-full transition-all",
+                                lang === 'FR' ? "bg-[#FF6600] text-white" : "text-slate-500 hover:text-slate-300"
+                            )}>
+                            FR
+                        </button>
+                        <button
+                            onClick={() => setLang('EN')}
+                            className={cn(
+                                "px-3 py-1 text-[10px] font-black rounded-full transition-all",
+                                lang === 'EN' ? "bg-[#FF6600] text-white" : "text-slate-500 hover:text-slate-300"
+                            )}>
+                            EN
+                        </button>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        {/* Cart */}
+                    <div className="flex items-center gap-4">
+                        <button className="size-10 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+                            <Moon className="size-5" />
+                        </button>
+
                         <div className="relative">
                             <button
                                 onClick={() => setIsCartOpen(!isCartOpen)}
-                                className="size-10 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-primary transition-all relative"
+                                className="size-10 flex items-center justify-center text-slate-400 hover:text-white transition-all relative"
                             >
                                 <ShoppingCart className="size-5" />
                                 {cartCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 size-5 bg-primary text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-950">
+                                    <span className="absolute top-1 right-1 size-4 bg-[#FF6600] text-white text-[9px] font-black rounded-full flex items-center justify-center border border-[#0A0D14]">
                                         {cartCount}
                                     </span>
                                 )}
                             </button>
-
-                            {isCartOpen && (
-                                <div className="absolute top-full right-0 pt-3 w-80 sm:w-96 animate-in fade-in slide-in-from-top-2 duration-300">
-                                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden">
-                                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                                            <h4 className="font-bold">Mon Panier</h4>
-                                            <button onClick={() => setIsCartOpen(false)}><X className="size-4 opacity-50" /></button>
-                                        </div>
-                                        {cartItems.length === 0 ? (
-                                            <div className="p-10 text-center text-slate-400 text-sm italic">Panier vide.</div>
-                                        ) : (
-                                            <>
-                                                <div className="p-4 max-h-72 overflow-y-auto space-y-3">
-                                                    {cartItems.map(item => (
-                                                        <div key={item.id} className="flex items-center gap-4">
-                                                            <img src={item.image_url || item.image || 'https://via.placeholder.com/60'} className="size-12 rounded-lg object-cover" alt="" />
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="text-sm font-bold truncate">{item.nom_produit || item.name}</p>
-                                                                <p className="text-xs text-primary font-bold">{(item.prix_unitaire * (item.quantity || 1)).toLocaleString()} GNF</p>
-                                                            </div>
-                                                            <button onClick={() => removeFromCart(item.id)}><X className="size-4 text-red-500/50 hover:text-red-500" /></button>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <div className="p-6 bg-slate-50 dark:bg-slate-800/50 space-y-4">
-                                                    <div className="flex justify-between font-bold">
-                                                        <span>Total</span>
-                                                        <span className="text-primary">{cartTotal.toLocaleString()} GNF</span>
-                                                    </div>
-                                                    <Button className="w-full h-12 rounded-xl" onClick={() => navigate('/checkout')}>Payer</Button>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
                         </div>
 
-                        {/* User Auth */}
-                        <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
+                        {/* Divider */}
+                        <div className="h-8 w-px bg-white/10 hidden lg:block" />
 
                         {user ? (
-                            <div className="flex items-center gap-3 ml-2 group relative">
-                                <Link to="/dashboard" className="flex items-center gap-3 pl-2 pr-1 h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-                                    <div className="hidden sm:block text-right">
-                                        <p className="text-xs font-bold leading-none">{user.nom_complet}</p>
-                                        <p className="text-[10px] text-primary font-bold uppercase mt-1 leading-none">{user.role}</p>
-                                    </div>
-                                    <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                                        <User className="size-4" />
-                                    </div>
-                                </Link>
-                            </div>
+                            <Link to="/dashboard" className="flex items-center gap-3 pl-2 group">
+                                <div className="hidden sm:block text-right">
+                                    <p className="text-xs font-bold text-white">{user.nom_complet || 'Membre BCA'}</p>
+                                    <p className="text-[10px] text-[#FF6600] font-black uppercase tracking-tighter">Tableau de bord</p>
+                                </div>
+                                <div className="size-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white group-hover:bg-[#FF6600] transition-all">
+                                    <User className="size-5" />
+                                </div>
+                            </Link>
                         ) : (
-                            <div className="flex items-center gap-2 ml-2">
-                                <Link to="/login" className="hidden sm:block">
-                                    <Button variant="ghost" size="sm" className="font-bold text-slate-600 dark:text-slate-400">Connexion</Button>
+                            <div className="flex items-center gap-5">
+                                <Link to="/login" className="flex items-center gap-2 text-sm font-bold text-white hover:text-[#FF6600] transition-all group">
+                                    <LogIn className="size-4 opacity-60 group-hover:opacity-100" />
+                                    Connexion
                                 </Link>
                                 <Link to="/register">
-                                    <Button size="sm" className="font-bold px-6 shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">Démarrer</Button>
+                                    <Button size="lg" className="h-11 px-8 rounded-2xl bg-[#FF6600] border-none shadow-lg shadow-[#FF6600]/20 hover:scale-105 active:scale-95 transition-all text-xs font-black uppercase tracking-wider">
+                                        S'inscrire
+                                    </Button>
                                 </Link>
                             </div>
                         )}
 
                         {/* Mobile Menu */}
                         <button
-                            className="xl:hidden size-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white active:scale-95 transition-all"
+                            className="xl:hidden size-11 flex items-center justify-center rounded-2xl bg-white/5 text-white active:scale-95 transition-all"
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
                         >
-                            {isMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+                            {isMenuOpen ? <X className="size-6" /> : <Menu className="size-6" />}
                         </button>
                     </div>
                 </div>
@@ -230,40 +208,50 @@ const Navbar = () => {
 
             {/* Mobile Drawer */}
             {isMenuOpen && (
-                <div className="xl:hidden bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-900 p-4 space-y-4 animate-in slide-in-from-top-2 duration-300 overflow-y-auto max-h-[80vh]">
+                <div className="xl:hidden bg-[#0A0D14] border-t border-white/5 p-6 pb-12 space-y-8 animate-in slide-in-from-top-2 duration-300 overflow-y-auto max-h-[85vh]">
                     {navStructure.map(menu => (
-                        <div key={menu.label} className="space-y-2">
-                            <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2">{menu.label}</h5>
-                            <div className="grid grid-cols-1 gap-1">
+                        <div key={menu.label} className="space-y-4">
+                            <h5 className="text-[11px] font-black uppercase tracking-widest text-[#FF6600]/60">{menu.label}</h5>
+                            <div className="grid grid-cols-1 gap-2">
                                 {menu.children.map(child => (
                                     <Link
                                         key={child.to}
                                         to={child.to}
                                         onClick={() => setIsMenuOpen(false)}
-                                        className="flex items-center gap-4 p-3 rounded-2xl hover:bg-primary/5 text-slate-700 dark:text-slate-300 font-bold text-sm"
+                                        className="flex items-center gap-4 p-4 rounded-3xl bg-white/[0.03] border border-white/5 text-white font-bold text-base"
                                     >
-                                        <child.icon className="size-4 text-primary" />
+                                        <div className="size-10 rounded-2xl bg-[#FF6600]/10 flex items-center justify-center text-[#FF6600]">
+                                            <child.icon className="size-5" />
+                                        </div>
                                         {child.label}
                                     </Link>
                                 ))}
                             </div>
                         </div>
                     ))}
-                    <div className="h-px bg-slate-100 dark:bg-slate-900 mx-2" />
-                    <div className="p-2 space-y-4">
+
+                    <div className="pt-6 space-y-4">
+                        <div className="flex items-center justify-between px-2 mb-6">
+                            <span className="text-xs font-bold text-slate-500">Langue</span>
+                            <div className="flex items-center bg-[#151921] rounded-full p-1 border border-white/5">
+                                <button onClick={() => setLang('FR')} className={cn("px-4 py-1.5 text-xs font-black rounded-full", lang === 'FR' ? "bg-[#FF6600] text-white" : "text-slate-500")}>FR</button>
+                                <button onClick={() => setLang('EN')} className={cn("px-4 py-1.5 text-xs font-black rounded-full", lang === 'EN' ? "bg-[#FF6600] text-white" : "text-slate-500")}>EN</button>
+                            </div>
+                        </div>
+
                         {user ? (
-                            <Link to="/dashboard" onClick={() => setIsMenuOpen(false)} className="block">
-                                <Button className="w-full h-12 rounded-xl">Mon Dashboard</Button>
+                            <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
+                                <Button className="w-full h-14 rounded-2xl text-base font-black">MON TABLEAU DE BORD</Button>
                             </Link>
                         ) : (
-                            <>
-                                <Link to="/login" onClick={() => setIsMenuOpen(false)} className="block">
-                                    <Button variant="outline" className="w-full h-12 rounded-xl">Se connecter</Button>
+                            <div className="grid grid-cols-2 gap-4">
+                                <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                                    <Button variant="outline" className="w-full h-14 rounded-2xl text-sm font-black border-white/10">CONNEXION</Button>
                                 </Link>
-                                <Link to="/register" onClick={() => setIsMenuOpen(false)} className="block">
-                                    <Button className="w-full h-12 rounded-xl">S'inscrire</Button>
+                                <Link to="/register" onClick={() => setIsMenuOpen(false)}>
+                                    <Button className="w-full h-14 rounded-2xl text-sm font-black bg-[#FF6600]">REJOINDRE</Button>
                                 </Link>
-                            </>
+                            </div>
                         )}
                     </div>
                 </div>

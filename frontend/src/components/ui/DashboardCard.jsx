@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, Sparkles } from 'lucide-react';
 
 const DashboardCard = ({
     title,
@@ -19,98 +19,100 @@ const DashboardCard = ({
 
     return (
         <div className={cn(
-            "group relative overflow-hidden rounded-2xl border transition-all duration-200",
+            "group relative overflow-hidden rounded-[2.5rem] border-4 transition-all duration-700",
             isGlass
-                ? "bg-slate-950 text-white border-slate-800 shadow-lg"
-                : "bg-card border-slate-100 dark:border-white/5 text-slate-900 dark:text-white shadow-sm hover:border-primary/20 hover:shadow-md",
+                ? "bg-white/[0.02] border-white/5 backdrop-blur-3xl shadow-3xl"
+                : "bg-[#0A0D14] border-white/5 text-white shadow-3xl hover:border-[#FF6600]/20 hover:scale-[1.02]",
             className
         )}>
-            <div className="p-6">
-                <div className="flex items-start justify-between mb-6">
-                    {/* Icon */}
-                    <div className={cn(
-                        "size-11 rounded-xl flex items-center justify-center border transition-all duration-200 group-hover:scale-105",
-                        isGlass
-                            ? "bg-white/10 border-white/10 text-primary"
-                            : "bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5 text-primary group-hover:bg-primary group-hover:text-white"
-                    )}>
-                        {Icon && <Icon className="size-5" />}
+            {/* Animated Gradient Background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#FF6600]/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+
+            <div className="p-10 relative z-10 flex flex-col h-full justify-between">
+                <div>
+                    <div className="flex items-start justify-between mb-10">
+                        {/* Icon */}
+                        <div className={cn(
+                            "size-16 rounded-2xl flex items-center justify-center border-2 transition-all duration-700 group-hover:rotate-12 shadow-3xl",
+                            isGlass
+                                ? "bg-white/5 border-white/10 text-[#FF6600]"
+                                : "bg-white/5 border-white/5 text-[#FF6600] group-hover:bg-[#FF6600] group-hover:text-white group-hover:border-[#FF6600]"
+                        )}>
+                            {Icon && <Icon className="size-8" />}
+                        </div>
+
+                        {/* Badge */}
+                        {badge && (
+                            <div className={cn(
+                                "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] border-2 italic shadow-lg",
+                                badge.color === 'rose' ? "bg-rose-500/10 border-rose-500/20 text-rose-500" :
+                                    badge.color === 'amber' ? "bg-amber-500/10 border-amber-500/20 text-amber-500" :
+                                        badge.color === 'emerald' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
+                                            "bg-[#FF6600]/10 border-[#FF6600]/20 text-[#FF6600]"
+                            )}>
+                                {badge.label}
+                            </div>
+                        )}
+
+                        {/* Trend — only if no badge */}
+                        {trendValue && !badge && (
+                            <div className={cn(
+                                "flex items-center gap-2 px-4 py-1.5 rounded-xl text-[10px] font-black tracking-[0.3em] border-2 italic uppercase shadow-lg",
+                                trend === "up"
+                                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                                    : "bg-rose-500/10 border-rose-500/20 text-rose-500"
+                            )}>
+                                {trend === "up" ? <TrendingUp className="size-4" /> : <TrendingDown className="size-4" />}
+                                {trendValue}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Badge */}
-                    {badge && (
-                        <div className={cn(
-                            "px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wider border",
-                            badge.color === 'rose' ? "bg-rose-500/10 border-rose-500/20 text-rose-500" :
-                            badge.color === 'amber' ? "bg-amber-500/10 border-amber-500/20 text-amber-500" :
-                            badge.color === 'emerald' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400" :
-                            "bg-primary/10 border-primary/20 text-primary"
-                        )}>
-                            {badge.label}
+                    <div className="space-y-4">
+                        {/* Label */}
+                        <div className="flex items-center gap-3">
+                            <div className="size-2 rounded-full bg-[#FF6600] animate-pulse shadow-[0_0_10px_rgba(255,102,0,0.4)]" />
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic leading-none pt-0.5">
+                                {title}
+                            </p>
                         </div>
-                    )}
 
-                    {/* Trend — only if no badge */}
-                    {trendValue && !badge && (
-                        <div className={cn(
-                            "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border",
-                            trend === "up"
-                                ? "bg-emerald-500/10 border-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                                : "bg-rose-500/10 border-rose-500/15 text-rose-600 dark:text-rose-400"
-                        )}>
-                            {trend === "up" ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
-                            {trendValue}
-                        </div>
-                    )}
+                        {/* Value */}
+                        <p className="text-4xl lg:text-5xl font-black italic tracking-tighter text-white uppercase leading-none truncate">
+                            {value}
+                        </p>
+
+                        {/* Trend shown below value if badge is present */}
+                        {trendValue && badge && (
+                            <div className={cn(
+                                "inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest mt-2 italic",
+                                trend === "up" ? "text-emerald-500" : "text-rose-500"
+                            )}>
+                                {trend === "up" ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
+                                {trendValue} <span className="text-slate-600 ml-1">VS MOIS DERNIER</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                <div className="space-y-1.5">
-                    {/* Label */}
-                    <p className={cn(
-                        "text-executive-label",
-                        isGlass ? "text-slate-500" : ""
-                    )}>
-                        {title}
-                    </p>
-
-                    {/* Value */}
-                    <p className={cn(
-                        "text-3xl font-bold tracking-tight tabular-nums",
-                        isGlass ? "text-white" : "text-slate-900 dark:text-white"
-                    )}>
-                        {value}
-                    </p>
-
-                    {/* Trend shown below value if badge is present */}
-                    {trendValue && badge && (
-                        <div className={cn(
-                            "inline-flex items-center gap-1.5 text-[11px] font-semibold mt-1",
-                            trend === "up" ? "text-emerald-500" : "text-rose-500"
-                        )}>
-                            {trend === "up" ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
-                            {trendValue} vs mois dernier
-                        </div>
-                    )}
-
+                <div className="mt-8 space-y-6">
                     {/* Impact Tag */}
                     {impact && (
                         <div className={cn(
-                            "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wide mt-2",
-                            impact.type === 'risk' ? "bg-rose-500/10 text-rose-500" :
-                            impact.type === 'growth' ? "bg-emerald-500/10 text-emerald-500" :
-                            "bg-slate-500/10 text-slate-500"
+                            "inline-flex items-center gap-3 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border-2 italic",
+                            impact.type === 'risk' ? "bg-rose-500/5 border-rose-500/10 text-rose-500" :
+                                impact.type === 'growth' ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-500" :
+                                    "bg-white/5 border-white/5 text-slate-500"
                         )}>
-                            <span className="opacity-60">{impact.label}:</span>
-                            <span className="font-bold">{impact.value}</span>
+                            <Sparkles className="size-3 opacity-50" />
+                            <span className="opacity-40">{impact.label}:</span>
+                            <span className="font-black text-white">{impact.value}</span>
                         </div>
                     )}
 
                     {/* Description */}
                     {description && (
-                        <p className={cn(
-                            "text-[12px] font-medium mt-3 leading-relaxed opacity-50",
-                            isGlass ? "text-slate-400" : "text-slate-500"
-                        )}>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] italic leading-relaxed text-slate-600 border-l-4 border-white/5 pl-6 group-hover:border-[#FF6600]/30 transition-colors">
                             {description}
                         </p>
                     )}

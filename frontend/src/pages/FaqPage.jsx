@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import PublicLayout from '../components/layout/PublicLayout';
 import { Button } from '../components/ui/Button';
-import { HelpCircle, ChevronDown, ChevronUp, Search, ArrowRight, MessageSquare } from 'lucide-react';
+import { HelpCircle, ChevronDown, ChevronUp, Search, ArrowRight, MessageSquare, ShieldCheck, Sparkles } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const FAQ_CATEGORIES = [
@@ -12,7 +12,7 @@ const FAQ_CATEGORIES = [
         questions: [
             { q: "Comment créer un compte sur BCA Connect ?", a: "Rendez-vous sur notre page d'inscription. Choisissez votre rôle (Client, Fournisseur ou Transporteur), remplissez le formulaire et validez votre numéro de téléphone via un code OTP. En moins de 3 minutes, vous avez accès à la plateforme." },
             { q: "Quels documents sont nécessaires pour devenir fournisseur ?", a: "Vous aurez besoin d'une pièce d'identité valide (CNI, passeport) et si disponible, d'un registre de commerce. Notre équipe valide votre compte sous 48h ouvrables." },
-            { q: "Puis-je avoir plusieurs rôles sur la même plateforme ?", a: "Non, chaque compte est lié à un seul rôle pour des raisons de sécurité. Vous pouvez créer des comptes distincts avec des adresses email différentes pour chaque rôle." },
+            { q: "Puis-je avoir plusieurs rôles sur la même plateforme ?", a: "Chaque compte est lié à un seul rôle pour des raisons de sécurité. Vous pouvez créer des comptes distincts avec des adresses email différentes pour chaque rôle." },
             { q: "J'ai oublié mon mot de passe, que faire ?", a: "Cliquez sur 'Mot de passe oublié' sur la page de connexion. Vous recevrez un code OTP sur votre numéro de téléphone enregistré pour réinitialiser votre mot de passe." },
         ]
     },
@@ -61,19 +61,19 @@ const FaqItem = ({ question, answer }) => {
     const [isOpen, setIsOpen] = useState(false);
     return (
         <div className={cn(
-            "glass-card border-4 border-border rounded-[2rem] overflow-hidden transition-all duration-700 shadow-premium group",
-            isOpen && "border-primary/40 scale-[1.02] shadow-primary/10"
+            "bg-white/[0.02] border-4 transition-all duration-700 shadow-2xl group overflow-hidden rounded-[3rem]",
+            isOpen ? "border-[#FF6600]/40 scale-[1.02] bg-white/[0.04]" : "border-white/5 hover:border-white/10"
         )}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between p-10 text-left gap-8 hover:bg-primary/5 transition-colors group/btn"
+                className="w-full flex items-center justify-between p-12 text-left gap-8 hover:bg-white/[0.01] transition-colors group/btn"
             >
-                <span className="text-xl font-black text-foreground italic tracking-tighter uppercase leading-tight group-hover/btn:translate-x-2 transition-transform duration-500">{question}</span>
+                <span className="text-xl md:text-2xl font-black text-white italic tracking-tighter uppercase leading-tight group-hover/btn:translate-x-4 transition-transform duration-700">{question}</span>
                 <div className={cn(
-                    "size-14 rounded-2xl flex items-center justify-center shrink-0 border-4 transition-all duration-500 shadow-premium",
-                    isOpen ? "bg-primary border-primary text-white rotate-180" : "bg-background border-border text-primary group-hover/btn:scale-110"
+                    "size-16 rounded-[1.5rem] flex items-center justify-center shrink-0 border-4 transition-all duration-700 shadow-3xl",
+                    isOpen ? "bg-[#FF6600] border-[#FF6600] text-white rotate-180" : "bg-white/5 border-white/5 text-slate-700 group-hover/btn:scale-110 group-hover/btn:border-[#FF6600]/20"
                 )}>
-                    {isOpen ? <ChevronUp className="size-6" /> : <ChevronDown className="size-6" />}
+                    {isOpen ? <ChevronUp className="size-8" /> : <ChevronDown className="size-8" />}
                 </div>
             </button>
             <div className={cn(
@@ -81,7 +81,7 @@ const FaqItem = ({ question, answer }) => {
                 isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
             )}>
                 <div className="overflow-hidden">
-                    <div className="px-10 pb-10 text-muted-foreground/60 font-black uppercase tracking-[0.2em] text-xs leading-relaxed italic border-t-4 border-border pt-8 mt-2 mx-10 border-l-8 border-l-primary/20 pl-8">
+                    <div className="px-12 pb-12 text-slate-500 font-extrabold uppercase tracking-[0.2em] text-xs leading-relaxed italic border-t-4 border-white/5 pt-10 mt-2 mx-12 border-l-8 border-l-[#FF6600]/20 pl-10">
                         {answer}
                     </div>
                 </div>
@@ -105,55 +105,55 @@ const FaqPage = () => {
 
     return (
         <PublicLayout>
-            <div className="font-inter pb-32">
+            <div className="bg-[#0A0D14] min-h-screen text-white font-inter">
 
                 {/* ══ EXECUTIVE HERO ══ */}
-                <section className="relative py-40 overflow-hidden text-center group">
-                    {/* Background layers */}
-                    <div className="absolute inset-0 bg-slate-950" />
-                    <div className="absolute top-0 left-1/4 size-[40rem] bg-primary/10 rounded-full blur-[150px] group-hover:bg-primary/20 transition-colors duration-1000" />
-                    <div className="absolute bottom-0 right-1/4 size-[40rem] bg-blue-600/5 rounded-full blur-[150px]" />
-                    <div className="absolute inset-0 opacity-10 bg-[radial-gradient(var(--primary)_1.5px,transparent_1.5px)] bg-[size:48px_48px]" />
-                    
-                    <div className="relative z-10 max-w-5xl mx-auto px-6 space-y-12 animate-in fade-in slide-in-from-bottom-12 duration-1000">
-                        <div className="flex flex-col items-center gap-6">
-                            <div className="flex items-center gap-4">
-                                <div className="size-3 rounded-full bg-primary animate-pulse" />
-                                <span className="text-executive-label font-black text-primary uppercase tracking-[0.6em] italic leading-none pt-0.5">ACADÉMIE & SUPPORT BCA CONNECT</span>
+                <section className="relative pt-48 pb-32 overflow-hidden text-center border-b-8 border-white/5 group">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 size-[60rem] bg-[#FF6600]/10 rounded-full blur-[200px] mix-blend-screen pointer-events-none group-hover:scale-110 transition-transform duration-[4s]" />
+                    <div className="absolute inset-0 opacity-[0.03]" style={{
+                        backgroundImage: `linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)`,
+                        backgroundSize: '5rem 5rem'
+                    }} />
+
+                    <div className="relative z-10 max-w-7xl mx-auto px-6 space-y-16 animate-in fade-in slide-in-from-bottom-12 duration-1000">
+                        <div className="flex flex-col items-center gap-8">
+                            <div className="flex items-center gap-6">
+                                <div className="size-4 rounded-full bg-[#FF6600] animate-pulse shadow-[0_0_20px_rgba(255,102,0,0.4)]" />
+                                <span className="text-[11px] font-black text-[#FF6600] uppercase tracking-[0.6em] italic leading-none pt-0.5">ACADÉMIE & SUPPORT BCA CONNECT</span>
                             </div>
-                            <h1 className="text-7xl md:text-9xl font-black text-white tracking-tighter leading-[0.85] uppercase italic">
+                            <h1 className="text-7xl md:text-[10rem] font-black tracking-tighter leading-[0.8] uppercase italic text-white drop-shadow-2xl">
                                 PROTOCOLE <br />
-                                <span className="text-primary not-italic underline decoration-white/10 underline-offset-[-12px]">D'ASSISTANCE.</span>
+                                <span className="text-[#FF6600] not-italic underline decoration-white/10 decoration-8 underline-offset-[-12px]">D'ASSISTANCE.</span>
                             </h1>
                         </div>
 
                         {/* Executive Search Hub */}
-                        <div className="relative max-w-2xl mx-auto group/search">
-                            <div className="absolute -inset-2 bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20 rounded-[2.5rem] blur-xl opacity-0 group-focus-within/search:opacity-100 transition-opacity duration-700" />
-                            <div className="relative glass-card border-4 border-white/10 rounded-[2rem] overflow-hidden shadow-premium-lg">
-                                <Search className="absolute left-8 top-1/2 -translate-y-1/2 size-8 text-primary group-focus-within/search:scale-125 transition-transform" />
+                        <div className="relative max-w-3xl mx-auto group/search">
+                            <div className="absolute -inset-4 bg-gradient-to-r from-[#FF6600]/20 via-[#FF6600]/40 to-[#FF6600]/20 rounded-[3rem] blur-2xl opacity-0 group-focus-within/search:opacity-100 transition-opacity duration-1000" />
+                            <div className="relative bg-white/[0.02] border-4 border-white/10 rounded-[2.5rem] overflow-hidden shadow-3xl backdrop-blur-3xl">
+                                <Search className="absolute left-10 top-1/2 -translate-y-1/2 size-10 text-[#FF6600] group-focus-within/search:scale-125 transition-transform duration-700" />
                                 <input
                                     type="text"
                                     placeholder="IDENTIFIER UNE SOLUTION, UN PROCESSUS, UN CONTRAT..."
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
-                                    className="w-full h-24 pl-22 pr-10 bg-transparent border-none text-white placeholder:text-white/20 font-black text-lg italic tracking-widest focus:ring-0 uppercase"
+                                    className="w-full h-28 pl-26 pr-12 bg-transparent border-none text-white placeholder:text-slate-800 font-black text-xl italic tracking-widest focus:ring-0 uppercase transition-all"
                                 />
                             </div>
                         </div>
                     </div>
                 </section>
 
-                <div className="max-w-6xl mx-auto px-6 md:px-12 py-24 space-y-24">
+                <div className="max-w-7xl mx-auto px-6 md:px-12 py-32 space-y-28">
                     {/* Integrated Control Panel (Categories) */}
-                    <div className="flex flex-wrap items-center justify-center gap-6">
+                    <div className="flex flex-wrap items-center justify-center gap-8">
                         <button
                             onClick={() => setActiveCategory(null)}
                             className={cn(
-                                "h-16 px-10 rounded-[1.2rem] font-black text-[11px] uppercase tracking-[0.4em] transition-all border-4 italic leading-none pt-1",
-                                !activeCategory 
-                                    ? "bg-primary text-white border-primary shadow-premium-lg shadow-primary/40 scale-105" 
-                                    : "glass-card border-border text-muted-foreground/60 hover:border-primary/40 hover:text-primary"
+                                "h-20 px-14 rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.5em] transition-all border-4 italic leading-none pt-1 decoration-8",
+                                !activeCategory
+                                    ? "bg-[#FF6600] text-white border-[#FF6600] shadow-3xl shadow-[#FF6600]/30 scale-110"
+                                    : "bg-white/5 border-white/5 text-slate-500 hover:border-[#FF6600]/40 hover:text-white"
                             )}
                         >
                             ACCÈS TOTAL
@@ -163,31 +163,31 @@ const FaqPage = () => {
                                 key={cat.label}
                                 onClick={() => setActiveCategory(cat.label === activeCategory ? null : cat.label)}
                                 className={cn(
-                                    "h-16 px-8 rounded-[1.2rem] font-black text-[11px] uppercase tracking-[0.3em] transition-all border-4 flex items-center gap-4 italic leading-none pt-1",
-                                    activeCategory === cat.label 
-                                        ? "bg-primary text-white border-primary shadow-premium-lg shadow-primary/40 scale-105" 
-                                        : "glass-card border-border text-muted-foreground/60 hover:border-primary/40 hover:text-primary"
+                                    "h-20 px-10 rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.4em] transition-all border-4 flex items-center gap-6 italic leading-none pt-1",
+                                    activeCategory === cat.label
+                                        ? "bg-[#FF6600] text-white border-[#FF6600] shadow-3xl shadow-[#FF6600]/30 scale-110"
+                                        : "bg-white/5 border-white/5 text-slate-500 hover:border-[#FF6600]/40 hover:text-white"
                                 )}
                             >
-                                <span className="text-xl filter grayscale active:grayscale-0">{cat.icon}</span> 
+                                <span className="text-2xl filter grayscale active:grayscale-0 group-hover:filter-none">{cat.icon}</span>
                                 {cat.label}
                             </button>
                         ))}
                     </div>
 
                     {/* Content Engine */}
-                    <div className="space-y-20">
+                    <div className="space-y-32">
                         {filteredCategories.length > 0 ? (
                             filteredCategories.map(cat => (
-                                <div key={cat.label} className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
-                                    <div className="flex items-center gap-8 group/title">
-                                        <div className="size-2 bg-primary rounded-full group-hover:scale-[10] transition-transform duration-700 opacity-20" />
-                                        <h2 className="text-executive-label font-black uppercase tracking-[0.5em] text-primary flex items-center gap-6 italic leading-none pt-1">
-                                            <span className="text-4xl">{cat.icon}</span> {cat.label}
+                                <div key={cat.label} className="space-y-16 animate-in fade-in slide-in-from-bottom-12 duration-1000">
+                                    <div className="flex items-center gap-10 group/title">
+                                        <div className="size-3 bg-[#FF6600] rounded-full group-hover:scale-[12] transition-transform duration-1000 opacity-20 shadow-[0_0_20px_rgba(255,102,0,0.4)]" />
+                                        <h2 className="text-[11px] font-black uppercase tracking-[0.6em] text-[#FF6600] flex items-center gap-8 italic leading-none pt-1">
+                                            <span className="text-5xl">{cat.icon}</span> {cat.label}
                                         </h2>
-                                        <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
+                                        <div className="flex-1 h-1 bg-gradient-to-r from-white/10 to-transparent" />
                                     </div>
-                                    <div className="grid grid-cols-1 gap-8">
+                                    <div className="grid grid-cols-1 gap-10">
                                         {cat.questions.map((item, i) => (
                                             <FaqItem key={i} question={item.q} answer={item.a} />
                                         ))}
@@ -195,14 +195,14 @@ const FaqPage = () => {
                                 </div>
                             ))
                         ) : (
-                            <div className="py-40 text-center space-y-8 glass-card border-4 border-dashed border-border rounded-[3rem]">
-                                <div className="size-32 rounded-[2.5rem] bg-muted/10 flex items-center justify-center mx-auto border-4 border-dashed border-border group">
-                                    <Search className="size-16 text-muted-foreground/20 animate-pulse" />
+                            <div className="py-48 text-center space-y-10 bg-white/[0.01] border-4 border-dashed border-white/5 rounded-[4rem]">
+                                <div className="size-40 rounded-[3rem] bg-white/5 flex items-center justify-center mx-auto border-4 border-dashed border-white/5 group">
+                                    <Search className="size-20 text-slate-800 animate-pulse" />
                                 </div>
-                                <div className="space-y-4">
-                                    <p className="text-4xl font-black italic tracking-tighter text-foreground uppercase">Protocole Infructueux</p>
-                                    <p className="text-muted-foreground/60 font-black uppercase tracking-[0.3em] text-xs max-w-lg mx-auto italic border-r-8 border-primary/20 pr-10 text-right">
-                                        Aucune donnée n'a été identifiée pour les critères spécifiés dans notre base de connaissances.
+                                <div className="space-y-6">
+                                    <p className="text-5xl font-black italic tracking-tighter text-white uppercase">PROTOCOLE INFRUCTUEUX</p>
+                                    <p className="text-slate-500 font-extrabold uppercase tracking-[0.4em] text-xs max-w-2xl mx-auto italic border-r-8 border-[#FF6600]/20 pr-12 text-right">
+                                        AUCUNE DONNÉE N'A ÉTÉ IDENTIFIÉE POUR LES CRITÈRES SPÉCIFIÉS DANS NOTRE BASE DE CONNAISSANCES.
                                     </p>
                                 </div>
                             </div>
@@ -210,21 +210,23 @@ const FaqPage = () => {
                     </div>
 
                     {/* Executive Support CTA */}
-                    <div className="relative p-20 rounded-[4rem] glass-card border-4 border-primary/20 text-center space-y-10 overflow-hidden shadow-premium-lg group">
-                        <div className="absolute top-0 right-0 size-96 bg-primary/10 rounded-full blur-[120px] -mt-48 -mr-48 group-hover:scale-125 transition-transform duration-[2s]" />
-                        <div className="relative z-10 size-24 bg-primary rounded-[2rem] flex items-center justify-center mx-auto shadow-premium-lg group-hover:rotate-12 transition-transform">
-                            <MessageSquare className="size-12 text-white" />
+                    <div className="relative p-24 rounded-[5rem] bg-white group border-x-[12px] border-[#FF6600] text-center space-y-12 overflow-hidden shadow-3xl">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,102,0,0.1),transparent_70%)]" />
+                        <div className="absolute top-0 right-0 size-[40rem] bg-[#FF6600]/10 rounded-full blur-[150px] -mt-48 -mr-48 group-hover:scale-125 transition-transform duration-[2s]" />
+
+                        <div className="relative z-10 size-28 bg-black rounded-[2.5rem] flex items-center justify-center mx-auto shadow-3xl group-hover:rotate-12 transition-transform duration-700">
+                            <MessageSquare className="size-14 text-white" />
                         </div>
-                        <div className="relative z-10 space-y-6">
-                            <h3 className="text-4xl md:text-5xl font-black italic tracking-tighter text-foreground uppercase leading-none">Besoin d'une <span className="text-primary not-italic">Intervention Directe ?</span></h3>
-                            <p className="text-muted-foreground/60 font-black uppercase tracking-[0.3em] text-sm italic max-w-2xl mx-auto leading-relaxed border-l-8 border-primary/20 pl-10">
-                                Nos agents de liaison stratégique sont prêts à résoudre vos problématiques opérationnelles les plus complexes en un temps record.
+                        <div className="relative z-10 space-y-8">
+                            <h3 className="text-5xl md:text-7xl font-black italic tracking-tighter text-black uppercase leading-none">BESOIN D'UNE <span className="text-[#FF6600] not-italic">LIAISON DIRECTE ?</span></h3>
+                            <p className="text-slate-500 font-black uppercase tracking-[0.4em] text-sm italic max-w-3xl mx-auto leading-relaxed border-l-8 border-[#FF6600]/40 pl-12 text-left">
+                                NOS AGENTS DE LIAISON STRATÉGIQUE SONT PRÊTS À RÉSOUDRE VOS PROBLÉMATIQUES OPÉRATIONNELLES LES PLUS COMPLEXES EN UN TEMPS RECORD.
                             </p>
                         </div>
                         <Link to="/contact" className="relative z-10 inline-block">
-                            <Button className="h-20 px-14 rounded-[1.5rem] font-black uppercase tracking-[0.4em] text-xs shadow-premium-lg shadow-primary/40 bg-primary hover:bg-primary text-white border-0 hover:scale-105 active:scale-95 transition-all group/btn relative overflow-hidden italic leading-none pt-1">
+                            <Button className="h-28 px-20 rounded-[2.5rem] font-black uppercase tracking-[0.5em] text-sm shadow-3xl shadow-[#FF6600]/20 bg-black hover:bg-black text-white border-4 border-black hover:scale-110 active:scale-95 transition-all group/btn relative overflow-hidden italic leading-none">
                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_2s_infinite]" />
-                                OUVRIR UN CANAL DE SUPPORT <ArrowRight className="size-5 ml-4 group-hover/btn:translate-x-2 transition-transform" />
+                                OUVRIR UN CANAL CONSULAIRE <ArrowRight className="size-8 ml-6 group-hover/btn:translate-x-4 transition-transform" />
                             </Button>
                         </Link>
                     </div>

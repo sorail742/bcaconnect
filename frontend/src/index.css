@@ -4,114 +4,97 @@
 
 @layer base {
     :root {
-        /* Design Initial BCA - Orange & Green */
+        /* Design Premium BCA - Orange & Deep Black */
         --background: 0 0% 98%;
-        --foreground: 222.2 84% 4.9%;
+        --foreground: 224 71% 4%;
 
         --card: 0 0% 100%;
-        --card-foreground: 222.2 84% 4.9%;
+        --card-foreground: 224 71% 4%;
 
         --popover: 0 0% 100%;
-        --popover-foreground: 222.2 84% 4.9%;
+        --popover-foreground: 224 71% 4%;
 
-        --primary: 20 100% 52%;
-        /* Orange #FF5B0D */
+        --primary: 24 100% 50%;
+        /* #FF6600 */
         --primary-foreground: 0 0% 100%;
 
         --secondary: 158 100% 33%;
-        /* Green #00A86B */
         --secondary-foreground: 0 0% 100%;
 
-        --muted: 210 40% 96.1%;
-        --muted-foreground: 215.4 16.3% 46.9%;
+        --muted: 220 14% 96%;
+        --muted-foreground: 220 9% 46%;
 
-        --accent: 43 74% 49%;
-        /* Gold #DAA520 */
-        --accent-foreground: 222.2 47.4% 11.2%;
+        --accent: 24 100% 50%;
+        --accent-foreground: 224 71% 4%;
 
-        --destructive: 0 84.2% 60.2%;
+        --destructive: 0 84% 60%;
         --destructive-foreground: 210 40% 98%;
 
-        --border: 214.3 31.8% 91.4%;
-        --input: 214.3 31.8% 91.4%;
-        --ring: 20 100% 52%;
+        --border: 220 13% 91%;
+        --input: 220 13% 91%;
+        --ring: 24 100% 50%;
 
-        --radius: 1rem;
+        --radius: 1.5rem;
     }
 
     .dark {
-        /* Design Sombre BCA */
-        --background: 220 33% 6%;
-        /* #0B0E14 approx */
+        --background: 223 35% 6%;
+        /* #0A0D14 aprox */
         --foreground: 210 40% 98%;
 
-        --card: 220 33% 9%;
+        --card: 223 35% 8%;
         --card-foreground: 210 40% 98%;
 
-        --popover: 220 33% 8%;
+        --popover: 223 35% 7%;
         --popover-foreground: 210 40% 98%;
 
-        --primary: 20 100% 52%;
+        --primary: 24 100% 50%;
         --primary-foreground: 0 0% 100%;
 
         --secondary: 158 100% 33%;
         --secondary-foreground: 0 0% 100%;
 
-        --muted: 217.2 32.6% 17.5%;
-        --muted-foreground: 215 20.2% 65.1%;
+        --muted: 223 35% 12%;
+        --muted-foreground: 215 20% 65%;
 
-        --accent: 43 74% 49%;
+        --accent: 24 100% 50%;
         --accent-foreground: 210 40% 98%;
 
-        --destructive: 0 62.8% 30.6%;
+        --destructive: 0 63% 31%;
         --destructive-foreground: 210 40% 98%;
 
-        --border: 217.2 32.6% 17.5%;
-        --input: 217.2 32.6% 17.5%;
-        --ring: 20 100% 52%;
+        --border: 223 35% 15%;
+        --input: 223 35% 15%;
+        --ring: 24 100% 50%;
     }
 }
 
 @layer components {
-
-    /* Glassmorphism — reduced blur for sharpness */
     .glass {
-        @apply bg-white/80 dark:bg-black/60 backdrop-blur-2xl border border-slate-200/50 dark:border-white/10 shadow-premium;
+        @apply bg-[#0A0D14]/60 backdrop-blur-3xl border border-white/5 shadow-2xl;
     }
 
     .glass-card {
-        @apply bg-white/60 dark:bg-white/5 border border-slate-100 dark:border-white/5 backdrop-blur-xl hover:border-primary/30 transition-all duration-300 shadow-premium;
+        @apply bg-white/[0.03] border border-white/5 backdrop-blur-2xl hover:border-[#FF6600]/20 transition-all duration-500 shadow-2xl;
     }
 
-    /* Executive Typography — cleaner, less decorative */
-    .text-executive-title {
-        @apply font-bold tracking-tight uppercase leading-tight not-italic;
+    /* Premium Typography */
+    .text-premium-title {
+        @apply font-black tracking-[-0.04em] leading-[1.1] text-white;
+        font-family: 'Outfit', sans-serif;
     }
 
-    .text-executive-label {
-        @apply text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground;
-    }
-
-    .text-executive-data {
-        @apply font-bold tracking-tight tabular-nums;
-    }
-
-    /* Premium Gradients */
-    .bg-premium-gradient {
-        @apply bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700;
-    }
-
-    .text-premium-gradient {
-        @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-500 to-violet-600 dark:from-blue-400 dark:via-blue-300 dark:to-indigo-400;
-    }
-
-    /* Interaction */
-    .hover-premium {
-        @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10;
+    .text-premium-label {
+        @apply text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6600];
+        font-family: 'Outfit', sans-serif;
     }
 
     .active-press {
-        @apply active:scale-95 transition-transform duration-100;
+        @apply active:scale-95 transition-transform duration-200;
+    }
+
+    .orange-glow {
+        box-shadow: 0 0 50px -10px rgba(255, 102, 0, 0.3);
     }
 }
 
@@ -121,15 +104,8 @@
     }
 
     body {
-        @apply bg-slate-50 text-foreground antialiased selection:bg-primary/20;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    }
-
-    .dark body {
-        background: radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.08), transparent 50%),
-            radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.08), transparent 50%),
-            #020617;
-        background-attachment: fixed;
+        @apply bg-[#0A0D14] text-foreground antialiased selection:bg-[#FF6600]/30;
+        font-family: 'Inter', sans-serif;
     }
 
     h1,
@@ -138,24 +114,46 @@
     h4,
     h5,
     h6 {
-        @apply font-bold tracking-tight text-slate-900 dark:text-slate-50;
+        @apply font-bold tracking-[-0.02em] text-white;
+        font-family: 'Outfit', sans-serif;
     }
 
     section {
-        @apply relative py-20 lg:py-32 overflow-clip;
+        @apply py-24 lg:py-40;
     }
 }
 
-/* Custom Utilities for Depth */
-.shadow-premium {
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.02);
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
 }
 
-.dark .shadow-premium {
-    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 1px 10px rgba(0, 0, 0, 0.1);
+::-webkit-scrollbar-track {
+    background: #0A0D14;
 }
 
-/* Smooth Tabular Numbers for Stats */
-.tabular-nums {
-    font-variant-numeric: tabular-nums;
+::-webkit-scrollbar-thumb {
+    background: #1C222D;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #FF6600;
+}
+
+/* Animation utilities */
+.animate-pulse-slow {
+    animation: pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 0.1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
 }

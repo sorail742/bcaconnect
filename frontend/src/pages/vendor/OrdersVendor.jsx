@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import DataTable from '../../components/ui/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -12,19 +12,22 @@ import {
     XCircle,
     RotateCcw,
     RefreshCw,
-    Activity,
     ChevronRight,
     ArrowUpRight,
     Filter,
-    Zap,
     Truck,
-    CircleDashed
+    CircleDashed,
+    ShoppingBag,
+    TrendingUp,
+    Activity,
+    Satellite,
+    Zap,
+    Sparkles
 } from 'lucide-react';
 import orderService from '../../services/orderService';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
-import { DashboardAlerts } from '../../components/dashboard/DashboardAlerts';
-import { formatGrowthCurrency, getLogisticsRisk } from '../../lib/GrowthMetrics';
+import { Button } from '../../components/ui/Button';
 
 const OrdersVendor = () => {
     const [orders, setOrders] = useState([]);
@@ -34,38 +37,38 @@ const OrdersVendor = () => {
     const [selectedIds, setSelectedIds] = useState([]);
 
     const STATUS_FILTERS = [
-        { key: 'Tous', label: 'Global' },
-        { key: 'en_attente', label: 'Attente' },
-        { key: 'confirme', label: 'Confirmé' },
-        { key: 'prepare', label: 'Préparé' },
-        { key: 'expedie', label: 'Expédié' },
-        { key: 'livre', label: 'Livré' },
-        { key: 'annule', label: 'Annulé' }
+        { key: 'Tous', label: 'FLUX GLOBAL' },
+        { key: 'en_attente', label: 'ATTENTE' },
+        { key: 'confirme', label: 'CONFIRMÉ' },
+        { key: 'prepare', label: 'PRÉPARÉ' },
+        { key: 'expedie', label: 'EXPÉDIÉ' },
+        { key: 'livre', label: 'LIVRÉ' },
+        { key: 'annule', label: 'ANNULÉ' }
     ];
 
-    const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
         setIsLoading(true);
         try {
             const data = await orderService.getVendorOrders();
             setOrders(data.orders || []);
         } catch (err) {
-            toast.error("Échec de la synchronisation logistique.");
+            toast.error("ÉCHEC DE LA RÉCUPÉRATION DES COMMANDES.");
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchOrders();
-    }, []);
+    }, [fetchOrders]);
 
     const handleStatusUpdate = async (itemId, newStatus) => {
         try {
             await orderService.updateItemStatus(itemId, newStatus);
-            toast.success(`Flux mis à jour : ${newStatus.toUpperCase()}`);
+            toast.success(`STATUT MIS À JOUR : ${newStatus.toUpperCase()}`);
             fetchOrders();
         } catch (err) {
-            toast.error("Échec de la transition de statut.");
+            toast.error("ERREUR LORS DE LA MISE À JOUR DU STATUT.");
         }
     };
 
@@ -74,7 +77,7 @@ const OrdersVendor = () => {
             case 'en_attente': return 'warning';
             case 'confirme': return 'info';
             case 'prepare': return 'info';
-            case 'expedie': return 'secondary';
+            case 'expedie': return 'primary';
             case 'livre': return 'success';
             case 'annule': return 'danger';
             case 'retourne': return 'danger';
@@ -85,7 +88,7 @@ const OrdersVendor = () => {
     const filtered = orders.filter((o) => {
         const matchStatus = activeFilter === 'Tous' || o.statut === activeFilter;
         const matchSearch =
-            o.id.toLowerCase().includes(search.toLowerCase()) ||
+            o.commande_id.toLowerCase().includes(search.toLowerCase()) ||
             o.Order?.User?.nom_complet.toLowerCase().includes(search.toLowerCase()) ||
             o.produit?.nom_produit.toLowerCase().includes(search.toLowerCase());
         return matchStatus && matchSearch;
@@ -93,102 +96,88 @@ const OrdersVendor = () => {
 
     const columns = [
         {
-            label: 'Désignation Actif',
+            label: 'DESIGNATION FLUX',
             render: (row) => (
-                <div className="flex items-center gap-6">
-                    <div className="size-16 rounded-[1.2rem] bg-accent/20 border-2 border-border flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all shadow-inner overflow-hidden">
+                <div className="flex items-center gap-6 py-3 group/item">
+                    <div className="size-16 rounded-2xl bg-white/[0.03] border-4 border-white/5 flex items-center justify-center overflow-hidden shrink-0 group-hover/item:scale-110 group-hover/item:rotate-3 transition-all duration-700 shadow-2xl relative">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-[#FF6600]/20 to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity" />
                         {row.produit?.image_url ? (
-                            <img src={row.produit.image_url} className="w-full h-full object-cover" alt="" />
+                            <img src={row.produit.image_url} className="w-full h-full object-cover relative z-10" alt="" />
                         ) : (
-                            <Package className="size-8 text-muted-foreground/20" />
+                            <Package className="size-8 text-slate-700" />
                         )}
                     </div>
                     <div className="min-w-0">
-                        <p className="text-sm font-black text-foreground italic uppercase tracking-tighter leading-none mb-2 truncate max-w-[200px]">
+                        <p className="text-sm font-black text-white uppercase tracking-tighter leading-none mb-2 italic truncate max-w-[200px] pt-1 group-hover/item:text-[#FF6600] transition-colors">
                             {row.produit?.nom_produit}
                         </p>
-                        <div className="flex items-center gap-2">
-                            <span className="text-[9px] font-black uppercase text-muted-foreground/30 italic tracking-widest bg-accent/30 px-2 py-0.5 rounded-md border border-border">
-                                ID: {row.commande_id.slice(0, 8)}
-                            </span>
-                        </div>
+                        <p className="text-[10px] font-black text-[#FF6600] uppercase tracking-[0.3em] leading-none italic opacity-60">
+                            NODE: {row.commande_id.slice(0, 8).toUpperCase()}
+                        </p>
                     </div>
                 </div>
             )
         },
         {
-            label: 'Entité Client',
+            label: 'OPÉRATEUR RÉSEAU',
             render: (row) => (
-                <div className="flex flex-col">
-                    <span className="text-xs font-black text-foreground uppercase tracking-widest italic group-hover:text-primary transition-colors">
-                        {row.Order?.User?.nom_complet}
+                <div className="flex flex-col gap-1.5 py-1">
+                    <span className="text-[12px] font-black text-white uppercase tracking-wider italic">
+                        {row.Order?.User?.nom_complet?.toUpperCase()}
                     </span>
-                    <span className="text-[10px] text-muted-foreground/40 font-bold mt-1 uppercase tracking-[0.2em]">
+                    <span className="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em] italic flex items-center gap-2">
+                        <Activity className="size-3 text-[#FF6600]" />
                         {row.Order?.User?.telephone}
                     </span>
                 </div>
             )
         },
         {
-            label: 'Volume',
-            render: (row) => (
-                <div className="flex items-center gap-2">
-                    <span className="text-xl font-black italic tracking-tighter text-executive-data">
-                        x{row.quantite}
-                    </span>
-                    <span className="text-[9px] font-black text-muted-foreground/20 uppercase italic mt-1">UNITÉS</span>
-                </div>
-            )
-        },
-        {
-            label: 'Cotation',
-            render: (row) => (
-                <div className="flex flex-col">
-                    <span className="text-sm font-black text-foreground tracking-tight">
-                        {(row.prix_unitaire_achat * row.quantite).toLocaleString()} <small className="text-[9px] font-bold opacity-30">GNF</small>
-                    </span>
-                    <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-md mt-1 w-fit">PRÊT MOBILE MONEY</span>
-                </div>
-            )
-        },
-        {
-            label: 'Lieu / Flux',
+            label: 'VOLUME',
             render: (row) => (
                 <div className="flex items-center gap-3">
-                    <StatusBadge status={row.statut} variant={getStatusVariant(row.statut)} />
+                    <span className="text-sm font-black text-white italic tracking-tighter uppercase tabular-nums">x{row.quantite}</span>
+                    <div className="size-1.5 rounded-full bg-[#FF6600]/40" />
                 </div>
             )
         },
         {
-            label: 'Actions Logistiques',
+            label: 'TOTAL GNF',
             render: (row) => (
-                <div className="flex items-center justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
+                <span className="text-sm font-black text-white tracking-tighter italic tabular-nums uppercase">
+                    {(row.prix_unitaire_achat * row.quantite).toLocaleString('fr-GN')} <small className="text-[10px] font-black text-[#FF6600] non-italic">GNF</small>
+                </span>
+            )
+        },
+        {
+            label: 'STATUT CANAL',
+            render: (row) => (
+                <StatusBadge status={row.statut} variant={getStatusVariant(row.statut)} className="text-[9px] font-black italic uppercase tracking-widest border-2" />
+            )
+        },
+        {
+            label: 'GOUVERNANCE',
+            render: (row) => (
+                <div className="flex items-center justify-end gap-4 pr-6">
                     {row.statut === 'en_attente' && (
-                        <button onClick={() => handleStatusUpdate(row.id, 'confirme')} 
-                            className="size-10 bg-background border border-border rounded-lg flex items-center justify-center text-emerald-500 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all shadow-sm active:scale-95 group/btn" 
-                            title="Confirmer Protocoles">
-                            <CheckCircle2 className="size-4" />
+                        <button onClick={() => handleStatusUpdate(row.id, 'confirme')}
+                            className="size-11 bg-white/[0.03] border-2 border-white/5 rounded-xl flex items-center justify-center text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all duration-700 shadow-3xl hover:scale-110 active:scale-95 group/confirm"
+                            title="Confirmer">
+                            <CheckCircle2 className="size-5 group-hover/confirm:scale-110" />
                         </button>
                     )}
                     {row.statut === 'confirme' && (
-                        <button onClick={() => handleStatusUpdate(row.id, 'prepare')} 
-                            className="size-10 bg-background border border-border rounded-lg flex items-center justify-center text-indigo-500 hover:border-indigo-500/40 hover:bg-indigo-500/5 transition-all shadow-sm active:scale-95 group/btn" 
-                            title="Prêt Logistique">
-                            <Package className="size-4" />
+                        <button onClick={() => handleStatusUpdate(row.id, 'prepare')}
+                            className="size-11 bg-[#FF6600]/10 border-2 border-[#FF6600]/20 rounded-xl flex items-center justify-center text-[#FF6600] hover:bg-[#FF6600] hover:text-white transition-all duration-700 shadow-3xl hover:scale-110 active:scale-95 group/prepare"
+                            title="Prêt">
+                            <Package className="size-5 group-hover/prepare:animate-pulse" />
                         </button>
                     )}
                     {['en_attente', 'confirme', 'prepare'].includes(row.statut) && (
-                        <button onClick={() => handleStatusUpdate(row.id, 'annule')} 
-                            className="size-10 bg-background border border-border rounded-lg flex items-center justify-center text-rose-500 hover:border-rose-500/40 hover:bg-rose-500/5 transition-all shadow-sm active:scale-95 group/btn" 
-                            title="Révoquer Commande">
-                            <XCircle className="size-4" />
-                        </button>
-                    )}
-                    {row.statut === 'livre' && (
-                        <button onClick={() => handleStatusUpdate(row.id, 'retourne')} 
-                            className="size-10 bg-background border border-border rounded-lg flex items-center justify-center text-amber-500 hover:border-amber-500/40 hover:bg-amber-500/5 transition-all shadow-sm active:scale-95 group/btn" 
-                            title="Procéder au Retour">
-                            <RotateCcw className="size-4" />
+                        <button onClick={() => handleStatusUpdate(row.id, 'annule')}
+                            className="size-11 bg-white/[0.03] border-2 border-white/5 rounded-xl flex items-center justify-center text-rose-500 hover:bg-rose-500 hover:text-white transition-all duration-700 shadow-3xl hover:scale-110 active:scale-95 group/cancel"
+                            title="Annuler">
+                            <XCircle className="size-5 group-hover/cancel:rotate-90" />
                         </button>
                     )}
                 </div>
@@ -196,150 +185,112 @@ const OrdersVendor = () => {
         }
     ];
 
-    const stats = [
-        { label: 'Flux Total', val: orders.length, icon: ListOrdered, color: 'text-primary' },
-        { label: 'Attente Action', val: orders.filter(o => o.statut === 'en_attente').length, icon: Clock, color: 'text-amber-500' },
-        { label: 'C.A. Réalisé', val: `${orders.filter(o => o.statut === 'livre').reduce((acc, o) => acc + (o.prix_unitaire_achat * o.quantite), 0).toLocaleString()} GNF`, icon: Wallet, color: 'text-emerald-500' },
-    ];
-
     return (
-        <DashboardLayout title="LOGISTIQUE DES VENTES">
-            <div className="space-y-8 p-6 animate-in fade-in duration-500 pb-20">
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b-2 border-border pb-8">
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-3">
-                            <div className="size-2 bg-primary rounded-full shadow-[0_0_10px_rgba(43,90,255,0.6)]" />
-                            <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] leading-none pt-0.5">Surveillance Logistique</span>
-                        </div>
-                        <h2 className="text-4xl md:text-5xl font-black text-foreground tracking-tight uppercase leading-[0.85]">Gestion des <span className="text-primary">Commandes.</span></h2>
-                        <p className="text-muted-foreground/60 font-medium text-sm border-l-2 border-primary/20 pl-4 max-w-lg italic">Fulfillment haute-vitesse et supervision des transactions.</p>
-                    </div>
-                    <div className="flex gap-3">
-                        <button 
-                            onClick={fetchOrders}
-                            className="h-16 w-16 bg-background border border-border rounded-2xl flex items-center justify-center text-muted-foreground/30 hover:border-primary/40 hover:text-primary transition-all shadow-sm group"
-                        >
-                            <RefreshCw className={cn("size-6 group-hover:rotate-180 transition-transform duration-700", isLoading && "animate-spin")} />
-                        </button>
-                    </div>
-                </div>
+        <DashboardLayout title="CENTRE LOGISTIQUE TRANSACTIONNEL">
+            <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-1000 pb-20">
 
-                {/* Priority Alert System */}
-                {orders.filter(o => o.statut === 'en_attente').length > 5 && (
-                    <DashboardAlerts 
-                        alerts={[{
-                            type: 'warning',
-                            label: 'Saturation Logistique',
-                            message: `Vous avez un volume anormal de commandes (${orders.filter(o => o.statut === 'en_attente').length}) en attente de validation.`,
-                            icon: <Truck className="size-5" />
-                        }]}
-                    />
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {stats.map((s, i) => (
-                        <div key={i} className="glass-card p-8 rounded-3xl border border-border flex flex-col justify-between h-44 shadow-sm group hover:border-primary/20 transition-all duration-300">
-                            <div className="flex justify-between items-start">
-                                <div className={cn("size-12 rounded-xl flex items-center justify-center bg-accent/20 border border-border shadow-inner group-hover:scale-110 transition-transform", s.color)}>
-                                    <s.icon className="size-6" />
-                                </div>
-                                <Zap className="size-3 text-muted-foreground/10" />
-                            </div>
-                            <div>
-                                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 mb-1">{s.label}</p>
-                                <p className={cn("text-3xl font-black tracking-tight leading-none text-executive-data truncate", s.color)}>{s.val}</p>
-                            </div>
+                {/* Stats Section */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                    <div className="p-10 bg-white/[0.02] rounded-[4rem] border-4 border-white/5 shadow-3xl group relative overflow-hidden flex items-center gap-8 border-l-[16px] border-l-[#FF6600]">
+                        <div className="absolute inset-x-0 bottom-0 h-1 bg-[#FF6600]/20 group-hover:h-full transition-all duration-700 opacity-20 pointer-events-none" />
+                        <div className="size-16 rounded-[1.5rem] bg-[#FF6600]/10 flex items-center justify-center text-[#FF6600] border-2 border-[#FF6600]/20 shadow-3xl group-hover:rotate-12 transition-transform duration-700 relative z-10">
+                            <ListOrdered className="size-8" />
                         </div>
-                    ))}
-                </div>
-
-                {/* Logistics Velocity Pulse */}
-                <div className="p-8 rounded-[2rem] bg-indigo-500/5 border-2 border-indigo-500/10 flex flex-col md:flex-row items-center justify-between gap-10">
-                    <div className="flex items-center gap-8">
-                        <div className="size-20 rounded-[2rem] bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                            <Truck className="size-10" />
-                        </div>
-                        <div className="space-y-2">
-                            <h4 className="text-xl font-black italic tracking-tighter uppercase leading-none">Logistics Pulse — <span className="text-indigo-500">Flux Optimal.</span></h4>
-                            <p className="text-muted-foreground/60 text-sm font-medium italic">Vitesse moyenne de livraison : <span className="text-foreground font-black">2.4h</span>. Aucun goulot d'étranglement détecté sur le segment mobile.</p>
+                        <div className="relative z-10">
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-3 italic">FLUX TOTAL</p>
+                            <p className="text-4xl font-black text-white uppercase italic tracking-tighter">{orders.length}</p>
                         </div>
                     </div>
-                    <div className="flex gap-4">
-                        <div className="px-6 py-3 bg-white dark:bg-white/5 border border-indigo-500/20 rounded-2xl flex flex-col items-center">
-                            <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest mb-1">Délai Sync</span>
-                            <span className="text-xl font-black text-indigo-500 italic leading-none">0.8s</span>
+                    <div className="p-10 bg-white/[0.02] rounded-[4rem] border-4 border-white/5 shadow-3xl group relative overflow-hidden flex items-center gap-8 border-l-[16px] border-l-amber-500">
+                        <div className="absolute inset-x-0 bottom-0 h-1 bg-amber-500/20 group-hover:h-full transition-all duration-700 opacity-20 pointer-events-none" />
+                        <div className="size-16 rounded-[1.5rem] bg-amber-500/10 flex items-center justify-center text-amber-500 border-2 border-amber-500/20 shadow-3xl group-hover:rotate-12 transition-transform duration-700 relative z-10">
+                            <Clock className="size-8" />
                         </div>
-                        <div className="px-6 py-3 bg-indigo-500 text-white rounded-2xl flex flex-col items-center shadow-lg shadow-indigo-500/20">
-                            <span className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-1">Capacité MM</span>
-                            <span className="text-xl font-black italic leading-none">100%</span>
+                        <div className="relative z-10">
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-3 italic">EN ATTENTE</p>
+                            <p className="text-4xl font-black text-white uppercase italic tracking-tighter">{orders.filter(o => o.statut === 'en_attente').length}</p>
+                        </div>
+                    </div>
+                    <div className="p-10 bg-white/[0.02] rounded-[4rem] border-4 border-white/5 shadow-3xl group relative overflow-hidden flex items-center gap-8 border-l-[16px] border-l-emerald-500">
+                        <div className="absolute inset-x-0 bottom-0 h-1 bg-emerald-500/20 group-hover:h-full transition-all duration-700 opacity-20 pointer-events-none" />
+                        <div className="size-16 rounded-[1.5rem] bg-emerald-500/10 flex items-center justify-center text-emerald-500 border-2 border-emerald-500/20 shadow-3xl group-hover:rotate-12 transition-transform duration-700 relative z-10">
+                            <Wallet className="size-8" />
+                        </div>
+                        <div className="relative z-10">
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-3 italic">VALEUR LIVRÉE</p>
+                            <p className="text-4xl font-black text-white uppercase italic tracking-tighter tabular-nums">{orders.filter(o => o.statut === 'livre').reduce((acc, o) => acc + (o.prix_unitaire_achat * o.quantite), 0).toLocaleString('fr-GN')} <small className="text-xs opacity-40 font-black italic">GNF</small></p>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex flex-col xl:flex-row gap-6 items-stretch xl:items-center justify-between">
-                    <div className="relative group/search flex-1 max-w-2xl">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground/30 size-5 group-focus-within/search:text-primary transition-all" />
-                        <input
-                            className="w-full h-16 pl-14 pr-8 bg-background border border-border focus:border-primary/40 rounded-2xl text-xs font-bold uppercase tracking-widest placeholder:text-muted-foreground/20 shadow-inner outline-none transition-all"
-                            placeholder="RECHERCHER CLIENT, PRODUIT OU ID COMMANDE..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                {/* Filter & Search Surface */}
+                <div className="bg-white/[0.01] border-4 border-white/5 rounded-[4rem] overflow-hidden shadow-3xl">
+                    <div className="p-12 border-b-4 border-white/5 bg-white/[0.02] flex flex-col lg:flex-row lg:items-center justify-between gap-12">
+                        <div className="flex items-center gap-6 overflow-x-auto pb-4 lg:pb-0 scrollbar-hide py-2">
+                            {STATUS_FILTERS.map((f) => (
+                                <button
+                                    key={f.key}
+                                    onClick={() => setActiveFilter(f.key)}
+                                    className={cn(
+                                        "px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] italic transition-all duration-700 border-4 whitespace-nowrap",
+                                        activeFilter === f.key
+                                            ? "bg-[#FF6600] text-white border-[#FF6600] shadow-3xl scale-110"
+                                            : "bg-white/5 border-transparent text-slate-600 hover:text-white"
+                                    )}
+                                >
+                                    {f.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="relative group w-full lg:w-[32rem]">
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#FF6600]/20 to-transparent blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-1000" />
+                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 size-6 group-focus-within:text-[#FF6600] transition-all duration-700 relative z-10" />
+                            <input
+                                className="w-full pl-16 pr-8 h-16 bg-white/[0.03] border-4 border-white/5 group-focus-within:border-[#FF6600]/40 rounded-2xl text-sm font-black uppercase tracking-[0.2em] italic placeholder:text-slate-700 outline-none relative z-10 transition-all duration-700 text-white"
+                                placeholder="CLIENT, PRODUIT, RÉFÉRENCE..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="p-4">
+                        <DataTable
+                            selectable
+                            selectedIds={selectedIds}
+                            onSelectionChange={setSelectedIds}
+                            columns={columns}
+                            data={filtered}
+                            isLoading={isLoading}
+                            className="bg-transparent border-0"
                         />
-                    </div>
 
-                    {selectedIds.length > 0 && (
-                        <div className="flex items-center gap-3 animate-in slide-in-from-right-4 duration-300">
-                             <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mr-2">{selectedIds.length} SÉLECTIONNÉES</span>
-                            <button 
-                                onClick={() => {
-                                    selectedIds.forEach(id => handleStatusUpdate(id, 'confirme'));
-                                    setSelectedIds([]);
-                                }}
-                                className="h-10 px-6 bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center gap-2 shadow-lg shadow-emerald-500/20">
-                                <CheckCircle2 className="size-4" /> Bulk Confirm
-                            </button>
-                        </div>
-                    )}
-
-                    <div className="flex items-center gap-2 bg-accent/10 p-1.5 rounded-2xl border border-border shadow-inner min-w-fit overflow-x-auto scroller-hide">
-                        {STATUS_FILTERS.map((f) => (
-                            <button
-                                key={f.key}
-                                onClick={() => setActiveFilter(f.key)}
-                                className={cn(
-                                    "px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap",
-                                    activeFilter === f.key
-                                        ? "bg-primary text-white shadow-lg"
-                                        : "text-muted-foreground/40 hover:text-foreground"
-                                )}
-                            >
-                                {f.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="glass-card rounded-[2rem] border border-border overflow-hidden shadow-sm">
-                    <DataTable
-                        selectable
-                        selectedIds={selectedIds}
-                        onSelectionChange={setSelectedIds}
-                        columns={columns}
-                        data={filtered}
-                        isLoading={isLoading}
-                    />
-                </div>
-
-                {/* Empty State Mock */}
-                {!isLoading && filtered.length === 0 && (
-                    <div className="py-40 text-center glass-card rounded-[4rem] border-4 border-border border-dashed">
-                        <div className="flex flex-col items-center gap-10 opacity-20 group">
-                            <CircleDashed className="size-24 animate-[spin_10s_linear_infinite]" />
-                            <div className="space-y-4">
-                                <p className="text-2xl font-black italic tracking-tighter uppercase">Aucun Flux Identifié</p>
-                                <p className="text-sm font-bold uppercase tracking-widest">Les transactions apparaîtront ici dès validation client.</p>
+                        {!isLoading && filtered.length === 0 && (
+                            <div className="py-40 text-center opacity-20 flex flex-col items-center gap-10">
+                                <ShoppingBag className="size-24 animate-pulse text-slate-500" />
+                                <p className="text-[12px] font-black uppercase tracking-[0.6em] italic">AUCUN FLUX TRANSACTIONNEL IDENTIFIÉ</p>
                             </div>
-                        </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Bulk Action Button */}
+                {selectedIds.length > 0 && (
+                    <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-20 duration-700">
+                        <button
+                            onClick={async () => {
+                                for (const id of selectedIds) {
+                                    await handleStatusUpdate(id, 'confirme');
+                                }
+                                setSelectedIds([]);
+                            }}
+                            className="h-20 px-12 rounded-[2rem] bg-[#FF6600] text-white shadow-3xl shadow-[#FF6600]/30 font-black text-xs uppercase tracking-[0.4em] border-0 flex items-center gap-6 italic hover:scale-110 active:scale-95 transition-all duration-700 group/bulk"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/bulk:animate-[shimmer_2s_infinite]" />
+                            <CheckCircle2 className="size-6 relative z-10" />
+                            <span className="relative z-10 pt-1">CONFIRMER {selectedIds.length} FLUX SÉLECTIONNÉS</span>
+                        </button>
                     </div>
                 )}
             </div>

@@ -59,31 +59,26 @@ import ProtectedRoute from '../components/auth/ProtectedRoute';
 const AppRoutes = () => {
     return (
         <Routes>
-            <Route
-                path="/"
-                element={<LandingPage />}
-            />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/" element={<LandingPage />} />
 
-            {/* Routes Publiques Marketplace */}
-            <Route path="/marketplace" element={<ProductCatalogue />} />
-            <Route path="/catalog" element={<ProductCatalogue />} />
-            <Route path="/vendors" element={<VendorsList />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/tracking" element={<Tracking />} />
-            <Route path="/shop/:slug" element={<StorePage />} />
+            {/* Public Routes Wrapped in MainLayout */}
+            <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
+            <Route path="/register" element={<MainLayout><Register /></MainLayout>} />
+            <Route path="/marketplace" element={<MainLayout><ProductCatalogue /></MainLayout>} />
+            <Route path="/catalog" element={<MainLayout><ProductCatalogue /></MainLayout>} />
+            <Route path="/vendors" element={<MainLayout><VendorsList /></MainLayout>} />
+            <Route path="/product/:id" element={<MainLayout><ProductDetail /></MainLayout>} />
+            <Route path="/cart" element={<MainLayout><CartPage /></MainLayout>} />
+            <Route path="/tracking" element={<MainLayout><Tracking /></MainLayout>} />
+            <Route path="/shop/:slug" element={<MainLayout><StorePage /></MainLayout>} />
+            <Route path="/about" element={<MainLayout><AboutPage /></MainLayout>} />
+            <Route path="/contact" element={<MainLayout><ContactPage /></MainLayout>} />
+            <Route path="/faq" element={<MainLayout><FaqPage /></MainLayout>} />
+            <Route path="/terms" element={<MainLayout><TermsPage /></MainLayout>} />
+            <Route path="/privacy" element={<MainLayout><PrivacyPage /></MainLayout>} />
+            <Route path="/help" element={<MainLayout><HelpCenter /></MainLayout>} />
 
-            {/* Pages Institutionnelles */}
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/faq" element={<FaqPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/help" element={<HelpCenter />} />
-
-            {/* Routes Protégées */}
+            {/* Protected Routes (Usually have their own specific layout like DashboardLayout) */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><OrdersClient /></ProtectedRoute>} />
             <Route path="/wallet" element={<ProtectedRoute><UserWallet /></ProtectedRoute>} />
@@ -95,7 +90,7 @@ const AppRoutes = () => {
             <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
             <Route path="/dispute/:orderId" element={<ProtectedRoute><DisputeReport /></ProtectedRoute>} />
 
-            {/* Routes Vendeur (Vendor) */}
+            {/* Vendor Routes */}
             <Route path="/vendor/dashboard" element={<ProtectedRoute><VendorDashboard /></ProtectedRoute>} />
             <Route path="/vendor/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
             <Route path="/vendor/products/add" element={<ProtectedRoute><AddProduct /></ProtectedRoute>} />
@@ -103,13 +98,13 @@ const AppRoutes = () => {
             <Route path="/vendor/store" element={<ProtectedRoute><StoreSettings /></ProtectedRoute>} />
             <Route path="/vendor/orders" element={<ProtectedRoute><OrdersVendor /></ProtectedRoute>} />
 
-            {/* Routes Transporteur (Carrier) */}
+            {/* Carrier Routes */}
             <Route path="/carrier/dashboard" element={<ProtectedRoute><CarrierDashboard /></ProtectedRoute>} />
 
-            {/* Routes Banque */}
+            {/* Bank Routes */}
             <Route path="/bank/dashboard" element={<ProtectedRoute><BankDashboard /></ProtectedRoute>} />
 
-            {/* Routes Admin */}
+            {/* Admin Routes */}
             <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
             <Route path="/admin/products" element={<ProtectedRoute><AdminProducts /></ProtectedRoute>} />
@@ -119,11 +114,9 @@ const AppRoutes = () => {
             <Route path="/admin/ads" element={<ProtectedRoute><AdManager /></ProtectedRoute>} />
             <Route path="/admin/disputes" element={<ProtectedRoute><AdminDisputes /></ProtectedRoute>} />
 
-            {/* Route par défaut (404) */}
-            <Route path="*" element={<NotFound />} />
+            <Route path="*" element={<MainLayout><NotFound /></MainLayout>} />
         </Routes>
     );
 };
 
 export default AppRoutes;
-

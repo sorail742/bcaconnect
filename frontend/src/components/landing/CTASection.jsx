@@ -1,59 +1,67 @@
 import { Button } from "../ui/Button"
-import { ArrowRight, Mail } from "lucide-react"
+import { ArrowRight, Mail, Zap, ShieldCheck, Headphones } from "lucide-react"
 import { Link } from "react-router-dom"
 
 export function CTASection() {
     return (
-        <section id="contact" className="relative py-24 bg-white dark:bg-slate-950 overflow-hidden">
+        <section id="contact" className="relative py-32 bg-[#0A0D14] overflow-hidden isolate">
+            {/* Atmospheric Backgrounds */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#FF6600]/5 blur-[160px] rounded-full pointer-events-none -z-10 animate-pulse-slow" />
+
             <div className="container mx-auto px-4 relative z-10">
-                <div className="relative max-w-5xl mx-auto">
-                    <div className="relative p-10 md:p-20 rounded-[3rem] bg-slate-900 border border-slate-800 text-center shadow-2xl overflow-hidden group">
-                        {/* Decorative Background */}
-                        <div className="absolute -top-24 -right-24 size-80 bg-primary/20 blur-[100px] rounded-full" />
-                        <div className="absolute -bottom-24 -left-24 size-80 bg-secondary/10 blur-[100px] rounded-full" />
+                <div className="relative max-w-6xl mx-auto">
+                    <div className="relative p-12 md:p-24 rounded-[4rem] bg-[#11161D]/50 border border-white/5 text-center shadow-2xl overflow-hidden backdrop-blur-3xl group">
+
+                        {/* Interactive Gradient Glow */}
+                        <div className="absolute -top-40 -right-40 size-[500px] bg-[#FF6600]/10 blur-[120px] rounded-full group-hover:scale-110 transition-transform duration-1000" />
+                        <div className="absolute -bottom-40 -left-40 size-[500px] bg-blue-600/5 blur-[120px] rounded-full group-hover:scale-110 transition-transform duration-1000" />
 
                         <div className="relative z-10">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-bold text-white/60 mb-8 uppercase tracking-widest">
-                                Prêt pour l'aventure ?
+                            <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-[#FF6600]/10 border border-[#FF6600]/20 text-[10px] font-black text-[#FF6600] mb-10 uppercase tracking-[0.2em] animate-fade-in">
+                                <Zap className="size-3 fill-current" />
+                                Propulsion Digitale
                             </div>
 
-                            <h2 className="text-3xl md:text-6xl font-bold text-white mb-8 tracking-tight leading-tight">
+                            <h2 className="text-4xl md:text-7xl font-black text-white mb-10 tracking-tight leading-[0.95] max-w-4xl mx-auto">
                                 Propulsez votre commerce <br />
-                                <span className="text-primary font-bold">vers le futur.</span>
+                                <span className="text-[#FF6600] italic">vers le futur.</span>
                             </h2>
 
-                            <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-12 font-medium leading-relaxed">
+                            <p className="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto mb-16 font-medium leading-relaxed opacity-80">
                                 Rejoignez l'élite économique africaine. Une seule plateforme pour des possibilités infinies.
                             </p>
 
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 relative z-10 mb-20Scale">
                                 <Link to="/register" className="w-full sm:w-auto">
-                                    <Button size="lg" className="w-full h-14 rounded-xl px-10 gap-3 text-base font-bold shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+                                    <Button size="lg" className="w-full h-16 rounded-[2rem] px-12 gap-3 text-sm font-black uppercase tracking-widest bg-[#FF6600] shadow-2xl shadow-[#FF6600]/20 hover:scale-105 active:scale-95 transition-all border-none">
                                         Démarrer maintenant
                                         <ArrowRight className="size-5" />
                                     </Button>
                                 </Link>
                                 <Link to="/contact" className="w-full sm:w-auto">
-                                    <Button variant="outline" size="lg" className="w-full h-14 rounded-xl px-10 gap-3 text-base font-bold bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-white transition-all">
+                                    <Button variant="outline" size="lg" className="w-full h-16 rounded-[2rem] px-12 gap-3 text-sm font-black uppercase tracking-widest bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-white transition-all">
                                         <Mail className="size-5" />
                                         Nous contacter
                                     </Button>
                                 </Link>
                             </div>
 
-                            <div className="mt-12 flex flex-wrap items-center justify-center gap-8 opacity-40 grayscale group-hover:grayscale-0 transition-all duration-700">
-                                <div className="flex items-center gap-2">
-                                    <div className="size-2 rounded-full bg-secondary" />
-                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">Sécurisé</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="size-2 rounded-full bg-secondary" />
-                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">Support 24/7</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="size-2 rounded-full bg-secondary" />
-                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">Évolutif</span>
-                                </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto mt-20 pt-16 border-t border-white/5">
+                                {[
+                                    { icon: ShieldCheck, label: "Sécurité Militaire", desc: "Transactions cryptées de bout en bout." },
+                                    { icon: Zap, label: "Vitesse Éclair", desc: "L'interface la plus rapide du marché." },
+                                    { icon: Headphones, label: "Support Élite", desc: "Assistance personnalisée disponible 24/7." }
+                                ].map((item, i) => (
+                                    <div key={i} className="flex flex-col items-center text-center gap-4 group/item">
+                                        <div className="size-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-[#FF6600] group-hover/item:bg-[#FF6600] group-hover/item:text-white transition-all duration-500">
+                                            <item.icon className="size-6" />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-black text-white mb-1 uppercase tracking-wider">{item.label}</h4>
+                                            <p className="text-[11px] text-slate-500 font-medium">{item.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>

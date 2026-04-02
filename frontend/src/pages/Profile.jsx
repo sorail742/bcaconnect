@@ -14,21 +14,27 @@ import {
     Shield,
     User,
     BellRing,
-    Clock
+    Clock,
+    Zap,
+    Sparkles,
+    Satellite,
+    Fingerprint,
+    ShieldAlert
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Toggle = ({ enabled, onChange }) => (
     <button
         onClick={() => onChange(!enabled)}
         className={cn(
-            "relative inline-flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full transition-all duration-500 border-2",
-            enabled ? "bg-primary border-primary shadow-[0_0_15px_rgba(43,90,255,0.4)]" : "bg-accent border-border shadow-inner"
+            "relative inline-flex h-8 w-16 shrink-0 cursor-pointer items-center rounded-2xl transition-all duration-700 border-2",
+            enabled ? "bg-[#FF6600] border-[#FF6600] shadow-[0_0_15px_rgba(255,102,0,0.4)]" : "bg-white/5 border-white/10"
         )}
     >
-        <span
+        <div
             className={cn(
-                "pointer-events-none block h-5 w-5 rounded-full bg-background shadow-premium transition-all duration-500",
-                enabled ? "translate-x-7" : "translate-x-1"
+                "pointer-events-none block h-5 w-5 rounded-lg bg-white shadow-xl transition-all duration-700",
+                enabled ? "translate-x-9 rotate-45" : "translate-x-1.5"
             )}
         />
     </button>
@@ -39,10 +45,8 @@ const UserProfile = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    // Onglet actif basé sur l'URL
     const [activeTab, setActiveTab] = useState(location.pathname === '/settings' ? 'settings' : 'profile');
 
-    // Synchronisation de l'onglet si l'URL change (ex: via la sidebar)
     useEffect(() => {
         setActiveTab(location.pathname === '/settings' ? 'settings' : 'profile');
     }, [location.pathname]);
@@ -60,17 +64,14 @@ const UserProfile = () => {
 
     const [emailAlerts, setEmailAlerts] = useState(true);
     const [pushNotifs, setPushNotifs] = useState(false);
-    const [marketNews, setMarketNews] = useState(true);
 
     const [isUpdating, setIsUpdating] = useState(false);
-    const [message, setMessage] = useState({ type: '', text: '' });
 
     const handleUpdate = async (e) => {
-        e.preventDefault();
-        setMessage({ type: '', text: '' });
+        if (e) e.preventDefault();
 
         if (motDePasse && motDePasse !== confirmPassword) {
-            setMessage({ type: 'error', text: 'Les mots de passe ne correspondent pas.' });
+            toast.error('LES MOTS DE PASSE NE CORRESPONDENT PAS.');
             return;
         }
 
@@ -82,22 +83,23 @@ const UserProfile = () => {
                 email,
                 mot_de_passe: motDePasse || undefined
             });
-            setMessage({ type: 'success', text: 'Profil mis à jour avec succès !' });
+            toast.success('PROFIL EXÉCUTIF MIS À JOUR AVEC SUCCÈS !');
             setMotDePasse('');
             setConfirmPassword('');
         } catch (error) {
-            setMessage({ type: 'error', text: error.response?.data?.message || 'Erreur lors de la mise à jour.' });
+            toast.error(error.response?.data?.message || 'ERREUR LORS DE LA MISE À JOUR.');
         } finally {
             setIsUpdating(false);
         }
     };
 
     const handleDelete = async () => {
-        if (window.confirm("Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.")) {
+        if (window.confirm("ÊTES-VOUS SÛR DE VOULOIR SUPPRIMER VOTRE COMPTE EXÉCUTIF ? CETTE ACTION EST IRRÉVERSIBLE.")) {
             try {
                 await deleteAccount();
+                toast.success("COMPTE RÉSEAU SUPPRIMÉ.");
             } catch (error) {
-                setMessage({ type: 'error', text: 'Erreur lors de la suppression du compte.' });
+                toast.error('ERREUR LORS DE LA SUPPRESSION DU COMPTE.');
             }
         }
     };
@@ -107,317 +109,286 @@ const UserProfile = () => {
     };
 
     return (
-        <DashboardLayout title={activeTab === 'profile' ? "IDENTITÉ EXECUTIVE" : "PARAMÈTRES RÉSEAU"}>
-            <div className="max-w-7xl mx-auto space-y-16 animate-in fade-in duration-1000 pb-32 px-6 md:px-10">
-                {/* ══════════════════════════════════════════════════
-                    EXECUTIVE NAVIGATION — TAB SYSTEM
-                ══════════════════════════════════════════════════ */}
-                <div className="flex items-center gap-3 bg-accent/40 p-2 rounded-[2rem] border-2 border-border w-fit shadow-inner">
+        <DashboardLayout title={activeTab === 'profile' ? "PROFIL EXÉCUTIF" : "PARAMÈTRES RÉSEAU"}>
+            <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-1000 pb-32">
+
+                {/* Tab Navigation */}
+                <div className="flex items-center gap-4 bg-white/[0.02] p-2 rounded-[2rem] border-4 border-white/5 w-fit">
                     <button
                         onClick={() => handleTabChange('profile')}
                         className={cn(
-                            "px-12 py-4 rounded-[1.5rem] text-executive-label font-black uppercase tracking-widest transition-all italic",
-                            activeTab === 'profile' 
-                                ? "bg-background text-primary shadow-premium border-2 border-border" 
-                                : "text-muted-foreground hover:text-foreground opacity-60"
+                            "px-10 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.4em] italic transition-all duration-700",
+                            activeTab === 'profile'
+                                ? "bg-[#FF6600] text-white shadow-3xl shadow-[#FF6600]/20 scale-105"
+                                : "text-slate-500 hover:text-white"
                         )}
                     >
-                        STRUCTURE
+                        IDENTITÉ
                     </button>
                     <button
                         onClick={() => handleTabChange('settings')}
                         className={cn(
-                            "px-12 py-4 rounded-[1.5rem] text-executive-label font-black uppercase tracking-widest transition-all italic",
-                            activeTab === 'settings' 
-                                ? "bg-background text-primary shadow-premium border-2 border-border" 
-                                : "text-muted-foreground hover:text-foreground opacity-60"
+                            "px-10 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.4em] italic transition-all duration-700",
+                            activeTab === 'settings'
+                                ? "bg-[#FF6600] text-white shadow-3xl shadow-[#FF6600]/20 scale-105"
+                                : "text-slate-500 hover:text-white"
                         )}
                     >
-                        PROTOCOLES
+                        PRÉFÉRENCES
                     </button>
                 </div>
 
-                {message.text && (
-                    <div className={cn(
-                        "p-8 rounded-[2.5rem] border-4 text-executive-label font-black uppercase tracking-widest animate-in slide-in-from-top-6 italic shadow-premium",
-                        message.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-destructive/10 border-destructive/20 text-destructive'
-                    )}>
-                        {message.text.toUpperCase()}
-                    </div>
-                )}
+                {/* Hero Profile */}
+                <div className="relative overflow-hidden p-12 md:p-20 bg-white group border-x-[16px] border-[#FF6600] rounded-[4rem] shadow-3xl">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,102,0,0.1),transparent_70%)] opacity-50" />
+                    <div className="absolute top-0 right-0 size-[50rem] bg-[#FF6600]/5 rounded-full blur-[200px] -mt-64 -mr-64 group-hover:scale-125 transition-transform duration-[4s]" />
 
-                {/* ══════════════════════════════════════════════════
-                    SECTION 1 — THE IDENTITY HUB (AVATAR & STATS)
-                ══════════════════════════════════════════════════ */}
-                <div className="relative overflow-hidden p-14 border-4 border-foreground bg-foreground text-background rounded-[3.5rem] shadow-premium-lg">
-                    <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_0%,rgba(43,90,255,0.3),transparent_60%)]"></div>
-                    <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[150px] -ml-64 -mb-64 opacity-60"></div>
-                    
-                    <div className="flex flex-col xl:flex-row items-center gap-16 relative z-10">
-                        {/* THE MASTER AVATAR */}
-                        <div className="relative group shrink-0">
-                            <div className="size-52 rounded-[3.5rem] border-4 border-background/20 shadow-premium-lg overflow-hidden bg-background/10 flex items-center justify-center transition-all duration-1000 group-hover:scale-[1.08] group-hover:rotate-6">
-                                <span className="text-7xl font-black text-primary italic tracking-tighter drop-shadow-2xl">{getInitials(user?.nom_complet)}</span>
+                    <div className="flex flex-col md:flex-row items-center gap-16 relative z-10">
+                        <div className="relative shrink-0">
+                            <div className="size-48 rounded-[3rem] border-8 border-black shadow-3xl overflow-hidden bg-black flex items-center justify-center group/avatar transition-all duration-1000 hover:scale-105 hover:rotate-3">
+                                <div className="absolute inset-0 bg-gradient-to-tr from-[#FF6600]/40 via-transparent to-transparent opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-1000" />
+                                {user?.photo_url ? (
+                                    <img src={user.photo_url} alt="" className="w-full h-full object-cover relative z-10" />
+                                ) : (
+                                    <span className="text-6xl font-black text-[#FF6600] italic uppercase tracking-tighter relative z-10">{getInitials(user?.nom_complet)}</span>
+                                )}
                             </div>
-                            <button className="absolute -bottom-4 -right-4 bg-primary text-background p-6 rounded-[2rem] shadow-premium-lg hover:bg-background hover:text-primary transition-all border-8 border-foreground flex items-center justify-center group/edit">
-                                <Edit3 className="size-6 group-hover/edit:rotate-12 transition-transform" />
+                            <button className="absolute -bottom-4 -right-4 bg-[#FF6600] text-white p-5 rounded-2xl shadow-3xl hover:scale-110 hover:rotate-12 transition-all border-8 border-white group-hover:bg-black group-hover:text-[#FF6600] duration-500">
+                                <Edit3 className="size-6" />
                             </button>
                         </div>
 
-                        {/* EXECUTIVE SUMMARY */}
-                        <div className="flex-1 text-center xl:text-left space-y-8 w-full">
-                            <div className="flex flex-col xl:flex-row xl:items-center gap-8">
-                                <h2 className="text-5xl md:text-8xl font-black text-background tracking-tighter italic uppercase leading-[0.85]">
-                                    {user?.nom_complet}
+                        <div className="flex-1 text-center md:text-left space-y-8">
+                            <div className="space-y-4">
+                                <div className="inline-flex items-center gap-4 px-6 py-2 bg-[#FF6600]/10 border-2 border-[#FF6600]/20 rounded-2xl text-[#FF6600] text-[10px] font-black uppercase tracking-[0.4em] italic leading-none pt-1 shadow-lg">
+                                    <div className="size-2 rounded-full bg-[#FF6600] animate-pulse" />
+                                    {user?.role === 'fournisseur' ? 'MARCHAND CERTIFIÉ ELITE' : user?.role === 'admin' ? 'ADMINISTRATEUR RÉSEAU' : 'MEMBRE PRIVILÈGE BCA'}
+                                </div>
+                                <h2 className="text-6xl md:text-8xl font-black text-black tracking-tighter leading-[0.8] uppercase italic">
+                                    {user?.nom_complet?.split(' ')[0]} <br />
+                                    <span className="text-[#FF6600] not-italic underline decoration-black/10 decoration-8 underline-offset-[-15px]">{user?.nom_complet?.split(' ').slice(1).join(' ')}</span>
                                 </h2>
-                                <div className="px-8 py-3 bg-primary/20 backdrop-blur-3xl rounded-[1.5rem] border-2 border-primary/30 text-executive-label font-black uppercase tracking-widest text-primary w-fit mx-auto xl:mx-0 shadow-premium italic">
-                                    {user?.role === 'fournisseur' ? 'MARCHAND VÉRIFIÉ' : user?.role === 'admin' ? 'ELITE ADMIN' : 'INVESTISSEUR BCA'}
-                                </div>
                             </div>
-                            
-                            <div className="flex flex-wrap items-center justify-center xl:justify-start gap-x-16 gap-y-10">
-                                <div className="flex items-center gap-5 group/stat">
-                                    <div className="size-14 rounded-[1.5rem] bg-background/10 border-2 border-background/20 flex items-center justify-center text-primary group-hover/stat:bg-primary group-hover/stat:text-background transition-all shadow-premium">
-                                        <CalendarDays className="size-6" />
-                                    </div>
-                                    <div className="flex flex-col text-left">
-                                        <span className="text-executive-label font-black text-background/40 uppercase italic tracking-widest opacity-60">ANCIENNETÉ ACCRÉDITÉE</span>
-                                        <span className="text-lg font-black uppercase tracking-tight italic text-background">DEPUIS {new Date(user?.createdAt).getFullYear()}</span>
-                                    </div>
+
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-12 opacity-60">
+                                <div className="flex items-center gap-4 group/info">
+                                    <CalendarDays className="size-6 text-[#FF6600] group-hover/info:rotate-12 transition-transform" />
+                                    <span className="text-[11px] font-black text-black uppercase tracking-[0.3em] italic pt-1 border-b-2 border-black/5 pb-1">INSCRIT EN {new Date(user?.createdAt).getFullYear()}</span>
                                 </div>
-                                <div className="flex items-center gap-5 group/stat">
-                                    <div className="size-14 rounded-[1.5rem] bg-emerald-500/20 border-2 border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-premium">
-                                        <BadgeCheck className="size-6" />
-                                    </div>
-                                    <div className="flex flex-col text-left">
-                                        <span className="text-executive-label font-black text-background/40 uppercase italic tracking-widest opacity-60">SÛRETÉ DE RÉSEAU</span>
-                                        <span className="text-lg font-black uppercase tracking-tight italic text-emerald-400">IDENTITÉ SCELLÉE</span>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-5 group/stat">
-                                    <div className="size-14 rounded-[1.5rem] bg-background/10 border-2 border-background/20 flex items-center justify-center text-primary shadow-premium">
-                                        <Shield className="size-6" />
-                                    </div>
-                                    <div className="flex flex-col text-left">
-                                        <span className="text-executive-label font-black text-background/40 uppercase italic tracking-widest opacity-60">PROTOCOLE BCA</span>
-                                        <span className="text-lg font-black uppercase tracking-tight italic text-background">PRIORITY PROTECT AA+</span>
-                                    </div>
+                                <div className="flex items-center gap-4 group/info">
+                                    <BadgeCheck className="size-6 text-[#FF6600] group-hover/info:rotate-12 transition-transform" />
+                                    <span className="text-[11px] font-black text-black uppercase tracking-[0.3em] italic pt-1 border-b-2 border-black/5 pb-1">COMPTE CERTIFIÉ</span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* PRIMARY ACTION */}
-                        <Button
+                        <button
                             onClick={handleUpdate}
                             disabled={isUpdating}
-                            className="w-full xl:w-auto h-24 px-16 rounded-[2.5rem] bg-background text-foreground hover:bg-primary hover:text-background text-executive-label font-black uppercase italic tracking-widest shadow-premium-lg transition-all hover:scale-[1.05] active:scale-[0.95] shrink-0 border-transparent"
+                            className="h-24 px-12 rounded-[2rem] bg-black text-white hover:bg-[#FF6600] font-black text-xs uppercase tracking-[0.4em] shadow-3xl transition-all duration-700 active:scale-95 shrink-0 border-0 italic group relative overflow-hidden"
                         >
-                            {isUpdating ? 'SYNCHRONISATION...' : 'SANCTUARISER'}
-                        </Button>
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
+                            <span className="relative z-10 pt-1">{isUpdating ? 'SYNCHRONISATION...' : 'METTRE À JOUR'}</span>
+                        </button>
                     </div>
                 </div>
 
                 {activeTab === 'profile' ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
-                        {/* ══════════════════════════════════════════════════
-                            SECTION 2 — PERSONAL DATA MATRIX
-                        ══════════════════════════════════════════════════ */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                         <div className="lg:col-span-2 space-y-12">
-                            <div className="bg-card border-4 border-border rounded-[3.5rem] overflow-hidden shadow-premium group/matrix">
-                                <div className="px-12 py-8 border-b-4 border-border bg-accent/20 flex items-center justify-between">
-                                    <div className="flex items-center gap-5">
-                                        <User className="size-6 text-primary group-hover/matrix:scale-110 transition-transform" />
-                                        <h3 className="text-executive-label font-black uppercase tracking-widest text-foreground italic">MATRICE D'IDENTITÉ EXECUTIVE</h3>
+                            <div className="bg-white/[0.01] border-4 border-white/5 rounded-[4rem] overflow-hidden shadow-3xl group relative">
+                                <div className="absolute top-0 right-0 size-80 bg-[#FF6600]/5 rounded-full blur-[120px] -mr-40 -mt-40 group-hover:bg-[#FF6600]/10 transition-colors duration-1000" />
+
+                                <div className="px-10 py-8 border-b-4 border-white/5 bg-white/[0.02] flex items-center justify-between relative z-10">
+                                    <div className="flex items-center gap-6">
+                                        <div className="size-12 rounded-xl bg-[#FF6600]/10 flex items-center justify-center border-2 border-[#FF6600]/20 shadow-3xl">
+                                            <Fingerprint className="size-6 text-[#FF6600]" />
+                                        </div>
+                                        <h3 className="text-[12px] font-black text-white uppercase tracking-[0.4em] italic pt-1">INFORMATIONS D'IDENTITÉ</h3>
                                     </div>
-                                    <div className="size-3 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(43,90,255,0.5)]" />
                                 </div>
-                                <div className="p-12 space-y-12">
+                                <div className="p-12 md:p-16 space-y-12 relative z-10">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                                        <div className="space-y-6">
-                                            <label className="text-executive-label font-black uppercase italic tracking-widest text-muted-foreground/60 ml-2">DÉSIGNATION LÉGALE PRO</label>
-                                            <div className="relative group/input">
-                                                <Input 
-                                                    className="h-20 px-8 rounded-2xl bg-accent/40 border-2 border-transparent focus:border-primary/40 focus:bg-background text-lg font-black italic uppercase transition-all shadow-inner"
-                                                    value={nomComplet} 
-                                                    onChange={(e) => setNomComplet(e.target.value)} 
-                                                />
-                                                <div className="absolute right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover/input:opacity-100 transition-opacity">
-                                                    <Edit3 className="size-5 text-primary" />
-                                                </div>
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-3 ml-2">
+                                                <div className="size-2 rounded-full bg-[#FF6600] animate-pulse" />
+                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">NOM COMPLET</label>
                                             </div>
+                                            <input
+                                                className="h-16 w-full px-8 rounded-2xl bg-white/[0.03] border-4 border-white/5 focus:border-[#FF6600]/40 text-sm font-black uppercase tracking-widest italic text-white transition-all outline-none"
+                                                value={nomComplet}
+                                                onChange={(e) => setNomComplet(e.target.value)}
+                                            />
                                         </div>
-                                        <div className="space-y-6">
-                                            <label className="text-executive-label font-black uppercase italic tracking-widest text-muted-foreground/60 ml-2">LIAISON MOBILE SÉCURISÉE</label>
-                                            <div className="relative group/input">
-                                                <Input 
-                                                    type="tel" 
-                                                    className="h-20 px-8 rounded-2xl bg-accent/40 border-2 border-transparent focus:border-primary/40 focus:bg-background text-lg font-black italic uppercase transition-all shadow-inner"
-                                                    value={telephone} 
-                                                    onChange={(e) => setTelephone(e.target.value)} 
-                                                />
-                                                <div className="absolute right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover/input:opacity-100 transition-opacity">
-                                                    <BadgeCheck className="size-5 text-emerald-500" />
-                                                </div>
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-3 ml-2">
+                                                <div className="size-2 rounded-full bg-[#FF6600] animate-pulse" />
+                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">TÉLÉPHONE RÉSEAU</label>
                                             </div>
+                                            <input
+                                                type="tel"
+                                                className="h-16 w-full px-8 rounded-2xl bg-white/[0.03] border-4 border-white/5 focus:border-[#FF6600]/40 text-sm font-black uppercase tracking-widest italic text-white transition-all outline-none"
+                                                value={telephone}
+                                                onChange={(e) => setTelephone(e.target.value)}
+                                            />
                                         </div>
                                     </div>
-                                    <div className="space-y-6">
-                                        <label className="text-executive-label font-black uppercase italic tracking-widest text-muted-foreground/60 ml-2">CANAL DE CORRESPONDANCE ÉLITE</label>
-                                        <Input 
-                                            type="email" 
-                                            className="h-20 px-8 rounded-2xl bg-accent/40 border-2 border-transparent focus:border-primary/40 focus:bg-background text-lg font-black italic uppercase transition-all shadow-inner"
-                                            value={email} 
-                                            onChange={(e) => setEmail(e.target.value)} 
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3 ml-2">
+                                            <div className="size-2 rounded-full bg-[#FF6600] animate-pulse" />
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">ADRESSE EMAIL SÉCURISÉE</label>
+                                        </div>
+                                        <input
+                                            type="email"
+                                            className="h-16 w-full px-8 rounded-2xl bg-white/[0.03] border-4 border-white/5 focus:border-[#FF6600]/40 text-sm font-black uppercase tracking-widest italic text-white transition-all outline-none"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
                                         />
                                     </div>
                                 </div>
                             </div>
 
-                            {/* PROGRESS BANNER */}
-                            <div className="bg-foreground text-background rounded-[3.5rem] p-16 relative overflow-hidden group shadow-premium-lg">
-                                <div className="absolute top-0 right-0 size-[400px] bg-primary/20 rounded-full blur-[120px] -mr-48 -mt-48 transition-all duration-1000 group-hover:bg-primary/30" />
-                                <div className="absolute bottom-0 left-0 size-[300px] bg-background/10 rounded-full blur-[100px] -ml-32 -mb-32" />
-                                
-                                <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-16">
-                                    <div className="space-y-8">
-                                        <div className="px-6 py-3 bg-emerald-500/20 border-2 border-emerald-500/30 rounded-[1.5rem] w-fit shadow-premium">
-                                            <p className="text-executive-label font-black uppercase italic tracking-widest text-emerald-400 leading-none">INDICATEUR DE PRESTIGE</p>
-                                        </div>
-                                        <div className="flex items-baseline gap-6">
-                                            <span className="text-8xl font-black tracking-tighter italic leading-none">92</span>
-                                            <span className="text-4xl font-black text-primary uppercase italic tracking-tighter">%</span>
-                                            <span className="text-executive-label font-black text-background/40 uppercase italic tracking-widest ml-6 opacity-60">STATURE DE MARCHÉ GLOBAL</span>
-                                        </div>
-                                        <p className="text-lg text-background/60 font-bold max-w-lg leading-relaxed italic opacity-80">
-                                            Votre influence commerciale est à son apogée. Optimisez vos protocoles logistiques pour sceller votre rang "DIAMOND PARTNER".
-                                        </p>
+                            {/* Activity Card */}
+                            <div className="bg-white group rounded-[4rem] border-x-[16px] border-[#FF6600] p-12 md:p-16 flex flex-col md:flex-row items-center justify-between gap-12 shadow-3xl relative overflow-hidden">
+                                <div className="absolute top-0 right-0 size-96 bg-[#FF6600]/10 rounded-full blur-[100px] -mr-48 -mt-48 transition-transform group-hover:scale-125 duration-[4s]" />
+
+                                <div className="space-y-8 text-center md:text-left relative z-10">
+                                    <div className="inline-flex items-center gap-3 px-6 py-2 bg-[#FF6600]/10 border-2 border-[#FF6600]/20 rounded-xl">
+                                        <Sparkles className="size-4 text-[#FF6600]" />
+                                        <p className="text-[10px] font-black text-[#FF6600] uppercase tracking-[0.4em] italic pt-0.5">SCORE DE FIDÉLITÉ EXÉCUTIF</p>
                                     </div>
-                                    <div className="w-full xl:w-96 space-y-8">
-                                        <div className="flex justify-between items-end">
-                                            <span className="text-executive-label font-black uppercase italic tracking-widest text-background/40">INTÉGRITÉ DU PROFIL</span>
-                                            <span className="text-2xl font-black text-primary italic">92 / 100</span>
+                                    <div className="flex items-baseline justify-center md:justify-start gap-6">
+                                        <span className="text-8xl font-black text-black italic tracking-tighter uppercase leading-none">{user?.points_fidelite || 0}</span>
+                                        <div className="flex flex-col">
+                                            <span className="text-2xl font-black text-[#FF6600] italic uppercase tracking-tighter leading-none">POINTS</span>
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic mt-2">ACTIVE NODE</span>
                                         </div>
-                                        <div className="h-4 bg-background/10 rounded-full overflow-hidden border-2 border-background/20 p-1 shadow-inner">
-                                            <div className="bg-primary h-full w-[92%] rounded-full shadow-[0_0_40px_rgba(43,90,255,1)] animate-pulse" />
-                                        </div>
+                                    </div>
+                                    <p className="text-sm text-slate-500 font-extrabold max-w-sm uppercase tracking-widest leading-relaxed italic">CONTINUEZ À UTILISER L'INFRASTRUCTURE BCA POUR DÉBLOQUER DE NOUVEAUX PRIVILÈGES RÉSEAU.</p>
+                                </div>
+                                <div className="flex-1 max-w-sm w-full space-y-6 relative z-10">
+                                    <div className="flex justify-between text-[11px] font-black uppercase tracking-[0.4em] italic border-b-2 border-black/5 pb-2">
+                                        <span className="text-slate-400">PROCHAIN PALIER</span>
+                                        <span className="text-[#FF6600]">85% SYNC</span>
+                                    </div>
+                                    <div className="h-6 bg-black/5 rounded-full overflow-hidden border-4 border-white shadow-inner p-1">
+                                        <div className="bg-[#FF6600] h-full w-[85%] rounded-full shadow-[0_0_20px_rgba(255,102,0,0.4)] transition-all duration-[2s] animate-pulse"></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* SIDEBAR WIDGETS */}
-                        <div className="space-y-12">
-                            <div className="bg-accent/40 border-4 border-border rounded-[3.5rem] p-12 space-y-8 shadow-premium group hover:border-primary/40 transition-all duration-700">
-                                <div className="size-20 rounded-[2rem] bg-background flex items-center justify-center text-primary border-4 border-border shadow-premium group-hover:rotate-12 transition-transform">
-                                    <Shield className="size-10" />
+                        <div className="space-y-10">
+                            <div className="bg-white group rounded-[4rem] border-x-[16px] border-black p-10 space-y-8 shadow-3xl relative overflow-hidden">
+                                <div className="absolute top-0 right-0 size-64 bg-black/10 rounded-full blur-[80px] -mr-32 -mt-32" />
+
+                                <div className="size-20 rounded-[2rem] bg-black flex items-center justify-center text-[#FF6600] shadow-3xl group-hover:rotate-12 transition-transform duration-700 relative z-10">
+                                    <ShieldAlert className="size-10" />
                                 </div>
-                                <h4 className="text-executive-title font-black text-foreground italic leading-none">ASSISTANCE GLOBAL ÉLITE</h4>
-                                <p className="text-executive-label text-muted-foreground/60 font-bold leading-relaxed italic opacity-80">
-                                    Votre inviolabilité est notre standard. En cas de suspicion de flux asymétriques ou d'usurpation, activez le protocole d'urgence BCA Guard immédiatement.
-                                </p>
-                                <Button variant="ghost" className="w-full justify-between h-20 px-10 bg-background rounded-[1.5rem] hover:bg-primary hover:text-background text-primary text-executive-label font-black uppercase italic tracking-widest transition-all shadow-premium border-2 border-border group/btn">
-                                    CONTRÔLE PRIVACITÉ
-                                    <ArrowRight className="size-6 group-hover/btn:translate-x-3 transition-transform" />
-                                </Button>
+                                <div className="space-y-6 relative z-10">
+                                    <h4 className="text-2xl font-black text-black uppercase leading-tight italic tracking-tighter">APPUI <br /> SÉCURITÉ</h4>
+                                    <p className="text-sm text-slate-500 font-extrabold leading-relaxed italic uppercase tracking-widest border-l-4 border-black/10 pl-6">
+                                        VOTRE INTÉGRITÉ EST NOTRE PRIORITÉ. POUR TOUTE ACTIVITÉ ATYPIQUE, CONTACTEZ NOTRE CENTRE DE RÉPONSE D'ÉLITE.
+                                    </p>
+                                </div>
+                                <button className="w-full h-16 rounded-2xl bg-black text-white hover:bg-[#FF6600] text-[10px] font-black uppercase tracking-[0.4em] transition-all duration-700 flex items-center justify-between px-8 italic shadow-3xl relative z-10">
+                                    SUPPORT EXÉCUTIF
+                                    <Satellite className="size-5 animate-pulse" />
+                                </button>
                             </div>
                         </div>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
-                        {/* ══════════════════════════════════════════════════
-                            SECTION 3 — SECURITY ARCHITECTURE
-                        ══════════════════════════════════════════════════ */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                         <div className="lg:col-span-2 space-y-16">
-                            <div className="bg-card border-4 border-border rounded-[3.5rem] overflow-hidden shadow-premium group/matrix">
-                                <div className="px-12 py-8 border-b-4 border-border bg-accent/20 flex items-center gap-5">
-                                    <Shield className="size-6 text-primary group-hover/matrix:rotate-12 transition-transform" />
-                                    <h3 className="text-executive-label font-black uppercase italic tracking-widest text-foreground">CLEFS D'ACCÈS SCELLÉES</h3>
+                            <div className="bg-white/[0.01] border-4 border-white/5 rounded-[4rem] overflow-hidden shadow-3xl group relative">
+                                <div className="absolute top-0 right-0 size-80 bg-[#FF6600]/5 rounded-full blur-[120px] -mr-40 -mt-40 group-hover:bg-[#FF6600]/10 transition-colors duration-1000" />
+
+                                <div className="px-10 py-8 border-b-4 border-white/5 bg-white/[0.02] flex items-center gap-6 relative z-10">
+                                    <div className="size-12 rounded-xl bg-[#FF6600]/10 flex items-center justify-center border-2 border-[#FF6600]/20 shadow-3xl">
+                                        <BadgeCheck className="size-6 text-[#FF6600]" />
+                                    </div>
+                                    <h3 className="text-[12px] font-black text-white uppercase tracking-[0.4em] italic pt-1">SÉCURITÉ DU CANAL ALPHA</h3>
                                 </div>
-                                <div className="p-12 space-y-12">
+                                <div className="p-12 md:p-16 space-y-12 relative z-10">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                                        <div className="space-y-6">
-                                            <label className="text-executive-label font-black uppercase italic tracking-widest text-muted-foreground/60 ml-2">PROTOCOLE D'AUTHENTIFICATION</label>
-                                            <Input 
-                                                type="password" 
-                                                placeholder="NOUVEAU CODE MAÎTRE"
-                                                className="h-20 px-8 rounded-2xl bg-accent/40 border-2 border-transparent focus:border-primary/40 focus:bg-background text-lg font-black italic tracking-[0.3em] transition-all shadow-inner placeholder:opacity-30"
-                                                value={motDePasse} 
-                                                onChange={(e) => setMotDePasse(e.target.value)} 
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-3 ml-2">
+                                                <div className="size-2 rounded-full bg-[#FF6600] animate-pulse" />
+                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">NOUVEAU CODE D'ACCÈS</label>
+                                            </div>
+                                            <input
+                                                type="password"
+                                                placeholder="••••••••"
+                                                className="h-16 w-full px-8 rounded-2xl bg-white/[0.03] border-4 border-white/5 focus:border-[#FF6600]/40 text-sm font-black transition-all outline-none text-white"
+                                                value={motDePasse}
+                                                onChange={(e) => setMotDePasse(e.target.value)}
                                             />
                                         </div>
-                                        <div className="space-y-6">
-                                            <label className="text-executive-label font-black uppercase italic tracking-widest text-muted-foreground/60 ml-2">CONFIRMATION SYNCHRONE</label>
-                                            <Input 
-                                                type="password" 
-                                                placeholder="RÉITÉRER LE CODE"
-                                                className="h-20 px-8 rounded-2xl bg-accent/40 border-2 border-transparent focus:border-primary/40 focus:bg-background text-lg font-black italic tracking-[0.3em] transition-all shadow-inner placeholder:opacity-30"
-                                                value={confirmPassword} 
-                                                onChange={(e) => setConfirmPassword(e.target.value)} 
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-3 ml-2">
+                                                <div className="size-2 rounded-full bg-[#FF6600] animate-pulse" />
+                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">CONFIRMATION</label>
+                                            </div>
+                                            <input
+                                                type="password"
+                                                placeholder="••••••••"
+                                                className="h-16 w-full px-8 rounded-2xl bg-white/[0.03] border-4 border-white/5 focus:border-[#FF6600]/40 text-sm font-black transition-all outline-none text-white"
+                                                value={confirmPassword}
+                                                onChange={(e) => setConfirmPassword(e.target.value)}
                                             />
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-5 p-6 bg-primary/5 rounded-[1.5rem] border-2 border-primary/20">
-                                         <Clock className="size-6 text-primary animate-pulse" />
-                                         <p className="text-executive-label text-muted-foreground font-black uppercase italic tracking-widest leading-relaxed">
-                                             MAINTENEZ CES CHAMPS VIERGES POUR CONSERVER LA STRUCTURE DE SÉCURITÉ ACTUELLE.
-                                         </p>
+                                    <div className="flex items-center gap-6 p-8 bg-white/[0.02] rounded-[2rem] border-2 border-white/5 italic">
+                                        <div className="size-10 rounded-xl bg-[#FF6600]/10 flex items-center justify-center border-2 border-[#FF6600]/20">
+                                            <Clock className="size-5 text-[#FF6600]" />
+                                        </div>
+                                        <p className="text-[11px] text-slate-500 font-extrabold uppercase tracking-[0.2em] italic">LAISSEZ LE CHAMP VIDE POUR CONSERVER L'INDEXATION ACTUELLE.</p>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* DANGER ZONE — EXECUTIVE STYLE */}
-                            <div className="pt-12 border-t-8 border-border">
-                                <div className="flex flex-col md:flex-row items-center justify-between p-16 bg-destructive/5 rounded-[4rem] border-4 border-destructive/20 gap-16 relative overflow-hidden group shadow-premium">
-                                    <div className="absolute top-0 right-0 size-[400px] bg-destructive/10 rounded-full blur-[120px] -mr-48 -mt-48 group-hover:scale-125 transition-transform duration-1000" />
-                                    <div className="text-center md:text-left space-y-6 relative z-10">
-                                        <div className="flex items-center justify-center md:justify-start gap-6">
-                                            <div className="size-4 rounded-full bg-destructive animate-ping shadow-[0_0_20px_rgba(239,68,68,0.6)]" />
-                                            <h3 className="text-executive-title font-black text-destructive uppercase italic tracking-widest">PROTOCOLE DE DISSOLUTION</h3>
-                                        </div>
-                                        <p className="text-lg text-muted-foreground/80 font-bold max-w-lg leading-relaxed italic opacity-80">
-                                            L'initiation de cette commande est irréversible. L'intégralité de vos actifs, historiques de flux et privilèges seront définitivement scellés et inaccessibles.
-                                        </p>
+                            <div className="p-12 md:p-16 bg-white rounded-[4rem] border-x-[16px] border-rose-600 flex flex-col md:flex-row items-center justify-between gap-12 shadow-3xl group relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-r from-rose-500/5 via-transparent to-transparent opacity-50" />
+
+                                <div className="space-y-4 text-center md:text-left relative z-10">
+                                    <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-rose-500/10 rounded-lg">
+                                        <ShieldAlert className="size-4 text-rose-500" />
+                                        <h3 className="text-[10px] font-black text-rose-600 uppercase tracking-[0.4em] italic pt-0.5">TERMINAL DE SUPPRESSION</h3>
                                     </div>
-                                    <Button 
-                                        onClick={handleDelete} 
-                                        variant="destructive" 
-                                        className="h-24 px-16 text-executive-label font-black uppercase italic tracking-widest rounded-[2rem] shadow-premium-lg hover:scale-[1.05] active:scale-[0.95] transition-all flex items-center gap-6 shrink-0 relative z-10 border-transparent"
-                                    >
-                                        <Trash2 className="size-7" />
-                                        LIQUIDER LE COMPTE
-                                    </Button>
+                                    <h3 className="text-4xl font-black text-black uppercase tracking-tighter italic">ZONE DE <br /> DANGER CRITIQUE</h3>
+                                    <p className="text-sm text-slate-500 font-extrabold max-w-sm italic uppercase tracking-widest border-l-4 border-rose-500/20 pl-6">LA SUPPRESSION DE VOTRE COMPTE EST DÉFINITIVE ET EFFACE TOUT VOTRE INDEX RÉSEAU.</p>
                                 </div>
+                                <button
+                                    onClick={handleDelete}
+                                    className="h-24 px-12 rounded-[2rem] bg-black text-white hover:bg-rose-600 font-black text-xs uppercase tracking-[0.4em] shadow-3xl flex items-center gap-6 border-0 transition-all duration-700 hover:scale-110 active:scale-95 italic group/delete relative overflow-hidden"
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/delete:animate-[shimmer_2s_infinite]" />
+                                    <Trash2 className="size-6 relative z-10" />
+                                    <span className="relative z-10 pt-1">ÉJECTER LE COMPTE</span>
+                                </button>
                             </div>
                         </div>
 
-                        {/* SIDEBAR — PREFERENCES MATRIX */}
-                        <div className="space-y-16">
-                            <div className="bg-card border-4 border-border rounded-[3.5rem] overflow-hidden shadow-premium group/flux">
-                                <div className="px-12 py-8 border-b-4 border-border bg-accent/20 flex items-center gap-5">
-                                    <BellRing className="size-6 text-primary group-hover/flux:rotate-12 transition-transform" />
-                                    <h3 className="text-executive-label font-black uppercase italic tracking-widest text-foreground">FLUX D'ACCRÉDITATION</h3>
-                                </div>
-                                <div className="p-12 space-y-16">
-                                    <div className="flex items-center justify-between gap-12 group/pref">
-                                        <div className="space-y-3">
-                                            <p className="text-lg font-black text-foreground uppercase italic tracking-tighter leading-none">CORRESPONDANCE GLOBALE</p>
-                                            <p className="text-executive-label text-muted-foreground/60 font-black uppercase tracking-widest italic leading-none">RAPPORTS HEBDOMADAIRES BCA</p>
+                        <div className="space-y-10">
+                            <div className="bg-white/[0.01] border-4 border-white/5 rounded-[4rem] p-12 shadow-3xl group relative overflow-hidden">
+                                <div className="absolute top-0 right-0 size-64 bg-[#FF6600]/5 rounded-full blur-[100px] -mr-32 -mt-32 group-hover:bg-[#FF6600]/10 transition-colors duration-1000" />
+
+                                <h3 className="text-[12px] font-black text-white uppercase tracking-[0.5em] border-b-4 border-white/5 pb-8 mb-12 italic relative z-10">CANAUX DE FLUX</h3>
+                                <div className="space-y-12 relative z-10">
+                                    <div className="flex items-center justify-between gap-10 group/item">
+                                        <div className="space-y-2">
+                                            <p className="text-sm font-black text-white uppercase tracking-widest italic group-hover/item:text-[#FF6600] transition-colors">ALERTES EMAIL</p>
+                                            <p className="text-[10px] text-slate-600 font-black uppercase tracking-[0.2em] italic leading-none">RAPPORTS & ACTIVITÉ QUANTUM</p>
                                         </div>
                                         <Toggle enabled={emailAlerts} onChange={setEmailAlerts} />
                                     </div>
-
-                                    <div className="flex items-center justify-between gap-12 group/pref">
-                                        <div className="space-y-3">
-                                            <p className="text-lg font-black text-foreground uppercase italic tracking-tighter leading-none">PUSH DE SÉCURITÉ</p>
-                                            <p className="text-executive-label text-muted-foreground/60 font-black uppercase tracking-widest italic leading-none">ALERTES DE FLUX & LOGISTIQUE</p>
+                                    <div className="flex items-center justify-between gap-10 group/item">
+                                        <div className="space-y-2">
+                                            <p className="text-sm font-black text-white uppercase tracking-widest italic group-hover/item:text-[#FF6600] transition-colors">NOTIFICATIONS PUSH</p>
+                                            <p className="text-[10px] text-slate-600 font-black uppercase tracking-[0.2em] italic leading-none">ÉTAT DES COMMANDES RÉSEAU</p>
                                         </div>
                                         <Toggle enabled={pushNotifs} onChange={setPushNotifs} />
-                                    </div>
-                                    
-                                    <div className="p-8 bg-accent/40 rounded-[2rem] border-2 border-border shadow-inner">
-                                         <p className="text-executive-label text-muted-foreground/40 font-black uppercase italic tracking-widest leading-relaxed text-center">
-                                             LES PARAMÈTRES DE SYNCHRONISATION SONT MIS À JOUR EN TEMPS RÉEL SUR LE CLOUD BCA CONNECT.
-                                         </p>
                                     </div>
                                 </div>
                             </div>

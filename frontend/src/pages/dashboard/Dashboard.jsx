@@ -3,45 +3,29 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import DashboardCard from '../../components/ui/DashboardCard';
 import DataTable from '../../components/ui/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
-import { Wallet, ShoppingBag, Star, CheckCircle, Truck, Clock, Plus, Award, ArrowRight, TrendingUp, Shield, Activity } from 'lucide-react';
-import { Skeleton, CardSkeleton, TableRowSkeleton } from '../../components/ui/Loader';
+import { Wallet, ShoppingBag, Star, Activity, ArrowRight, TrendingUp, Shield, Package, Sparkles, Zap, TrendingDown } from 'lucide-react';
+import { CardSkeleton, TableRowSkeleton } from '../../components/ui/Loader';
 import { ErrorState } from '../../components/ui/StatusStates';
 import { useAuth } from '../../hooks/useAuth';
 import orderService from '../../services/orderService';
 import productService from '../../services/productService';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
-// Sample weekly performance data for the chart
-const weeklyData = [
-    { jour: 'Lun', montant: 120000, commandes: 3 },
-    { jour: 'Mar', montant: 250000, commandes: 5 },
-    { jour: 'Mer', montant: 180000, commandes: 4 },
-    { jour: 'Jeu', montant: 420000, commandes: 8 },
-    { jour: 'Ven', montant: 380000, commandes: 7 },
-    { jour: 'Sam', montant: 560000, commandes: 12 },
-    { jour: 'Dim', montant: 340000, commandes: 6 },
-];
-
 const orderColumns = [
-    { key: 'numero_commande', label: 'N° Commande', render: (val) => <span className="font-black text-xs italic tracking-tight">{val || '—'}</span> },
-    { key: 'montant_total', label: 'Montant', render: (val) => <span className="font-black text-xs italic">{parseFloat(val || 0).toLocaleString('fr-GN')} <span className="text-[8px] text-primary font-bold not-italic tracking-widest">GNF</span></span> },
-    { key: 'statut', label: 'Statut', render: (val) => <StatusBadge status={val} /> },
+    { key: 'numero_commande', label: 'N° COMMANDE', render: (val) => <span className="font-black text-[10px] uppercase tracking-widest italic">{val || '—'}</span> },
+    { key: 'montant_total', label: 'MONTANT', render: (val) => <span className="font-black text-sm text-white italic">{parseFloat(val || 0).toLocaleString('fr-GN')} <span className="text-[10px] text-[#FF6600] non-italic">GNF</span></span> },
+    { key: 'statut', label: 'STATUT', render: (val) => <StatusBadge status={val} className="text-[9px] font-black italic uppercase tracking-widest border-2" /> },
 ];
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         return (
-            <div className="bg-background border-2 border-border rounded-2xl p-5 shadow-2xl">
-                <p className="text-[9px] font-black text-primary uppercase tracking-[0.3em] mb-2">{label}</p>
-                <p className="text-lg font-black text-white italic tracking-tight">
-                    {parseFloat(payload[0].value).toLocaleString('fr-GN')} <span className="text-[9px] text-primary font-bold not-italic">GNF</span>
+            <div className="bg-black/80 backdrop-blur-3xl border-4 border-[#FF6600]/20 rounded-3xl p-6 shadow-3xl">
+                <p className="text-[10px] font-black text-[#FF6600] uppercase tracking-[0.3em] mb-3 italic">{label}</p>
+                <p className="text-xl font-black text-white italic">
+                    {parseFloat(payload[0].value).toLocaleString('fr-GN')} <span className="text-[10px] text-slate-500 non-italic">GNF</span>
                 </p>
-                {payload[1] && (
-                    <p className="text-[9px] text-slate-500 font-bold mt-1 uppercase tracking-widest">
-                        {payload[1].value} commandes
-                    </p>
-                )}
             </div>
         );
     }
@@ -50,12 +34,14 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const Dashboard = () => {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
     const [orders, setOrders] = useState([]);
     const [totalOrders, setTotalOrders] = useState(0);
     const [quickProducts, setQuickProducts] = useState([]);
     const [wallet, setWallet] = useState(null);
+    const [chartData, setChartData] = useState([]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -67,10 +53,15 @@ const Dashboard = () => {
                     import('../../services/walletService').then(m => m.default.getMyWallet())
                 ]);
 
-                setOrders(ordersData.orders || []);
+                const fetchedOrders = ordersData.orders || [];
+                setOrders(fetchedOrders);
                 setTotalOrders(ordersData.total || 0);
                 setQuickProducts(productsData.slice(0, 4));
                 setWallet(walletData);
+
+                // Process chart data from orders
+                processOrdersForChart(fetchedOrders);
+
                 setHasError(false);
             } catch (err) {
                 console.error("Erreur chargement dashboard:", err);
@@ -83,264 +74,216 @@ const Dashboard = () => {
         fetchData();
     }, []);
 
+    const processOrdersForChart = (ordersList) => {
+        const days = ['DIM', 'LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM'];
+        const activity = {};
+
+        // Initialize last 7 days
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dayName = days[date.getDay()];
+            activity[dayName] = 0;
+        }
+
+        ordersList.forEach(order => {
+            const orderDate = new Date(order.createdAt);
+            const dayName = days[orderDate.getDay()];
+            if (activity.hasOwnProperty(dayName)) {
+                activity[dayName] += parseFloat(order.montant_total || 0);
+            }
+        });
+
+        const formattedData = Object.keys(activity).map(key => ({
+            jour: key,
+            montant: activity[key]
+        }));
+
+        setChartData(formattedData);
+    };
+
     const stats = [
-        { title: 'Solde du portefeuille', value: wallet ? `${parseFloat(wallet.solde_virtuel).toLocaleString('fr-GN')} GNF` : '0 GNF', icon: Wallet, trend: 'up', trendValue: '+12.4%', description: 'Fonds disponibles immédiatement', color: 'primary' },
-        { title: 'Commandes totales', value: totalOrders.toString(), icon: ShoppingBag, trend: 'up', trendValue: '+5.2%', description: 'Historique des transactions', color: 'emerald' },
-        { title: 'Score de Fidélité', value: user?.points_fidelite || '2.4k', icon: Star, trend: 'up', trendValue: 'TOP 5%', description: 'Rang privilège BCA', color: 'amber' },
+        { title: 'SOLDE PORTEFEUILLE', value: wallet ? `${parseFloat(wallet.solde_virtuel).toLocaleString('fr-GN')} GNF` : '0 GNF', icon: Wallet, trend: 'up', trendValue: 'RÉEL', description: 'FONDS DISPONIBLES EN SÉQUESTRE', color: 'primary' },
+        { title: 'COMMANDES TOTALES', value: totalOrders.toString(), icon: ShoppingBag, trend: 'up', trendValue: `${orders.length > 0 ? 'ACTIF' : 'N/A'}`, description: 'HISTORIQUE TRANSACTIONNEL COMPLET', color: 'primary' },
+        { title: 'POINTS BCA', value: user?.points_fidelite || '0', icon: Star, trend: 'up', trendValue: 'PRIVILÈGE', description: 'STATUT DE GOUVERNANCE FIDÉLITÉ', color: 'primary' },
     ];
 
     return (
-        <DashboardLayout title="Cockpit Exécutif">
-            <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                
-                {/* ══════════════════════════════════════════════════
-                    SECTOR 1 — EXECUTIVE HERO COMMAND CENTER
-                ══════════════════════════════════════════════════ */}
-                <div className="relative overflow-hidden rounded-[4rem] bg-background border-2 border-border p-12 md:p-20 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)]">
-                    <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_0%,rgba(43,90,255,0.15),transparent_60%)]"></div>
-                    <div className="absolute bottom-0 left-0 -ml-20 -mb-20 size-96 bg-primary/5 rounded-full blur-[150px] animate-pulse"></div>
-                    
-                    <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-16">
+        <DashboardLayout title="TABLEAU DE BORD">
+            <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-1000 pb-20">
+
+                {/* Hero Welcome */}
+                <div className="relative overflow-hidden rounded-[4rem] bg-white group border-x-[16px] border-[#FF6600] p-12 md:p-20 shadow-3xl">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,102,0,0.1),transparent_70%)] opacity-50" />
+                    <div className="absolute top-0 right-0 size-[50rem] bg-[#FF6600]/5 rounded-full blur-[200px] -mt-64 -mr-64 group-hover:scale-125 transition-transform duration-[4s]" />
+
+                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-12">
                         <div className="space-y-10">
-                            <div className="inline-flex items-center gap-4 px-6 py-2.5 rounded-2xl bg-white/5 border-2 border-white/5 text-primary text-[10px] font-black uppercase tracking-[0.4em] italic shadow-2xl">
-                                <span className="size-2.5 rounded-full bg-primary animate-ping"></span>
-                                Session Prioritaire — {user?.role === 'admin' ? 'Administrateur Elite' : user?.role === 'fournisseur' ? 'Marchand Partenaire' : 'Membre BCA'}
+                            <div className="inline-flex items-center gap-4 px-6 py-2 rounded-2xl bg-[#FF6600]/10 border-2 border-[#FF6600]/20 text-[#FF6600] text-[10px] font-black uppercase tracking-[0.4em] italic">
+                                <Zap className="size-4 animate-pulse" />
+                                SESSION {user?.role === 'admin' ? 'ADMINISTRATEUR' : 'MEMBRE PREMIUM'} ACTIVATE
                             </div>
-                            <h3 className="text-5xl md:text-8xl font-black tracking-tighter text-white leading-none italic uppercase">
-                                Bienvenue, <br />
-                                <span className="text-primary">{user?.nom_complet?.split(' ')[0] || 'Partenaire'}</span>.
-                            </h3>
-                            <p className="text-slate-400 font-bold max-w-xl text-lg leading-relaxed italic opacity-70">
-                                Le réseau BCA Connect est à votre service. Pilotez vos opérations avec une précision chirurgicale.
+                            <h2 className="text-6xl md:text-8xl font-black text-black tracking-tighter leading-[0.8] uppercase italic">
+                                BIENVENUE, <br />
+                                <span className="text-[#FF6600] not-italic">{user?.nom_complet?.split(' ')[0] || 'MEMBRE'}</span>.
+                            </h2>
+                            <p className="text-slate-500 font-extrabold max-w-2xl leading-relaxed uppercase tracking-widest italic border-l-8 border-[#FF6600]/20 pl-10">
+                                ACCÉDEZ À VOS COMMANDES, GÉREZ VOTRE PORTEFEUILLE ET SUIVEZ VOS LIVRAISONS EN TEMPS RÉEL SUR L'INFRASTRUCTURE BCA CONNECT.
                             </p>
                         </div>
-                        <div className="flex flex-col items-center xl:items-end gap-10">
-                             <div className="text-center xl:text-right space-y-4">
-                                <p className="text-executive-label text-slate-600">Dernier Flux</p>
-                                <p className="text-white font-black text-4xl italic tracking-tighter tabular-nums">{new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}</p>
-                             </div>
-                             <Link to="/profile">
-                                 <button className="px-12 h-20 bg-white text-black rounded-[2rem] font-black text-[12px] uppercase tracking-[0.4em] hover:bg-primary hover:text-white transition-all duration-700 shadow-[0_20px_40px_-5px_rgba(255,255,255,0.1)] active-press hover:scale-[1.03]">
-                                     Identité BCA
-                                     <ArrowRight className="inline-block ml-4 size-5" />
-                                 </button>
-                             </Link>
+                        <div className="flex flex-col items-start md:items-end gap-10">
+                            <div className="text-left md:text-right space-y-2">
+                                <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em] italic">DERNIER SYNC FLUX</p>
+                                <p className="text-black font-black text-5xl tabular-nums italic tracking-tighter">{new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}</p>
+                            </div>
+                            <button
+                                onClick={() => navigate('/profile')}
+                                className="px-12 h-20 bg-black text-white hover:bg-[#FF6600] rounded-[1.5rem] font-black text-xs uppercase tracking-[0.4em] transition-all duration-700 shadow-3xl hover:scale-110 active:scale-95 italic group/btn overflow-hidden relative"
+                            >
+                                <span className="relative z-10">MON PROFIL EXÉCUTIF</span>
+                                <ArrowRight className="inline-block ml-4 size-5 relative z-10 group-hover/btn:translate-x-2 transition-transform" />
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_2s_infinite]" />
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                {/* ══════════════════════════════════════════════════
-                    SECTOR 2 — KPI STATS GRID (EXECUTIVE BENTO)
-                ══════════════════════════════════════════════════ */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* KPI stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                     {isLoading ? (
                         [1, 2, 3].map(i => <CardSkeleton key={i} />)
                     ) : (
                         stats.map((stat, idx) => (
-                            <DashboardCard key={idx} {...stat} variant={idx === 0 ? "glass" : "default"} />
+                            <DashboardCard key={idx} {...stat} className="hover:border-[#FF6600]/40 transition-all duration-700" />
                         ))
                     )}
                 </div>
 
-                {/* ══════════════════════════════════════════════════
-                    SECTOR 3 — WEEKLY PERFORMANCE CHART + SECURITY
-                ══════════════════════════════════════════════════ */}
-                <div className="grid grid-cols-1 lg:grid-cols-10 gap-8">
-                    {/* Recharts Activity Graph */}
-                    <div className="lg:col-span-7 bg-card border-2 border-border rounded-[3.5rem] overflow-hidden shadow-premium p-12">
-                        <div className="flex items-center justify-between mb-12">
+                {/* Activity & Wallet */}
+                <div className="grid grid-cols-1 lg:grid-cols-10 gap-12">
+                    <div className="lg:col-span-6 bg-white/[0.02] border-4 border-white/5 rounded-[4rem] p-12 shadow-3xl group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 size-80 bg-[#FF6600]/5 rounded-full blur-[120px] -mr-40 -mt-40 group-hover:bg-[#FF6600]/10 transition-colors duration-1000" />
+
+                        <div className="flex items-center justify-between mb-12 relative z-10">
                             <div className="flex items-center gap-6">
-                                <div className="size-14 rounded-2xl bg-primary/5 flex items-center justify-center text-primary border-2 border-primary/10">
-                                    <Activity className="size-6" />
+                                <div className="size-14 rounded-2xl bg-[#FF6600]/10 flex items-center justify-center text-[#FF6600] shadow-3xl border-2 border-[#FF6600]/20 group-hover:rotate-12 transition-transform duration-700">
+                                    <Activity className="size-7" />
                                 </div>
-                                <div>
-                                    <h3 className="text-executive-title text-sm tracking-widest">Performance Flux</h3>
-                                    <p className="text-executive-label mt-1.5 opacity-60">Volume Transactionnel — 7 Jours</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4 px-5 py-2 bg-emerald-500/5 border-2 border-emerald-500/10 rounded-2xl">
-                                <TrendingUp className="size-5 text-emerald-500" />
-                                <span className="text-executive-data text-xs text-emerald-500">+23.8%</span>
+                                <h3 className="text-xl font-black text-white uppercase tracking-[0.3em] italic">ACTIVITÉ D'ACQUISITION</h3>
                             </div>
                         </div>
-                        <div className="h-72">
+                        <div className="h-80 relative z-10">
                             <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={weeklyData} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
+                                <AreaChart data={chartData}>
                                     <defs>
-                                        <linearGradient id="gradientPrimary" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.2}/>
-                                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                                        <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#FF6600" stopOpacity={0.4} />
+                                            <stop offset="95%" stopColor="#FF6600" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
-                                    <XAxis 
-                                        dataKey="jour" 
-                                        axisLine={false} 
-                                        tickLine={false} 
-                                        tick={{ fill: 'currentColor', opacity: 0.4, fontSize: 10, fontWeight: 900 }}
-                                        className="text-foreground italic uppercase tracking-widest"
+                                    <XAxis
+                                        dataKey="jour"
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: '#475569', fontSize: 10, fontWeight: 900, letterSpacing: '0.2em' }}
                                     />
-                                    <YAxis 
-                                        axisLine={false} 
-                                        tickLine={false} 
-                                        tick={{ fill: 'currentColor', opacity: 0.4, fontSize: 9, fontWeight: 700 }}
-                                        tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                                        className="text-foreground"
-                                    />
+                                    <YAxis hide />
                                     <Tooltip content={<CustomTooltip />} />
-                                    <Area 
-                                        type="monotone" 
-                                        dataKey="montant" 
-                                        stroke="hsl(var(--primary))" 
-                                        strokeWidth={4} 
-                                        fill="url(#gradientPrimary)"
-                                        animationDuration={2000}
-                                    />
+                                    <Area type="monotone" dataKey="montant" stroke="#FF6600" strokeWidth={6} fillOpacity={1} fill="url(#colorAmount)" />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
                     </div>
 
-                    {/* Security & Trust Widget */}
-                    <div className="lg:col-span-3 flex flex-col gap-8">
-                        <div className="flex-1 bg-background text-white rounded-[3.5rem] p-12 relative overflow-hidden border-2 border-border shadow-2xl">
-                            <div className="absolute top-0 right-0 size-48 bg-primary/10 rounded-full blur-[80px] -mr-24 -mt-24 opacity-50" />
-                            <div className="relative z-10 flex flex-col h-full justify-between">
-                                <div className="space-y-8">
-                                    <div className="size-16 rounded-2xl bg-white/5 border-2 border-white/5 flex items-center justify-center text-primary shadow-2xl">
-                                        <Shield className="size-7" />
-                                    </div>
-                                    <div>
-                                        <h4 className="text-executive-label text-slate-500 mb-4">Niveau Sécurité BCA</h4>
-                                        <div className="flex items-baseline gap-4">
-                                            <span className="text-6xl font-black italic tracking-tighter tabular-nums text-white">AA+</span>
-                                            <span className="text-executive-label text-emerald-400">Optimal</span>
-                                        </div>
-                                    </div>
+                    <div className="lg:col-span-4 flex flex-col gap-10">
+                        <div className="bg-white/[0.02] border-4 border-white/5 rounded-[4rem] p-12 flex flex-col justify-between flex-1 shadow-3xl relative overflow-hidden group">
+                            <div className="absolute bottom-0 left-0 size-64 bg-blue-500/5 rounded-full blur-[100px] -ml-32 -mb-32 transition-colors duration-1000 group-hover:bg-blue-500/10" />
+
+                            <div className="space-y-10 relative z-10">
+                                <div className="size-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 shadow-3xl border-2 border-blue-500/20 group-hover:rotate-6 transition-transform">
+                                    <Shield className="size-8" />
                                 </div>
-                                <div className="space-y-4 mt-12">
-                                    <div className="flex justify-between text-executive-label">
-                                        <span className="text-slate-500">Score de Confiance</span>
-                                        <span className="text-primary italic font-black">96.4%</span>
-                                    </div>
-                                    <div className="h-3 bg-white/5 rounded-full overflow-hidden border-2 border-white/5 p-0.5 shadow-inner">
-                                        <div className="bg-primary h-full w-[96.4%] rounded-full shadow-[0_0_30px_rgba(43,90,255,0.6)]" />
+                                <div className="space-y-4">
+                                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.4em] italic leading-none pt-1">NIVEAU DE CONFIANCE RÉSEAU</p>
+                                    <div className="flex items-baseline gap-4">
+                                        <span className="text-5xl font-black text-white italic uppercase tracking-tighter">ELITE</span>
+                                        <span className="text-2xl font-black text-[#FF6600] italic">A++</span>
                                     </div>
                                 </div>
                             </div>
+                            <div className="mt-12 space-y-6 relative z-10">
+                                <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.3em] italic">
+                                    <span className="text-slate-600">SCORE D'INTÉGRITÉ</span>
+                                    <span className="text-[#FF6600]">92.8%</span>
+                                </div>
+                                <div className="h-4 bg-white/5 rounded-full overflow-hidden border-2 border-white/5 p-1 shadow-inner">
+                                    <div className="bg-[#FF6600] h-full w-[92.8%] rounded-full shadow-[0_0_20px_rgba(255,102,0,0.4)] animate-pulse"></div>
+                                </div>
+                            </div>
                         </div>
-                        <Link to="/wallet" className="block group">
-                            <div className="bg-primary p-10 rounded-[2.5rem] text-white relative overflow-hidden active-press transition-all duration-500 shadow-premium hover:shadow-primary/40 border-2 border-primary/20">
-                                <div className="absolute top-0 right-0 size-40 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-1000" />
-                                <div className="relative z-10 flex items-center gap-6">
-                                    <div className="size-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border-2 border-white/10">
-                                        <Wallet className="size-6" />
+
+                        <Link to="/wallet" className="group/wallet">
+                            <div className="bg-[#FF6600] p-12 rounded-[3rem] text-white shadow-3xl shadow-[#FF6600]/20 hover:scale-[1.05] transition-all duration-700 relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/wallet:animate-[shimmer_3s_infinite]" />
+                                <div className="flex items-center gap-8">
+                                    <div className="size-16 rounded-2xl bg-white/20 border-2 border-white/20 flex items-center justify-center group-hover/wallet:rotate-12 transition-transform">
+                                        <Wallet className="size-8" />
                                     </div>
-                                    <div>
-                                        <p className="text-executive-label text-white/60">Mon Portefeuille</p>
-                                        <p className="text-executive-data text-xl text-white">Gestion Flux</p>
+                                    <div className="space-y-2">
+                                        <p className="text-[11px] font-black text-white/60 uppercase tracking-[0.4em] italic">MON SYSTÈME FINANCIER</p>
+                                        <p className="text-2xl font-black italic tracking-tighter uppercase">PORTEFEUILLE</p>
                                     </div>
-                                    <ArrowRight className="size-6 ml-auto opacity-60 group-hover:translate-x-3 transition-transform duration-500" />
+                                    <ArrowRight className="size-8 ml-auto text-white/40 group-hover/wallet:translate-x-3 transition-transform" />
                                 </div>
                             </div>
                         </Link>
                     </div>
                 </div>
 
-                {/* ══════════════════════════════════════════════════
-                    SECTOR 4 — CATALOG + ORDERS + PROMO BENTO
-                ══════════════════════════════════════════════════ */}
-                <div className="grid grid-cols-1 lg:grid-cols-10 gap-8">
-                    
-                    {/* Catalog Exploration */}
-                    <div className="lg:col-span-6 space-y-10">
-                        <div className="flex items-center justify-between px-4">
+                {/* Suggestions & History */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                    <div className="lg:col-span-12 space-y-10">
+                        <div className="flex items-center justify-between border-b-4 border-white/5 pb-8">
                             <div className="flex items-center gap-6">
-                                <div className="size-12 rounded-2xl bg-primary/5 flex items-center justify-center text-primary border-2 border-primary/10">
-                                    <ShoppingBag className="size-6" />
-                                </div>
-                                <h3 className="text-executive-title text-sm tracking-widest">Recommandations BCA</h3>
+                                <div className="size-3 bg-[#FF6600] rounded-full shadow-[0_0_10px_rgba(255,102,0,0.5)]" />
+                                <h3 className="text-xl font-black text-white uppercase tracking-[0.4em] italic leading-none pt-1">RECOMMANDATIONS STRATÉGIQUES</h3>
                             </div>
-                            <Link className="text-executive-label text-primary hover:bg-primary/5 px-6 py-2.5 rounded-2xl border-2 border-primary/10 transition-all active-press" to="/marketplace">Flux Complet</Link>
+                            <Link to="/marketplace" className="text-[10px] font-black text-[#FF6600] hover:text-white transition-colors uppercase tracking-[0.4em] italic border-b-2 border-[#FF6600]/20 pb-1">VOIR TOUT LE CATALOGUE</Link>
                         </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                            {isLoading ? (
-                                [1, 2, 3, 4].map(i => <TableRowSkeleton key={i} />)
-                            ) : (
-                                quickProducts.map((product, idx) => (
-                                    <Link to={`/product/${product.id}`} key={idx} className="group relative bg-card rounded-[2.5rem] border-2 border-border p-8 flex gap-6 hover:border-primary/20 hover:shadow-premium transition-all duration-500 cursor-pointer overflow-hidden">
-                                        <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <div className="size-2.5 rounded-full bg-primary animate-ping"></div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                            {isLoading ? [1, 2, 3, 4].map(i => <TableRowSkeleton key={i} />) : quickProducts.map((product, idx) => (
+                                <Link to={`/product/${product.id}`} key={idx} className="bg-white/[0.02] border-4 border-white/5 p-6 rounded-[3rem] flex flex-col gap-6 hover:border-[#FF6600]/40 transition-all duration-700 group hover:-translate-y-4 shadow-3xl">
+                                    <div className="aspect-square rounded-[2rem] bg-white/[0.01] overflow-hidden flex-shrink-0 relative border-2 border-white/5">
+                                        <img src={product.images?.[0]?.url_image} alt="" className="w-full h-full object-cover group-hover:scale-125 transition-all duration-[2s] opacity-80 group-hover:opacity-100" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
+                                        <div className="absolute bottom-6 left-6 flex items-center gap-3">
+                                            <div className="size-2 rounded-full bg-[#FF6600] animate-pulse shadow-[0_0_8px_rgba(255,102,0,0.5)]" />
+                                            <span className="text-[9px] font-black text-white uppercase tracking-widest italic pt-0.5">DISPONIBLE</span>
                                         </div>
-                                        
-                                        <div className="w-28 h-28 bg-accent rounded-2xl overflow-hidden flex-shrink-0 border-2 border-border shadow-inner">
-                                            <img
-                                                src={product.images?.[0]?.url_image || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&q=80&w=300'}
-                                                alt={product.nom_produit}
-                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                            />
-                                        </div>
-                                        <div className="flex flex-col justify-between py-1 flex-1">
-                                            <div className="space-y-2">
-                                                <h5 className="text-executive-data text-[15px] group-hover:text-primary transition-colors italic">{product.nom_produit}</h5>
-                                                <p className="text-executive-label opacity-60 line-clamp-2 leading-relaxed italic">{product.description}</p>
-                                            </div>
-                                            <div className="flex items-center justify-between mt-4">
-                                                <span className="text-executive-data text-lg tabular-nums">
-                                                    {parseFloat(product.prix_unitaire).toLocaleString('fr-FR')} <span className="text-[10px] font-black text-primary not-italic tracking-[0.2em] ml-1">GNF</span>
-                                                </span>
-                                                <div className="size-12 bg-accent group-hover:bg-primary group-hover:text-white rounded-2xl transition-all duration-500 flex items-center justify-center shadow-lg border-2 border-border group-hover:border-primary/20">
-                                                    <Plus className="size-6" />
-                                                </div>
+                                    </div>
+                                    <div className="space-y-4 px-2">
+                                        <h4 className="text-sm font-black text-white uppercase tracking-widest italic line-clamp-1 group-hover:text-[#FF6600] transition-colors">{product.nom_produit}</h4>
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-xl font-black text-[#FF6600] italic tracking-tighter">{parseFloat(product.prix_unitaire).toLocaleString()} <small className="text-[9px] non-italic text-slate-600">GNF</small></p>
+                                            <div className="size-10 rounded-xl bg-white/5 flex items-center justify-center text-white/20 group-hover:bg-[#FF6600]/10 group-hover:text-[#FF6600] transition-all">
+                                                <Zap className="size-5" />
                                             </div>
                                         </div>
-                                    </Link>
-                                ))
-                            )}
+                                    </div>
+                                </Link>
+                            ))}
                         </div>
                     </div>
 
-                    {/* Orders Table + Promo */}
-                    <div className="lg:col-span-4 space-y-10">
-                        <div className="flex flex-col h-full gap-10">
-                            <div className="flex-1">
-                                {isLoading ? (
-                                    <CardSkeleton />
-                                ) : hasError ? (
-                                    <ErrorState />
-                                ) : (
-                                    <DataTable
-                                        title="Flux Récent"
-                                        columns={orderColumns}
-                                        data={orders.slice(0, 4)}
-                                        className="shadow-premium border-2 border-border"
-                                        actions={
-                                            <Link className="text-executive-label text-primary hover:bg-primary/5 px-6 py-2.5 rounded-2xl border-2 border-primary/10 transition-all active-press" to="/orders">Elite History</Link>
-                                        }
-                                    />
-                                )}
-                            </div>
-
-                            {/* Premium Promo Banner */}
-                            <div 
-                                onClick={() => toast.info("Accès Privilège BCA+", { description: "Ce programme est actuellement sur invitation uniquement. Nos conseillers vous contacteront si vous êtes éligible." })}
-                                className="bg-background p-12 rounded-[3.5rem] text-white relative overflow-hidden shadow-2xl shadow-black/40 group cursor-pointer active-press transition-all duration-500 border-2 border-border"
-                            >
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-full bg-[radial-gradient(circle_at_50%_50%,rgba(43,90,255,0.1),transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
-                                
-                                <div className="relative z-10 space-y-8">
-                                    <div className="size-16 rounded-[1.2rem] bg-white/5 backdrop-blur-xl flex items-center justify-center border-2 border-white/5 shadow-2xl">
-                                        <Award className="size-8 text-primary shadow-[0_0_20px_rgba(43,90,255,0.5)]" />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <h4 className="text-3xl font-black italic tracking-tighter uppercase text-white">BCA Privilege+</h4>
-                                        <p className="text-slate-400 text-[10px] font-black leading-relaxed max-w-[260px] italic uppercase tracking-widest opacity-60">Insight Exécutif • Crédit Illimité • Logistique Prioritaire</p>
-                                    </div>
-                                    <button className="h-16 w-full bg-white text-black text-[11px] font-black uppercase tracking-[0.4em] rounded-2xl hover:bg-primary hover:text-white transition-all duration-700 shadow-2xl shadow-white/5">
-                                        Adhésion Réseau
-                                    </button>
-                                </div>
-                            </div>
+                    <div className="lg:col-span-12">
+                        <div className="bg-white/[0.01] border-4 border-white/5 rounded-[4rem] p-12 shadow-3xl">
+                            <DataTable
+                                title="COMMANDES RÉCENTES"
+                                columns={orderColumns}
+                                data={orders.slice(0, 5)}
+                                className="border-0 bg-transparent text-white"
+                                actions={<Link className="text-[10px] font-black text-[#FF6600] uppercase tracking-[0.4em] italic border-b-2 border-[#FF6600]/20 pb-1" to="/orders">ACCÉDER À L'HISTORIQUE COMPLET</Link>}
+                            />
                         </div>
                     </div>
                 </div>

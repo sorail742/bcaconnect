@@ -1,21 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { 
-    RotateCcw, 
-    CheckCircle, 
-    XCircle, 
-    Package, 
-    Calendar, 
-    AlertTriangle, 
-    Search, 
+import {
+    RotateCcw,
+    CheckCircle,
+    XCircle,
+    Package,
+    Calendar,
+    AlertTriangle,
+    Search,
     Filter,
     RefreshCcw,
     ChevronRight,
-    ArrowRightLeft
+    ArrowRightLeft,
+    CheckCircle2,
+    ShieldAlert,
+    History
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
+import { Button } from '../../components/ui/Button';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -24,24 +28,24 @@ const Returns = () => {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
 
-    const fetchReturns = async () => {
+    const fetchReturns = useCallback(async () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
             const response = await axios.get(`${API_URL}/returns/admin`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setReturns(response.data);
+            setReturns(response.data || []);
         } catch (error) {
-            toast.error("Échec de la synchronisation des dossiers retours.");
+            toast.error("Impossible d'auditer les dossiers retours.");
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchReturns();
-    }, []);
+    }, [fetchReturns]);
 
     const handleAction = async (id, status) => {
         try {
@@ -52,138 +56,119 @@ const Returns = () => {
             toast.success(`Dossier ${status === 'approuve' ? 'validé' : 'révoqué'}.`);
             fetchReturns();
         } catch (error) {
-            toast.error("Échec du changement de protocole.");
+            toast.error("Échec de la validation de protocole.");
         }
     };
 
-    const filtered = returns.filter(r => 
-        r.id.toLowerCase().includes(search.toLowerCase()) ||
-        r.User?.nom_complet?.toLowerCase().includes(search.toLowerCase())
+    const filtered = returns.filter(r =>
+        (r.id || '').toLowerCase().includes(search.toLowerCase()) ||
+        (r.User?.nom_complet || '').toLowerCase().includes(search.toLowerCase())
     );
 
     return (
-        <DashboardLayout title="GESTION DES FLUX INVERSES">
-            <div className="space-y-12 animate-in fade-in duration-700 pb-20">
-                
-                {/* ── Header Executive ──────────────────────────────── */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 border-b-4 border-border pb-12">
+        <DashboardLayout title="Logistique Retours">
+            <div className="max-w-7xl mx-auto space-y-10 animate-fade-in pb-24 px-6 md:px-10 pt-10">
+
+                {/* Header Actions */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-100 dark:border-slate-800 pb-8">
                     <div className="space-y-4">
-                        <div className="flex items-center gap-4">
-                            <div className="size-3 bg-rose-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.6)]" />
-                            <span className="text-executive-label font-black text-rose-500 uppercase tracking-[0.4em] italic leading-none pt-0.5">Logistique des Réversibilités BCA</span>
+                        <div className="flex items-center gap-2">
+                            <div className="size-2 bg-primary rounded-full" />
+                            <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Contrôle de Flux Inversés</span>
                         </div>
-                        <h2 className="text-5xl md:text-7xl font-black text-foreground italic tracking-tighter uppercase leading-[0.85]">Dossiers de <br /><span className="text-primary not-italic underline decoration-primary/20 decoration-8 underline-offset-[-4px]">Retours.</span></h2>
-                        <p className="text-muted-foreground/60 font-medium text-lg italic border-l-4 border-primary/20 pl-8 max-w-xl">Audit et validation des demandes de remboursement et retours de marchandises certifiées.</p>
+                        <h2 className="text-4xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">Gestion des <span className="text-primary italic">Retours.</span></h2>
                     </div>
-                    <button 
-                        onClick={fetchReturns}
-                        className="h-24 w-24 bg-background border-4 border-border rounded-[2.5rem] flex items-center justify-center text-muted-foreground/30 hover:border-primary/40 hover:text-primary transition-all shadow-premium group"
-                    >
-                        <RefreshCcw className="size-8 group-hover:rotate-180 transition-transform duration-700" />
+                    <button onClick={fetchReturns} className="size-12 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl flex items-center justify-center text-slate-400 hover:text-primary transition-all shadow-sm">
+                        <RefreshCcw className={cn("size-5", loading && "animate-spin")} />
                     </button>
                 </div>
 
-                {/* ── Filter Bar ────────────────────────────────────── */}
-                <div className="glass-card p-4 rounded-[2.5rem] border-4 border-border flex flex-col md:flex-row gap-4 bg-accent/10">
-                    <div className="relative group/search flex-1">
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground/30 size-6 group-focus-within/search:text-primary transition-all" />
+                {/* Filter Surface */}
+                <div className="p-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] flex items-center shadow-sm">
+                    <div className="relative group w-full">
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 size-5 group-focus-within:text-primary transition-colors" />
                         <input
-                            className="w-full h-20 pl-16 pr-8 bg-background border-4 border-transparent focus:border-primary/40 rounded-[1.8rem] text-sm font-black italic uppercase tracking-widest placeholder:text-muted-foreground/20 shadow-inner outline-none transition-all"
-                            placeholder="RECHERCHER DOSSIER OU CLIENT..."
+                            className="w-full pl-16 pr-8 h-14 bg-transparent text-sm font-bold uppercase tracking-widest placeholder:text-slate-300 outline-none"
+                            placeholder="RECHERCHER DOSSIER, CLIENT..."
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            onChange={e => setSearch(e.target.value)}
                         />
                     </div>
-                    <button className="h-20 w-20 bg-background border-4 border-border rounded-[1.8rem] flex items-center justify-center text-muted-foreground/30 hover:border-primary/40 hover:text-primary transition-all shadow-inner group">
-                        <Filter className="size-6 group-hover:scale-110 transition-transform" />
-                    </button>
                 </div>
 
-                {/* ── Display Grid ─────────────────────────────────── */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                {/* List Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {loading ? (
-                        [1, 2, 3, 4].map(n => <div key={n} className="h-96 bg-accent/20 rounded-[3rem] animate-pulse border-4 border-border" />)
+                        [1, 2, 3, 4].map(n => <div key={n} className="h-64 bg-slate-100 dark:bg-slate-800/50 rounded-[2.5rem] animate-pulse border border-slate-200 dark:border-slate-700" />)
                     ) : filtered.length === 0 ? (
-                        <div className="lg:col-span-2 py-40 flex flex-col items-center gap-8 opacity-20">
-                            <ArrowRightLeft className="size-20" />
-                            <p className="text-2xl font-black italic tracking-tighter uppercase">Registre de Retour Vierge</p>
+                        <div className="lg:col-span-2 py-32 flex flex-col items-center justify-center gap-6 opacity-30 text-center">
+                            <ArrowRightLeft className="size-16" />
+                            <p className="text-xs font-bold uppercase tracking-widest">Registre de Retour Vierge</p>
                         </div>
                     ) : (
                         filtered.map(item => (
                             <div
                                 key={item.id}
-                                className="glass-card border-4 border-border rounded-[3rem] p-10 shadow-premium hover:shadow-premium-lg hover:border-primary/20 transition-all duration-500 relative overflow-hidden group"
+                                className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
                             >
                                 <div className="absolute top-0 right-0 p-8">
                                     <div className={cn(
-                                        "px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest italic border-2",
-                                        item.statut === 'approuve' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" :
-                                        item.statut === 'rejete' ? "bg-rose-500/10 border-rose-500/20 text-rose-500" :
-                                        "bg-amber-500/10 border-amber-500/20 text-amber-500 animate-pulse"
+                                        "px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest border",
+                                        item.statut === 'approuve' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" :
+                                            item.statut === 'rejete' ? "bg-red-500/10 text-red-500 border-red-500/20" :
+                                                "bg-amber-500/10 text-amber-500 border-amber-500/20 animate-pulse"
                                     )}>
-                                        {item.statut === 'en_attente' ? 'Analyse en Cours' : item.statut.toUpperCase()}
+                                        {item.statut === 'en_attente' ? 'ANALYSIS' : item.statut === 'approuve' ? 'VALIDÉ' : 'REJETÉ'}
                                     </div>
                                 </div>
 
-                                <div className="space-y-8">
-                                    <div className="flex items-center gap-6">
-                                        <div className="size-20 rounded-[2rem] bg-accent border-4 border-border flex items-center justify-center shadow-premium group-hover:rotate-6 transition-transform overflow-hidden">
-                                            <Package className="size-10 text-muted-foreground/20" />
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-5">
+                                        <div className="size-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 flex items-center justify-center">
+                                            <Package className="size-8 text-slate-200" />
                                         </div>
                                         <div>
-                                            <p className="text-executive-label font-black text-muted-foreground/20 uppercase tracking-[0.2em] italic mb-1">Dossier Retour</p>
-                                            <h4 className="text-3xl font-black text-foreground italic tracking-tighter uppercase leading-none truncate max-w-[250px]">
+                                            <p className="text-[11px] font-bold text-slate-900 dark:text-white uppercase truncate max-w-[200px]">
                                                 {item.User?.nom_complet || "Client Inconnu"}
-                                            </h4>
+                                            </p>
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 italic">REF: #{item.id?.slice(0, 8)}</p>
                                         </div>
                                     </div>
 
-                                    <div className="p-8 bg-background border-4 border-border rounded-[2rem] shadow-inner space-y-6">
+                                    <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-4">
                                         <div className="flex items-start gap-4">
-                                            <AlertTriangle className="size-5 text-amber-500 shrink-0 mt-1" />
+                                            <ShieldAlert className="size-4 text-amber-500 shrink-0 mt-1" />
                                             <div>
-                                                <p className="text-[10px] font-black text-muted-foreground/30 uppercase tracking-widest mb-1 italic">Motif de Réversibilité</p>
-                                                <p className="text-sm font-bold text-foreground italic leading-relaxed">"{item.motif || "Non spécifié"}"</p>
+                                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Motif Déclaré</p>
+                                                <p className="text-[11px] text-slate-600 dark:text-slate-300 font-medium italic leading-relaxed">"{item.motif || "Non spécifié"}"</p>
                                             </div>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-8 border-t-2 border-border/50 pt-6">
-                                            <div>
-                                                <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] mb-1 italic">Commandé le</p>
-                                                <div className="flex items-center gap-2 text-xs font-black italic">
-                                                    <Calendar className="size-3 opacity-30" />
-                                                    {new Date(item.createdAt).toLocaleDateString('fr-GN')}
-                                                </div>
+                                        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-4">
+                                            <div className="flex items-center gap-2">
+                                                <Calendar className="size-3 text-slate-300" />
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase">{new Date(item.createdAt).toLocaleDateString('fr-GN')}</span>
                                             </div>
-                                            <div>
-                                                <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] mb-1 italic">ID Référence</p>
-                                                <p className="text-xs font-black italic text-primary">#{item.id.slice(0, 8).toUpperCase()}</p>
+                                            <div className="flex items-center gap-2">
+                                                <History className="size-3 text-slate-300" />
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase italic">Protocole Actif</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     {item.statut === 'en_attente' && (
-                                        <div className="flex gap-4 pt-4">
+                                        <div className="flex gap-4 pt-2">
                                             <button
                                                 onClick={() => handleAction(item.id, 'rejete')}
-                                                className="flex-1 h-20 bg-background border-4 border-border text-rose-500 rounded-[1.5rem] font-black uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-4 hover:border-rose-500/40 hover:bg-rose-500/5 transition-all active:scale-95 group/btn"
+                                                className="flex-1 h-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-red-500 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-red-50 transition-all flex items-center justify-center gap-2"
                                             >
-                                                <XCircle className="size-4 group-hover/btn:scale-125 transition-transform" />
-                                                RÉVOQUER
+                                                <XCircle className="size-3" /> Rejeter
                                             </button>
-                                            <button
+                                            <Button
                                                 onClick={() => handleAction(item.id, 'approuve')}
-                                                className="flex-1 h-20 bg-primary text-white rounded-[1.5rem] font-black uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-4 shadow-premium-lg shadow-primary/20 hover:scale-[1.03] active:scale-95 transition-all group/btn"
+                                                className="flex-1 h-12 rounded-xl text-[9px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg"
                                             >
-                                                <CheckCircle className="size-4 group-hover/btn:scale-125 transition-transform" />
-                                                APPROUVER
-                                            </button>
-                                        </div>
-                                    )}
-
-                                    {item.statut !== 'en_attente' && (
-                                        <div className="pt-4 flex items-center justify-between text-muted-foreground/30">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] italic">Dossier Archivé</p>
-                                            <RotateCcw className="size-5 opacity-20" />
+                                                <CheckCircle2 className="size-3" /> Valider
+                                            </Button>
                                         </div>
                                     )}
                                 </div>

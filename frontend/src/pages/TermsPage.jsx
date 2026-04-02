@@ -1,127 +1,123 @@
 import React from 'react';
 import PublicLayout from '../components/layout/PublicLayout';
-import { FileText, CheckCircle2, LayoutGrid, Award, ShieldAlert, BadgeCheck } from 'lucide-react';
+import { FileText, CheckCircle2, LayoutGrid, Award, ShieldAlert, BadgeCheck, ShieldCheck, Sparkles } from 'lucide-react';
 
 const TermsPage = () => {
     return (
         <PublicLayout>
-            <div className="w-full space-y-24 animate-in fade-in slide-in-from-bottom-12 duration-1000 font-inter pb-32 px-6 md:px-12 max-w-6xl mx-auto pt-24">
-                {/* Executive Header */}
-                <div className="space-y-10 text-center relative">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 size-96 bg-primary/10 rounded-full blur-[150px] -z-10" />
-                    <div className="flex flex-col items-center gap-6">
-                        <div className="flex items-center gap-4">
-                            <div className="size-3 rounded-full bg-primary animate-pulse" />
-                            <span className="text-executive-label font-black text-primary uppercase tracking-[0.5em] italic leading-none pt-0.5">CONTRAT DE CONFIANCE & GOUVERNANCE</span>
-                        </div>
-                        <h1 className="text-6xl md:text-8xl font-black text-foreground tracking-tighter italic uppercase leading-[0.85]">
-                            Conditions d' <br />
-                            <span className="text-primary not-italic underline decoration-primary/20 underline-offset-[-8px]">Utilisation.</span>
-                        </h1>
-                    </div>
-                    <p className="text-muted-foreground/60 font-black uppercase tracking-[0.3em] text-xs italic border-b-4 border-primary/20 pb-6 inline-block">Dernière mise à jour : 21 Mars 2026</p>
-                </div>
+            <div className="bg-[#0A0D14] min-h-screen text-white font-inter">
+                <div className="w-full space-y-32 animate-in fade-in slide-in-from-bottom-12 duration-1000 pb-48 px-6 md:px-12 max-w-7xl mx-auto pt-48">
 
-                {/* Trust Pillars */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                    <div className="glass-card p-10 rounded-[2.5rem] border-4 border-border space-y-6 shadow-premium group hover:border-primary/30 transition-all">
-                        <div className="size-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner group-hover:rotate-12 transition-transform duration-500">
-                            <BadgeCheck className="size-8" />
+                    {/* Executive Header */}
+                    <div className="space-y-16 text-center relative group">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 size-[65rem] bg-[#FF6600]/10 rounded-full blur-[220px] -z-10 mix-blend-screen pointer-events-none group-hover:scale-110 transition-transform duration-[4s]" />
+                        <div className="flex flex-col items-center gap-10">
+                            <div className="flex items-center gap-6">
+                                <div className="size-4 rounded-full bg-[#FF6600] animate-pulse shadow-[0_0_25px_rgba(255,102,0,0.5)]" />
+                                <span className="text-[11px] font-black text-[#FF6600] uppercase tracking-[0.6em] italic leading-none pt-0.5">CONTRAT DE CONFIANCE & GOUVERNANCE</span>
+                            </div>
+                            <h1 className="text-7xl md:text-[10rem] font-black tracking-tighter italic uppercase leading-[0.8] text-white drop-shadow-2xl">
+                                CONDITIONS D' <br />
+                                <span className="text-[#FF6600] not-italic underline decoration-white/10 decoration-8 underline-offset-[-12px]">UTILISATION.</span>
+                            </h1>
                         </div>
-                        <div className="space-y-3">
-                            <h3 className="text-xl font-black italic tracking-tighter uppercase text-foreground">Engagement Qualité</h3>
-                            <p className="text-[10px] text-muted-foreground/60 font-black uppercase tracking-[0.2em] italic leading-relaxed">Accréditation rigoureuse des marchands et vérification systématique des actifs commerciaux mis en ligne.</p>
-                        </div>
+                        <p className="text-slate-500 font-black uppercase tracking-[0.4em] text-sm italic border-b-4 border-white/5 pb-8 inline-block">DERNIÈRE MISE À JOUR : 21 MARS 2026</p>
                     </div>
-                    <div className="glass-card p-10 rounded-[2.5rem] border-4 border-border space-y-6 shadow-premium group hover:border-blue-500/30 transition-all">
-                        <div className="size-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 shadow-inner group-hover:rotate-12 transition-transform duration-500">
-                            <Award className="size-8" />
-                        </div>
-                        <div className="space-y-3">
-                            <h3 className="text-xl font-black italic tracking-tighter uppercase text-foreground">Éthique Business</h3>
-                            <p className="text-[10px] text-muted-foreground/60 font-black uppercase tracking-[0.2em] italic leading-relaxed">Tolérance zéro pour les contrefaçons, les abus de position et toute forme de fraude transactionnelle.</p>
-                        </div>
-                    </div>
-                    <div className="glass-card p-10 rounded-[2.5rem] border-4 border-border space-y-6 shadow-premium group hover:border-emerald-500/30 transition-all">
-                        <div className="size-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-inner group-hover:rotate-12 transition-transform duration-500">
-                            <ShieldAlert className="size-8" />
-                        </div>
-                        <div className="space-y-3">
-                            <h3 className="text-xl font-black italic tracking-tighter uppercase text-foreground">Séquestre Garanti</h3>
-                            <p className="text-[10px] text-muted-foreground/60 font-black uppercase tracking-[0.2em] italic leading-relaxed">Protocole Escrow activé par défaut : vos fonds sont sanctuarisés jusqu'à confirmation de livraison.</p>
-                        </div>
-                    </div>
-                </div>
 
-                {/* Legal Framework */}
-                <div className="glass-card border-4 border-border rounded-[3.5rem] p-12 md:p-20 shadow-premium-lg relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 size-96 bg-primary/5 rounded-full blur-[120px] -mr-48 -mt-48 group-hover:bg-primary/10 transition-colors duration-1000" />
-                    
-                    <div className="prose prose-executive max-w-none space-y-24 relative z-10">
-                        <section className="space-y-8 animate-in slide-in-from-left duration-700">
-                            <div className="flex items-center gap-6 group/title">
-                                <div className="p-3 bg-primary/10 rounded-xl text-primary shadow-premium border-2 border-primary/20">
-                                    <CheckCircle2 className="size-6" />
+                    {/* Trust Pillars */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                        {[
+                            { icon: BadgeCheck, label: "ENGAGEMENT QUALITÉ", desc: "ACCRÉDITATION RIGOUREUSE DES MARCHANDS ET VÉRIFICATION SYSTÉMATIQUE DES ACTIFS COMMERCIAUX MIS EN LIGNE.", borderColor: "border-[#FF6600]/30", iconColor: "text-[#FF6600]", bgColor: "bg-[#FF6600]/10" },
+                            { icon: Award, label: "ÉTHIQUE BUSINESS", desc: "TOLÉRANCE ZÉRO POUR LES CONTREFAÇONS, LES ABUS DE POSITION ET TOUTE FORME DE FRAUDE TRANSACTIONNELLE.", borderColor: "border-blue-500/30", iconColor: "text-blue-500", bgColor: "bg-blue-500/10" },
+                            { icon: ShieldAlert, label: "SÉQUESTRE GARANTI", desc: "PROTOCOLE ESCROW ACTIVÉ PAR DÉFAUT : VOS FONDS SONT SANCTUARISÉS JUSQU'À CONFIRMATION DE LIVRAISON.", borderColor: "border-emerald-500/30", iconColor: "text-emerald-500", bgColor: "bg-emerald-500/10" },
+                        ].map((item, i) => (
+                            <div key={i} className={`bg-white/[0.02] p-12 rounded-[4rem] border-4 ${item.borderColor} space-y-10 shadow-3xl group hover:scale-105 transition-all duration-700 relative overflow-hidden`}>
+                                <div className={`absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
+                                <div className={`size-24 rounded-[1.5rem] ${item.bgColor} flex items-center justify-center ${item.iconColor} shadow-inner group-hover:rotate-12 transition-transform duration-700 relative z-10`}>
+                                    <item.icon className="size-12" />
                                 </div>
-                                <h2 className="text-3xl font-black text-foreground italic tracking-tighter uppercase leading-none pt-1">
-                                    1. Objet et Acceptation
-                                </h2>
-                            </div>
-                            <div className="text-muted-foreground/80 font-black uppercase tracking-[0.25em] text-xs leading-[2.2] italic border-l-8 border-primary/20 pl-12 py-2">
-                                Les présentes Conditions Générales d'Utilisation (CGU) définissent les architectures de gouvernance, d'accès et d'utilisation de l'écosystème BCA Connect. En accédant au service, vous ratifiez sans réserve ces protocoles.
-                            </div>
-                        </section>
-
-                        <section className="space-y-12 animate-in slide-in-from-right duration-700 delay-100">
-                            <div className="flex items-center gap-6 group/title">
-                                <div className="p-3 bg-primary/10 rounded-xl text-primary shadow-premium border-2 border-primary/20">
-                                    <CheckCircle2 className="size-6" />
+                                <div className="space-y-6 relative z-10">
+                                    <h3 className="text-2xl font-black italic tracking-tighter uppercase text-white leading-none">{item.label}</h3>
+                                    <p className="text-[11px] text-slate-500 font-black uppercase tracking-[0.2em] italic leading-relaxed border-l-8 border-white/5 pl-8">{item.desc}</p>
                                 </div>
-                                <h2 className="text-3xl font-black text-foreground italic tracking-tighter uppercase leading-none pt-1">
-                                    2. Rôle des Acteurs Stratégiques
-                                </h2>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                {[
-                                    { role: "VENDEURS", desc: "Responsables de l'intégrité de leurs actifs, de la conformité des annonces et de l'excellence de service." },
-                                    { role: "ACHETEURS", desc: "S'engagent à respecter les protocoles de paiement et à confirmer la réception des actifs dès livraison." },
-                                    { role: "TRANSPORTEURS", desc: "Garantissent la sécurité des actifs en transit et le respect strict des fenêtres temporelles de livraison." }
-                                ].map((item, i) => (
-                                    <div key={i} className="p-8 bg-background/50 rounded-[2rem] border-2 border-border hover:border-primary/20 transition-all space-y-4">
-                                        <p className="text-primary font-black italic tracking-widest text-[11px] uppercase border-b-2 border-primary/10 pb-2">{item.role}</p>
-                                        <p className="text-muted-foreground/60 font-black uppercase tracking-widest text-[9px] leading-relaxed italic">{item.desc}</p>
+                        ))}
+                    </div>
+
+                    {/* Legal Framework */}
+                    <div className="bg-white/[0.02] border-4 border-white/5 rounded-[5rem] p-16 md:p-24 shadow-3xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 size-[45rem] bg-[#FF6600]/5 rounded-full blur-[200px] -mr-48 -mt-48 group-hover:bg-[#FF6600]/10 transition-colors duration-1000" />
+
+                        <div className="space-y-32 relative z-10">
+                            {/* Section 1 */}
+                            <section className="space-y-12 animate-in slide-in-from-left duration-1000">
+                                <div className="flex items-center gap-10 group/title">
+                                    <div className="p-4 bg-[#FF6600]/10 rounded-2xl text-[#FF6600] shadow-3xl border-2 border-[#FF6600]/20 group-hover:rotate-6 transition-transform">
+                                        <Sparkles className="size-8" />
                                     </div>
-                                ))}
-                            </div>
-                        </section>
-
-                        <section className="space-y-8 animate-in slide-in-from-left duration-700 delay-200">
-                            <div className="flex items-center gap-6 group/title">
-                                <div className="p-3 bg-primary/10 rounded-xl text-primary shadow-premium border-2 border-primary/20">
-                                    <CheckCircle2 className="size-6" />
+                                    <h2 className="text-4xl lg:text-6xl font-black text-white italic tracking-tighter uppercase leading-none pt-1">
+                                        1. OBJET ET RATIFICATION
+                                    </h2>
                                 </div>
-                                <h2 className="text-3xl font-black text-foreground italic tracking-tighter uppercase leading-none pt-1">
-                                    3. Protocole de Paiement Séquestre
-                                </h2>
-                            </div>
-                            <div className="text-muted-foreground/80 font-black uppercase tracking-[0.25em] text-xs leading-[2.2] italic border-r-8 border-primary/20 pr-12 py-2 text-right">
-                                Tout flux financier sur BCA Connect est sanctuarisé dans une unité de séquestre (Escrow). Les actifs monétaires ne sont transférés au cédant qu'après validation explicite de l'acquéreur ou expiration du délai de protection de 72 heures post-livraison.
-                            </div>
-                        </section>
-
-                        <section className="space-y-8 animate-in slide-in-from-right duration-700 delay-300">
-                            <div className="flex items-center gap-6 group/title">
-                                <div className="p-3 bg-primary/10 rounded-xl text-primary shadow-premium border-2 border-primary/20">
-                                    <CheckCircle2 className="size-6" />
+                                <div className="text-slate-400 font-black uppercase tracking-[0.3em] text-xs leading-[2.5] italic border-l-[12px] border-[#FF6600]/20 pl-16 py-4">
+                                    LES PRÉSENTES CONDITIONS GÉNÉRALES D'UTILISATION (CGU) DÉFINISSENT LES ARCHITECTURES DE GOUVERNANCE, D'ACCÈS ET D'UTILISATION DE L'ÉCOSYSTÈME BCA CONNECT. EN ACCÉDANT AU SERVICE, VOUS RATIFIEZ SANS RÉSERVE CES PROTOCOLES.
                                 </div>
-                                <h2 className="text-3xl font-black text-foreground italic tracking-tighter uppercase leading-none pt-1">
-                                    4. Litiges et Arbitrage
-                                </h2>
-                            </div>
-                            <div className="text-muted-foreground/80 font-black uppercase tracking-[0.25em] text-xs leading-[2.2] italic border-l-8 border-primary/20 pl-12 py-2">
-                                En cas d'anomalie opérationnelle, l'acheteur doit initier un protocole de litige dans les 24 heures suivant la réception. Le département d'arbitrage de BCA Connect interviendra pour statuer et ordonner le remboursement intégral si la faille est confirmée.
-                            </div>
-                        </section>
+                            </section>
+
+                            {/* Section 2 */}
+                            <section className="space-y-16 animate-in slide-in-from-right duration-1000 delay-100">
+                                <div className="flex items-center gap-10 group/title">
+                                    <div className="p-4 bg-blue-500/10 rounded-2xl text-blue-500 shadow-3xl border-2 border-blue-500/20 group-hover:-rotate-6 transition-transform">
+                                        <ShieldCheck className="size-8" />
+                                    </div>
+                                    <h2 className="text-4xl lg:text-6xl font-black text-white italic tracking-tighter uppercase leading-none pt-1">
+                                        2. ACTEURS STRATÉGIQUES
+                                    </h2>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                                    {[
+                                        { role: "VENDEURS", desc: "RESPONSABLES DE L'INTÉGRITÉ DES ACTIFS, DE LA CONFORMITÉ DES ANNONCES ET DE L'EXCELLENCE DE SERVICE.", icon: Sparkles },
+                                        { role: "ACHETEURS", desc: "S'ENGAGENT À RESPECTER LES PROTOCOLES DE PAIEMENT ET À CONFIRMER LA RÉCEPTION DES ACTIFS DÈS LIVRAISON.", icon: ShieldCheck },
+                                        { role: "TRANSPORTEURS", desc: "GARANTISSENT LA SÉCURITÉ DES ACTIFS EN TRANSIT ET LE RESPECT STRICT DES FENÊTRES TEMPORELLES.", icon: BadgeCheck }
+                                    ].map((item, i) => (
+                                        <div key={i} className="p-10 bg-white/[0.01] rounded-[3rem] border-4 border-white/5 hover:border-[#FF6600]/20 transition-all space-y-6 group/item">
+                                            <p className="text-[#FF6600] font-black italic tracking-[0.3em] text-xs uppercase border-b-4 border-white/5 pb-4 group-hover/item:border-[#FF6600]/30 transition-all">{item.role}</p>
+                                            <p className="text-slate-500 font-extrabold uppercase tracking-widest text-[10px] leading-relaxed italic">{item.desc}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* Section 3 */}
+                            <section className="space-y-12 animate-in slide-in-from-left duration-1000 delay-200">
+                                <div className="flex items-center gap-10 group/title">
+                                    <div className="p-4 bg-emerald-500/10 rounded-2xl text-emerald-500 shadow-3xl border-2 border-emerald-500/20 group-hover:rotate-6 transition-transform">
+                                        <BadgeCheck className="size-8" />
+                                    </div>
+                                    <h2 className="text-4xl lg:text-6xl font-black text-white italic tracking-tighter uppercase leading-none pt-1">
+                                        3. PAIEMENT SÉQUESTRE
+                                    </h2>
+                                </div>
+                                <div className="text-slate-400 font-black uppercase tracking-[0.3em] text-xs leading-[2.5] italic border-r-[12px] border-[#FF6600]/20 pr-16 py-4 text-right">
+                                    TOUT FLUX FINANCIER SUR BCA CONNECT EST SANCTUARISÉ DANS UNE UNITÉ DE SÉQUESTRE (ESCROW). LES ACTIFS MONÉTAIRES NE SONT TRANSFÉRÉS AU CÉDANT QU'APRÈS VALIDATION EXPLICITE DE L'ACQUÉREUR OU EXPIRATION DU DÉLAI DE PROTECTION.
+                                </div>
+                            </section>
+
+                            {/* Section 4 */}
+                            <section className="space-y-12 animate-in slide-in-from-right duration-1000 delay-300">
+                                <div className="flex items-center gap-10 group/title">
+                                    <div className="p-4 bg-red-500/10 rounded-2xl text-red-500 shadow-3xl border-2 border-red-500/20 group-hover:-rotate-6 transition-transform">
+                                        <ShieldAlert className="size-8" />
+                                    </div>
+                                    <h2 className="text-4xl lg:text-6xl font-black text-white italic tracking-tighter uppercase leading-none pt-1">
+                                        4. LITIGES & ARBITRAGE
+                                    </h2>
+                                </div>
+                                <div className="text-slate-400 font-black uppercase tracking-[0.3em] text-xs leading-[2.5] italic border-l-[12px] border-[#FF6600]/20 pl-16 py-4">
+                                    EN CAS D'ANOMALIE OPÉRATIONNELLE, L'ACHETEUR DOIT INITIER UN PROTOCOLE DE LITIGE DANS LES 24 HEURES SUIVANT LA RÉCEPTION. LE DÉPARTEMENT D'ARBITRAGE DE BCA CONNECT INTERVIENDRA POUR STATUER ET ORDONNER LE REMBOURSEMENT INTÉGRAL.
+                                </div>
+                            </section>
+                        </div>
                     </div>
                 </div>
             </div>

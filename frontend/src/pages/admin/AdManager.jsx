@@ -1,28 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { 
-    Plus, 
-    Edit3, 
-    Trash2, 
-    Image as ImageIcon, 
-    Link as LinkIcon, 
-    Eye, 
-    MousePointer2, 
+import {
+    Plus,
+    Edit3,
+    Trash2,
+    Image as ImageIcon,
+    Link as LinkIcon,
+    Eye,
+    MousePointer2,
     TrendingUp,
     RefreshCcw,
     Zap,
     Play,
     Pause,
-    AlertCircle
+    AlertCircle,
+    CheckCircle2,
+    Target,
+    BarChart3,
+    ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 
 const AdsManager = () => {
     const [ads, setAds] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [editingAd, setEditingAd] = useState(null);
     const [formData, setFormData] = useState({
         titre: '',
@@ -32,24 +39,24 @@ const AdsManager = () => {
         statut: 'actif'
     });
 
-    const fetchAds = async () => {
+    const fetchAds = useCallback(async () => {
         try {
             setLoading(true);
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/ads`);
-            setAds(response.data);
+            setAds(response.data || []);
         } catch (error) {
-            toast.error("Échec de la synchronisation des campagnes.");
+            toast.error("Impossible de synchroniser les campagnes.");
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchAds();
-    }, []);
+    }, [fetchAds]);
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Cesser définitivement la diffusion de cette campagne ?")) return;
+        if (!window.confirm("Révoquer définitivement cette campagne publicitaire ?")) return;
         try {
             await axios.delete(`${import.meta.env.VITE_API_URL}/ads/${id}`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -57,7 +64,7 @@ const AdsManager = () => {
             toast.success("Campagne révoquée.");
             fetchAds();
         } catch (error) {
-            toast.error("Opération compromise.");
+            toast.error("Échec de l'opération.");
         }
     };
 
@@ -65,11 +72,11 @@ const AdsManager = () => {
         if (ad) {
             setEditingAd(ad);
             setFormData({
-                titre: ad.titre,
-                image_url: ad.image_url,
-                lien_redirection: ad.lien_redirection,
-                priorite: ad.priorite,
-                statut: ad.statut
+                titre: ad.titre || '',
+                image_url: ad.image_url || '',
+                lien_redirection: ad.lien_redirection || '',
+                priorite: ad.priorite || 1,
+                statut: ad.statut || 'actif'
             });
         } else {
             setEditingAd(null);
@@ -80,144 +87,137 @@ const AdsManager = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsSaving(true);
         try {
             const token = localStorage.getItem('token');
+            const data = {
+                titre: formData.titre.trim(),
+                image_url: formData.image_url.trim(),
+                lien_redirection: formData.lien_redirection.trim(),
+                priorite: parseInt(formData.priorite),
+                statut: formData.statut
+            };
+
             if (editingAd) {
-                await axios.put(`${import.meta.env.VITE_API_URL}/ads/${editingAd.id}`, formData, {
+                await axios.put(`${import.meta.env.VITE_API_URL}/ads/${editingAd.id}`, data, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 toast.success("Campagne actualisée.");
             } else {
-                await axios.post(`${import.meta.env.VITE_API_URL}/ads`, formData, {
+                await axios.post(`${import.meta.env.VITE_API_URL}/ads`, data, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                toast.success("Nouvelle diffusion lancée.");
+                toast.success("Campagne déployée.");
             }
             setShowModal(false);
             fetchAds();
         } catch (error) {
-            toast.error("Erreur lors de l'enregistrement de la campagne.");
+            toast.error("Erreur lors de l'enregistrement.");
+        } finally {
+            setIsSaving(false);
         }
     };
 
     return (
-        <DashboardLayout title="DIRECTOIRE PUBLICITAIRE">
-            <div className="space-y-12 animate-in fade-in duration-700 pb-20">
-                
-                {/* ── Header Executive ──────────────────────────────── */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 border-b-4 border-border pb-12">
+        <DashboardLayout title="Ad Manager">
+            <div className="max-w-7xl mx-auto space-y-10 animate-fade-in pb-24 px-6 md:px-10 pt-10">
+
+                {/* Header Actions */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-100 dark:border-slate-800 pb-8">
                     <div className="space-y-4">
-                        <div className="flex items-center gap-4">
-                            <div className="size-3 bg-amber-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.6)]" />
-                            <span className="text-executive-label font-black text-amber-500 uppercase tracking-[0.4em] italic leading-none pt-0.5">Surveillance de l'Audience BCA</span>
+                        <div className="flex items-center gap-2">
+                            <div className="size-2 bg-primary rounded-full" />
+                            <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Contrôle de Visibilité</span>
                         </div>
-                        <h2 className="text-5xl md:text-7xl font-black text-foreground italic tracking-tighter uppercase leading-[0.85]">Gestion des <br /><span className="text-primary not-italic underline decoration-primary/20 decoration-8 underline-offset-[-4px]">Campagnes.</span></h2>
-                        <p className="text-muted-foreground/60 font-medium text-lg italic border-l-4 border-primary/20 pl-8 max-w-xl">Pilotage haut-débit de la visibilité des marques et produits au sein de l'écosystème Guinée.</p>
+                        <h2 className="text-4xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">Directoire <span className="text-primary italic">Publicitaire.</span></h2>
                     </div>
                     <div className="flex gap-4">
-                        <button 
-                            onClick={fetchAds}
-                            className="h-24 w-24 bg-background border-4 border-border rounded-[2.5rem] flex items-center justify-center text-muted-foreground/30 hover:border-primary/40 hover:text-primary transition-all shadow-premium group"
-                        >
-                            <RefreshCcw className="size-8 group-hover:rotate-180 transition-transform duration-700" />
+                        <button onClick={fetchAds} className="size-12 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl flex items-center justify-center text-slate-400 hover:text-primary transition-all shadow-sm">
+                            <RefreshCcw className={cn("size-5", loading && "animate-spin")} />
                         </button>
-                        <button
-                            onClick={() => handleOpenModal()}
-                            className="h-24 px-12 bg-primary text-white rounded-[2.5rem] font-black uppercase tracking-[0.4em] text-xs flex items-center gap-6 shadow-premium-lg shadow-primary/30 hover:scale-105 active:scale-95 transition-all group relative overflow-hidden"
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
-                            <Plus className="size-6 group-hover:rotate-90 transition-transform duration-500" />
-                            <span className="relative z-10 leading-none pt-1">Lancer Campagne</span>
-                        </button>
+                        <Button onClick={() => handleOpenModal()} className="h-14 px-10 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center gap-3 shadow-xl">
+                            <Plus className="size-5" /> Lancer Diffusion
+                        </Button>
                     </div>
                 </div>
 
-                {/* ── Active Campaigns Grid ─────────────────────────── */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                {/* Performance Hub */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div className="md:col-span-1 p-8 bg-slate-900 rounded-[2rem] border border-slate-800 shadow-xl flex flex-col justify-between h-[200px]">
+                        <div className="flex items-center justify-between">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Audience Active</p>
+                            <Target className="size-5 text-primary" />
+                        </div>
+                        <div>
+                            <p className="text-3xl font-bold text-white uppercase tabular-nums">High</p>
+                            <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mt-2 flex items-center gap-2">
+                                <TrendingUp className="size-3" /> Optimale
+                            </p>
+                        </div>
+                    </div>
+                    <div className="md:col-span-3 p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] shadow-sm flex items-center justify-center">
+                        <div className="grid grid-cols-3 gap-12 w-full max-w-2xl">
+                            <div className="text-center space-y-2">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">Affichages</p>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white italic tracking-tight">12.4K</p>
+                            </div>
+                            <div className="text-center space-y-2 border-x border-slate-100 dark:border-slate-800">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">Interactions</p>
+                                <p className="text-2xl font-bold text-slate-900 dark:text-white italic tracking-tight">3.2K</p>
+                            </div>
+                            <div className="text-center space-y-2">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">ROI Moyen</p>
+                                <p className="text-2xl font-bold text-primary italic tracking-tight">+8.5%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     {loading ? (
-                        [1, 2, 3, 4].map(n => <div key={n} className="h-[28rem] bg-accent/20 rounded-[4rem] animate-pulse border-4 border-border" />)
+                        [1, 2].map(n => <div key={n} className="h-96 bg-slate-100 dark:bg-slate-800/50 rounded-[2.5rem] animate-pulse border border-slate-200 dark:border-slate-700" />)
                     ) : ads.length === 0 ? (
-                        <div className="lg:col-span-2 py-40 flex flex-col items-center gap-8 opacity-20">
-                            <Zap className="size-20" />
-                            <p className="text-2xl font-black italic tracking-tighter uppercase">Silence Diffusion — Aucune Campagne</p>
+                        <div className="md:col-span-2 py-32 flex flex-col items-center justify-center gap-6 opacity-30 text-center">
+                            <BarChart3 className="size-16" />
+                            <p className="text-xs font-bold uppercase tracking-widest">Aucune campagne en cours</p>
                         </div>
                     ) : (
                         ads.map(ad => (
                             <div
                                 key={ad.id}
-                                className="glass-card border-4 border-border rounded-[4rem] overflow-hidden shadow-premium hover:shadow-premium-lg hover:border-primary/20 transition-all duration-700 group flex flex-col"
+                                className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[3rem] overflow-hidden shadow-sm hover:shadow-md transition-all group"
                             >
-                                {/* Banner Preview */}
-                                <div className="h-64 relative overflow-hidden bg-accent">
-                                    <img 
-                                        src={ad.image_url} 
-                                        alt={ad.titre}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2s]"
+                                <div className="h-56 relative overflow-hidden bg-slate-100 dark:bg-slate-800">
+                                    <img
+                                        src={ad.image_url}
+                                        alt=""
+                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                                    <div className="absolute top-6 right-6">
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
+                                    <div className="absolute top-6 left-6">
                                         <div className={cn(
-                                            "flex items-center gap-3 px-4 py-2 rounded-full border-2 backdrop-blur-md",
-                                            ad.statut === 'actif' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-slate-500/10 border-white/10 text-white/40"
+                                            "flex items-center gap-3 px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest border backdrop-blur-md",
+                                            ad.statut === 'actif' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-white/10 text-white/50 border-white/10"
                                         )}>
-                                            {ad.statut === 'actif' ? <Play className="size-3 fill-current" /> : <Pause className="size-3 fill-current" />}
-                                            <span className="text-[9px] font-black uppercase tracking-widest italic">{ad.statut === 'actif' ? 'DIFFUSION ACTIVE' : 'CAMPAGNE EN PAUSE'}</span>
+                                            <div className={cn("size-2 rounded-full", ad.statut === 'actif' ? "bg-emerald-500" : "bg-white/30")} />
+                                            {ad.statut === 'actif' ? 'Diffusion Active' : 'En Pause'}
                                         </div>
                                     </div>
-                                    <div className="absolute bottom-6 left-8 flex items-end gap-6">
-                                        <div className="bg-primary px-4 py-1.5 rounded-lg text-[9px] font-black text-white italic uppercase tracking-[0.2em] shadow-lg">
-                                            PRIORITÉ {ad.priorite}
-                                        </div>
-                                        <h3 className="text-3xl font-black text-white italic tracking-tighter uppercase drop-shadow-2xl truncate max-w-[350px]">
-                                            {ad.titre}
-                                        </h3>
+                                    <div className="absolute bottom-6 left-8 right-8">
+                                        <h3 className="text-2xl font-bold text-white uppercase italic tracking-tighter truncate">{ad.titre}</h3>
+                                        <p className="text-[9px] font-bold text-primary uppercase tracking-[0.3em] mt-1">Priorité Niveau {ad.priorite}</p>
                                     </div>
                                 </div>
 
-                                {/* Content Details */}
-                                <div className="p-10 flex-1 space-y-8 flex flex-col justify-between">
-                                    <div className="grid grid-cols-3 gap-6 p-6 rounded-[2rem] bg-background border-4 border-border shadow-inner">
-                                        <div className="text-center space-y-2 border-r-2 border-border/50">
-                                            <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] italic">Vues</p>
-                                            <div className="flex items-center justify-center gap-2 text-xl font-black italic tracking-tighter text-executive-data">
-                                                <Eye className="size-4 text-primary" />
-                                                {Math.floor(Math.random() * 1200)}
-                                            </div>
+                                <div className="p-8 space-y-8">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors cursor-pointer group/url">
+                                            <LinkIcon className="size-3" />
+                                            <span className="text-[10px] font-bold tracking-tight truncate max-w-[200px]">{ad.lien_redirection}</span>
                                         </div>
-                                        <div className="text-center space-y-2 border-r-2 border-border/50">
-                                            <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] italic">Clics</p>
-                                            <div className="flex items-center justify-center gap-2 text-xl font-black italic tracking-tighter text-executive-data">
-                                                <MousePointer2 className="size-4 text-primary" />
-                                                {Math.floor(Math.random() * 450)}
-                                            </div>
-                                        </div>
-                                        <div className="text-center space-y-2">
-                                            <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] italic">Taux</p>
-                                            <div className="flex items-center justify-center gap-2 text-xl font-black italic tracking-tighter text-emerald-500">
-                                                <TrendingUp className="size-4" />
-                                                {(Math.random() * 8 + 1).toFixed(1)}%
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center justify-between pt-4 border-t-2 border-border/50">
-                                        <div className="flex items-center gap-3 text-muted-foreground/20 hover:text-primary transition-colors cursor-pointer group/link">
-                                            <LinkIcon className="size-4" />
-                                            <span className="text-[10px] font-black italic truncate max-w-[200px]">{ad.lien_redirection}</span>
-                                        </div>
-                                        <div className="flex gap-4">
-                                            <button 
-                                                onClick={() => handleOpenModal(ad)}
-                                                className="size-16 bg-background border-4 border-border rounded-2xl flex items-center justify-center text-muted-foreground/40 hover:text-primary hover:border-primary/40 transition-all shadow-premium active:scale-95"
-                                            >
-                                                <Edit3 className="size-6" />
-                                            </button>
-                                            <button 
-                                                onClick={() => handleDelete(ad.id)}
-                                                className="size-16 bg-background border-4 border-border rounded-2xl flex items-center justify-center text-muted-foreground/40 hover:text-rose-500 hover:border-rose-500/40 transition-all shadow-premium active:scale-95"
-                                            >
-                                                <Trash2 className="size-6" />
-                                            </button>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => handleOpenModal(ad)} className="size-12 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-primary rounded-xl flex items-center justify-center transition-all border border-slate-100 dark:border-slate-800"><Edit3 className="size-5" /></button>
+                                            <button onClick={() => handleDelete(ad.id)} className="size-12 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-red-500 rounded-xl flex items-center justify-center transition-all border border-slate-100 dark:border-slate-800"><Trash2 className="size-5" /></button>
                                         </div>
                                     </div>
                                 </div>
@@ -225,105 +225,86 @@ const AdsManager = () => {
                         ))
                     )}
                 </div>
+            </div>
 
-                {/* Modal de Diffusion (Executive Form) */}
-                <div className={cn(
-                    "fixed inset-0 z-[100] flex items-center justify-center p-6 transition-all duration-500",
-                    showModal ? "opacity-100 visible" : "opacity-0 invisible"
-                )}>
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowModal(false)} />
-                    <div className="relative w-full max-w-2xl bg-card border-4 border-border rounded-[4rem] shadow-premium-lg overflow-hidden animate-in zoom-in-95 duration-500">
-                        <div className="p-10 border-b-4 border-border flex items-center justify-between bg-accent/20">
-                            <div className="space-y-1">
-                                <h3 className="text-2xl font-black italic tracking-tighter uppercase leading-none">{editingAd ? 'AUDIT DE CAMPAGNE' : 'NOUVELLE DIFFUSION'}</h3>
-                                <p className="text-[10px] font-black text-muted-foreground/30 uppercase tracking-[0.3em] italic">Registre Publicitaire BCA v2</p>
-                            </div>
-                            <button onClick={() => setShowModal(false)} className="size-10 rounded-full bg-background border-2 border-border flex items-center justify-center text-muted-foreground/40 hover:text-primary transition-colors">×</button>
+            {/* Modal Form */}
+            <Modal
+                isOpen={showModal}
+                onClose={() => setShowModal(false)}
+                title={editingAd ? "Audit Campagne" : "Nouveau Déploiement"}
+            >
+                <form onSubmit={handleSubmit} className="space-y-8 p-6">
+                    <div className="space-y-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Titre Promotionnel</label>
+                            <Input
+                                required
+                                value={formData.titre}
+                                onChange={(e) => setFormData({ ...formData, titre: e.target.value })}
+                                placeholder="EX: VENTES PRIVÉES..."
+                                className="h-14 px-6 rounded-xl font-bold text-sm uppercase"
+                            />
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-12 space-y-8">
-                            <div className="space-y-4">
-                                <label className="text-executive-label font-black uppercase tracking-widest text-muted-foreground/40 ml-2 italic">Titre de Campagne</label>
-                                <input
-                                    required
-                                    className="w-full h-16 px-8 rounded-[1.5rem] border-4 border-border bg-background focus:border-primary/40 text-sm font-black italic uppercase tracking-widest outline-none transition-all shadow-inner"
-                                    placeholder="EX: PROMO HIGH-TECH GUINÉE"
-                                    value={formData.titre}
-                                    onChange={(e) => setFormData({ ...formData, titre: e.target.value })}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Priorité (1-10)</label>
+                                <Input
+                                    type="number"
+                                    min="1" max="10"
+                                    value={formData.priorite}
+                                    onChange={(e) => setFormData({ ...formData, priorite: e.target.value })}
+                                    className="h-14 px-6 rounded-xl font-bold text-sm"
                                 />
                             </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="space-y-4">
-                                    <label className="text-executive-label font-black uppercase tracking-widest text-muted-foreground/40 ml-2 italic">Priorité (1-10)</label>
-                                    <input
-                                        type="number"
-                                        min="1" max="10"
-                                        className="w-full h-16 px-8 rounded-[1.5rem] border-4 border-border bg-background focus:border-primary/40 text-sm font-black italic outline-none transition-all shadow-inner"
-                                        value={formData.priorite}
-                                        onChange={(e) => setFormData({ ...formData, priorite: parseInt(e.target.value) })}
-                                    />
-                                </div>
-                                <div className="space-y-4">
-                                    <label className="text-executive-label font-black uppercase tracking-widest text-muted-foreground/40 ml-2 italic">Statut Initial</label>
-                                    <select
-                                        className="w-full h-16 px-8 rounded-[1.5rem] border-4 border-border bg-background focus:border-primary/40 text-[10px] font-black uppercase tracking-widest italic outline-none transition-all shadow-inner appearance-none"
-                                        value={formData.statut}
-                                        onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
-                                    >
-                                        <option value="actif">STATUT : ACTIF</option>
-                                        <option value="inactif">STATUT : PAUSE</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <label className="text-executive-label font-black uppercase tracking-widest text-muted-foreground/40 ml-2 italic">Média Haute-Définition (URL)</label>
-                                <div className="relative group/field">
-                                    <ImageIcon className="absolute left-6 top-1/2 -translate-y-1/2 size-5 text-muted-foreground/20 group-focus-within/field:text-primary transition-colors" />
-                                    <input
-                                        required
-                                        className="w-full h-16 pl-16 pr-6 rounded-[1.5rem] border-4 border-border bg-background focus:border-primary/40 text-xs font-medium italic outline-none transition-all shadow-inner"
-                                        placeholder="HTTPS://ASSETS.BCA.GN/ADS/SUMMER_PROMO.JPG"
-                                        value={formData.image_url}
-                                        onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <label className="text-executive-label font-black uppercase tracking-widest text-muted-foreground/40 ml-2 italic">Protocole de Redirection (Lien)</label>
-                                <div className="relative group/field">
-                                    <LinkIcon className="absolute left-6 top-1/2 -translate-y-1/2 size-5 text-muted-foreground/20 group-focus-within/field:text-primary transition-colors" />
-                                    <input
-                                        required
-                                        className="w-full h-16 pl-16 pr-6 rounded-[1.5rem] border-4 border-border bg-background focus:border-primary/40 text-xs font-medium italic outline-none transition-all shadow-inner"
-                                        placeholder="HTTPS://BCACONNECT.GN/CATALOGUE/OFFRE-LIMITE"
-                                        value={formData.lien_redirection}
-                                        onChange={(e) => setFormData({ ...formData, lien_redirection: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex gap-6 pt-10">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowModal(false)}
-                                    className="flex-1 h-20 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest text-muted-foreground/30 hover:text-foreground hover:bg-accent transition-all italic underline decoration-4 underline-offset-8 decoration-transparent hover:decoration-border"
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Statut Diffusion</label>
+                                <select
+                                    className="w-full h-14 px-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-bold uppercase tracking-widest outline-none"
+                                    value={formData.statut}
+                                    onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
                                 >
-                                    Annuler l'Opération
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 bg-primary text-white h-20 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.4em] shadow-premium-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all italic leading-none"
-                                >
-                                    {editingAd ? 'CONFIRMER MODIFICATIONS' : 'APPROUVER DIFFUSION'}
-                                </button>
+                                    <option value="actif">Actif</option>
+                                    <option value="inactif">Pause</option>
+                                </select>
                             </div>
-                        </form>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Asset HD (URL)</label>
+                            <Input
+                                required
+                                value={formData.image_url}
+                                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                                placeholder="https://..."
+                                className="h-14 px-6 rounded-xl font-bold text-[10px] tracking-widest"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Protocole Redirection (URL)</label>
+                            <Input
+                                required
+                                value={formData.lien_redirection}
+                                onChange={(e) => setFormData({ ...formData, lien_redirection: e.target.value })}
+                                placeholder="https://..."
+                                className="h-14 px-6 rounded-xl font-bold text-[10px] tracking-widest text-primary"
+                            />
+                        </div>
                     </div>
-                </div>
-            </div>
+
+                    <div className="pt-6">
+                        <Button
+                            type="submit"
+                            disabled={isSaving}
+                            className="w-full h-14 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl"
+                        >
+                            {isSaving ? <RefreshCcw className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+                            Approuver Diffusion
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
         </DashboardLayout>
     );
 };

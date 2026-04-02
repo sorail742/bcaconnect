@@ -1,119 +1,111 @@
 import React from 'react';
 import PublicLayout from '../components/layout/PublicLayout';
-import { Shield, Lock, Eye, FileText, CheckCircle2 } from 'lucide-react';
+import { Shield, Lock, Eye, FileText, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 
 const PrivacyPage = () => {
     return (
         <PublicLayout>
-            <div className="w-full space-y-24 animate-in fade-in slide-in-from-bottom-12 duration-1000 font-inter pb-32 px-6 md:px-12 max-w-6xl mx-auto pt-24">
-                {/* Executive Header */}
-                <div className="space-y-10 text-center relative">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 size-96 bg-primary/10 rounded-full blur-[150px] -z-10" />
-                    <div className="flex flex-col items-center gap-6">
-                        <div className="flex items-center gap-4">
-                            <div className="size-3 rounded-full bg-primary animate-pulse" />
-                            <span className="text-executive-label font-black text-primary uppercase tracking-[0.5em] italic leading-none pt-0.5">JURIDIQUE & PROTECTION DES DONNÉES</span>
-                        </div>
-                        <h1 className="text-6xl md:text-8xl font-black text-foreground tracking-tighter italic uppercase leading-[0.85]">
-                            Politique de <br />
-                            <span className="text-primary not-italic underline decoration-primary/20 underline-offset-[-8px]">Confidentialité.</span>
-                        </h1>
-                    </div>
-                    <p className="text-muted-foreground/60 font-black uppercase tracking-[0.3em] text-xs italic border-b-4 border-primary/20 pb-6 inline-block">Dernière mise à jour : 21 Mars 2026</p>
-                </div>
+            <div className="bg-[#0A0D14] min-h-screen text-white font-inter">
+                <div className="w-full space-y-32 animate-in fade-in slide-in-from-bottom-12 duration-1000 pb-48 px-6 md:px-12 max-w-7xl mx-auto pt-48">
 
-                {/* Security Highlights */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                    <div className="glass-card p-10 rounded-[2.5rem] border-4 border-border space-y-6 shadow-premium group hover:border-primary/30 transition-all">
-                        <div className="size-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner group-hover:rotate-12 transition-transform duration-500">
-                            <Lock className="size-8" />
+                    {/* Executive Header */}
+                    <div className="space-y-16 text-center relative group">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 size-[60rem] bg-[#FF6600]/10 rounded-full blur-[200px] -z-10 mix-blend-screen pointer-events-none group-hover:scale-110 transition-transform duration-[4s]" />
+                        <div className="flex flex-col items-center gap-10">
+                            <div className="flex items-center gap-6">
+                                <div className="size-4 rounded-full bg-[#FF6600] animate-pulse shadow-[0_0_20px_rgba(255,102,0,0.4)]" />
+                                <span className="text-[11px] font-black text-[#FF6600] uppercase tracking-[0.6em] italic leading-none pt-0.5">JURIDIQUE & PROTECTION DES DONNÉES</span>
+                            </div>
+                            <h1 className="text-7xl md:text-[10rem] font-black tracking-tighter italic uppercase leading-[0.8] text-white drop-shadow-2xl">
+                                POLITIQUE DE <br />
+                                <span className="text-[#FF6600] not-italic underline decoration-white/10 decoration-8 underline-offset-[-12px]">CONFIDENTIALITÉ.</span>
+                            </h1>
                         </div>
-                        <div className="space-y-3">
-                            <h3 className="text-xl font-black italic tracking-tighter uppercase text-foreground">Données Sécurisées</h3>
-                            <p className="text-[10px] text-muted-foreground/60 font-black uppercase tracking-[0.2em] italic leading-relaxed">Chiffrement AES-256 de grade militaire pour toutes vos informations personnelles et transactionnelles.</p>
-                        </div>
+                        <p className="text-slate-500 font-black uppercase tracking-[0.4em] text-sm italic border-b-4 border-white/5 pb-8 inline-block">DERNIÈRE MISE À JOUR : 21 MARS 2026</p>
                     </div>
-                    <div className="glass-card p-10 rounded-[2.5rem] border-4 border-border space-y-6 shadow-premium group hover:border-blue-500/30 transition-all">
-                        <div className="size-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 shadow-inner group-hover:rotate-12 transition-transform duration-500">
-                            <Eye className="size-8" />
-                        </div>
-                        <div className="space-y-3">
-                            <h3 className="text-xl font-black italic tracking-tighter uppercase text-foreground">Intégrité Totale</h3>
-                            <p className="text-[10px] text-muted-foreground/60 font-black uppercase tracking-[0.2em] italic leading-relaxed">Engagement contractuel de non-partage des flux de données avec des entités tierces sans consentement.</p>
-                        </div>
-                    </div>
-                    <div className="glass-card p-10 rounded-[2.5rem] border-4 border-border space-y-6 shadow-premium group hover:border-emerald-500/30 transition-all">
-                        <div className="size-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-inner group-hover:rotate-12 transition-transform duration-500">
-                            <Shield className="size-8" />
-                        </div>
-                        <div className="space-y-3">
-                            <h3 className="text-xl font-black italic tracking-tighter uppercase text-foreground">Souveraineté</h3>
-                            <p className="text-[10px] text-muted-foreground/60 font-black uppercase tracking-[0.2em] italic leading-relaxed">Contrôle absolu sur votre empreinte numérique avec droit d'effacement intégral et immédiat.</p>
-                        </div>
-                    </div>
-                </div>
 
-                {/* Legal Framework */}
-                <div className="glass-card border-4 border-border rounded-[3.5rem] p-12 md:p-20 shadow-premium-lg relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 size-96 bg-primary/5 rounded-full blur-[120px] -mr-48 -mt-48 group-hover:bg-primary/10 transition-colors duration-1000" />
-                    
-                    <div className="prose prose-executive max-w-none space-y-20 relative z-10">
-                        <section className="space-y-8 animate-in slide-in-from-left duration-700">
-                            <div className="flex items-center gap-6 group/title">
-                                <div className="p-3 bg-primary/10 rounded-xl text-primary shadow-premium border-2 border-primary/20">
-                                    <CheckCircle2 className="size-6" />
+                    {/* Security Highlights */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                        {[
+                            { icon: Lock, label: "DONNÉES SÉCURISÉES", desc: "CHIFFREMENT AES-256 DE GRADE MILITAIRE POUR TOUTES VOS INFORMATIONS PERSONNELLES ET TRANSACTIONNELLES.", borderColor: "border-[#FF6600]/30", iconColor: "text-[#FF6600]", bgColor: "bg-[#FF6600]/10" },
+                            { icon: Eye, label: "INTÉGRITÉ TOTALE", desc: "ENGAGEMENT CONTRACTUEL DE NON-PARTAGE DES FLUX DE DONNÉES AVEC DES ENTITÉS TIERCES SANS CONSENTEMENT.", borderColor: "border-blue-500/30", iconColor: "text-blue-500", bgColor: "bg-blue-500/10" },
+                            { icon: Shield, label: "SOUVERAINETÉ", desc: "CONTRÔLE ABSOLU SUR VOTRE EMPREINTE NUMÉRIQUE AVEC DROIT D'EFFACEMENT INTÉGRAL ET IMMÉDIAT.", borderColor: "border-emerald-500/30", iconColor: "text-emerald-500", bgColor: "bg-emerald-500/10" },
+                        ].map((item, i) => (
+                            <div key={i} className={`bg-white/[0.02] p-12 rounded-[4rem] border-4 ${item.borderColor} space-y-10 shadow-3xl group hover:scale-105 transition-all duration-700 relative overflow-hidden`}>
+                                <div className={`absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
+                                <div className={`size-24 rounded-[1.5rem] ${item.bgColor} flex items-center justify-center ${item.iconColor} shadow-inner group-hover:rotate-12 transition-transform duration-700 relative z-10`}>
+                                    <item.icon className="size-12" />
                                 </div>
-                                <h2 className="text-3xl font-black text-foreground italic tracking-tighter uppercase leading-none pt-1">
-                                    1. Collecte des informations
-                                </h2>
-                            </div>
-                            <div className="text-muted-foreground/80 font-black uppercase tracking-[0.25em] text-xs leading-[2.2] italic border-l-8 border-primary/20 pl-12 py-2">
-                                Nous collectons les informations que vous nous fournissez directement lors de la création de votre compte : nom, adresse email, numéro de téléphone, adresse de livraison et informations de paiement (Mobile Money ou virement). Ces données sont les briques fondamentales de votre identité au sein de l'écosystème BCA.
-                            </div>
-                        </section>
-
-                        <section className="space-y-8 animate-in slide-in-from-right duration-700 delay-100">
-                            <div className="flex items-center gap-6 group/title">
-                                <div className="p-3 bg-primary/10 rounded-xl text-primary shadow-premium border-2 border-primary/20">
-                                    <CheckCircle2 className="size-6" />
-                                </div>
-                                <h2 className="text-3xl font-black text-foreground italic tracking-tighter uppercase leading-none pt-1">
-                                    2. Utilisation des données
-                                </h2>
-                            </div>
-                            <div className="space-y-8">
-                                <p className="text-muted-foreground/80 font-black uppercase tracking-[0.25em] text-xs italic leading-relaxed border-r-8 border-primary/20 pr-12 text-right">
-                                    Vos flux de données sont exploités exclusivement pour garantir l'efficience opérationnelle du réseau :
-                                </p>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {[
-                                        "Ingénierie du traitement des commandes et flux logistiques.",
-                                        "Gouvernance du portefeuille virtuel et sécurisation Escrow.",
-                                        "Optimisation des services et détection d'anomalies via IA.",
-                                        "Diffusion de protocoles de notification critiques."
-                                    ].map((item, i) => (
-                                        <div key={i} className="flex items-center gap-5 p-6 bg-background rounded-2xl border-2 border-border group/item hover:border-primary/20 transition-all">
-                                            <div className="size-2 rounded-full bg-primary group-hover/item:scale-[4] transition-transform" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground leading-tight italic">{item}</span>
-                                        </div>
-                                    ))}
+                                <div className="space-y-6 relative z-10">
+                                    <h3 className="text-2xl font-black italic tracking-tighter uppercase text-white leading-none">{item.label}</h3>
+                                    <p className="text-[11px] text-slate-500 font-black uppercase tracking-[0.2em] italic leading-relaxed border-l-8 border-white/5 pl-8">{item.desc}</p>
                                 </div>
                             </div>
-                        </section>
+                        ))}
+                    </div>
 
-                        <section className="space-y-8 animate-in slide-in-from-left duration-700 delay-200">
-                            <div className="flex items-center gap-6 group/title">
-                                <div className="p-3 bg-primary/10 rounded-xl text-primary shadow-premium border-2 border-primary/20">
-                                    <CheckCircle2 className="size-6" />
+                    {/* Legal Framework */}
+                    <div className="bg-white/[0.02] border-4 border-white/5 rounded-[5rem] p-16 md:p-24 shadow-3xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 size-[40rem] bg-[#FF6600]/5 rounded-full blur-[200px] -mr-48 -mt-48 group-hover:bg-[#FF6600]/10 transition-colors duration-1000" />
+
+                        <div className="space-y-32 relative z-10">
+                            <section className="space-y-12 animate-in slide-in-from-left duration-1000">
+                                <div className="flex items-center gap-10 group/title">
+                                    <div className="p-4 bg-[#FF6600]/10 rounded-2xl text-[#FF6600] shadow-3xl border-2 border-[#FF6600]/20 group-hover:rotate-6 transition-transform">
+                                        <Sparkles className="size-8" />
+                                    </div>
+                                    <h2 className="text-4xl lg:text-6xl font-black text-white italic tracking-tighter uppercase leading-none pt-1">
+                                        1. COLLECTE INFORMATIONNELLE
+                                    </h2>
                                 </div>
-                                <h2 className="text-3xl font-black text-foreground italic tracking-tighter uppercase leading-none pt-1">
-                                    3. Sécurité
-                                </h2>
-                            </div>
-                            <div className="text-muted-foreground/80 font-black uppercase tracking-[0.25em] text-xs leading-[2.2] italic border-l-8 border-primary/20 pl-12 py-2">
-                                BCA Connect déploie des architectures de sécurité multi-couches (physiques, logiques et administratives) pour sanctuariser vos informations. Toutes les interactions financières sont routées via des terminaux chiffrés et audités en permanence.
-                            </div>
-                        </section>
+                                <div className="text-slate-400 font-black uppercase tracking-[0.3em] text-xs leading-[2.5] italic border-l-[12px] border-[#FF6600]/20 pl-16 py-4">
+                                    NOUS COLLECTONS LES INFORMATIONS QUE VOUS NOUS FOURNISSEZ DIRECTEMENT LORS DE LA CRÉATION DE VOTRE COMPTE : NOM, ADRESSE EMAIL, NUMÉRO DE TÉLÉPHONE, ADRESSE DE LIVRAISON ET INFORMATIONS DE PAIEMENT (MOBILE MONEY OU VIREMENT). CES DONNÉES SONT LES BRIQUES FONDAMENTALES DE VOTRE IDENTITÉ AU SEIN DE L'ÉCOSYSTÈME BCA.
+                                </div>
+                            </section>
+
+                            <section className="space-y-12 animate-in slide-in-from-right duration-1000 delay-100">
+                                <div className="flex items-center gap-10 group/title">
+                                    <div className="p-4 bg-[#FF6600]/10 rounded-2xl text-[#FF6600] shadow-3xl border-2 border-[#FF6600]/20 group-hover:rotate-6 transition-transform">
+                                        <ShieldCheck className="size-8" />
+                                    </div>
+                                    <h2 className="text-4xl lg:text-6xl font-black text-white italic tracking-tighter uppercase leading-none pt-1">
+                                        2. EXPLOITATION OPÉRATIONNELLE
+                                    </h2>
+                                </div>
+                                <div className="space-y-12">
+                                    <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-xs italic leading-relaxed border-r-[12px] border-[#FF6600]/20 pr-16 text-right">
+                                        VOS FLUX DE DONNÉES SONT EXPLOITÉS EXCLUSIVEMENT POUR GARANTIR L'EFFICIENCE OPÉRATIONNELLE DU RÉSEAU :
+                                    </p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                        {[
+                                            "INGÉNIERIE DU TRAITEMENT DES COMMANDES ET FLUX LOGISTIQUES.",
+                                            "GOUVERNANCE DU PORTEFEUILLE VIRTUEL ET SÉCURISATION ESCROW.",
+                                            "OPTIMISATION DES SERVICES ET DÉTECTION D'ANOMALIES VIA IA.",
+                                            "DIFFUSION DE PROTOCOLES DE NOTIFICATION CRITIQUES."
+                                        ].map((item, i) => (
+                                            <div key={i} className="flex items-center gap-8 p-10 bg-white/[0.01] rounded-3xl border-4 border-white/5 group/item hover:border-[#FF6600]/20 transition-all">
+                                                <div className="size-4 rounded-full bg-[#FF6600] group-hover/item:scale-[4] transition-transform duration-700 shadow-[0_0_15px_rgba(255,102,0,0.4)]" />
+                                                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 leading-tight italic">{item}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className="space-y-12 animate-in slide-in-from-left duration-1000 delay-200">
+                                <div className="flex items-center gap-10 group/title">
+                                    <div className="p-4 bg-[#FF6600]/10 rounded-2xl text-[#FF6600] shadow-3xl border-2 border-[#FF6600]/20 group-hover:rotate-6 transition-transform">
+                                        <Lock className="size-8" />
+                                    </div>
+                                    <h2 className="text-4xl lg:text-6xl font-black text-white italic tracking-tighter uppercase leading-none pt-1">
+                                        3. SANCTUARISATION
+                                    </h2>
+                                </div>
+                                <div className="text-slate-400 font-black uppercase tracking-[0.3em] text-xs leading-[2.5] italic border-l-[12px] border-[#FF6600]/20 pl-16 py-4">
+                                    BCA CONNECT DÉPLOIE DES ARCHITECTURES DE SÉCURITÉ MULTI-COUCHES (PHYSIQUES, LOGIQUES ET ADMINISTRATIVES) POUR SANCTUARISER VOS INFORMATIONS. TOUTES LES INTERACTIONS FINANCIÈRES SONT ROUTÉES VIA DES TERMINAUX CHIFFRÉS ET AUDITÉS EN PERMANENCE.
+                                </div>
+                            </section>
+                        </div>
                     </div>
                 </div>
             </div>

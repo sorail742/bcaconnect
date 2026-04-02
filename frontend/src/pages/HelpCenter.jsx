@@ -1,6 +1,6 @@
 import React from 'react';
 import PublicLayout from '../components/layout/PublicLayout';
-import { HelpCircle, Star, ShoppingBag, Truck, CheckCircle2, ShieldCheck, ArrowRight, BookOpen, MessageCircle } from 'lucide-react';
+import { HelpCircle, Star, ShoppingBag, Truck, CheckCircle2, ShieldCheck, ArrowRight, BookOpen, MessageCircle, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { cn } from '../lib/utils';
@@ -8,146 +8,147 @@ import { cn } from '../lib/utils';
 const HelpCenter = () => {
     return (
         <PublicLayout>
-            <div className="font-inter pb-32">
+            <div className="bg-[#0A0D14] min-h-screen text-white font-inter">
                 {/* ══ EXECUTIVE HERO ══ */}
-                <section className="relative py-40 overflow-hidden text-center group">
-                    <div className="absolute inset-0 bg-slate-950" />
-                    <div className="absolute top-0 left-1/4 size-[40rem] bg-primary/10 rounded-full blur-[150px] group-hover:bg-primary/20 transition-colors duration-1000" />
-                    <div className="absolute bottom-0 right-1/4 size-[40rem] bg-blue-600/5 rounded-full blur-[150px]" />
-                    <div className="absolute inset-0 opacity-10 bg-[radial-gradient(var(--primary)_1.5px,transparent_1.5px)] bg-[size:48px_48px]" />
-                    
-                    <div className="relative z-10 max-w-5xl mx-auto px-6 space-y-12 animate-in fade-in slide-in-from-bottom-12 duration-1000">
-                        <div className="flex flex-col items-center gap-6">
-                            <div className="flex items-center gap-4">
-                                <div className="size-3 rounded-full bg-primary animate-pulse" />
-                                <span className="text-executive-label font-black text-primary uppercase tracking-[0.6em] italic leading-none pt-0.5">CENTRE DE RESSOURCES & ACADÉMIE</span>
+                <section className="relative pt-48 pb-32 overflow-hidden text-center group">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 size-[65rem] bg-[#FF6600]/10 rounded-full blur-[220px] mix-blend-screen pointer-events-none group-hover:scale-110 transition-transform duration-[4s]" />
+                    <div className="absolute inset-0 opacity-[0.03]" style={{
+                        backgroundImage: `linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)`,
+                        backgroundSize: '5rem 5rem'
+                    }} />
+
+                    <div className="relative z-10 max-w-7xl mx-auto px-6 space-y-16 animate-in fade-in slide-in-from-bottom-12 duration-1000">
+                        <div className="flex flex-col items-center gap-10">
+                            <div className="flex items-center gap-6">
+                                <div className="size-4 rounded-full bg-[#FF6600] animate-pulse shadow-[0_0_20px_rgba(255,102,0,0.4)]" />
+                                <span className="text-[11px] font-black text-[#FF6600] uppercase tracking-[0.6em] italic leading-none pt-0.5">CENTRE DE RESSOURCES & ACADÉMIE</span>
                             </div>
-                            <h1 className="text-7xl md:text-9xl font-black text-white tracking-tighter leading-[0.85] uppercase italic">
+                            <h1 className="text-7xl md:text-[10rem] font-black tracking-tighter leading-[0.8] uppercase italic text-white drop-shadow-2xl">
                                 PROTOCOLE <br />
-                                <span className="text-primary not-italic underline decoration-white/10 underline-offset-[-12px]">D'ASSISTANCE.</span>
+                                <span className="text-[#FF6600] not-italic underline decoration-white/10 decoration-8 underline-offset-[-12px]">D'ASSISTANCE.</span>
                             </h1>
                         </div>
-                        <p className="text-white/40 text-lg md:text-xl font-black uppercase tracking-[0.3em] max-w-3xl mx-auto leading-relaxed border-x-4 border-primary/20 px-10 italic">
-                            Maîtrisez l'écosystème BCA Connect. Identifiez les processus, sécurisez vos transactions et optimisez votre croissance opérationnelle.
+                        <p className="text-slate-500 text-lg md:text-2xl font-black uppercase tracking-[0.3em] max-w-4xl mx-auto leading-relaxed border-x-8 border-[#FF6600]/20 px-12 italic">
+                            MAÎTRISEZ L'ÉCOSYSTÈME BCA CONNECT. IDENTIFIEZ LES PROCESSUS, SÉCURISEZ VOS TRANSACTIONS ET OPTIMISEZ VOTRE CROISSANCE OPÉRATIONNELLE.
                         </p>
                     </div>
                 </section>
 
-                <div className="max-w-7xl mx-auto px-6 md:px-12 py-32 space-y-40">
+                <div className="max-w-7xl mx-auto px-6 md:px-12 py-32 space-y-48 pb-64">
                     {/* ══ SECTION : ACHETER ══ */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center group/section">
-                        <div className="space-y-12">
-                            <div className="space-y-6">
-                                <div className="flex items-center gap-4">
-                                    <div className="size-2 bg-primary rounded-full" />
-                                    <span className="text-executive-label font-black text-primary uppercase tracking-[0.5em] italic pt-1">GUIDE ACQUÉREUR</span>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center group/section">
+                        <div className="space-y-16">
+                            <div className="space-y-8">
+                                <div className="flex items-center gap-6">
+                                    <div className="size-3 bg-[#FF6600] rounded-full shadow-[0_0_15px_rgba(255,102,0,0.4)]" />
+                                    <span className="text-[11px] font-black text-[#FF6600] uppercase tracking-[0.6em] italic pt-1">GUIDE ACQUÉREUR</span>
                                 </div>
-                                <h2 className="text-5xl md:text-6xl font-black italic tracking-tighter text-foreground uppercase leading-[0.9]">
-                                    Flux de <span className="text-primary not-italic">L'Acquisition.</span>
+                                <h2 className="text-6xl md:text-8xl font-black italic tracking-tighter text-white uppercase leading-[0.85]">
+                                    FLUX DE <span className="text-[#FF6600] not-italic">L'ACQUISITION.</span>
                                 </h2>
                             </div>
-                            <div className="space-y-8">
+                            <div className="space-y-10">
                                 {[
-                                    { title: "Identification d'Actifs", desc: "Explorez notre catalogue intelligent avec filtres par catégorie, prix et localisation stratégique.", icon: ShoppingBag, color: "text-primary", bg: "bg-primary/10" },
-                                    { title: "Paiement Séquestre (Escrow)", desc: "Règlement via Mobile Money ou Wallet. Vos fonds sont sanctuarisés jusqu'à validation de livraison.", icon: ShieldCheck, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-                                    { title: "Logistique en Temps Réel", desc: "Suivi chirurgical de chaque étape du colis, du ramassage à votre porte.", icon: Truck, color: "text-blue-500", bg: "bg-blue-500/10" },
+                                    { title: "IDENTIFICATION D'ACTIFS", desc: "EXPLOREZ NOTRE CATALOGUE INTELLIGENT AVEC FILTRES PAR CATÉGORIE, PRIX ET LOCALISATION STRATÉGIQUE.", icon: ShoppingBag, color: "text-[#FF6600]", bg: "bg-[#FF6600]/10" },
+                                    { title: "PAIEMENT SÉQUESTRE (ESCROW)", desc: "RÈGLEMENT VIA MOBILE MONEY OU WALLET. VOS FONDS SONT SANCTUARISÉS JUSQU'À VALIDATION DE LIVRAISON.", icon: ShieldCheck, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                                    { title: "LOGISTIQUE EN TEMPS RÉEL", desc: "SUIVI CHIRURGICAL DE CHAQUE ÉTAPE DU COLIS, DU RAMASSAGE À VOTRE PORTE.", icon: Truck, color: "text-blue-500", bg: "bg-blue-500/10" },
                                 ].map((step, i) => (
-                                    <div key={i} className="flex gap-8 p-10 rounded-[2.5rem] glass-card border-4 border-border hover:border-primary/30 transition-all duration-500 group shadow-premium hover:scale-[1.02]">
-                                        <div className={cn("size-16 rounded-2xl flex items-center justify-center shrink-0 group-hover:rotate-12 transition-all duration-500 shadow-inner border-2 border-white/5", step.bg, step.color)}>
-                                            <step.icon className="size-8" />
+                                    <div key={i} className="flex gap-10 p-12 rounded-[3.5rem] bg-white/[0.02] border-4 border-white/5 hover:border-[#FF6600]/30 transition-all duration-700 group shadow-3xl hover:scale-[1.05]">
+                                        <div className={cn("size-20 rounded-[1.5rem] flex items-center justify-center shrink-0 group-hover:rotate-12 transition-all duration-700 shadow-inner border-2 border-white/5", step.bg, step.color)}>
+                                            <step.icon className="size-10" />
                                         </div>
-                                        <div>
-                                            <h4 className="text-xl font-black italic text-foreground tracking-tighter uppercase leading-none mb-3">{step.title}</h4>
-                                            <p className="text-xs text-muted-foreground/60 font-black uppercase tracking-widest leading-relaxed italic">{step.desc}</p>
+                                        <div className="flex flex-col justify-center">
+                                            <h4 className="text-2xl font-black italic text-white tracking-tighter uppercase leading-none mb-4">{step.title}</h4>
+                                            <p className="text-[11px] text-slate-500 font-extrabold uppercase tracking-widest leading-relaxed italic border-l-4 border-white/5 pl-6">{step.desc}</p>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
-                        <div className="aspect-[4/3] rounded-[4rem] glass-card border-4 border-border overflow-hidden relative shadow-premium-lg group/img">
-                            <img src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&q=80&w=800" alt="Expérience achat" className="w-full h-full object-cover opacity-60 mix-blend-luminosity group-hover/img:scale-110 group-hover/img:opacity-80 transition-all duration-1000" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-                            <div className="absolute bottom-12 left-12 right-12">
-                                <div className="p-6 glass-card border-2 border-white/10 rounded-2xl">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary italic mb-2">INFRASTRUCTURE ACHAT</p>
-                                    <p className="text-xl font-black italic text-white uppercase tracking-tighter leading-none">Sécurité Transactionnelle 100% Garantie</p>
+                        <div className="aspect-[4/5] lg:aspect-square rounded-[5rem] bg-white/[0.02] border-8 border-white/5 overflow-hidden relative shadow-3xl group/img">
+                            <img src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&q=80&w=1200" alt="Expérience achat" className="w-full h-full object-cover opacity-60 mix-blend-luminosity group-hover/img:scale-110 group-hover/img:opacity-100 transition-all duration-[2s]" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#0A0D14] via-transparent to-transparent" />
+                            <div className="absolute bottom-16 left-16 right-16">
+                                <div className="p-10 bg-black/60 backdrop-blur-3xl border-4 border-[#FF6600]/20 rounded-[3rem] shadow-3xl">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.5em] text-[#FF6600] italic mb-4">INFRASTRUCTURE ACHAT</p>
+                                    <p className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">SÉCURITÉ TRANSACTIONNELLE <br /> 100% GARANTIE</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* ══ SECTION : VENDRE ══ */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center group/section">
-                        <div className="order-2 lg:order-1 aspect-[4/3] rounded-[4rem] glass-card border-4 border-border overflow-hidden relative shadow-premium-lg group/img">
-                            <img src="https://images.unsplash.com/photo-1556742044-3c52d6e88c62?auto=format&fit=crop&q=80&w=800" alt="Expérience vendeur" className="w-full h-full object-cover opacity-60 mix-blend-luminosity group-hover/img:scale-110 group-hover/img:opacity-80 transition-all duration-1000" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-                            <div className="absolute bottom-12 left-12 right-12 text-right">
-                                <div className="p-6 glass-card border-2 border-white/10 rounded-2xl ml-auto inline-block text-left">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500 italic mb-2">ÉCOSYSTÈME MARCHAND</p>
-                                    <p className="text-xl font-black italic text-white uppercase tracking-tighter leading-none">Croissance Aliméntée par l'IA</p>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center group/section">
+                        <div className="order-2 lg:order-1 aspect-[4/5] lg:aspect-square rounded-[5rem] bg-white/[0.02] border-8 border-white/5 overflow-hidden relative shadow-3xl group/img">
+                            <img src="https://images.unsplash.com/photo-1556742044-3c52d6e88c62?auto=format&fit=crop&q=80&w=1200" alt="Expérience vendeur" className="w-full h-full object-cover opacity-60 mix-blend-luminosity group-hover/img:scale-110 group-hover/img:opacity-100 transition-all duration-[2s]" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#0A0D14] via-transparent to-transparent" />
+                            <div className="absolute bottom-16 left-16 right-16 text-right">
+                                <div className="p-10 bg-black/60 backdrop-blur-3xl border-4 border-blue-500/20 rounded-[3rem] shadow-3xl ml-auto inline-block text-left">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.5em] text-blue-500 italic mb-4">ÉCOSYSTÈME MARCHAND</p>
+                                    <p className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">CROISSANCE PROPULSÉE <br /> PAR L'IA EXÉCUTIVE</p>
                                 </div>
                             </div>
                         </div>
-                        <div className="order-1 lg:order-2 space-y-12">
-                            <div className="space-y-6">
-                                <div className="flex items-center gap-4">
-                                    <div className="size-2 bg-blue-500 rounded-full" />
-                                    <span className="text-executive-label font-black text-blue-500 uppercase tracking-[0.5em] italic pt-1">EXPANSION COMMERCIALE</span>
+                        <div className="order-1 lg:order-2 space-y-16">
+                            <div className="space-y-8">
+                                <div className="flex items-center gap-6">
+                                    <div className="size-3 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.4)]" />
+                                    <span className="text-[11px] font-black text-blue-500 uppercase tracking-[0.6em] italic pt-1">EXPANSION COMMERCIALE</span>
                                 </div>
-                                <h2 className="text-5xl md:text-6xl font-black italic tracking-tighter text-foreground uppercase leading-[0.9]">
-                                    Vendre sur <span className="text-blue-500 not-italic">BCA Network.</span>
+                                <h2 className="text-6xl md:text-8xl font-black italic tracking-tighter text-white uppercase leading-[0.85]">
+                                    VENDRE SUR <span className="text-blue-500 not-italic">BCA NETWORK.</span>
                                 </h2>
                             </div>
-                            <div className="space-y-8">
+                            <div className="space-y-10">
                                 {[
-                                    { title: "Boutique en 3 Minutes", desc: "Créez votre vitrine, ajoutez vos produits et commencez à vendre instantanément.", icon: ShoppingBag, color: "text-blue-500", bg: "bg-blue-500/10" },
-                                    { title: "Gouvernance de Stock", desc: "Analysez vos flux, optimisez vos inventaires et augmentez votre Score de Confiance IA.", icon: Star, color: "text-amber-500", bg: "bg-amber-500/10" },
-                                    { title: "Reversements Instantanés", desc: "Récupérez vos gains directement par Mobile Money dès validation de livraison client.", icon: ShieldCheck, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                                    { title: "BOUTIQUE EN 180 SECONDES", desc: "CRÉEZ VOTRE VITRINE, AJOUTEZ VOS PRODUITS ET COMMENCEZ À VENDRE INSTANTANÉMENT.", icon: ShoppingBag, color: "text-blue-500", bg: "bg-blue-500/10" },
+                                    { title: "GOUVERNANCE DE STOCK", desc: "ANALYSEZ VOS FLUX, OPTIMISEZ VOS INVENTAIRES ET AUGMENTEZ VOTRE SCORE DE CONFIANCE IA.", icon: Sparkles, color: "text-amber-500", bg: "bg-amber-500/10" },
+                                    { title: "REVERSEMENTS INSTANTANÉS", desc: "RÉCUPÉREZ VOS GAINS DIRECTEMENT PAR MOBILE MONEY DÈS VALIDATION DE LIVRAISON CLIENT.", icon: ShieldCheck, color: "text-emerald-500", bg: "bg-emerald-500/10" },
                                 ].map((step, i) => (
-                                    <div key={i} className="flex gap-8 p-10 rounded-[2.5rem] glass-card border-4 border-border hover:border-blue-500/30 transition-all duration-500 group shadow-premium hover:scale-[1.02]">
-                                        <div className={cn("size-16 rounded-2xl flex items-center justify-center shrink-0 group-hover:rotate-12 transition-all duration-500 shadow-inner border-2 border-white/5", step.bg, step.color)}>
-                                            <step.icon className="size-8" />
+                                    <div key={i} className="flex gap-10 p-12 rounded-[3.5rem] bg-white/[0.02] border-4 border-white/5 hover:border-blue-500/30 transition-all duration-700 group shadow-3xl hover:scale-[1.05]">
+                                        <div className={cn("size-20 rounded-[1.5rem] flex items-center justify-center shrink-0 group-hover:rotate-12 transition-all duration-700 shadow-inner border-2 border-white/5", step.bg, step.color)}>
+                                            <step.icon className="size-10" />
                                         </div>
-                                        <div>
-                                            <h4 className="text-xl font-black italic text-foreground tracking-tighter uppercase leading-none mb-3">{step.title}</h4>
-                                            <p className="text-xs text-muted-foreground/60 font-black uppercase tracking-widest leading-relaxed italic">{step.desc}</p>
+                                        <div className="flex flex-col justify-center">
+                                            <h4 className="text-2xl font-black italic text-white tracking-tighter uppercase leading-none mb-4">{step.title}</h4>
+                                            <p className="text-[11px] text-slate-500 font-extrabold uppercase tracking-widest leading-relaxed italic border-l-4 border-white/5 pl-6">{step.desc}</p>
                                         </div>
                                     </div>
                                 ))}
                             </div>
-                            <Link to="/register" className="inline-block pt-4">
-                                <Button className="h-20 px-14 rounded-[1.5rem] font-black uppercase tracking-[0.4em] text-xs shadow-premium-lg shadow-blue-500/40 bg-blue-600 hover:bg-blue-600 text-white border-0 hover:scale-105 active:scale-95 transition-all group/btn relative overflow-hidden italic leading-none pt-1">
+                            <Link to="/register" className="inline-block pt-10">
+                                <Button className="h-28 px-20 rounded-[2.5rem] font-black uppercase tracking-[0.5em] text-sm shadow-3xl shadow-blue-500/20 bg-blue-600 hover:bg-blue-600 text-white border-4 border-blue-600 hover:scale-110 active:scale-95 transition-all group/btn relative overflow-hidden italic leading-none">
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_2s_infinite]" />
-                                    DÉPLOYER MA BOUTIQUE <ArrowRight className="size-6 ml-4 group-hover/btn:translate-x-2 transition-transform" />
+                                    DÉPLOYER MA BOUTIQUE <ArrowRight className="size-8 ml-6 group-hover/btn:translate-x-4 transition-transform" />
                                 </Button>
                             </Link>
                         </div>
                     </div>
 
                     {/* ══ EXECUTIVE CTA ══ */}
-                    <div className="relative p-20 rounded-[4rem] glass-card border-4 border-primary/20 text-center space-y-12 overflow-hidden shadow-premium-lg group">
-                        <div className="absolute top-0 right-0 size-[40rem] bg-primary/10 rounded-full blur-[120px] -mt-40 -mr-40 group-hover:scale-110 transition-transform duration-[3s]" />
-                        <div className="absolute inset-0 opacity-5 bg-[radial-gradient(var(--primary)_1.5px,transparent_1.5px)] bg-[size:32px_32px]" />
-                        
-                        <div className="relative z-10 space-y-8">
-                            <h2 className="text-5xl md:text-7xl font-black text-foreground italic tracking-tighter uppercase leading-[0.85]">
-                                Besoin d'une <br />
-                                <span className="text-primary not-italic">Intervention Directe ?</span>
+                    <div className="relative p-24 rounded-[6rem] bg-white group border-x-[16px] border-[#FF6600] text-center space-y-16 overflow-hidden shadow-3xl">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,102,0,0.1),transparent_70%)]" />
+                        <div className="absolute top-0 right-0 size-[50rem] bg-[#FF6600]/10 rounded-full blur-[200px] -mt-64 -mr-64 group-hover:scale-125 transition-transform duration-[3s]" />
+
+                        <div className="relative z-10 space-y-12">
+                            <h2 className="text-6xl md:text-9xl font-black text-black italic tracking-tighter uppercase leading-[0.8]">
+                                BESOIN D'UNE <br />
+                                <span className="text-[#FF6600] not-italic">LIAISON DIRECTE ?</span>
                             </h2>
-                            <p className="text-muted-foreground/60 font-black uppercase tracking-[0.3em] text-sm italic max-w-2xl mx-auto leading-relaxed border-l-8 border-primary/20 pl-10">
-                                Nos ingénieurs de support sont mobilisés pour résoudre vos blocages opérationnels 24/7 via notre canal sécurisé.
+                            <p className="text-slate-500 font-black uppercase tracking-[0.4em] text-sm italic max-w-4xl mx-auto leading-relaxed border-l-8 border-[#FF6600]/40 pl-16 text-left">
+                                NOS INGÉNIEURS DE SUPPORT SONT MOBILISÉS POUR RÉSOUDRE VOS BLOCAGES OPÉRATIONNELS 24/7 VIA NOTRE CANAL SÉCURISÉ. RÉPONSE GARANTIE DANS LA FENÊTRE CRITIQUE.
                             </p>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-8 relative z-10">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-12 relative z-10">
                             <Link to="/contact">
-                                <Button className="h-20 px-14 rounded-[1.5rem] font-black uppercase tracking-[0.4em] text-xs shadow-premium-lg shadow-primary/40 bg-primary hover:bg-primary text-white border-0 hover:scale-105 active:scale-95 transition-all group/btn relative overflow-hidden italic leading-none pt-1">
+                                <Button className="h-28 px-20 rounded-[2.5rem] font-black uppercase tracking-[0.5em] text-sm shadow-3xl shadow-[#FF6600]/20 bg-black hover:bg-black text-white border-4 border-black hover:scale-110 active:scale-95 transition-all group/btn relative overflow-hidden italic leading-none">
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_2s_infinite]" />
-                                    CANAL DE SUPPORT <MessageCircle className="size-6 ml-4" />
+                                    OUVRIR CANAL SUPPORT <MessageCircle className="size-8 ml-6" />
                                 </Button>
                             </Link>
                             <Link to="/faq">
-                                <Button variant="outline" className="h-20 px-14 rounded-[1.5rem] font-black uppercase tracking-[0.4em] text-xs border-4 border-border text-foreground hover:bg-card/40 hover:border-primary/40 transition-all hover:scale-105 active:scale-95 bg-card/20 backdrop-blur-xl italic leading-none pt-1">
+                                <Button variant="outline" className="h-28 px-20 rounded-[2.5rem] font-black uppercase tracking-[0.5em] text-sm border-4 border-black/10 text-black hover:bg-black hover:text-white transition-all hover:scale-110 active:scale-95 italic leading-none">
                                     PROTOCOLES FAQ
                                 </Button>
                             </Link>
