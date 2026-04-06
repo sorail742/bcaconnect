@@ -15,6 +15,7 @@ db.version(1).stores({
 export const offlineStorage = {
     // Produits
     saveProducts: async (products) => {
+        if (!Array.isArray(products)) return null;
         return await db.products.bulkPut(products);
     },
     getProducts: async () => {
@@ -49,6 +50,7 @@ export const offlineStorage = {
 
     // Catégories
     saveCategories: async (categories) => {
+        if (!Array.isArray(categories)) return null;
         return await db.categories.bulkPut(categories);
     },
     getCategories: async () => {

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const aiController = require('../controllers/aiController');
-const { authMiddleware, authorize } = require('../middlewares/authMiddleware');
+const { authMiddleware, authorize, optionalAuth } = require('../middlewares/authMiddleware');
 
 // ── Routes IA — BCA Connect Intelligence ─────────────────────────────────────
 
@@ -20,17 +20,7 @@ router.post('/suggest-price', authMiddleware, authorize(['fournisseur', 'admin']
 // 5. Médiation IA pour un litige (Admin ou parties concernées)
 router.post('/mediate', authMiddleware, aiController.mediateDispute);
 
-// 6. Chat libre avec l'assistant BCA (Optionnel : authentifié pour le contexte, sinon mode invité)
-router.post('/chat', (req, res, next) => {
-    // Tentative d'authentification mais on ne bloque pas si absent
-    const jwt = require('jsonwebtoken');
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    if (token) {
-        try {
-            req.user = jwt.verify(token, process.env.JWT_SECRET || 'bca_connect_super_secret_fallback_key_2024');
-        } catch (e) { /* ignore */ }
-    }
-    next();
-}, aiController.chat);
+// 6. Chat libre avec l'assistant BCA (optionalAuth : contexte si connecté, mode invité sinon)
+router.post('/chat', optionalAuth, aiController.chat);
 
 module.exports = router;

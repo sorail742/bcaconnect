@@ -61,15 +61,15 @@ const AppRoutes = () => {
         <Routes>
             <Route path="/" element={<LandingPage />} />
 
-            {/* Public Routes Wrapped in MainLayout */}
-            <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
-            <Route path="/register" element={<MainLayout><Register /></MainLayout>} />
+            {/* Auth Routes (Standalone) */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/marketplace" element={<MainLayout><ProductCatalogue /></MainLayout>} />
             <Route path="/catalog" element={<MainLayout><ProductCatalogue /></MainLayout>} />
             <Route path="/vendors" element={<MainLayout><VendorsList /></MainLayout>} />
             <Route path="/product/:id" element={<MainLayout><ProductDetail /></MainLayout>} />
             <Route path="/cart" element={<MainLayout><CartPage /></MainLayout>} />
-            <Route path="/tracking" element={<MainLayout><Tracking /></MainLayout>} />
+            <Route path="/tracking" element={<ProtectedRoute><Tracking /></ProtectedRoute>} />
             <Route path="/shop/:slug" element={<MainLayout><StorePage /></MainLayout>} />
             <Route path="/about" element={<MainLayout><AboutPage /></MainLayout>} />
             <Route path="/contact" element={<MainLayout><ContactPage /></MainLayout>} />

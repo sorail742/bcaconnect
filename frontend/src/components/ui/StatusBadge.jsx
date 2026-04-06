@@ -13,7 +13,7 @@ const statusConfig = {
     'warning':       { style: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20', pulse: false },
     'danger':        { style: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20', pulse: false },
     'info':          { style: 'bg-primary/10 text-primary border-primary/20', pulse: false },
-    'neutral':       { style: 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/10', pulse: false },
+    'neutral':       { style: 'bg-slate-100 dark:bg-slate-900/5 dark:bg-foreground/5 text-muted-foreground dark:text-slate-600 dark:text-muted-foreground/80 border-slate-200 dark:border-slate-300 dark:border-foreground/10', pulse: false },
 };
 
 const StatusBadge = ({ status, variant, className }) => {

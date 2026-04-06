@@ -1,8 +1,7 @@
 import { offlineStorage } from '../lib/db';
 import axios from 'axios';
 import { toast } from 'sonner';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import { API_BASE_URL } from '../constants/api';
 
 export const syncService = {
     // Vérifie si le navigateur est en ligne
@@ -19,7 +18,7 @@ export const syncService = {
 
         for (const order of pendingOrders) {
             try {
-                const response = await axios.post(`${API_URL}/orders`, {
+                const response = await axios.post(`${API_BASE_URL}/orders`, {
                     items: order.items,
                     isOfflineSync: true // Flag pour le backend si besoin
                 }, {

@@ -9,9 +9,15 @@ const productService = {
         }
         try {
             const response = await api.get('/products');
-            const products = response.data;
-            // Mise à jour silencieuse du cache
-            offlineStorage.saveProducts(products).catch(err => console.error("Erreur cache products:", err));
+            const data = response.data;
+            
+            // L'API renvoie { total, pages, products: [] } ou directement []
+            const products = Array.isArray(data) ? data : (data.products || []);
+            
+            // Mise à jour silencieuse du cache (bulkPut attend un tableau)
+            if (products.length > 0) {
+                offlineStorage.saveProducts(products).catch(err => console.error("Erreur cache products:", err));
+            }
             return products;
         } catch (error) {
             console.error("Erreur réseau products, tentative cache...");

@@ -34,6 +34,23 @@ const Store = sequelize.define('Store', {
         type: DataTypes.STRING(255),
         allowNull: true,
     },
+    use_carousel: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        allowNull: false,
+    },
+    banner_images: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        get() {
+            const val = this.getDataValue('banner_images');
+            if (!val) return [];
+            try { return JSON.parse(val); } catch { return []; }
+        },
+        set(val) {
+            this.setDataValue('banner_images', val ? JSON.stringify(val) : null);
+        }
+    },
 }, {
     tableName: 'boutiques',
 });

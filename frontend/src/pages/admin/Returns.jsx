@@ -66,109 +66,129 @@ const Returns = () => {
     );
 
     return (
-        <DashboardLayout title="Logistique Retours">
-            <div className="max-w-7xl mx-auto space-y-10 animate-fade-in pb-24 px-6 md:px-10 pt-10">
+        <DashboardLayout title="CONTRÔLE_FLUX_INVERSÉS_ALPHA">
+            <div className="space-y-4 animate-in pb-16">
 
-                {/* Header Actions */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-100 dark:border-slate-800 pb-8">
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                            <div className="size-2 bg-primary rounded-full" />
-                            <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Contrôle de Flux Inversés</span>
+                {/* Executive Command Center — Master Directive */}
+                <div className="executive-card !p-4 group overflow-visible">
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#FFB703]/[0.02] to-transparent pointer-events-none" />
+                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 relative z-10">
+                        <div className="flex items-center gap-3">
+                            <div className="size-6 rounded-[2.2rem] bg-[#FFB703]/10 flex items-center justify-center text-[#FFB703] border border-[#FFB703]/20 shadow-inner group-hover:rotate-6 transition-transform">
+                                <ArrowRightLeft className="size-6 shadow-sm" />
+                            </div>
+                            <div className="space-y-2.5">
+                                <h2 className="text-sm font-black text-foreground uppercase tracking-tighter leading-none pt-0.5">
+                                    GESTION_<span className="text-[#FFB703]">RETOURS</span>.
+                                </h2>
+                                <div className="flex items-center gap-3">
+                                    <div className="size-2 rounded-full bg-[#FFB703] animate-pulse" />
+                                    <p className="text-[10px] font-black text-muted-foreground/80 uppercase  opacity-80 pt-0.5">
+                                        REVERSE_FLOW SYNC — AUDIT_LIVE_{new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        <h2 className="text-4xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">Gestion des <span className="text-primary italic">Retours.</span></h2>
+                        <button 
+                            id="btn-refresh-returns-hub"
+                            onClick={fetchReturns} 
+                            className="size-6 rounded-[2.2rem] bg-white/[0.03] border border-foreground/10 flex items-center justify-center text-muted-foreground/80 hover:text-[#FFB703] hover:border-[#FFB703]/20 transition-all  shadow-sm"
+                        >
+                            <RefreshCcw className={cn("size-6", loading && "animate-spin")} />
+                        </button>
                     </div>
-                    <button onClick={fetchReturns} className="size-12 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl flex items-center justify-center text-slate-400 hover:text-primary transition-all shadow-sm">
-                        <RefreshCcw className={cn("size-5", loading && "animate-spin")} />
-                    </button>
                 </div>
 
-                {/* Filter Surface */}
-                <div className="p-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] flex items-center shadow-sm">
+                {/* Search Surface — Precision Filtering */}
+                <div className="executive-card !p-4 flex items-center bg-background/40 border-[#FFB703]/10">
                     <div className="relative group w-full">
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 size-5 group-focus-within:text-primary transition-colors" />
+                        <Search className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-600 size-5 group-focus-within:text-[#FFB703] transition-colors relative z-10" />
                         <input
-                            className="w-full pl-16 pr-8 h-14 bg-transparent text-sm font-bold uppercase tracking-widest placeholder:text-slate-300 outline-none"
-                            placeholder="RECHERCHER DOSSIER, CLIENT..."
+                            id="input-search-returns-ledger"
+                            className="w-full pl-20 pr-8 h-11 bg-transparent text-[16px] font-black uppercase tracking-widest placeholder:text-slate-800 text-foreground outline-none"
+                            placeholder="IDENTIFIER_UNITÉ_RETOUR_OU_CLIENT..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                         />
                     </div>
                 </div>
 
-                {/* List Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Registry Ledger — Nodal Data Hub */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                     {loading ? (
-                        [1, 2, 3, 4].map(n => <div key={n} className="h-64 bg-slate-100 dark:bg-slate-800/50 rounded-[2.5rem] animate-pulse border border-slate-200 dark:border-slate-700" />)
+                        [1, 2, 3, 4].map(n => <div key={n} className="h-80 bg-white/[0.02] border border-foreground/5 rounded-2xl animate-pulse" />)
                     ) : filtered.length === 0 ? (
-                        <div className="lg:col-span-2 py-32 flex flex-col items-center justify-center gap-6 opacity-30 text-center">
-                            <ArrowRightLeft className="size-16" />
-                            <p className="text-xs font-bold uppercase tracking-widest">Registre de Retour Vierge</p>
+                        <div className="lg:col-span-2 py-24 executive-card flex flex-col items-center justify-center gap-3 opacity-20 text-center border-dashed border-foreground/10">
+                            <ArrowRightLeft className="size-6 text-foreground" />
+                            <p className="text-[14px] font-black uppercase  text-foreground">REGISTRE_FLUX_INVERSÉ_VIERGE</p>
                         </div>
                     ) : (
                         filtered.map(item => (
                             <div
                                 key={item.id}
-                                className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
+                                className="executive-card p-4 group relative overflow-hidden transition-all duration-500 hover:border-[#FFB703]/30"
                             >
-                                <div className="absolute top-0 right-0 p-8">
+                                <div className="absolute top-0 right-0 p-4">
                                     <div className={cn(
-                                        "px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest border",
+                                        "px-6 py-2 rounded-2xl text-[10px] font-black uppercase  border backdrop-blur-2xl transition-all duration-500",
                                         item.statut === 'approuve' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" :
-                                            item.statut === 'rejete' ? "bg-red-500/10 text-red-500 border-red-500/20" :
+                                            item.statut === 'rejete' ? "bg-rose-500/10 text-rose-500 border-rose-500/20" :
                                                 "bg-amber-500/10 text-amber-500 border-amber-500/20 animate-pulse"
                                     )}>
-                                        {item.statut === 'en_attente' ? 'ANALYSIS' : item.statut === 'approuve' ? 'VALIDÉ' : 'REJETÉ'}
+                                        {item.statut === 'en_attente' ? 'ANALYSE_PULSE' : item.statut === 'approuve' ? 'PROTOCOLE_VALIDÉ' : 'RECOUVREMENT_REJETÉ'}
                                     </div>
                                 </div>
 
                                 <div className="space-y-6">
-                                    <div className="flex items-center gap-5">
-                                        <div className="size-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 flex items-center justify-center">
-                                            <Package className="size-8 text-slate-200" />
+                                    <div className="flex items-center gap-3">
+                                        <div className="size-6 rounded-2xl bg-white/[0.03] border border-foreground/10 flex items-center justify-center shadow-2xl relative overflow-hidden group-hover:scale-110 transition-transform duration-700">
+                                            <div className="absolute inset-0 bg-gradient-to-tr from-[#FFB703]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <Package className="size-6 text-slate-700 group-hover:text-[#FFB703] transition-colors" />
                                         </div>
-                                        <div>
-                                            <p className="text-[11px] font-bold text-slate-900 dark:text-white uppercase truncate max-w-[200px]">
-                                                {item.User?.nom_complet || "Client Inconnu"}
+                                        <div className="space-y-2">
+                                            <p className="text-sm font-black text-foreground uppercase truncate max-w-[280px] tracking-tight pt-1 leading-none">
+                                                {item.User?.nom_complet || "ACTEUR_INCONNU"}
                                             </p>
-                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 italic">REF: #{item.id?.slice(0, 8)}</p>
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase  leading-none">ID_LOGS: #{item.id?.slice(0, 8).toUpperCase()}</p>
                                         </div>
                                     </div>
 
-                                    <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-4">
-                                        <div className="flex items-start gap-4">
-                                            <ShieldAlert className="size-4 text-amber-500 shrink-0 mt-1" />
-                                            <div>
-                                                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Motif Déclaré</p>
-                                                <p className="text-[11px] text-slate-600 dark:text-slate-300 font-medium italic leading-relaxed">"{item.motif || "Non spécifié"}"</p>
+                                    <div className="p-4 bg-background/40 rounded-2xl border border-foreground/5 space-y-4 group-hover:border-[#FFB703]/10 transition-colors">
+                                        <div className="flex items-start gap-3">
+                                            <ShieldAlert className="size-6 text-[#FFB703] shrink-0 mt-1" />
+                                            <div className="space-y-2">
+                                                <p className="text-[9px] font-black text-slate-600 uppercase  leading-none pt-1">MOTIF_DÉCLARÉ_UNITÉ</p>
+                                                <p className="text-[13px] text-foreground font-black uppercase leading-relaxed tracking-tight group-hover:text-[#FFB703] transition-colors">"{item.motif || "AUCUNE_INDEXATION_DÉTAILLÉE_ASSET."}"</p>
                                             </div>
                                         </div>
-                                        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-4">
-                                            <div className="flex items-center gap-2">
-                                                <Calendar className="size-3 text-slate-300" />
-                                                <span className="text-[9px] font-bold text-slate-400 uppercase">{new Date(item.createdAt).toLocaleDateString('fr-GN')}</span>
+                                        <div className="pt-8 border-t border-foreground/5 grid grid-cols-2 gap-3">
+                                            <div className="flex items-center gap-4">
+                                                <Calendar className="size-5 text-slate-700" />
+                                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-tight tabular-nums">{new Date(item.createdAt).toLocaleDateString('fr-GN')}</span>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <History className="size-3 text-slate-300" />
-                                                <span className="text-[9px] font-bold text-slate-400 uppercase italic">Protocole Actif</span>
+                                            <div className="flex items-center gap-4">
+                                                <History className="size-5 text-slate-700" />
+                                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-tight">CANAL_ACTIF</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     {item.statut === 'en_attente' && (
-                                        <div className="flex gap-4 pt-2">
+                                        <div className="flex gap-3 pt-4">
                                             <button
+                                                id={`btn-reject-return-${item.id}`}
                                                 onClick={() => handleAction(item.id, 'rejete')}
-                                                className="flex-1 h-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-red-500 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                                                className="flex-1 h-12 bg-white/[0.03] border border-foreground/10 text-rose-500 rounded-2xl text-[10px] font-black uppercase  hover:bg-rose-500/10 hover:border-rose-500/30 transition-all flex items-center justify-center gap-4  shadow-sm"
                                             >
-                                                <XCircle className="size-3" /> Rejeter
+                                                <XCircle className="size-5" /> REJETER_UNITÉ
                                             </button>
-                                            <Button
+                                            <button
+                                                id={`btn-approve-return-${item.id}`}
                                                 onClick={() => handleAction(item.id, 'approuve')}
-                                                className="flex-1 h-12 rounded-xl text-[9px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg"
+                                                className="flex-1 h-12 bg-white text-background rounded-2xl text-[10px] font-black uppercase  hover:bg-[#FFB703] transition-all flex items-center justify-center gap-4  shadow-2xl shadow-white/5 border-0"
                                             >
-                                                <CheckCircle2 className="size-3" /> Valider
-                                            </Button>
+                                                <CheckCircle2 className="size-5" /> VALIDER_FLUX
+                                            </button>
                                         </div>
                                     )}
                                 </div>

@@ -9,17 +9,17 @@ const DashboardAlerts = ({ alerts = [], onDismiss }) => {
         <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
             {alerts.map((alert, idx) => (
                 <div key={idx} className={cn(
-                    "relative overflow-hidden rounded-2xl border-2 p-5 flex items-center justify-between group transition-all",
+                    "relative overflow-hidden rounded-lg border-2 p-5 flex items-center justify-between group transition-all",
                     alert.type === 'critical' ? "bg-rose-500/5 border-rose-500/20 text-rose-500" :
                     alert.type === 'warning' ? "bg-amber-500/5 border-amber-500/20 text-amber-500" :
                     "bg-primary/5 border-primary/20 text-primary"
                 )}>
                     <div className="flex items-center gap-4">
                         <div className={cn(
-                            "size-10 rounded-xl flex items-center justify-center shadow-lg",
-                            alert.type === 'critical' ? "bg-rose-500 text-white" :
-                            alert.type === 'warning' ? "bg-amber-500 text-white" :
-                            "bg-primary text-white"
+                            "size-10 rounded-lg flex items-center justify-center shadow-lg",
+                            alert.type === 'critical' ? "bg-rose-500 text-slate-900 dark:text-foreground" :
+                            alert.type === 'warning' ? "bg-amber-500 text-slate-900 dark:text-foreground" :
+                            "bg-primary text-slate-900 dark:text-foreground"
                         )}>
                             {alert.icon || <AlertCircle className="size-5" />}
                         </div>
@@ -31,7 +31,7 @@ const DashboardAlerts = ({ alerts = [], onDismiss }) => {
                     
                     <div className="flex items-center gap-3">
                         {alert.action && (
-                            <button onClick={alert.action.onClick} className="px-4 py-2 bg-background border border-current rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-current hover:text-white transition-all">
+                            <button onClick={alert.action.onClick} className="px-4 py-2 bg-background border border-current rounded-lg text-[10px] font-semibold hover:bg-current hover:text-slate-900 dark:text-foreground transition-all">
                                 {alert.action.label}
                             </button>
                         )}
@@ -54,7 +54,7 @@ const NextBestAction = ({ action }) => {
     if (!action) return null;
 
     return (
-        <div className="glass-card border border-primary/20 bg-primary/[0.02] p-4 rounded-2xl flex items-center justify-between group cursor-pointer hover:bg-primary/[0.05] transition-all mb-8">
+        <div className="glass-card border border-primary/20 bg-primary/[0.02] p-4 rounded-lg flex items-center justify-between group cursor-pointer hover:bg-primary/[0.05] transition-all mb-8">
             <div className="flex items-center gap-4">
                 <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                     <Zap className="size-4 fill-current" />

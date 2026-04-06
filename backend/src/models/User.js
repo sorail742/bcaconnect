@@ -27,8 +27,9 @@ const User = sequelize.define('User', {
         allowNull: false,
     },
     role: {
-        type: DataTypes.STRING(20),
+        type: DataTypes.ENUM('admin', 'fournisseur', 'transporteur', 'client', 'banque'),
         defaultValue: 'client',
+        allowNull: false,
     },
     score_confiance: {
         type: DataTypes.INTEGER,

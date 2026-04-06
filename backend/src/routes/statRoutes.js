@@ -5,6 +5,6 @@ const { protect, authorize } = require('../middlewares/authMiddleware');
 
 router.get('/admin', protect, authorize('admin'), dashboardController.getAdminStats);
 router.get('/financial', protect, authorize('admin', 'banque'), dashboardController.getFinancialReports);
-router.get('/vendor', protect, authorize('vendeur', 'admin'), dashboardController.getVendorStats);
+router.get('/vendor', protect, authorize('fournisseur', 'admin'), dashboardController.getVendorStats);
 
 module.exports = router;

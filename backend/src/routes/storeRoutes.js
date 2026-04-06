@@ -4,9 +4,9 @@ const storeController = require('../controllers/storeController');
 const { authMiddleware, authorize } = require('../middlewares/authMiddleware');
 
 router.get('/', storeController.getAll);
-router.get('/me', authMiddleware, authorize(['fournisseur']), storeController.getMyStore);
-router.put('/me', authMiddleware, authorize(['fournisseur']), storeController.updateMyStore);
-router.post('/', authMiddleware, authorize(['fournisseur']), storeController.create);
+router.get('/me', authMiddleware, authorize(['fournisseur', 'admin']), storeController.getMyStore);
+router.put('/me', authMiddleware, authorize(['fournisseur', 'admin']), storeController.updateMyStore);
+router.post('/', authMiddleware, authorize(['fournisseur', 'admin']), storeController.create);
 router.get('/slug/:slug', storeController.getBySlug);
 router.get('/:id', storeController.getById);
 

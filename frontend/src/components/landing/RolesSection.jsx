@@ -1,81 +1,104 @@
-import { User, Store, Truck, Building2, Settings } from "lucide-react"
-import { cn } from "../../lib/utils"
-
-const roles = [
-    {
-        icon: User,
-        title: "Clients",
-        description: "Accès au catalogue complet, comparaison des prix, paiements flexibles et suivi en temps réel.",
-        color: "bg-primary",
-        textColor: "text-primary"
-    },
-    {
-        icon: Store,
-        title: "Vendeurs",
-        description: "Gestion des stocks, outils de vente, analytics de performance et visibilité accrue sur le marché.",
-        color: "bg-secondary",
-        textColor: "text-secondary"
-    },
-    {
-        icon: Truck,
-        title: "Livreurs",
-        description: "Optimisation des tournées, GPS intégré et gestion simplifiée des livraisons de proximité.",
-        color: "bg-accent",
-        textColor: "text-accent"
-    },
-    {
-        icon: Building2,
-        title: "Banques",
-        description: "Gestion sécurisée des transactions, solutions de microfinance et crédits de campagne.",
-        color: "bg-primary/80",
-        textColor: "text-primary/80"
-    },
-    {
-        icon: Settings,
-        title: "Admin",
-        description: "Modération, résolution des litiges et support utilisateur pour un écosystème sain.",
-        color: "bg-secondary/80",
-        textColor: "text-secondary/80"
-    }
-]
+import React from 'react';
+import { motion } from 'framer-motion';
+import { ShoppingBag, Store, ArrowRight, ShieldCheck, Zap, Star, LayoutDashboard } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
+import { cn } from "../../lib/utils";
 
 export function RolesSection() {
+    const { t, lang } = useLanguage();
+
+    const roles = [
+        {
+            title: t('roleBuyerTitle') || "Acheteur Certifié",
+            description: t('roleBuyerDesc') || "Accédez au marché en toute sécurité avec notre protection des achats et paiements garantis.",
+            icon: ShoppingBag,
+            to: "/register?role=client",
+            color: "text-blue-500",
+            bg: "bg-blue-500/10",
+            features: [
+                "Protection des paiements (Escrow)",
+                "Support client prioritaire",
+                "Suivi logistique en temps réel"
+            ]
+        },
+        {
+            title: t('roleVendorTitle') || "Vendeur Professionnel",
+            description: t('roleVendorDesc') || "Ouvrez votre boutique numérique, touchez des milliers de clients et gérez vos ventes facilement.",
+            icon: Store,
+            to: "/register?role=vendeur",
+            color: "text-primary",
+            bg: "bg-primary/10",
+            features: [
+                "Boutique personnalisée",
+                "Tableau de bord et statistiques",
+                "Règlements unifiés et rapides"
+            ]
+        }
+    ];
+
     return (
-        <section id="roles" className="relative py-24 bg-white dark:bg-slate-950 overflow-hidden">
-            <div className="container mx-auto px-4 relative z-10">
-                <div className="max-w-3xl mx-auto text-center mb-16 animate-fade-in-up">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-primary/10 border border-primary/20 text-[10px] font-bold text-primary mb-6 uppercase tracking-widest">
-                        Écosystème Connecté
-                    </div>
-                    <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6 tracking-tight leading-tight">
-                        Un espace de travail pour <br />
-                        <span className="text-primary">chaque acteur</span>
+        <section className="relative py-24 bg-background border-t border-foreground/[0.03]">
+            <div className="container mx-auto px-6 md:px-12">
+                <div className="text-center max-w-2xl mx-auto mb-16">
+                    <h2 className="text-2xl md:text-3xl font-semibold text-foreground tracking-tight mb-4">
+                        Rejoignez l'écosystème BCA
                     </h2>
-                    <p className="text-lg text-slate-600 dark:text-slate-400 font-medium leading-relaxed opacity-80">
-                        Des interfaces spécialisées pour optimiser le travail de tous les intervenants.
+                    <p className="text-sm md:text-base text-muted-foreground">
+                        {t('aboutDescHero') || "Choisissez votre statut et commencez à bénéficier de tous les avantages de notre plateforme e-commerce sécurisée."}
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto animate-fade-in-up">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
                     {roles.map((role, index) => (
-                        <div
+                        <Link 
                             key={index}
-                            className={cn(
-                                "group relative p-8 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-primary/20",
-                                index === 4 ? 'lg:col-start-2' : ''
-                            )}
+                            to={role.to}
+                            className="group flex flex-col p-6 rounded-2xl bg-card border border-border hover:border-primary/40 hover:shadow-md transition-all duration-300 relative overflow-hidden"
                         >
-                            <div className={cn("size-14 rounded-2xl flex items-center justify-center mb-6 shadow-sm", role.color)}>
-                                <role.icon className="size-7 text-white" />
-                            </div>
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{role.title}</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium">{role.description}</p>
+                            <div className="relative z-10 flex flex-col h-full">
+                                <div className={cn("size-12 rounded-xl flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-105", role.bg)}>
+                                    <role.icon className={cn("size-6", role.color)} />
+                                </div>
+                                
+                                <h3 className="text-[18px] font-semibold text-foreground mb-3">{role.title}</h3>
+                                <p className="text-sm text-muted-foreground leading-relaxed mb-8 flex-1">
+                                    {role.description}
+                                </p>
 
-                            <div className={cn("mt-6 h-1 w-12 rounded-full opacity-30", role.color)} />
+                                <div className="space-y-3 mb-8">
+                                    {role.features.map((feat, i) => (
+                                        <div key={i} className="flex items-center gap-3">
+                                            <div className="size-1.5 rounded-full bg-foreground/30 group-hover:bg-primary transition-colors" />
+                                            <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">{feat}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Corrected Button for Light/Dark Mode */}
+                                <div className="h-11 w-full rounded-xl bg-foreground text-background font-semibold text-sm transition-all group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center gap-2">
+                                    {t('join') || "Créer un compte"} 
+                                    <ArrowRight className="size-4" />
+                                </div>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+
+                <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 text-center max-w-4xl mx-auto opacity-60">
+                    {[
+                        { icon: ShieldCheck, label: "Sécurité" },
+                        { icon: Zap, label: "Rapidité" },
+                        { icon: Star, label: "Excellence" },
+                        { icon: LayoutDashboard, label: "Simplicité" }
+                    ].map((item, i) => (
+                        <div key={i} className="flex flex-col items-center gap-3">
+                            <item.icon className="size-6 text-muted-foreground" />
+                            <p className="text-xs font-medium text-muted-foreground">{item.label}</p>
                         </div>
                     ))}
                 </div>
             </div>
         </section>
-    )
+    );
 }

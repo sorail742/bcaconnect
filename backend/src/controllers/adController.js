@@ -1,9 +1,8 @@
 const { Publicite, PubliciteCiblage, PubliciteStat, PaiementPublicite, User } = require('../models');
-const { Op } = require('sequelize');
+const { Op, literal } = require('sequelize');
 
 const adController = {
-    // Créer une nouvelle publicité (Vendeur ou Admin)
-    create: async (req, res) => {
+    create: async (req, res, next) => {
         try {
             const { titre, contenu, url_image, url_destination, format, date_debut, date_fin, budget_total, ciblage } = req.body;
             const vendeur_id = req.user.role === 'admin' ? (req.body.vendeur_id || null) : req.user.id;
@@ -36,12 +35,11 @@ const adController = {
 
             res.status(201).json(ad);
         } catch (error) {
-            res.status(500).json({ message: error.message });
+            next(error);
         }
     },
 
-    // Récupérer les publicités ciblées pour l'utilisateur actuel
-    getForUser: async (req, res) => {
+    getForUser: async (req, res, next) => {
         try {
             const role = req.user ? req.user.role : 'client';
 
@@ -74,32 +72,33 @@ const adController = {
 
             res.json(ads);
         } catch (error) {
-            res.status(500).json({ message: error.message });
+            next(error);
         }
     },
 
-    // Enregistrer un clic sur une publicité
-    recordClick: async (req, res) => {
+    recordClick: async (req, res, next) => {
         try {
             const { id } = req.params;
+
             await PubliciteStat.increment('clics', { where: { publicite_id: id } });
 
-            // Déduire un petit montant du budget restant (simulation CPC)
-            const ad = await Publicite.findByPk(id);
-            if (ad) {
-                ad.budget_restant = Math.max(0, ad.budget_restant - 100); // 100 GNF par clic
-                if (ad.budget_restant === 0) ad.statut = 'completed';
-                await ad.save();
+            await Publicite.update(
+                { budget_restant: literal('CASE WHEN budget_restant >= 100 THEN budget_restant - 100 ELSE 0 END') },
+                { where: { id } }
+            );
+
+            const ad = await Publicite.findByPk(id, { attributes: ['budget_restant'] });
+            if (ad && parseFloat(ad.budget_restant) === 0) {
+                await Publicite.update({ statut: 'completed' }, { where: { id } });
             }
 
             res.json({ message: "Clic enregistré" });
         } catch (error) {
-            res.status(500).json({ message: error.message });
+            next(error);
         }
     },
 
-    // Récupérer les statistiques d'une publicité (pour le propriétaire)
-    getStats: async (req, res) => {
+    getStats: async (req, res, next) => {
         try {
             const { id } = req.params;
             const ad = await Publicite.findByPk(id, {
@@ -112,7 +111,7 @@ const adController = {
 
             res.json(ad.stats);
         } catch (error) {
-            res.status(500).json({ message: error.message });
+            next(error);
         }
     }
 };

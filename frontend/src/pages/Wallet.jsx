@@ -1,52 +1,36 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../hooks/useAuth';
 import DashboardLayout from '../components/layout/DashboardLayout';
+import { motion } from 'framer-motion';
 import {
-    PlusCircle,
-    ArrowUpRight,
-    BarChart3,
-    ShoppingBag,
-    Landmark,
-    History,
-    CreditCard,
-    CheckCircle2,
-    Clock,
-    TrendingUp,
-    Shield,
-    Wallet,
-    ChevronRight,
-    ChevronDown,
-    ArrowDownLeft,
-    Activity,
-    Zap,
-    Sparkles,
-    Satellite,
-    Fingerprint,
-    ShieldAlert
+    PlusCircle, ArrowUpRight, ShoppingBag, History,
+    CheckCircle2, Clock, TrendingUp, Wallet,
+    ArrowDownLeft, Activity, Zap, Lock, Cpu
 } from 'lucide-react';
-import { Button } from '../components/ui/Button';
 import StatusBadge from '../components/ui/StatusBadge';
 import { cn } from '../lib/utils';
 import walletService from '../services/walletService';
 import { toast } from 'sonner';
 
 const UserWallet = () => {
+    const { user } = useAuth();
     const [wallet, setWallet] = useState(null);
     const [transactions, setTransactions] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [depositAmount, setDepositAmount] = useState('');
+    const [showDepositForm, setShowDepositForm] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                setIsLoading(true);
                 const [walletData, txData] = await Promise.all([
                     walletService.getMyWallet(),
                     walletService.getTransactions()
                 ]);
                 setWallet(walletData);
                 setTransactions(txData || []);
-            } catch (error) {
-                console.error("Erreur chargement portefeuille:", error);
-                toast.error("ÉCHEC DU CHARGEMENT DES DONNÉES FINANCIÈRES.");
+            } catch {
+                toast.error("Erreur lors du chargement du portefeuille");
             } finally {
                 setIsLoading(false);
             }
@@ -54,12 +38,23 @@ const UserWallet = () => {
         fetchData();
     }, []);
 
-    const getStatusVariant = (status) => {
-        switch (status) {
-            case 'complete': return 'success';
-            case 'en_attente': return 'warning';
-            case 'echoue': return 'danger';
-            default: return 'neutral';
+    const handleDeposit = async (e) => {
+        e.preventDefault();
+        const amount = parseFloat(depositAmount);
+        if (!amount || isNaN(amount) || amount <= 0) {
+            toast.error('Veuillez saisir un montant valide');
+            return;
+        }
+        try {
+            const data = await walletService.initiateDeposit({ montant: amount, moyen_paiement: 'orange_money' });
+            if (data.payment_url) {
+                toast.info('Redirection vers le portail de paiement...');
+                window.open(data.payment_url, '_blank');
+            }
+            setShowDepositForm(false);
+            setDepositAmount('');
+        } catch {
+            toast.error("Erreur lors de l'initiation du dépôt");
         }
     };
 
@@ -73,200 +68,171 @@ const UserWallet = () => {
         }
     };
 
-    const handleDeposit = async () => {
-        const amount = window.prompt("ENTREZ LE MONTANT À DÉPOSER (GNF):", "500000");
-        if (!amount || isNaN(amount)) return;
-
-        try {
-            const data = await walletService.initiateDeposit({
-                montant: parseFloat(amount),
-                moyen_paiement: 'orange_money'
-            });
-
-            if (data.payment_url) {
-                toast.info("SYNCHRONISATION AVEC LE PORTAIL DE PAIEMENT...");
-                window.open(data.payment_url, '_blank');
-            }
-        } catch (error) {
-            toast.error("ERREUR LORS DE L'INITIATION DU FLUX DÉPÔT.");
+    const getTypeLabel = (type) => {
+        switch (type) {
+            case 'depot': return 'Dépôt';
+            case 'achat': return 'Achat';
+            case 'retrait': return 'Retrait';
+            case 'remboursement': return 'Remboursement';
+            default: return type;
         }
     };
 
     return (
-        <DashboardLayout title="TERMINAL FINANCIER EXÉCUTIF">
-            <div className="w-full space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-1000 pb-32 max-w-7xl mx-auto">
+        <DashboardLayout title="Mon Portefeuille">
+            <div className="space-y-6 pb-10">
 
-                {/* Balance Hero Card */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                    <div className="lg:col-span-2 p-12 md:p-16 bg-white rounded-[4rem] border-x-[16px] border-[#FF6600] shadow-3xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 size-[40rem] bg-[#FF6600]/10 rounded-full blur-[150px] pointer-events-none -mr-64 -mt-64 group-hover:scale-125 transition-transform duration-[4s]"></div>
-
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-16 relative z-10">
-                            <div className="space-y-12">
-                                <div className="flex items-center gap-6">
-                                    <div className="size-20 rounded-[2.5rem] bg-black flex items-center justify-center text-[#FF6600] shadow-3xl group-hover:rotate-12 transition-transform duration-1000">
-                                        <Wallet className="size-10" />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic leading-none pt-1">SOLDE DISPONIBLE</p>
-                                        <div className="flex items-center gap-3">
-                                            <div className="size-2 rounded-full bg-[#FF6600] animate-pulse" />
-                                            <p className="text-[10px] font-black text-black uppercase tracking-[0.3em] italic leading-none opacity-60">PROTOCOLE ALPHA SÉCURISÉ</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div className="flex items-baseline gap-6">
-                                        <h3 className="text-7xl md:text-9xl font-black text-black tracking-tighter leading-none italic uppercase">
-                                            {isLoading ? "••••••" : parseFloat(wallet?.solde_virtuel || 0).toLocaleString('fr-GN')}
-                                        </h3>
-                                        <span className="text-3xl font-black text-[#FF6600] uppercase tracking-tighter pt-4">GNF</span>
-                                    </div>
-                                    <div className="h-2 w-full bg-black/5 rounded-full overflow-hidden border-2 border-white shadow-inner max-w-sm">
-                                        <div className="bg-[#FF6600] h-full w-[100%] rounded-full shadow-[0_0_15px_rgba(255,102,0,0.4)] transition-all duration-[2s]"></div>
-                                    </div>
-                                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.5em] italic">ACTUALISATION CONTINUE DU FLUX RÉSEAU</p>
-                                </div>
+                {/* Header card */}
+                <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="size-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                                <Wallet className="size-6" />
                             </div>
-
-                            <div className="flex flex-col gap-6 w-full md:w-80">
-                                <button
-                                    onClick={handleDeposit}
-                                    className="h-20 w-full rounded-[2rem] bg-[#FF6600] text-white hover:bg-black font-black text-xs uppercase tracking-[0.4em] shadow-3xl transition-all duration-700 hover:scale-105 active:scale-95 italic group/btn relative overflow-hidden flex items-center justify-center gap-6"
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_2s_infinite]" />
-                                    <PlusCircle className="size-6 relative z-10" />
-                                    <span className="relative z-10 pt-1">ABONDER LE FLUX</span>
-                                </button>
-                                <button
-                                    className="h-20 w-full rounded-[2rem] bg-black text-white hover:bg-[#FF6600] font-black text-xs uppercase tracking-[0.4em] shadow-3xl transition-all duration-700 hover:scale-105 active:scale-95 italic group/btn_sec relative overflow-hidden flex items-center justify-center gap-6"
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn_sec:animate-[shimmer_2s_infinite]" />
-                                    <ArrowUpRight className="size-6 relative z-10" />
-                                    <span className="relative z-10 pt-1">RETRAIT RÉSEAU</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Quick Stats Widget */}
-                    <div className="bg-white/[0.01] border-4 border-white/5 rounded-[4rem] p-12 flex flex-col justify-between shadow-3xl group relative overflow-hidden">
-                        <div className="absolute top-0 right-0 size-64 bg-[#FF6600]/5 rounded-full blur-[100px] -mr-32 -mt-32"></div>
-
-                        <div className="flex items-center justify-between mb-12 relative z-10">
                             <div>
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-4 italic">FLUX HEBDOMADAIRE</p>
-                                <h4 className="text-3xl font-black text-white uppercase italic tracking-tighter">INDEX ALPHA</h4>
-                            </div>
-                            <div className="size-16 rounded-[1.5rem] bg-[#FF6600]/10 flex items-center justify-center text-[#FF6600] border-2 border-[#FF6600]/20 shadow-3xl group-hover:rotate-12 transition-transform duration-700">
-                                <TrendingUp className="size-8" />
-                            </div>
-                        </div>
-
-                        <div className="flex items-end h-40 gap-4 relative z-10">
-                            {[40, 70, 45, 90, 60, 80, 50].map((h, i) => (
-                                <div key={i} className="flex-1 group/bar relative h-full flex flex-col justify-end">
-                                    <div
-                                        className={cn(
-                                            "w-full rounded-2xl transition-all duration-1000 cursor-pointer shadow-lg",
-                                            i === 3 ? "bg-[#FF6600] shadow-[0_0_20px_rgba(255,102,0,0.3)] h-full" : "bg-white/[0.05] group-hover/bar:bg-white/10"
-                                        )}
-                                        style={{ height: `${h}%` }}
-                                    >
-                                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 transition-opacity bg-black text-white text-[9px] font-black px-2 py-1 rounded-lg border border-white/10">{h}%</div>
-                                    </div>
+                                <h2 className="text-lg font-bold text-foreground">Mon Portefeuille</h2>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    <div className="size-1.5 rounded-full bg-primary animate-pulse" />
+                                    <p className="text-xs text-muted-foreground">Synchronisé en temps réel</p>
                                 </div>
-                            ))}
+                            </div>
                         </div>
-                        <div className="flex justify-between mt-8 text-[9px] font-black text-slate-600 uppercase tracking-widest italic relative z-10 pt-4 border-t-2 border-white/5">
-                            <span>LUN</span><span>MAR</span><span>MER</span><span className="text-[#FF6600]">JEU</span><span>VEN</span><span>SAM</span><span>DIM</span>
-                        </div>
+                        <Activity className="size-5 text-muted-foreground hidden sm:block" />
                     </div>
                 </div>
 
-                {/* Transactions Registry */}
-                <div className="grid grid-cols-1 xl:grid-cols-12 gap-12">
-                    <div className="xl:col-span-8 space-y-10">
-                        <div className="flex items-center justify-between px-6">
-                            <div className="flex items-center gap-6">
-                                <div className="size-3 rounded-full bg-[#FF6600] animate-pulse shadow-[0_0_10px_rgba(255,102,0,0.6)]" />
-                                <h3 className="text-[12px] font-black text-white uppercase tracking-[0.5em] italic">REGISTRE DES TRANSACTIONS QUANTIQUE</h3>
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    {/* Balance + actions */}
+                    <div className="xl:col-span-2 space-y-4">
+                        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                                <div className="space-y-2">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Solde disponible</p>
+                                    <div className="flex items-baseline gap-2">
+                                        <h3 className="text-4xl font-bold text-foreground tabular-nums">
+                                            {isLoading ? "••••••" : parseFloat(wallet?.solde_virtuel || 0).toLocaleString('fr-GN')}
+                                        </h3>
+                                        <span className="text-xl font-bold text-primary">GNF</span>
+                                    </div>
+                                    <div className="h-2 bg-muted rounded-full overflow-hidden max-w-xs mt-2">
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: "100%" }}
+                                            transition={{ duration: 1.5 }}
+                                            className="bg-primary h-full rounded-full"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex flex-col gap-3 w-full md:w-48">
+                                    {showDepositForm ? (
+                                        <form onSubmit={handleDeposit} className="flex flex-col gap-2">
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                value={depositAmount}
+                                                onChange={(e) => setDepositAmount(e.target.value)}
+                                                placeholder="Montant (GNF)"
+                                                className="h-10 w-full px-3 bg-muted border border-border rounded-xl text-sm outline-none focus:border-primary/40 text-foreground"
+                                                autoFocus
+                                            />
+                                            <div className="flex gap-2">
+                                                <button type="submit" className="flex-1 h-9 bg-primary text-primary-foreground rounded-xl font-semibold text-xs transition-all">Confirmer</button>
+                                                <button type="button" onClick={() => setShowDepositForm(false)} className="flex-1 h-9 bg-muted border border-border rounded-xl font-semibold text-xs text-muted-foreground hover:text-foreground transition-all">Annuler</button>
+                                            </div>
+                                        </form>
+                                    ) : (
+                                        <>
+                                            <button
+                                                onClick={() => setShowDepositForm(true)}
+                                                className="h-10 w-full bg-foreground text-background hover:bg-primary hover:text-primary-foreground rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <PlusCircle className="size-4" />
+                                                Déposer
+                                            </button>
+                                            <button className="h-10 w-full bg-muted text-muted-foreground border border-border rounded-xl font-semibold text-sm hover:text-foreground hover:border-primary/40 transition-all flex items-center justify-center gap-2">
+                                                <ArrowUpRight className="size-4" />
+                                                Retirer
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
                             </div>
-                            <button className="text-[10px] font-black text-[#FF6600] hover:text-white uppercase tracking-[0.4em] flex items-center gap-3 transition-all duration-700 italic group/more">
-                                ARCHIVES COMPLÈTES <ChevronRight className="size-4 group-hover/more:translate-x-2 transition-transform" />
-                            </button>
                         </div>
 
-                        <div className="bg-white/[0.01] border-4 border-white/5 rounded-[4rem] overflow-hidden shadow-3xl">
-                            <div className="overflow-x-auto scrollbar-hide">
-                                <table className="w-full text-left border-collapse min-w-[700px]">
+                        {/* Transactions */}
+                        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                            <div className="p-4 border-b border-border flex items-center gap-3">
+                                <Activity className="size-4 text-primary" />
+                                <h3 className="text-sm font-bold text-foreground">Historique des transactions</h3>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm min-w-[600px]">
                                     <thead>
-                                        <tr className="bg-white/[0.02] text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] border-b-4 border-white/5 italic">
-                                            <th className="px-10 py-8">IDENTIFIANT</th>
-                                            <th className="px-10 py-8">HORODATAGE</th>
-                                            <th className="px-10 py-8">OPÉRATION RÉSEAU</th>
-                                            <th className="px-10 py-8">INDEX VALEUR</th>
-                                            <th className="px-10 py-8 text-right">STATUT CANAL</th>
+                                        <tr className="bg-muted/50 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                            <th className="px-4 py-3 text-left">Référence</th>
+                                            <th className="px-4 py-3 text-left">Date</th>
+                                            <th className="px-4 py-3 text-left">Type</th>
+                                            <th className="px-4 py-3 text-left">Montant</th>
+                                            <th className="px-4 py-3 text-right">Statut</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y-4 divide-white/5">
+                                    <tbody className="divide-y divide-border">
                                         {isLoading ? (
-                                            [1, 2, 3, 4, 5].map(i => (
+                                            [1,2,3,4].map(i => (
                                                 <tr key={i} className="animate-pulse">
-                                                    <td colSpan="5" className="px-10 py-12"><div className="h-4 bg-white/5 rounded-full w-full" /></td>
+                                                    <td colSpan="5" className="px-4 py-4">
+                                                        <div className="h-6 bg-muted rounded-lg w-full" />
+                                                    </td>
                                                 </tr>
                                             ))
                                         ) : transactions.length > 0 ? (
                                             transactions.map((txn, idx) => {
                                                 const Icon = getIcon(txn.type_transaction);
-                                                const isPositive = txn.type_transaction === 'depot' || txn.type_transaction === 'remboursement';
+                                                const isPositive = ['depot', 'remboursement'].includes(txn.type_transaction);
                                                 return (
-                                                    <tr key={txn.id || idx} className="hover:bg-white/[0.03] transition-all duration-700 group/row">
-                                                        <td className="px-10 py-8">
-                                                            <span className="text-[11px] font-black text-[#FF6600] group-hover/row:text-white transition-colors italic uppercase">#{(txn.id?.slice(0, 8) || txn.reference_externe || 'INDEX').toUpperCase()}</span>
+                                                    <tr key={txn.id || idx} className="hover:bg-muted/30 transition-colors">
+                                                        <td className="px-4 py-3">
+                                                            <span className="text-xs font-mono font-semibold text-primary">
+                                                                #{(txn.id?.slice(0, 10) || txn.reference_externe || 'REF').toUpperCase()}
+                                                            </span>
                                                         </td>
-                                                        <td className="px-10 py-8">
-                                                            <div className="flex items-center gap-4 text-slate-500 italic">
-                                                                <Clock className="size-4 text-[#FF6600]/40 group-hover/row:text-[#FF6600] transition-colors" />
-                                                                <span className="text-[11px] font-black uppercase tracking-wider">{new Date(txn.createdAt).toLocaleDateString('fr-GN')}</span>
+                                                        <td className="px-4 py-3">
+                                                            <div>
+                                                                <p className="text-xs font-medium text-foreground">{new Date(txn.createdAt).toLocaleDateString('fr-GN')}</p>
+                                                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                                                    <Clock className="size-3" />
+                                                                    {new Date(txn.createdAt).toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
+                                                                </p>
                                                             </div>
                                                         </td>
-                                                        <td className="px-10 py-8">
-                                                            <div className="flex items-center gap-6">
-                                                                <div className="size-12 rounded-xl bg-white/5 border-2 border-white/5 flex items-center justify-center text-slate-600 group-hover/row:text-[#FF6600] group-hover/row:border-[#FF6600]/20 group-hover/row:scale-110 transition-all duration-700 shadow-xl">
-                                                                    <Icon className="size-5" />
+                                                        <td className="px-4 py-3">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="size-7 rounded-lg bg-muted border border-border flex items-center justify-center">
+                                                                    <Icon className="size-3.5 text-muted-foreground" />
                                                                 </div>
-                                                                <span className="text-xs font-black text-white uppercase tracking-tighter italic">
-                                                                    {txn.type_transaction === 'depot' ? 'INDEXATION OM' :
-                                                                        txn.type_transaction === 'achat' ? 'COMMANDE MARCHÉ' :
-                                                                            txn.type_transaction === 'retrait' ? 'RETRAITS RÉSEAU' :
-                                                                                txn.metadata?.desc?.toUpperCase() || 'OPÉRATION BCA'}
-                                                                </span>
+                                                                <span className="text-xs font-medium text-foreground">{getTypeLabel(txn.type_transaction)}</span>
                                                             </div>
                                                         </td>
-                                                        <td className="px-10 py-8">
-                                                            <div className={cn(
-                                                                "text-sm font-black tracking-tighter italic uppercase tabular-nums",
-                                                                isPositive ? "text-emerald-500" : "text-white group-hover/row:text-[#FF6600] transition-colors"
+                                                        <td className="px-4 py-3">
+                                                            <span className={cn(
+                                                                "text-sm font-bold tabular-nums",
+                                                                isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"
                                                             )}>
-                                                                {isPositive ? '+' : '-'} {parseFloat(txn.montant).toLocaleString('fr-GN')}
-                                                                <span className="text-[10px] ml-3 opacity-40 uppercase non-italic">GNF</span>
-                                                            </div>
+                                                                {isPositive ? '+' : '-'}{parseFloat(txn.montant).toLocaleString('fr-GN')}
+                                                                <span className="text-xs text-muted-foreground ml-1">GNF</span>
+                                                            </span>
                                                         </td>
-                                                        <td className="px-10 py-8 text-right">
-                                                            <StatusBadge status={txn.statut} variant={getStatusVariant(txn.statut)} className="text-[9px] font-black italic uppercase tracking-widest border-2" />
+                                                        <td className="px-4 py-3 text-right">
+                                                            <StatusBadge status={txn.statut} />
                                                         </td>
                                                     </tr>
                                                 );
                                             })
                                         ) : (
                                             <tr>
-                                                <td colSpan="5" className="px-10 py-40 text-center">
-                                                    <div className="flex flex-col items-center gap-10 opacity-20 group/empty">
-                                                        <Satellite className="size-24 text-slate-500 animate-pulse" />
-                                                        <p className="text-[12px] font-black uppercase tracking-[0.6em] italic">AUCUN FLUX DÉTECTÉ DANS LE REGISTRE</p>
-                                                    </div>
+                                                <td colSpan="5" className="px-4 py-12 text-center">
+                                                    <Zap className="size-8 text-muted-foreground/30 mx-auto mb-2" />
+                                                    <p className="text-sm text-muted-foreground">Aucune transaction pour le moment</p>
                                                 </td>
                                             </tr>
                                         )}
@@ -276,90 +242,65 @@ const UserWallet = () => {
                         </div>
                     </div>
 
-                    {/* Virtual Privilege Card */}
-                    <div className="xl:col-span-4 space-y-12">
-                        <div className="px-6 flex items-center gap-4">
-                            <div className="size-2 rounded-full bg-[#FF6600] shadow-[0_0_10px_rgba(255,102,0,0.6)]" />
-                            <h3 className="text-[12px] font-black text-white uppercase tracking-[0.5em] italic">CARTE PRIVILÈGE BCA</h3>
-                        </div>
-
-                        <div className="relative overflow-hidden bg-black p-12 text-white rounded-[4rem] border-x-[16px] border-[#FF6600] shadow-3xl aspect-[1.6/1] flex flex-col justify-between group transition-all duration-1000 hover:scale-[1.05] hover:rotate-2 cursor-pointer">
-                            <div className="absolute top-0 right-0 size-[40rem] bg-[#FF6600]/20 rounded-full blur-[150px] -mr-48 -mt-48 transition-transform group-hover:scale-125 duration-[4s] animate-pulse"></div>
-
-                            <div className="relative z-10 flex justify-between items-start">
-                                <div className="size-16 rounded-2xl bg-white/5 backdrop-blur-3xl flex items-center justify-center border-2 border-white/10 shadow-3xl group-hover:bg-[#FF6600] group-hover:border-[#FF6600]/20 transition-all duration-700">
-                                    <Sparkles className="size-8 text-[#FF6600] group-hover:text-white" />
+                    {/* Right panel */}
+                    <div className="space-y-4">
+                        {/* Virtual card */}
+                        <div className="bg-foreground text-background rounded-2xl p-5 shadow-sm aspect-[1.6/1] flex flex-col justify-between relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent pointer-events-none" />
+                            <div className="flex justify-between items-start relative z-10">
+                                <div className="size-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center">
+                                    <Cpu className="size-5 text-primary" />
                                 </div>
-                                <div className="px-6 py-2 bg-white/5 border-2 border-white/10 rounded-xl text-[10px] font-black uppercase tracking-[0.5em] italic pt-1 shadow-lg group-hover:border-[#FF6600]/40">ELITE MEMBER</div>
+                                <span className="text-xs font-semibold bg-white/10 border border-white/20 px-3 py-1 rounded-lg">BCA Card</span>
                             </div>
-
-                            <div className="relative z-10 space-y-4">
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic opacity-60">NODE IDENTIFIER</p>
-                                <p className="text-3xl md:text-5xl font-black tracking-[0.3em] font-mono group-hover:text-[#FF6600] transition-colors duration-700">•••• ••• ••• 4492</p>
-                            </div>
-
-                            <div className="relative z-10 flex justify-between items-end border-t-4 border-white/5 pt-8">
-                                <div>
-                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.4em] mb-2 italic">DÉTENTEUR</p>
-                                    <p className="text-sm font-black uppercase tracking-[0.2em] text-[#FF6600] italic">BCA PREMIUM INVEST</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.4em] mb-2 italic">EXP</p>
-                                    <p className="text-sm font-black uppercase tracking-[0.3em] italic">12 / 28</p>
+                            <div className="relative z-10 space-y-2">
+                                <p className="text-xs text-background/60 font-medium">Identifiant</p>
+                                <p className="text-base font-mono font-bold">•••• ••• ••• 4492</p>
+                                <div className="flex justify-between items-end pt-2 border-t border-white/10">
+                                    <div>
+                                        <p className="text-xs text-background/50">Titulaire</p>
+                                        <p className="text-sm font-bold">{user?.nom_complet || 'Membre BCA'}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-xs text-background/50">Exp.</p>
+                                        <p className="text-sm font-bold font-mono">12/28</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Payment Methods */}
-                        <div className="space-y-6">
-                            <div className="p-8 bg-white rounded-[3rem] border-x-[12px] border-black flex items-center justify-between group cursor-pointer hover:border-[#FF6600] transition-all duration-700 shadow-3xl">
-                                <div className="flex items-center gap-6">
-                                    <div className="size-16 rounded-[1.5rem] bg-orange-500 flex items-center justify-center shadow-3xl group-hover:rotate-12 transition-transform duration-700">
-                                        <div className="text-[12px] font-black text-white italic tracking-tighter uppercase">OM</div>
+                        {/* Payment method */}
+                        <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
+                            <h4 className="text-sm font-bold text-foreground mb-3">Moyens de paiement</h4>
+                            <div className="flex items-center justify-between p-3 bg-muted rounded-xl border border-border hover:border-primary/40 transition-colors cursor-pointer">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-9 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
+                                        <span className="text-xs font-bold text-orange-500">OM</span>
                                     </div>
                                     <div>
-                                        <p className="text-sm font-black text-black uppercase tracking-tighter italic">ORANGE MONEY</p>
-                                        <p className="text-[11px] text-slate-500 font-black uppercase tracking-[0.2em] italic opacity-60 mt-1">+224 62X XX XX 12</p>
+                                        <p className="text-sm font-semibold text-foreground">Orange Money</p>
+                                        <p className="text-xs text-muted-foreground">+224 62X XX XX 12</p>
                                     </div>
                                 </div>
-                                <ChevronDown className="size-6 text-slate-300 group-hover:text-black transition-colors" />
+                                <CheckCircle2 className="size-4 text-emerald-500" />
                             </div>
-
-                            <button className="w-full h-20 rounded-[2.5rem] border-4 border-dashed border-white/10 text-[11px] font-black text-slate-600 uppercase tracking-[0.5em] hover:border-[#FF6600]/40 hover:text-[#FF6600] hover:bg-[#FF6600]/5 transition-all duration-700 flex items-center justify-center gap-6 italic group/add">
-                                <PlusCircle className="size-6 group-hover/add:rotate-180 transition-transform duration-700" />
-                                AJOUTER UN CANAL
+                            <button className="mt-3 w-full h-9 rounded-xl border-2 border-dashed border-border text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:text-primary transition-all flex items-center justify-center gap-2">
+                                <PlusCircle className="size-4" />
+                                Ajouter un moyen de paiement
                             </button>
                         </div>
-                    </div>
-                </div>
 
-                {/* Final Trust Signal Banner */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 py-20 border-t-4 border-white/5 mt-20">
-                    <div className="flex items-center gap-6 group/trust">
-                        <div className="size-14 rounded-2xl bg-[#FF6600]/10 flex items-center justify-center text-[#FF6600] border-2 border-[#FF6600]/20 group-hover:shadow-[0_0_20px_rgba(255,102,0,0.3)] transition-all">
-                            <ShieldAlert className="size-7" />
-                        </div>
-                        <div className="space-y-1">
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white italic">INDEX SÉCURITÉ ALPHA</span>
-                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600 italic">256-BIT QUANTUM ENCRYPTION</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-6 group/trust">
-                        <div className="size-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 border-2 border-emerald-500/20 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all">
-                            <CheckCircle2 className="size-7" />
-                        </div>
-                        <div className="space-y-1">
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white italic">FLUX CERTIFIÉS BCA</span>
-                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600 italic">INDEXATION RÉSEAU VALIDÉE</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-6 group/trust">
-                        <div className="size-14 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 border-2 border-amber-500/20 group-hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all">
-                            <Clock className="size-7" />
-                        </div>
-                        <div className="space-y-1">
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white italic">TRAITEMENT PRIORITAIRE</span>
-                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600 italic">INDEXATION 24/7 EN TEMPS RÉEL</p>
+                        {/* Security */}
+                        <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="size-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                                    <Lock className="size-4 text-primary" />
+                                </div>
+                                <h4 className="text-sm font-bold text-foreground">Sécurité</h4>
+                            </div>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                Votre portefeuille est chiffré et sécurisé. Toutes les opérations nécessitent une validation PIN.
+                            </p>
                         </div>
                     </div>
                 </div>

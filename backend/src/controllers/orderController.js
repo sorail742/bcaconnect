@@ -67,8 +67,9 @@ const orderController = {
             const total_ttc = total_produits + frais_port;
 
             // 3. Gestion du paiement
+            let wallet = null;
             if (paymentMethod === 'wallet') {
-                const wallet = await Wallet.findOne({ where: { user_id: utilisateur_id }, transaction: t });
+                wallet = await Wallet.findOne({ where: { user_id: utilisateur_id }, transaction: t });
                 if (!wallet || parseFloat(wallet.solde_virtuel) < total_ttc) {
                     throw new Error('Solde insuffisant dans votre portefeuille BCA.');
                 }
@@ -84,7 +85,8 @@ const orderController = {
                 methode_paiement: paymentMethod || 'wallet',
                 nom_destinataire: deliveryInfo?.nom,
                 telephone_livraison: deliveryInfo?.telephone,
-                adresse_livraison: deliveryInfo?.adresse
+                adresse_livraison: deliveryInfo?.adresse,
+                cle_idempotence: cle_idempotence || undefined
             }, { transaction: t });
 
             // Create OrderItems
@@ -96,7 +98,7 @@ const orderController = {
             }
 
             // Create financial Transaction entry
-            if (wallet) {
+            if (paymentMethod === 'wallet' && wallet) {
                 await Transaction.create({
                     portefeuille_id: wallet.id,
                     commande_id: order.id,
@@ -330,7 +332,6 @@ const orderController = {
         try {
             const { orderId } = req.params;
             const { statut } = req.body;
-            const utilisateur_id = req.user.id;
 
             const order = await Order.findByPk(orderId, {
                 transaction: t,
@@ -345,14 +346,14 @@ const orderController = {
             const isOwner = order.utilisateur_id === req.user.id;
 
             // Matrice de transition stricte pour ORDER (Global)
-            // payé -> annulé | retourné
             const transitions = {
                 'payé': ['annulé', 'retourné'],
+                'en_attente_paiement': ['annulé'],
                 'annulé': [],
                 'retourné': []
             };
 
-            if (!transitions[order.statut].includes(statut)) {
+            if (!transitions[order.statut] || !transitions[order.statut].includes(statut)) {
                 await t.rollback();
                 return res.status(400).json({
                     message: `Transition globale invalide: de "${order.statut}" vers "${statut}".`
@@ -372,8 +373,8 @@ const orderController = {
                 return res.status(403).json({ message: "Seul l'admin peut initier un retour global." });
             }
 
-            // Si annulation d'une commande déjà payée -> Remboursement
-            if (statut === 'annulé' && (order.statut === 'payé' || order.statut === 'en_attente')) {
+            // Si annulation d'une commande payée ou en attente -> Remboursement
+            if (statut === 'annulé' && (order.statut === 'payé' || order.statut === 'en_attente_paiement')) {
                 const wallet = await Wallet.findOne({ where: { user_id: order.utilisateur_id }, transaction: t });
                 if (wallet) {
                     await Transaction.create({

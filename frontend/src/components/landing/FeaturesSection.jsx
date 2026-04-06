@@ -1,113 +1,111 @@
-import {
-    ShoppingBag,
-    Users,
-    ClipboardList,
-    CreditCard,
-    MapPin,
-    MessageCircle,
-    ArrowRight
-} from "lucide-react"
-import { Link } from "react-router-dom"
-import { cn } from "../../lib/utils"
-
-const features = [
-    {
-        icon: ShoppingBag,
-        title: "Catalogue Produits",
-        description: "Un catalogue complet regroupant les meilleurs articles du marché local et international.",
-        route: "/marketplace",
-        color: "text-primary",
-        bg: "bg-primary/10",
-        border: "border-primary/20"
-    },
-    {
-        icon: Users,
-        title: "Réseau Marchands",
-        description: "Accédez à une liste de vendeurs certifiés et fiables pour toutes vos transactions.",
-        route: "/vendors",
-        color: "text-secondary",
-        bg: "bg-secondary/10",
-        border: "border-secondary/20"
-    },
-    {
-        icon: MapPin,
-        title: "Suivi Logistique",
-        description: "Suivez vos colis en temps réel jusqu'à votre porte avec notre système intégré.",
-        route: "/tracking",
-        color: "text-accent",
-        bg: "bg-accent/10",
-        border: "border-accent/20"
-    },
-    {
-        icon: CreditCard,
-        title: "Paiements Flexibles",
-        description: "Payez en toute sécurité via Mobile Money, carte bancaire ou virement local.",
-        route: "/payments",
-        color: "text-primary",
-        bg: "bg-primary/10",
-        border: "border-primary/20"
-    },
-    {
-        icon: ClipboardList,
-        title: "Gestion Commandes",
-        description: "Une interface intuitive pour suivre l'historique et l'état de vos achats.",
-        route: "/orders",
-        color: "text-secondary",
-        bg: "bg-secondary/10",
-        border: "border-secondary/20"
-    },
-    {
-        icon: MessageCircle,
-        title: "Support Client",
-        description: "Une assistance dédiée disponible 24h/24 pour répondre à tous vos besoins.",
-        route: "/contact",
-        color: "text-accent",
-        bg: "bg-accent/10",
-        border: "border-accent/20"
-    }
-]
+import React from 'react';
+import { motion } from 'framer-motion';
+import { 
+    ShoppingBag, Users, CreditCard, MapPin, 
+    MessageCircle, ArrowRight, Zap, Activity,
+    Shield, Cpu, Globe, ZapIcon
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
 
 export function FeaturesSection() {
+    const { t, lang } = useLanguage();
+
+    const features = [
+        {
+            icon: ShoppingBag,
+            title: t('catalog') || "Catalogue complet",
+            description: lang === 'FR' ? "Un catalogue réunissant les meilleurs articles localement et internationalement." : "A complete catalog featuring local and international goods.",
+            route: "/marketplace",
+            color: "text-primary",
+            bg: "bg-primary/10",
+            hoverBg: "hover:bg-primary/5",
+        },
+        {
+            icon: Users,
+            title: t('vendors') || "Réseau de vendeurs",
+            description: lang === 'FR' ? "Accédez à une liste de vendeurs certifiés, vérifiés et fiables." : "Access a list of certified and reliable vendor nodes.",
+            route: "/vendors",
+            color: "text-blue-500",
+            bg: "bg-blue-500/10",
+            hoverBg: "hover:bg-blue-500/5",
+        },
+        {
+            icon: MapPin,
+            title: t('tracking') || "Suivi en temps réel",
+            description: lang === 'FR' ? "Suivez vos colis en temps réel depuis l'expédition jusqu'à votre porte." : "Track your packages in real-time through global geo-sync.",
+            route: "/tracking",
+            color: "text-emerald-500",
+            bg: "bg-emerald-500/10",
+            hoverBg: "hover:bg-emerald-500/5",
+        },
+        {
+            icon: CreditCard,
+            title: t('feat3Title') || "Paiements sécurisés",
+            description: t('feat3Desc') || "Transactions chiffrées avec système d'entiercement sécurisé.",
+            route: "/help",
+            color: "text-purple-500",
+            bg: "bg-purple-500/10",
+            hoverBg: "hover:bg-purple-500/5",
+        },
+        {
+            icon: ZapIcon,
+            title: t('feat2Title') || "Transactions rapides",
+            description: t('feat2Desc') || "Vos règlements et transactions sont exécutés instantanément.",
+            route: "/help",
+            color: "text-primary",
+            bg: "bg-primary/10",
+            hoverBg: "hover:bg-primary/5",
+        },
+        {
+            icon: MessageCircle,
+            title: t('contact') || "Support direct",
+            description: lang === 'FR' ? "Une assistance dédiée disponible 24h/24 par système de messagerie sécurisé." : "Dedicated 24/7 support nodes via secure chat.",
+            route: "/contact",
+            color: "text-pink-500",
+            bg: "bg-pink-500/10",
+            hoverBg: "hover:bg-pink-500/5",
+        }
+    ];
+
     return (
-        <section id="features" className="relative py-24 bg-white dark:bg-slate-950 overflow-hidden">
-            <div className="container mx-auto px-4 relative z-10">
-                <div className="max-w-3xl mx-auto text-center mb-16 animate-fade-in-up">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-primary/10 border border-primary/20 text-[10px] font-bold text-primary mb-6 uppercase tracking-widest">
-                        Nos Services
-                    </div>
-                    <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6 tracking-tight leading-tight">
-                        Une plateforme pensée <br />
-                        <span className="text-primary">pour votre croissance</span>
+        <section id="features" className="relative py-24 bg-background border-t border-foreground/[0.03]">
+            <div className="container mx-auto px-6 md:px-12">
+                <div className="text-center max-w-2xl mx-auto mb-16">
+                    <h2 className="text-2xl md:text-3xl font-semibold text-foreground tracking-tight mb-4">
+                        Des outils conçus pour simplifier votre commerce
                     </h2>
-                    <p className="text-lg text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
-                        Des outils modernes pour simplifier le commerce et la distribution partout en Afrique.
+                    <p className="text-sm md:text-base text-muted-foreground">
+                        {lang === 'FR' ? "Découvrez des fonctionnalités modernes et rapides pensées pour connecter vendeurs, acheteurs et livreurs dans un seul même écosystème." : "Modern tools engineered to simplify commerce and tracking across the continent."}
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                     {features.map((feature, index) => (
                         <Link
                             key={index}
                             to={feature.route}
-                            className={cn(
-                                "group relative p-8 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 transition-all duration-300 block hover:-translate-y-2 hover:shadow-xl hover:border-primary/20"
-                            )}
+                            className={`group p-6 rounded-2xl bg-card border border-foreground/[0.05] hover:border-foreground/[0.15] hover:shadow-lg transition-all duration-300 block ${feature.hoverBg}`}
                         >
-                            <div className={cn("size-14 rounded-2xl flex items-center justify-center mb-6 transition-all duration-300 group-hover:scale-110 shadow-sm", feature.bg)}>
-                                <feature.icon className={cn("size-7 transition-colors", feature.color)} />
+                            <div className={`size-12 rounded-xl flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-105 ${feature.bg}`}>
+                                <feature.icon className={`size-6 ${feature.color}`} />
                             </div>
 
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 tracking-tight">{feature.title}</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium">{feature.description}</p>
+                            <h3 className="text-[17px] font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
+                                {feature.title}
+                            </h3>
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                                {feature.description}
+                            </p>
 
-                            <div className="mt-8 flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                                En savoir plus
-                                <ArrowRight className="size-3" />
+                            <div className="mt-8 flex items-center gap-2 text-sm font-medium text-primary opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                                {lang === 'FR' ? "En savoir plus" : "Learn more"}
+                                <ArrowRight className="size-4" />
                             </div>
                         </Link>
                     ))}
                 </div>
             </div>
         </section>
-    )
+    );
 }

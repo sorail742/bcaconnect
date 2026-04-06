@@ -54,7 +54,7 @@ const aiService = {
             attributes: [
                 'produit_id',
                 [sequelize.fn('SUM', sequelize.col('quantite')), 'total_vendu'],
-                [sequelize.fn('SUM', sequelize.literal('"quantite" * "prix_unitaire_achat"')), 'revenu_total'],
+                [sequelize.fn('SUM', sequelize.literal('quantite * prix_unitaire_achat')), 'revenu_total'],
             ],
             include: [{
                 model: Product,
@@ -62,7 +62,7 @@ const aiService = {
                 where: { boutique_id: storeId },
                 attributes: ['nom_produit', 'prix_unitaire', 'stock_quantite']
             }],
-            group: ['produit_id', 'produit.id'],
+            group: ['OrderItem.produit_id', 'produit.id'],
             order: [[sequelize.literal('total_vendu'), 'DESC']],
             limit: 10
         });
@@ -172,6 +172,13 @@ Statut commande: ${disputeData.statut_commande || 'livré'}`;
 
     /**
      * 5. Suggestion de prix pour un nouveau produit
+     */
+    getSmartPricing: async (nom, categorie, description) => {
+        return aiService.suggestPrice({ nom, categorie, description });
+    },
+
+    /**
+     * 6. Alias suggestPrice (appelé depuis aiController)
      */
     suggestPrice: async (productData) => {
         const systemPrompt = `Tu es un expert en pricing pour le marché e-commerce guinéen.

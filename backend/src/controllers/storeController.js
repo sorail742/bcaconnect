@@ -16,7 +16,7 @@ const generateSlug = (name) => {
 const storeController = {
     create: async (req, res, next) => {
         try {
-            const { nom_boutique, description, email_boutique, telephone_boutique, logo_url } = req.body;
+            const { nom_boutique, description, email_boutique, telephone_boutique, logo_url, use_carousel, banner_images } = req.body;
             const proprietaire_id = req.user.id;
 
             // Validation du nom
@@ -41,6 +41,8 @@ const storeController = {
                 email_boutique: email_boutique || null,
                 telephone_boutique: telephone_boutique || null,
                 logo_url: logo_url || null,
+                use_carousel: use_carousel || false,
+                banner_images: banner_images || [],
                 proprietaire_id,
                 slug
             });
@@ -55,6 +57,8 @@ const storeController = {
                 email_boutique: store.email_boutique,
                 telephone_boutique: store.telephone_boutique,
                 logo_url: store.logo_url,
+                use_carousel: store.use_carousel,
+                banner_images: store.banner_images,
                 statut: store.statut,
                 createdAt: store.createdAt
             });
@@ -142,7 +146,7 @@ const storeController = {
 
     updateMyStore: async (req, res, next) => {
         try {
-            const { nom_boutique, description, email_boutique, telephone_boutique, logo_url } = req.body;
+            const { nom_boutique, description, email_boutique, telephone_boutique, logo_url, use_carousel, banner_images } = req.body;
             const proprietaire_id = req.user.id;
 
             const store = await Store.findOne({ where: { proprietaire_id } });
@@ -153,7 +157,9 @@ const storeController = {
                 description,
                 email_boutique,
                 telephone_boutique,
-                logo_url
+                logo_url,
+                use_carousel: use_carousel !== undefined ? use_carousel : store.use_carousel,
+                banner_images: banner_images !== undefined ? banner_images : store.banner_images
             });
 
             res.json(updatedStore);

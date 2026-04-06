@@ -20,8 +20,11 @@ const Message = sequelize.define('Message', {
         allowNull: false,
     },
     type: {
-        type: DataTypes.ENUM('text', 'image', 'file'),
+        type: DataTypes.STRING(10),
         defaultValue: 'text',
+        validate: {
+            isIn: [['text', 'image', 'file']]
+        }
     },
     est_lu: {
         type: DataTypes.BOOLEAN,

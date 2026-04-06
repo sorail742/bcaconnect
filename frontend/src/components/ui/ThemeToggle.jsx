@@ -12,7 +12,7 @@ const ThemeToggle = ({ className, minimal = false }) => {
             className={cn(
                 "relative flex items-center transition-all duration-300",
                 minimal
-                    ? "p-2 rounded-xl hover:bg-primary/10 text-muted-foreground hover:text-primary"
+                    ? "p-2 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary"
                     : "gap-3 px-3 py-2 rounded-lg hover:bg-primary/5 text-muted-foreground hover:text-primary group",
                 className
             )}

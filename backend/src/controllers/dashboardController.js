@@ -83,7 +83,7 @@ const dashboardController = {
                         value: totalUsers.toLocaleString(),
                         icon: 'Users',
                         trend: 'up',
-                        trendValue: '+X%', 
+                        trendValue: `+${totalUsers}`,
                         description: 'Clients & Partenaires'
                     },
                     {
@@ -176,7 +176,6 @@ const dashboardController = {
             const formattedTransactions = recentTransactions.map(tx => ({
                 id: `#TRX-${tx.id.substring(0, 4).toUpperCase()}`,
                 user: tx.Wallet?.User?.nom_complet || 'Utilisateur inconnu',
-                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(tx.Wallet?.User?.nom_complet || 'U')}&background=random`,
                 type: tx.type_transaction === 'depot' ? 'Dépôt' : tx.type_transaction === 'retrait' ? 'Retrait' : 'Paiement',
                 typeVariant: tx.type_transaction === 'depot' ? 'info' : tx.type_transaction === 'retrait' ? 'secondary' : 'warning',
                 amount: `${tx.montant.toLocaleString()} GNF`,
@@ -191,7 +190,7 @@ const dashboardController = {
                     { title: 'Dépôts totaux', value: `${totalDeposits.toLocaleString()} GNF`, trendValue: `${growth > 0 ? '+' : ''}${growth.toFixed(1)}%`, trend: growth >= 0 ? 'up' : 'down' },
                     { title: 'Dépôts en attente', value: pendingDeposits.toString(), trendValue: 'Stable', trend: 'up' },
                     { title: 'Retraits en attente', value: pendingWithdrawals.toString(), trendValue: 'Stable', trend: 'down' },
-                    { title: 'Transactions traitées', value: processedCount.toLocaleString(), trendValue: '+X%', trend: 'up' },
+                    { title: 'Transactions traitées', value: processedCount.toLocaleString(), trendValue: `${processedCount}`, trend: 'up' },
                 ],
                 transactions: formattedTransactions,
                 chartData: {

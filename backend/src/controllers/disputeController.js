@@ -1,10 +1,11 @@
 const { Litige, Order, User, Notification } = require('../models');
+const { Op } = require('sequelize');
 const aiService = require('../services/aiService');
 
 /**
  * Créer un nouveau litige (avec médiation Groq IA réelle)
  */
-exports.createDispute = async (req, res) => {
+exports.createDispute = async (req, res, next) => {
     try {
         const { commande_id, type, description, defenseur_id } = req.body;
         const demandeur_id = req.user.id;
@@ -66,18 +67,15 @@ exports.createDispute = async (req, res) => {
 
         res.status(201).json(litige);
     } catch (error) {
-        res.status(500).json({ message: "Erreur lors de la création du litige", error: error.message });
+        next(error);
     }
 };
 
-/**
- * Récupérer les litiges pour l'utilisateur connecté
- */
-exports.getMyDisputes = async (req, res) => {
+exports.getMyDisputes = async (req, res, next) => {
     try {
         const litiges = await Litige.findAll({
             where: {
-                [require('sequelize').Op.or]: [
+                [Op.or]: [
                     { demandeur_id: req.user.id },
                     { defenseur_id: req.user.id }
                 ]
@@ -89,14 +87,11 @@ exports.getMyDisputes = async (req, res) => {
         });
         res.json(litiges);
     } catch (error) {
-        res.status(500).json({ message: "Erreur récupération litiges", error: error.message });
+        next(error);
     }
 };
 
-/**
- * Récupérer tous les litiges (Admin seulement)
- */
-exports.getAllDisputes = async (req, res) => {
+exports.getAllDisputes = async (req, res, next) => {
     try {
         const litiges = await Litige.findAll({
             include: [
@@ -106,14 +101,11 @@ exports.getAllDisputes = async (req, res) => {
         });
         res.json(litiges);
     } catch (error) {
-        res.status(500).json({ message: "Erreur récupération litiges", error: error.message });
+        next(error);
     }
 };
 
-/**
- * Résoudre un litige
- */
-exports.resolveDispute = async (req, res) => {
+exports.resolveDispute = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { decision_finale, statut } = req.body;
@@ -149,6 +141,6 @@ exports.resolveDispute = async (req, res) => {
 
         res.json(litige);
     } catch (error) {
-        res.status(500).json({ message: "Erreur résolution litige", error: error.message });
+        next(error);
     }
 };

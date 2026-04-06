@@ -6,7 +6,7 @@ const SectionContainer = React.forwardRef(({ className, children, ...props }, re
         <section
             ref={ref}
             className={cn(
-                "py-12 md:py-24 lg:py-32", // Standard vertical spacing
+                "py-12 md:py-12 lg:py-24", // Standard vertical spacing
                 className
             )}
             {...props}

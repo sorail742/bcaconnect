@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from './Sidebar';
-import { Bell, Search, Menu, Zap, Info, ChevronDown, User, Satellite, Activity } from 'lucide-react';
+import { Bell, Menu, Zap, Satellite, Activity, LayoutGrid, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import notificationService from '../../services/notificationService';
+import messageService from '../../services/messageService';
 import socketService from '../../services/socketService';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
@@ -12,7 +14,9 @@ const DashboardLayout = ({ children, title, noPadding }) => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [unreadMessages, setUnreadMessages] = useState(0);
 
     const fetchUnreadCount = useCallback(async () => {
         try {
@@ -28,6 +32,9 @@ const DashboardLayout = ({ children, title, noPadding }) => {
         fetchUnreadCount();
         socketService.connect();
 
+        // Charger messages non lus
+        messageService.getUnreadCount().then(setUnreadMessages).catch(() => {});
+
         if (user?.id) {
             socketService.on('connect', () => {
                 socketService.socket.emit('join', user.id);
@@ -39,153 +46,177 @@ const DashboardLayout = ({ children, title, noPadding }) => {
 
         const handleNewNotification = (notif) => {
             setUnreadCount(prev => prev + 1);
-            toast.message(notif.titre || "Notification Réseau", {
+            toast.message(notif.titre || "BCA Connect", {
                 description: notif.message,
-                action: {
-                    label: "Voir",
-                    onClick: () => navigate('/notifications')
-                }
+                action: { label: "Voir", onClick: () => navigate('/notifications') }
             });
         };
 
+        const handleNewMessage = () => {
+            setUnreadMessages(prev => prev + 1);
+        };
+
         socketService.on('notification_received', handleNewNotification);
+        socketService.on('new_message', handleNewMessage);
 
         return () => {
             socketService.off('notification_received', handleNewNotification);
+            socketService.off('new_message', handleNewMessage);
         };
     }, [navigate, user?.id, fetchUnreadCount]);
 
     return (
-        <div className="flex h-screen bg-[#0A0D14] font-inter text-white overflow-hidden selection:bg-[#FF6600]/30 selection:text-white">
+        <div className="flex h-screen bg-background font-sans text-foreground overflow-hidden selection:bg-primary/30 selection:text-foreground antialiased relative">
+            
+            {/* Massive Atmospheric Pulse — Executive Ambiance */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+                <div className="absolute top-[-20%] right-[-10%] size-[800px] bg-primary/[0.03] rounded-full blur-[150px] animate-pulse-slow" />
+                <div className="absolute bottom-[-10%] left-[-20%] size-[600px] bg-secondary/[0.03] rounded-full blur-[120px] animate-pulse-slow" style={{ animationDelay: '3s' }} />
+            </div>
 
-            {/* Overlay for mobile sidebar */}
-            {isSidebarOpen && (
-                <div
-                    className="fixed inset-0 bg-black/60 backdrop-blur-md z-[60] md:hidden transition-all duration-500"
-                    onClick={() => setIsSidebarOpen(false)}
-                />
-            )}
+            {/* Backdrop Overlay for Mobile Navigation */}
+            <AnimatePresence>
+                {isSidebarOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-background/90 backdrop-blur-3xl z-[60] md:hidden"
+                        onClick={() => setIsSidebarOpen(false)}
+                    />
+                )}
+            </AnimatePresence>
 
-            {/* Sidebar with dark theme */}
-            <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+            {/* Nodal Control Sidebar */}
+            <Sidebar 
+                isOpen={isSidebarOpen} 
+                isCollapsed={isSidebarCollapsed}
+                onClose={() => setIsSidebarOpen(false)} 
+            />
 
-            {/* Principal Content Container */}
-            <div className="flex-1 flex flex-col min-w-0 relative h-full">
+            {/* Central Intelligence Grid */}
+            <div className="flex-1 flex flex-col min-w-0 relative h-full z-10">
 
-                {/* Executive Topbar - Premium Glass */}
-                <header className="h-28 shrink-0 border-b-4 border-white/5 bg-[#0A0D14]/80 backdrop-blur-3xl z-50 px-8 md:px-12 flex items-center justify-between sticky top-0">
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#FF6600]/5 via-transparent to-transparent opacity-50" />
-
-                    <div className="flex items-center gap-8 relative z-10">
+                {/* Executive Command Bar — Glass High-Density */}
+                <header className="h-14 shrink-0 border-b border-border bg-background/80 backdrop-blur-[48px] z-40 px-4 md:px-6 flex items-center justify-between sticky top-0 shadow-sm">
+                    <div className="flex items-center gap-5 relative z-10">
+                        {/* Intelligent Toggle Hub */}
                         <button
-                            onClick={() => setIsSidebarOpen(true)}
-                            className="md:hidden p-4 text-slate-500 hover:text-white hover:bg-white/5 rounded-2xl transition-all border-2 border-white/5"
+                            id="btn-sidebar-toggle"
+                            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                            className="hidden md:flex size-7 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-foreground/5 bg-foreground/[0.03] border border-foreground/10 rounded-xl transition-all"
                         >
-                            <Menu className="size-6" />
+                            <LayoutGrid className={cn("size-4 transition-transform duration-500", isSidebarCollapsed ? 'rotate-90' : 'rotate-0')} />
                         </button>
-                        <div className="flex flex-col">
-                            <h2 className="text-sm font-black text-white uppercase tracking-[0.2em] leading-none italic">
-                                {title || 'ESPACE CONNECT'}
+
+                        <button
+                            id="btn-mobile-sidebar-toggle"
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="md:hidden size-7 flex items-center justify-center text-muted-foreground hover:text-primary bg-foreground/[0.03] border border-foreground/10 rounded-xl"
+                        >
+                            <Menu className="size-4" />
+                        </button>
+
+                        <div className="space-y-0.5">
+                            <h2 className="text-base font-bold text-foreground tracking-tight leading-none">
+                                {title || 'Dashboard'}
                             </h2>
-                            <div className="flex items-center gap-3 mt-2.5">
-                                <div className="size-2 rounded-full bg-[#FF6600] animate-pulse shadow-[0_0_8px_rgba(255,102,0,0.5)]" />
-                                <p className="text-[10px] text-[#FF6600] font-black uppercase tracking-[0.4em] italic leading-none opacity-80">RÉSEAU BCA EXÉCUTIF v4.0</p>
+                            <div className="flex items-center gap-2">
+                                <div className="size-1.5 rounded-full bg-primary animate-pulse" />
+                                <p className="text-[9px] text-primary font-bold uppercase tracking-widest leading-none">Réseau Actif</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-6 md:gap-10 relative z-10">
-                        {/* Global Search Interface - Dark */}
-                        <div className="hidden lg:flex relative group w-96">
-                            <div className="absolute inset-0 bg-[#FF6600]/5 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-700" />
-                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 size-5 text-slate-700 group-focus-within:text-[#FF6600] transition-colors duration-700" />
-                            <input
-                                type="text"
-                                placeholder="INDEXER LE RÉSEAU..."
-                                className="h-14 w-full pl-16 pr-6 bg-white/[0.02] border-2 border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-white focus:border-[#FF6600]/30 transition-all outline-none placeholder:text-slate-800 placeholder:italic italic"
-                            />
-                        </div>
-
-                        {/* Network Status */}
-                        <div className="hidden xl:flex items-center gap-6 px-10 py-3 bg-white/[0.01] border-2 border-white/5 rounded-2xl">
-                            <div className="flex items-center gap-3">
-                                <Satellite className="size-4 text-emerald-500" />
-                                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest italic pt-0.5">SATELLITE ACTIVE</span>
+                    <div className="flex items-center gap-5 relative z-10">
+                        {/* Intelligent Data Module */}
+                        <div className="hidden xl:flex items-center gap-4 px-4 h-9 bg-muted border border-border rounded-xl">
+                            <div className="flex items-center gap-2.5">
+                                <Satellite className="size-4 text-primary" />
+                                <span className="text-[9px] font-bold text-foreground uppercase tracking-widest opacity-80">Satellite Link</span>
                             </div>
-                            <div className="h-4 w-px bg-white/10" />
-                            <div className="flex items-center gap-3">
-                                <Activity className="size-4 text-blue-500" />
-                                <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest italic pt-0.5">FLUX : 1.2 GB/S</span>
+                            <div className="h-4 w-px bg-foreground/10" />
+                            <div className="flex items-center gap-2.5">
+                                <Activity className="size-4 text-emerald-500" />
+                                <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest tabular-nums">4.8 GB/s</span>
                             </div>
                         </div>
 
-                        {/* Alerts Hub */}
+                        {/* Messages */}
                         <button
-                            onClick={() => navigate('/notifications')}
-                            className="relative p-4 text-slate-500 hover:text-[#FF6600] hover:bg-[#FF6600]/10 rounded-2xl transition-all border-2 border-white/5 hover:border-[#FF6600]/40 shadow-3xl group"
+                            onClick={() => { navigate('/messages'); setUnreadMessages(0); }}
+                            className="relative size-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted bg-muted border border-border rounded-xl transition-all group"
                         >
-                            <Bell className="size-6 transition-transform group-hover:rotate-12" />
-                            {unreadCount > 0 && (
-                                <span className="absolute -top-1.5 -right-1.5 size-7 bg-[#FF6600] text-[10px] font-black text-white rounded-xl flex items-center justify-center shadow-3xl shadow-[#FF6600]/40 border-4 border-[#0A0D14] animate-bounce">
-                                    {unreadCount > 9 ? '9+' : unreadCount}
+                            <MessageSquare className="size-4" />
+                            {unreadMessages > 0 && (
+                                <span className="absolute -top-1 -right-1 size-4 bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center border border-background">
+                                    {unreadMessages > 9 ? '9+' : unreadMessages}
                                 </span>
                             )}
                         </button>
 
-                        <div className="h-10 w-px bg-white/10 mx-2 hidden sm:block"></div>
-
-                        {/* Identity Card - Premium */}
+                        {/* Notifications Hub */}
                         <button
-                            onClick={() => navigate('/profile')}
-                            className="flex items-center gap-6 group hover:bg-white/[0.03] p-2 pr-6 rounded-[1.5rem] transition-all border-2 border-transparent hover:border-white/5"
+                            id="btn-notifications"
+                            onClick={() => navigate('/notifications')}
+                            className="relative size-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted bg-muted border border-border rounded-xl transition-all group"
                         >
-                            <div className="size-14 rounded-2xl bg-white/5 p-1 border-2 border-white/10 transition-all group-hover:scale-105 group-hover:rotate-6 overflow-hidden shadow-3xl relative">
-                                <div className="absolute inset-0 bg-gradient-to-tr from-[#FF6600]/20 to-transparent" />
+                            <Bell className="size-4 transition-transform group-hover:rotate-6" />
+                            {unreadCount > 0 && (
+                                <span className="absolute top-2 right-2 size-2 bg-primary rounded-full border-2 border-background" />
+                            )}
+                        </button>
+
+                        {/* Identity Module */}
+                        <button
+                            id="btn-profile-hub"
+                            onClick={() => navigate('/profile')}
+                            className="flex items-center gap-3 group p-0.5 pr-3 rounded-xl bg-muted border border-border hover:border-primary/40 transition-all"
+                        >
+                            <div className="size-8 rounded-lg bg-primary p-0.5 transition-all group-hover:scale-105 overflow-hidden">
                                 <img
                                     src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id || 'guest'}`}
                                     alt="Identité"
-                                    className="w-full h-full object-cover rounded-xl relative z-10"
+                                    className="w-full h-full object-cover rounded shadow-md bg-background"
                                 />
                             </div>
-                            <div className="hidden sm:flex flex-col items-start leading-none gap-2">
-                                <p className="text-[12px] font-black text-white uppercase truncate max-w-[160px] transition-colors group-hover:text-[#FF6600] tracking-[0.1em] italic">
-                                    {user?.nom_complet || 'MEMBRE BCA'}
+                            <div className="hidden sm:flex flex-col items-start text-left">
+                                <p className="text-[10px] font-bold text-foreground">
+                                    {user?.nom_complet || 'Utilisateur'}
                                 </p>
-                                <div className="flex items-center gap-3 uppercase">
-                                    <div className="size-2 bg-[#FF6600] rounded-full shadow-[0_0_10px_rgba(255,102,0,0.5)]" />
-                                    <span className="text-[9px] font-black text-slate-600 tracking-[0.2em] italic">{user?.role === 'fournisseur' ? 'MARCHAND' : user?.role || 'CLIENT'}</span>
-                                </div>
+                                <span className="text-[8px] font-bold text-primary uppercase opacity-70 leading-none">{user?.role === 'fournisseur' ? 'Marchand' : 'Administrateur'}</span>
                             </div>
                         </button>
                     </div>
                 </header>
 
-                {/* Dashboard Viewport */}
-                <main className={`flex-1 overflow-y-auto relative scroll-smooth thin-scrollbar ${noPadding ? '' : 'p-0 pb-32'}`}>
-                    {/* Perspective Line */}
-                    <div className="absolute top-0 left-12 w-px h-full bg-white/5 pointer-events-none hidden md:block" />
-                    <div className="absolute top-0 right-12 w-px h-full bg-white/5 pointer-events-none hidden md:block" />
-
-                    <div className={cn(
-                        "relative z-10 w-full animate-in fade-in slide-in-from-bottom-4 duration-1000",
-                        !noPadding && "max-w-[1600px] mx-auto pt-16 px-12 lg:px-24"
-                    )}>
+                {/* Intelligence Viewport */}
+                <main data-lenis-prevent="true" className={cn(
+                    "flex-1 overflow-y-auto scroll-smooth relative bg-background",
+                    noPadding ? "" : "p-4 md:p-6 pb-10"
+                )}>
+                    {/* Visual Grain & Scale Layer */}
+                    <div className="absolute inset-x-0 top-0 h-[800px] bg-gradient-to-b from-primary/[0.01] to-transparent pointer-events-none" />
+                    
+                    <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={cn(
+                            "relative z-10 w-full",
+                            !noPadding && "max-w-[1700px] mx-auto"
+                        )}
+                    >
                         {children}
-                    </div>
+                    </motion.div>
 
-                    {/* Infrastructure Footer Mini */}
-                    <div className="mt-32 py-20 px-12 lg:px-24 border-t-4 border-white/5 flex flex-col sm:flex-row items-center justify-between gap-10 opacity-30 group hover:opacity-100 transition-opacity duration-1000">
-                        <div className="flex items-center gap-6">
-                            <div className="size-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-[#FF6600]/10 transition-colors">
-                                <Zap className="size-6 text-[#FF6600] group-hover:animate-pulse" />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <p className="text-[10px] font-black uppercase tracking-[0.4em] italic">CONNECT ALPHA NODE v4.51.0</p>
-                                <p className="text-[9px] font-black text-slate-700 uppercase tracking-[0.3em] italic">LIAISON QUANTIQUE SÉCURISÉE</p>
-                            </div>
+                    {/* Infrastructure Ledger Footer */}
+                    <footer className="mt-40 py-12 px-10 border-t border-white/[0.02] flex flex-col sm:flex-row items-center justify-between gap-5 opacity-20 hover:opacity-100 transition-opacity duration-1000">
+                        <div className="flex items-center gap-5">
+                            <Zap className="size-5 text-primary animate-pulse" />
+                            <p className="text-[10px] font-black uppercase  text-muted-foreground pt-0.5">BCA_TERMINAL_CORE_8.2X</p>
                         </div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.5em] italic">© 2026 BCA CONNECT • GOUVERNANCE EXÉCUTIVE SANS RÉSERVE</p>
-                    </div>
+                        <p className="text-[10px] font-black uppercase  text-muted-foreground pt-0.5">© 2026 BCA_CONNECT • GOUVERNANCE_NODALE_SÉCURISÉE</p>
+                    </footer>
                 </main>
             </div>
         </div>

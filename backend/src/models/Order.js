@@ -17,7 +17,7 @@ const Order = sequelize.define('Order', {
     },
     statut: {
         type: DataTypes.STRING(32),
-        defaultValue: 'payé',
+        defaultValue: 'en_attente_paiement',
     },
     mode_resilience: {
         type: DataTypes.BOOLEAN,

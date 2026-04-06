@@ -1,46 +1,53 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useLanguage } from '../context/LanguageContext';
 import DashboardLayout from '../components/layout/DashboardLayout';
-import { Input } from '../components/ui/Input';
-import { Button } from '../components/ui/Button';
 import { cn } from '../lib/utils';
 import {
-    CalendarDays,
-    BadgeCheck,
-    Edit3,
-    ArrowRight,
-    Trash2,
-    Shield,
-    User,
-    BellRing,
-    Clock,
-    Zap,
-    Sparkles,
-    Satellite,
-    Fingerprint,
-    ShieldAlert
+    CalendarDays, BadgeCheck, Edit3, Trash2, Shield,
+    User as UserIcon, ShieldAlert, Zap, RefreshCw,
+    Clock, Lock, Settings, CheckCircle2, Globe,
+    Activity, ArrowRight, Bell, Mail
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const Toggle = ({ enabled, onChange }) => (
+const Toggle = ({ enabled, onChange, id }) => (
     <button
+        id={id}
         onClick={() => onChange(!enabled)}
         className={cn(
-            "relative inline-flex h-8 w-16 shrink-0 cursor-pointer items-center rounded-2xl transition-all duration-700 border-2",
-            enabled ? "bg-[#FF6600] border-[#FF6600] shadow-[0_0_15px_rgba(255,102,0,0.4)]" : "bg-white/5 border-white/10"
+            "relative inline-flex h-7 w-14 shrink-0 cursor-pointer items-center rounded-full transition-all duration-300 border",
+            enabled ? "bg-primary border-primary" : "bg-muted border-border"
         )}
     >
-        <div
-            className={cn(
-                "pointer-events-none block h-5 w-5 rounded-lg bg-white shadow-xl transition-all duration-700",
-                enabled ? "translate-x-9 rotate-45" : "translate-x-1.5"
-            )}
+        <motion.div
+            animate={{ x: enabled ? 28 : 2 }}
+            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            className="size-5 rounded-full bg-white shadow-sm"
         />
     </button>
 );
 
+const FormField = ({ label, icon: Icon, ...props }) => (
+    <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</label>
+        <div className="relative">
+            {Icon && <Icon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />}
+            <input
+                className={cn(
+                    "h-10 w-full bg-background border border-border rounded-xl text-sm outline-none focus:border-primary/50 transition-all text-foreground placeholder:text-muted-foreground",
+                    Icon ? "pl-10 pr-3" : "px-3"
+                )}
+                {...props}
+            />
+        </div>
+    </div>
+);
+
 const UserProfile = () => {
+    const { t } = useLanguage();
     const { user, updateProfile, deleteAccount } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
@@ -61,340 +68,262 @@ const UserProfile = () => {
     const [email, setEmail] = useState(user?.email || '');
     const [motDePasse, setMotDePasse] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-
     const [emailAlerts, setEmailAlerts] = useState(true);
     const [pushNotifs, setPushNotifs] = useState(false);
-
     const [isUpdating, setIsUpdating] = useState(false);
 
     const handleUpdate = async (e) => {
         if (e) e.preventDefault();
-
         if (motDePasse && motDePasse !== confirmPassword) {
-            toast.error('LES MOTS DE PASSE NE CORRESPONDENT PAS.');
+            toast.error('Les mots de passe ne correspondent pas.');
             return;
         }
-
         setIsUpdating(true);
         try {
-            await updateProfile({
-                nom_complet: nomComplet,
-                telephone,
-                email,
-                mot_de_passe: motDePasse || undefined
-            });
-            toast.success('PROFIL EXÉCUTIF MIS À JOUR AVEC SUCCÈS !');
+            await updateProfile({ nom_complet: nomComplet, telephone, email, mot_de_passe: motDePasse || undefined });
+            toast.success('Profil mis à jour avec succès.');
             setMotDePasse('');
             setConfirmPassword('');
         } catch (error) {
-            toast.error(error.response?.data?.message || 'ERREUR LORS DE LA MISE À JOUR.');
+            toast.error(error.response?.data?.message || 'Erreur lors de la mise à jour.');
         } finally {
             setIsUpdating(false);
         }
     };
 
     const handleDelete = async () => {
-        if (window.confirm("ÊTES-VOUS SÛR DE VOULOIR SUPPRIMER VOTRE COMPTE EXÉCUTIF ? CETTE ACTION EST IRRÉVERSIBLE.")) {
+        if (window.confirm("Confirmer la suppression du compte ? Cette action est irréversible.")) {
             try {
                 await deleteAccount();
-                toast.success("COMPTE RÉSEAU SUPPRIMÉ.");
-            } catch (error) {
-                toast.error('ERREUR LORS DE LA SUPPRESSION DU COMPTE.');
+                toast.success("Compte supprimé.");
+            } catch {
+                toast.error('Erreur lors de la suppression.');
             }
         }
     };
 
-    const getInitials = (name) => {
-        return name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'BC';
-    };
+    const getInitials = (name) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'BC';
 
     return (
-        <DashboardLayout title={activeTab === 'profile' ? "PROFIL EXÉCUTIF" : "PARAMÈTRES RÉSEAU"}>
-            <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-1000 pb-32">
+        <DashboardLayout title={activeTab === 'profile' ? "Mon Profil" : "Paramètres"}>
+            <div className="space-y-6 pb-10">
 
-                {/* Tab Navigation */}
-                <div className="flex items-center gap-4 bg-white/[0.02] p-2 rounded-[2rem] border-4 border-white/5 w-fit">
-                    <button
-                        onClick={() => handleTabChange('profile')}
-                        className={cn(
-                            "px-10 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.4em] italic transition-all duration-700",
-                            activeTab === 'profile'
-                                ? "bg-[#FF6600] text-white shadow-3xl shadow-[#FF6600]/20 scale-105"
-                                : "text-slate-500 hover:text-white"
-                        )}
-                    >
-                        IDENTITÉ
-                    </button>
-                    <button
-                        onClick={() => handleTabChange('settings')}
-                        className={cn(
-                            "px-10 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.4em] italic transition-all duration-700",
-                            activeTab === 'settings'
-                                ? "bg-[#FF6600] text-white shadow-3xl shadow-[#FF6600]/20 scale-105"
-                                : "text-slate-500 hover:text-white"
-                        )}
-                    >
-                        PRÉFÉRENCES
-                    </button>
-                </div>
-
-                {/* Hero Profile */}
-                <div className="relative overflow-hidden p-12 md:p-20 bg-white group border-x-[16px] border-[#FF6600] rounded-[4rem] shadow-3xl">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,102,0,0.1),transparent_70%)] opacity-50" />
-                    <div className="absolute top-0 right-0 size-[50rem] bg-[#FF6600]/5 rounded-full blur-[200px] -mt-64 -mr-64 group-hover:scale-125 transition-transform duration-[4s]" />
-
-                    <div className="flex flex-col md:flex-row items-center gap-16 relative z-10">
-                        <div className="relative shrink-0">
-                            <div className="size-48 rounded-[3rem] border-8 border-black shadow-3xl overflow-hidden bg-black flex items-center justify-center group/avatar transition-all duration-1000 hover:scale-105 hover:rotate-3">
-                                <div className="absolute inset-0 bg-gradient-to-tr from-[#FF6600]/40 via-transparent to-transparent opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-1000" />
-                                {user?.photo_url ? (
-                                    <img src={user.photo_url} alt="" className="w-full h-full object-cover relative z-10" />
-                                ) : (
-                                    <span className="text-6xl font-black text-[#FF6600] italic uppercase tracking-tighter relative z-10">{getInitials(user?.nom_complet)}</span>
-                                )}
+                {/* Header card */}
+                <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5">
+                        <div className="flex items-center gap-4">
+                            <div className="size-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                                <UserIcon className="size-6" />
                             </div>
-                            <button className="absolute -bottom-4 -right-4 bg-[#FF6600] text-white p-5 rounded-2xl shadow-3xl hover:scale-110 hover:rotate-12 transition-all border-8 border-white group-hover:bg-black group-hover:text-[#FF6600] duration-500">
-                                <Edit3 className="size-6" />
+                            <div>
+                                <h2 className="text-lg font-bold text-foreground">Gestion du compte</h2>
+                                <p className="text-xs text-muted-foreground">ID: {user?.id?.slice(0, 8).toUpperCase()}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            {/* Tabs */}
+                            <div className="flex items-center bg-muted p-1 rounded-xl border border-border">
+                                <button
+                                    onClick={() => handleTabChange('profile')}
+                                    className={cn("px-4 h-8 rounded-lg text-xs font-semibold transition-all", activeTab === 'profile' ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                                >
+                                    Profil
+                                </button>
+                                <button
+                                    onClick={() => handleTabChange('settings')}
+                                    className={cn("px-4 h-8 rounded-lg text-xs font-semibold transition-all", activeTab === 'settings' ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                                >
+                                    Paramètres
+                                </button>
+                            </div>
+                            <button
+                                onClick={handleUpdate}
+                                disabled={isUpdating}
+                                className="h-9 px-5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 disabled:opacity-60"
+                            >
+                                {isUpdating ? <RefreshCw className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+                                {isUpdating ? 'Enregistrement...' : 'Enregistrer'}
                             </button>
                         </div>
-
-                        <div className="flex-1 text-center md:text-left space-y-8">
-                            <div className="space-y-4">
-                                <div className="inline-flex items-center gap-4 px-6 py-2 bg-[#FF6600]/10 border-2 border-[#FF6600]/20 rounded-2xl text-[#FF6600] text-[10px] font-black uppercase tracking-[0.4em] italic leading-none pt-1 shadow-lg">
-                                    <div className="size-2 rounded-full bg-[#FF6600] animate-pulse" />
-                                    {user?.role === 'fournisseur' ? 'MARCHAND CERTIFIÉ ELITE' : user?.role === 'admin' ? 'ADMINISTRATEUR RÉSEAU' : 'MEMBRE PRIVILÈGE BCA'}
-                                </div>
-                                <h2 className="text-6xl md:text-8xl font-black text-black tracking-tighter leading-[0.8] uppercase italic">
-                                    {user?.nom_complet?.split(' ')[0]} <br />
-                                    <span className="text-[#FF6600] not-italic underline decoration-black/10 decoration-8 underline-offset-[-15px]">{user?.nom_complet?.split(' ').slice(1).join(' ')}</span>
-                                </h2>
-                            </div>
-
-                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-12 opacity-60">
-                                <div className="flex items-center gap-4 group/info">
-                                    <CalendarDays className="size-6 text-[#FF6600] group-hover/info:rotate-12 transition-transform" />
-                                    <span className="text-[11px] font-black text-black uppercase tracking-[0.3em] italic pt-1 border-b-2 border-black/5 pb-1">INSCRIT EN {new Date(user?.createdAt).getFullYear()}</span>
-                                </div>
-                                <div className="flex items-center gap-4 group/info">
-                                    <BadgeCheck className="size-6 text-[#FF6600] group-hover/info:rotate-12 transition-transform" />
-                                    <span className="text-[11px] font-black text-black uppercase tracking-[0.3em] italic pt-1 border-b-2 border-black/5 pb-1">COMPTE CERTIFIÉ</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={handleUpdate}
-                            disabled={isUpdating}
-                            className="h-24 px-12 rounded-[2rem] bg-black text-white hover:bg-[#FF6600] font-black text-xs uppercase tracking-[0.4em] shadow-3xl transition-all duration-700 active:scale-95 shrink-0 border-0 italic group relative overflow-hidden"
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
-                            <span className="relative z-10 pt-1">{isUpdating ? 'SYNCHRONISATION...' : 'METTRE À JOUR'}</span>
-                        </button>
                     </div>
                 </div>
 
-                {activeTab === 'profile' ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                        <div className="lg:col-span-2 space-y-12">
-                            <div className="bg-white/[0.01] border-4 border-white/5 rounded-[4rem] overflow-hidden shadow-3xl group relative">
-                                <div className="absolute top-0 right-0 size-80 bg-[#FF6600]/5 rounded-full blur-[120px] -mr-40 -mt-40 group-hover:bg-[#FF6600]/10 transition-colors duration-1000" />
-
-                                <div className="px-10 py-8 border-b-4 border-white/5 bg-white/[0.02] flex items-center justify-between relative z-10">
-                                    <div className="flex items-center gap-6">
-                                        <div className="size-12 rounded-xl bg-[#FF6600]/10 flex items-center justify-center border-2 border-[#FF6600]/20 shadow-3xl">
-                                            <Fingerprint className="size-6 text-[#FF6600]" />
-                                        </div>
-                                        <h3 className="text-[12px] font-black text-white uppercase tracking-[0.4em] italic pt-1">INFORMATIONS D'IDENTITÉ</h3>
-                                    </div>
-                                </div>
-                                <div className="p-12 md:p-16 space-y-12 relative z-10">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-3 ml-2">
-                                                <div className="size-2 rounded-full bg-[#FF6600] animate-pulse" />
-                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">NOM COMPLET</label>
-                                            </div>
-                                            <input
-                                                className="h-16 w-full px-8 rounded-2xl bg-white/[0.03] border-4 border-white/5 focus:border-[#FF6600]/40 text-sm font-black uppercase tracking-widest italic text-white transition-all outline-none"
-                                                value={nomComplet}
-                                                onChange={(e) => setNomComplet(e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-3 ml-2">
-                                                <div className="size-2 rounded-full bg-[#FF6600] animate-pulse" />
-                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">TÉLÉPHONE RÉSEAU</label>
-                                            </div>
-                                            <input
-                                                type="tel"
-                                                className="h-16 w-full px-8 rounded-2xl bg-white/[0.03] border-4 border-white/5 focus:border-[#FF6600]/40 text-sm font-black uppercase tracking-widest italic text-white transition-all outline-none"
-                                                value={telephone}
-                                                onChange={(e) => setTelephone(e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-3 ml-2">
-                                            <div className="size-2 rounded-full bg-[#FF6600] animate-pulse" />
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">ADRESSE EMAIL SÉCURISÉE</label>
-                                        </div>
-                                        <input
-                                            type="email"
-                                            className="h-16 w-full px-8 rounded-2xl bg-white/[0.03] border-4 border-white/5 focus:border-[#FF6600]/40 text-sm font-black uppercase tracking-widest italic text-white transition-all outline-none"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                        />
-                                    </div>
-                                </div>
+                <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+                    {/* Left — Avatar card */}
+                    <div className="xl:col-span-1 space-y-4">
+                        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                            {/* Avatar area */}
+                            <div className="h-24 bg-gradient-to-br from-primary/10 to-muted relative">
+                                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, hsl(var(--primary)) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                             </div>
-
-                            {/* Activity Card */}
-                            <div className="bg-white group rounded-[4rem] border-x-[16px] border-[#FF6600] p-12 md:p-16 flex flex-col md:flex-row items-center justify-between gap-12 shadow-3xl relative overflow-hidden">
-                                <div className="absolute top-0 right-0 size-96 bg-[#FF6600]/10 rounded-full blur-[100px] -mr-48 -mt-48 transition-transform group-hover:scale-125 duration-[4s]" />
-
-                                <div className="space-y-8 text-center md:text-left relative z-10">
-                                    <div className="inline-flex items-center gap-3 px-6 py-2 bg-[#FF6600]/10 border-2 border-[#FF6600]/20 rounded-xl">
-                                        <Sparkles className="size-4 text-[#FF6600]" />
-                                        <p className="text-[10px] font-black text-[#FF6600] uppercase tracking-[0.4em] italic pt-0.5">SCORE DE FIDÉLITÉ EXÉCUTIF</p>
+                            <div className="px-5 pb-5 -mt-10 relative">
+                                <div className="relative w-fit">
+                                    <div className="size-20 rounded-2xl border-4 border-card bg-muted flex items-center justify-center overflow-hidden shadow-md">
+                                        {user?.photo_url
+                                            ? <img src={user.photo_url} alt="" className="w-full h-full object-cover" />
+                                            : <span className="text-2xl font-bold text-primary">{getInitials(user?.nom_complet)}</span>
+                                        }
                                     </div>
-                                    <div className="flex items-baseline justify-center md:justify-start gap-6">
-                                        <span className="text-8xl font-black text-black italic tracking-tighter uppercase leading-none">{user?.points_fidelite || 0}</span>
-                                        <div className="flex flex-col">
-                                            <span className="text-2xl font-black text-[#FF6600] italic uppercase tracking-tighter leading-none">POINTS</span>
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic mt-2">ACTIVE NODE</span>
-                                        </div>
-                                    </div>
-                                    <p className="text-sm text-slate-500 font-extrabold max-w-sm uppercase tracking-widest leading-relaxed italic">CONTINUEZ À UTILISER L'INFRASTRUCTURE BCA POUR DÉBLOQUER DE NOUVEAUX PRIVILÈGES RÉSEAU.</p>
+                                    <button className="absolute -bottom-1 -right-1 size-7 bg-primary text-primary-foreground rounded-lg shadow-sm flex items-center justify-center hover:bg-primary/90 transition-colors">
+                                        <Edit3 className="size-3.5" />
+                                    </button>
                                 </div>
-                                <div className="flex-1 max-w-sm w-full space-y-6 relative z-10">
-                                    <div className="flex justify-between text-[11px] font-black uppercase tracking-[0.4em] italic border-b-2 border-black/5 pb-2">
-                                        <span className="text-slate-400">PROCHAIN PALIER</span>
-                                        <span className="text-[#FF6600]">85% SYNC</span>
+                                <div className="mt-3 space-y-1">
+                                    <h4 className="text-sm font-bold text-foreground">{user?.nom_complet}</h4>
+                                    <div className="flex items-center gap-1.5">
+                                        <BadgeCheck className="size-3.5 text-primary" />
+                                        <span className="text-xs text-primary font-medium">
+                                            {user?.role === 'fournisseur' ? 'Marchand certifié' : 'Membre vérifié'}
+                                        </span>
                                     </div>
-                                    <div className="h-6 bg-black/5 rounded-full overflow-hidden border-4 border-white shadow-inner p-1">
-                                        <div className="bg-[#FF6600] h-full w-[85%] rounded-full shadow-[0_0_20px_rgba(255,102,0,0.4)] transition-all duration-[2s] animate-pulse"></div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 mt-4">
+                                    <div className="bg-muted rounded-xl p-3 text-center border border-border">
+                                        <p className="text-lg font-bold text-primary tabular-nums">{user?.points_fidelite || 0}</p>
+                                        <p className="text-xs text-muted-foreground">Points</p>
                                     </div>
+                                    <div className="bg-muted rounded-xl p-3 text-center border border-border">
+                                        <p className="text-lg font-bold text-foreground">{new Date(user?.createdAt).getFullYear()}</p>
+                                        <p className="text-xs text-muted-foreground">Membre depuis</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
+                                    <CalendarDays className="size-3.5 text-primary/60" />
+                                    <span>Inscrit le {new Date(user?.createdAt).toLocaleDateString('fr-GN')}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="space-y-10">
-                            <div className="bg-white group rounded-[4rem] border-x-[16px] border-black p-10 space-y-8 shadow-3xl relative overflow-hidden">
-                                <div className="absolute top-0 right-0 size-64 bg-black/10 rounded-full blur-[80px] -mr-32 -mt-32" />
-
-                                <div className="size-20 rounded-[2rem] bg-black flex items-center justify-center text-[#FF6600] shadow-3xl group-hover:rotate-12 transition-transform duration-700 relative z-10">
-                                    <ShieldAlert className="size-10" />
-                                </div>
-                                <div className="space-y-6 relative z-10">
-                                    <h4 className="text-2xl font-black text-black uppercase leading-tight italic tracking-tighter">APPUI <br /> SÉCURITÉ</h4>
-                                    <p className="text-sm text-slate-500 font-extrabold leading-relaxed italic uppercase tracking-widest border-l-4 border-black/10 pl-6">
-                                        VOTRE INTÉGRITÉ EST NOTRE PRIORITÉ. POUR TOUTE ACTIVITÉ ATYPIQUE, CONTACTEZ NOTRE CENTRE DE RÉPONSE D'ÉLITE.
-                                    </p>
-                                </div>
-                                <button className="w-full h-16 rounded-2xl bg-black text-white hover:bg-[#FF6600] text-[10px] font-black uppercase tracking-[0.4em] transition-all duration-700 flex items-center justify-between px-8 italic shadow-3xl relative z-10">
-                                    SUPPORT EXÉCUTIF
-                                    <Satellite className="size-5 animate-pulse" />
-                                </button>
-                            </div>
+                        <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex gap-3">
+                            <Shield className="size-5 text-primary shrink-0 mt-0.5" />
+                            <p className="text-xs text-primary/80 leading-relaxed">
+                                Votre identité est chiffrée et sécurisée sur le réseau BCA Connect.
+                            </p>
                         </div>
                     </div>
-                ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                        <div className="lg:col-span-2 space-y-16">
-                            <div className="bg-white/[0.01] border-4 border-white/5 rounded-[4rem] overflow-hidden shadow-3xl group relative">
-                                <div className="absolute top-0 right-0 size-80 bg-[#FF6600]/5 rounded-full blur-[120px] -mr-40 -mt-40 group-hover:bg-[#FF6600]/10 transition-colors duration-1000" />
 
-                                <div className="px-10 py-8 border-b-4 border-white/5 bg-white/[0.02] flex items-center gap-6 relative z-10">
-                                    <div className="size-12 rounded-xl bg-[#FF6600]/10 flex items-center justify-center border-2 border-[#FF6600]/20 shadow-3xl">
-                                        <BadgeCheck className="size-6 text-[#FF6600]" />
-                                    </div>
-                                    <h3 className="text-[12px] font-black text-white uppercase tracking-[0.4em] italic pt-1">SÉCURITÉ DU CANAL ALPHA</h3>
-                                </div>
-                                <div className="p-12 md:p-16 space-y-12 relative z-10">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-3 ml-2">
-                                                <div className="size-2 rounded-full bg-[#FF6600] animate-pulse" />
-                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">NOUVEAU CODE D'ACCÈS</label>
-                                            </div>
-                                            <input
-                                                type="password"
-                                                placeholder="••••••••"
-                                                className="h-16 w-full px-8 rounded-2xl bg-white/[0.03] border-4 border-white/5 focus:border-[#FF6600]/40 text-sm font-black transition-all outline-none text-white"
-                                                value={motDePasse}
-                                                onChange={(e) => setMotDePasse(e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-3 ml-2">
-                                                <div className="size-2 rounded-full bg-[#FF6600] animate-pulse" />
-                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">CONFIRMATION</label>
-                                            </div>
-                                            <input
-                                                type="password"
-                                                placeholder="••••••••"
-                                                className="h-16 w-full px-8 rounded-2xl bg-white/[0.03] border-4 border-white/5 focus:border-[#FF6600]/40 text-sm font-black transition-all outline-none text-white"
-                                                value={confirmPassword}
-                                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-6 p-8 bg-white/[0.02] rounded-[2rem] border-2 border-white/5 italic">
-                                        <div className="size-10 rounded-xl bg-[#FF6600]/10 flex items-center justify-center border-2 border-[#FF6600]/20">
-                                            <Clock className="size-5 text-[#FF6600]" />
-                                        </div>
-                                        <p className="text-[11px] text-slate-500 font-extrabold uppercase tracking-[0.2em] italic">LAISSEZ LE CHAMP VIDE POUR CONSERVER L'INDEXATION ACTUELLE.</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="p-12 md:p-16 bg-white rounded-[4rem] border-x-[16px] border-rose-600 flex flex-col md:flex-row items-center justify-between gap-12 shadow-3xl group relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-r from-rose-500/5 via-transparent to-transparent opacity-50" />
-
-                                <div className="space-y-4 text-center md:text-left relative z-10">
-                                    <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-rose-500/10 rounded-lg">
-                                        <ShieldAlert className="size-4 text-rose-500" />
-                                        <h3 className="text-[10px] font-black text-rose-600 uppercase tracking-[0.4em] italic pt-0.5">TERMINAL DE SUPPRESSION</h3>
-                                    </div>
-                                    <h3 className="text-4xl font-black text-black uppercase tracking-tighter italic">ZONE DE <br /> DANGER CRITIQUE</h3>
-                                    <p className="text-sm text-slate-500 font-extrabold max-w-sm italic uppercase tracking-widest border-l-4 border-rose-500/20 pl-6">LA SUPPRESSION DE VOTRE COMPTE EST DÉFINITIVE ET EFFACE TOUT VOTRE INDEX RÉSEAU.</p>
-                                </div>
-                                <button
-                                    onClick={handleDelete}
-                                    className="h-24 px-12 rounded-[2rem] bg-black text-white hover:bg-rose-600 font-black text-xs uppercase tracking-[0.4em] shadow-3xl flex items-center gap-6 border-0 transition-all duration-700 hover:scale-110 active:scale-95 italic group/delete relative overflow-hidden"
+                    {/* Right — Forms */}
+                    <div className="xl:col-span-3">
+                        <AnimatePresence mode="wait">
+                            {activeTab === 'profile' ? (
+                                <motion.div
+                                    key="profile"
+                                    initial={{ opacity: 0, x: 10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -10 }}
+                                    className="space-y-5"
                                 >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/delete:animate-[shimmer_2s_infinite]" />
-                                    <Trash2 className="size-6 relative z-10" />
-                                    <span className="relative z-10 pt-1">ÉJECTER LE COMPTE</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="space-y-10">
-                            <div className="bg-white/[0.01] border-4 border-white/5 rounded-[4rem] p-12 shadow-3xl group relative overflow-hidden">
-                                <div className="absolute top-0 right-0 size-64 bg-[#FF6600]/5 rounded-full blur-[100px] -mr-32 -mt-32 group-hover:bg-[#FF6600]/10 transition-colors duration-1000" />
-
-                                <h3 className="text-[12px] font-black text-white uppercase tracking-[0.5em] border-b-4 border-white/5 pb-8 mb-12 italic relative z-10">CANAUX DE FLUX</h3>
-                                <div className="space-y-12 relative z-10">
-                                    <div className="flex items-center justify-between gap-10 group/item">
-                                        <div className="space-y-2">
-                                            <p className="text-sm font-black text-white uppercase tracking-widest italic group-hover/item:text-[#FF6600] transition-colors">ALERTES EMAIL</p>
-                                            <p className="text-[10px] text-slate-600 font-black uppercase tracking-[0.2em] italic leading-none">RAPPORTS & ACTIVITÉ QUANTUM</p>
+                                    {/* Personal info */}
+                                    <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-5">
+                                        <div className="flex items-center gap-3 pb-4 border-b border-border">
+                                            <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                                                <UserIcon className="size-4 text-primary" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-bold text-foreground">Informations personnelles</h3>
+                                                <p className="text-xs text-muted-foreground">Mettez à jour vos informations de profil</p>
+                                            </div>
                                         </div>
-                                        <Toggle enabled={emailAlerts} onChange={setEmailAlerts} />
-                                    </div>
-                                    <div className="flex items-center justify-between gap-10 group/item">
-                                        <div className="space-y-2">
-                                            <p className="text-sm font-black text-white uppercase tracking-widest italic group-hover/item:text-[#FF6600] transition-colors">NOTIFICATIONS PUSH</p>
-                                            <p className="text-[10px] text-slate-600 font-black uppercase tracking-[0.2em] italic leading-none">ÉTAT DES COMMANDES RÉSEAU</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <FormField label="Nom complet" icon={UserIcon} value={nomComplet} onChange={e => setNomComplet(e.target.value)} placeholder="Votre nom complet" />
+                                            <FormField label="Téléphone" icon={Globe} type="tel" value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="+224 ..." />
                                         </div>
-                                        <Toggle enabled={pushNotifs} onChange={setPushNotifs} />
+                                        <FormField label="Adresse email" icon={Mail} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="votre@email.com" />
                                     </div>
-                                </div>
-                            </div>
-                        </div>
+
+                                    {/* Trust score */}
+                                    <div className="bg-primary rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                                        <div className="space-y-1">
+                                            <h4 className="text-sm font-bold text-primary-foreground">Score de confiance réseau</h4>
+                                            <p className="text-xs text-primary-foreground/70">
+                                                Stabilité : <span className="font-semibold text-primary-foreground">99% — Optimal</span>
+                                            </p>
+                                        </div>
+                                        <div className="size-12 rounded-xl bg-primary-foreground/10 border border-primary-foreground/20 flex items-center justify-center">
+                                            <Zap className="size-6 text-primary-foreground" />
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="settings"
+                                    initial={{ opacity: 0, x: 10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -10 }}
+                                    className="space-y-5"
+                                >
+                                    {/* Password */}
+                                    <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-5">
+                                        <div className="flex items-center gap-3 pb-4 border-b border-border">
+                                            <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                                                <Lock className="size-4 text-primary" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-bold text-foreground">Sécurité du compte</h3>
+                                                <p className="text-xs text-muted-foreground">Modifiez votre mot de passe</p>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <FormField label="Nouveau mot de passe" type="password" value={motDePasse} onChange={e => setMotDePasse(e.target.value)} placeholder="••••••••" />
+                                            <FormField label="Confirmer le mot de passe" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" />
+                                        </div>
+                                        <div className="flex items-center gap-3 p-3 bg-muted rounded-xl border border-border">
+                                            <Clock className="size-4 text-muted-foreground shrink-0" />
+                                            <p className="text-xs text-muted-foreground">Laissez vide pour conserver le mot de passe actuel.</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Notifications */}
+                                    <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4">
+                                        <div className="flex items-center gap-3 pb-4 border-b border-border">
+                                            <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                                                <Bell className="size-4 text-primary" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-bold text-foreground">Notifications</h3>
+                                                <p className="text-xs text-muted-foreground">Gérez vos préférences de notification</p>
+                                            </div>
+                                        </div>
+                                        {[
+                                            { id: 'email', label: 'Alertes email', desc: 'Recevez un résumé de vos transactions par email', value: emailAlerts, onChange: setEmailAlerts },
+                                            { id: 'push', label: 'Notifications push', desc: 'Notifications en temps réel sur vos commandes', value: pushNotifs, onChange: setPushNotifs },
+                                        ].map(item => (
+                                            <div key={item.id} className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border hover:border-primary/30 transition-colors">
+                                                <div>
+                                                    <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                                                    <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                                                </div>
+                                                <Toggle id={`toggle-${item.id}`} enabled={item.value} onChange={item.onChange} />
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Danger zone */}
+                                    <div className="bg-card border border-rose-500/20 rounded-2xl p-5 shadow-sm">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                            <div className="flex items-start gap-3 border-l-4 border-rose-500 pl-4">
+                                                <ShieldAlert className="size-5 text-rose-500 shrink-0 mt-0.5" />
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-foreground">Zone dangereuse</h4>
+                                                    <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+                                                        La suppression de votre compte est définitive. Toutes vos données seront effacées.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={handleDelete}
+                                                className="flex items-center gap-2 h-9 px-5 bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 hover:bg-rose-500 hover:text-white rounded-xl font-semibold text-sm transition-all shrink-0"
+                                            >
+                                                <Trash2 className="size-4" />
+                                                Supprimer le compte
+                                            </button>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
-                )}
+                </div>
             </div>
         </DashboardLayout>
     );

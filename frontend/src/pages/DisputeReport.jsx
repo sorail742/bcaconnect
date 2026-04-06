@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import DashboardLayout from '../components/layout/DashboardLayout';
-import {
-    AlertTriangle, Send, ChevronLeft, ShieldCheck,
-    Clock, ChevronDown, Activity, Zap, Sparkles,
-    ShieldAlert, Fingerprint, Satellite, Scale
-} from 'lucide-react';
+import { AlertTriangle, ChevronLeft, ShieldCheck, Clock, ChevronDown, Activity, Sparkles, Scale, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -15,174 +11,140 @@ const DisputeReport = () => {
     const { orderId } = useParams();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    const [disputeData, setDisputeData] = useState({
-        type: 'qualite',
-        description: '',
-        defenseur_id: ''
-    });
+    const [disputeData, setDisputeData] = useState({ type: 'qualite', description: '' });
     const [mediationResult, setMediationResult] = useState(null);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!disputeData.description.trim()) { toast.warning('Description requise.'); return; }
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.post(`${API_URL}/disputes`, {
-                commande_id: orderId,
-                ...disputeData
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
+            const response = await axios.post(`${API_URL}/disputes`, { commande_id: orderId, ...disputeData },
+                { headers: { Authorization: `Bearer ${token}` } });
             setMediationResult(response.data);
-            toast.success("PROTOCOLE DE MÉDIATION IA BCA ACTIVÉ AVEC SUCCÈS.");
-        } catch (error) {
-            toast.error("ÉCHEC DE L'OUVERTURE DU DOSSIER DE LITIGE.");
+            toast.success('Litige ouvert avec succès.');
+        } catch {
+            toast.error("Échec de l'ouverture du dossier.");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <DashboardLayout title="CENTRE DE RÉSOLUTION EXÉCUTIF">
-            <div className="max-w-4xl mx-auto space-y-16 animate-in fade-in slide-in-from-bottom-12 duration-1000 pb-32">
+        <DashboardLayout title="Résolution de litige">
+            <div className="max-w-3xl mx-auto space-y-6 pb-10">
 
-                {/* Tactical Back Navigation */}
-                <button
-                    onClick={() => navigate(-1)}
-                    className="flex items-center gap-6 text-slate-600 hover:text-[#FF6600] transition-all duration-700 group font-black uppercase tracking-[0.5em] text-[10px] italic pt-1 border-b-2 border-transparent hover:border-[#FF6600] pb-2"
-                >
-                    <div className="p-3 rounded-2xl bg-white/5 border-2 border-white/5 group-hover:border-[#FF6600]/40 group-hover:rotate-12 transition-all">
-                        <ChevronLeft className="size-5" />
+                {/* Header */}
+                <div className="bg-card border border-border rounded-2xl p-5 shadow-sm flex items-center gap-4">
+                    <button onClick={() => navigate(-1)} className="size-9 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-all">
+                        <ArrowLeft className="size-4" />
+                    </button>
+                    <div className="flex items-center gap-3">
+                        <div className="size-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+                            <AlertTriangle className="size-5 text-rose-500" />
+                        </div>
+                        <div>
+                            <h2 className="text-base font-bold text-foreground">Litige — Commande</h2>
+                            <div className="flex items-center gap-2 mt-0.5">
+                                <div className="size-1.5 rounded-full bg-rose-500 animate-pulse" />
+                                <p className="text-xs text-muted-foreground">Résolution en cours — {new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}</p>
+                            </div>
+                        </div>
                     </div>
-                    TERMINER L'ANALYSE DE FLUX
-                </button>
+                </div>
 
                 {!mediationResult ? (
-                    <div className="bg-white/[0.01] border-[12px] border-white/5 rounded-[5rem] p-16 md:p-24 shadow-3xl relative overflow-hidden group/form">
-                        <div className="absolute inset-x-0 bottom-0 h-1 bg-[#FF6600]/20 blur-2xl opacity-0 group-hover/form:opacity-100 transition-opacity duration-1000" />
-                        <div className="absolute top-0 right-0 size-96 bg-rose-500/5 rounded-full blur-[150px] -mr-48 -mt-48 transition-all duration-[4s]" />
-
-                        <div className="relative z-10 flex flex-col md:flex-row items-center gap-12 mb-20 border-b-4 border-white/5 pb-16">
-                            <div className="size-28 rounded-[2.5rem] bg-rose-500/10 border-4 border-rose-500/20 flex items-center justify-center text-rose-500 shadow-3xl group-hover/form:rotate-12 transition-transform duration-1000">
-                                <AlertTriangle className="size-14" />
+                    <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-6">
+                        <div className="flex items-center gap-4 pb-5 border-b border-border">
+                            <div className="size-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+                                <AlertTriangle className="size-5 text-rose-500" />
                             </div>
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-4">
-                                    <div className="size-3 rounded-full bg-rose-500 animate-pulse shadow-[0_0_15px_rgba(244,63,94,0.5)]" />
-                                    <span className="text-[12px] font-black text-rose-500 uppercase tracking-[0.6em] italic leading-none pt-1">ALERTE DE CONFORMITÉ ALPHA v4.0</span>
-                                </div>
-                                <h2 className="text-5xl md:text-7xl font-black italic tracking-tighter text-white uppercase leading-none">DOSSIER DE <br /><span className="text-rose-500 not-italic">LITIGE.</span></h2>
+                            <div>
+                                <h3 className="text-sm font-bold text-foreground">Ouverture d'un dossier de litige</h3>
+                                <p className="text-xs text-muted-foreground mt-0.5">Décrivez précisément le problème rencontré</p>
                             </div>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-16 relative z-10">
-                            <div className="space-y-6">
-                                <label className="text-[10px] font-black uppercase tracking-[0.6em] text-slate-700 ml-8 italic leading-none pt-1 flex items-center gap-4">
-                                    <Fingerprint className="size-4" />
-                                    CLASSIFICATION DE L'INCIDENT RÉSEAU *
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                                    <Activity className="size-3.5 text-primary" /> Type d'incident
                                 </label>
-                                <div className="relative group/select">
-                                    <div className="absolute inset-0 bg-[#FF6600]/5 blur-xl opacity-0 group-focus-within/select:opacity-100 transition-opacity" />
+                                <div className="relative">
                                     <select
-                                        className="w-full h-24 bg-black border-4 border-white/5 rounded-[2.5rem] px-12 text-xl font-black italic focus:outline-none focus:border-[#FF6600]/40 focus:ring-8 focus:ring-[#FF6600]/5 shadow-3xl appearance-none uppercase tracking-widest text-white transition-all duration-700 relative z-10"
+                                        className="w-full h-10 bg-background border border-border rounded-xl px-3 text-sm focus:outline-none focus:border-primary/50 transition-all text-foreground appearance-none"
                                         value={disputeData.type}
                                         onChange={e => setDisputeData({ ...disputeData, type: e.target.value })}
                                     >
-                                        <option value="qualite">UNITÉ NON CONFORME AUX STANDARDS BCA</option>
-                                        <option value="livraison">DÉFAILLANCE LOGISTIQUE / RUPTURE DE FLUX</option>
-                                        <option value="paiement">ANOMALIE DE FACTURATION / PROTOCOLE GNF</option>
-                                        <option value="autre">INCIDENT CRITIQUE NON RÉPERTORIÉ</option>
+                                        <option value="qualite">Produit non conforme</option>
+                                        <option value="livraison">Problème de livraison</option>
+                                        <option value="paiement">Anomalie de facturation</option>
+                                        <option value="autre">Autre incident</option>
                                     </select>
-                                    <div className="absolute right-12 top-1/2 -translate-y-1/2 pointer-events-none text-[#FF6600] group-hover/select:scale-125 transition-transform z-20">
-                                        <ChevronDown className="size-10" />
-                                    </div>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                                 </div>
                             </div>
 
-                            <div className="space-y-6">
-                                <label className="text-[10px] font-black uppercase tracking-[0.6em] text-slate-700 ml-8 italic leading-none pt-1 flex items-center gap-4">
-                                    <Activity className="size-4" />
-                                    EXPOSÉ DES MOTIFS / PREUVES LITTÉRALES *
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                                    <Activity className="size-3.5 text-primary" /> Description détaillée
                                 </label>
-                                <div className="relative group/text">
-                                    <div className="absolute inset-0 bg-[#FF6600]/5 blur-xl opacity-0 group-focus-within/text:opacity-100 transition-opacity" />
-                                    <textarea
-                                        className="w-full h-80 bg-black border-4 border-white/5 rounded-[3rem] p-12 text-xl font-black italic focus:outline-none focus:border-[#FF6600]/40 focus:ring-8 focus:ring-[#FF6600]/5 shadow-3xl resize-none placeholder:text-slate-800 uppercase tracking-widest leading-relaxed scrollbar-hide relative z-10 text-white transition-all duration-700"
-                                        placeholder="DÉTAILLEZ PRÉCISÉMENT L'ANOMALIE POUR L'ARBITRAGE IA..."
-                                        value={disputeData.description}
-                                        onChange={e => setDisputeData({ ...disputeData, description: e.target.value })}
-                                        required
-                                    />
-                                </div>
+                                <textarea
+                                    className="w-full h-40 bg-background border border-border rounded-xl p-3 text-sm focus:outline-none focus:border-primary/50 transition-all text-foreground resize-none placeholder:text-muted-foreground"
+                                    placeholder="Décrivez précisément le problème rencontré..."
+                                    value={disputeData.description}
+                                    onChange={e => setDisputeData({ ...disputeData, description: e.target.value })}
+                                    required
+                                />
                             </div>
 
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full h-28 bg-[#FF6600] text-white rounded-[3rem] font-black uppercase tracking-[0.6em] text-sm flex items-center justify-center gap-10 hover:bg-black hover:scale-[1.02] active:scale-[0.98] transition-all duration-700 disabled:opacity-20 shadow-3xl group/btn relative overflow-hidden italic shadow-[#FF6600]/20"
+                                className="w-full h-11 bg-foreground text-background rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-40"
                             >
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_2s_infinite]" />
-                                <div className="relative z-10 flex items-center gap-8">
-                                    {loading ? (
-                                        <div className="size-10 border-[6px] border-white/30 border-t-white rounded-full animate-spin" />
-                                    ) : (
-                                        <Scale className="size-10 group-hover/btn:-rotate-12 transition-transform duration-700" />
-                                    )}
-                                    <span className="leading-none pt-1">{loading ? "CHIFFREMENT DU DOSSIER..." : "ENGAGER L'ARBITRAGE IA"}</span>
-                                </div>
+                                {loading
+                                    ? <><div className="size-4 border-2 border-background/30 border-t-background rounded-full animate-spin" /> Analyse en cours...</>
+                                    : <><Scale className="size-4" /> Engager l'arbitrage IA</>
+                                }
                             </button>
                         </form>
                     </div>
                 ) : (
-                    <div className="bg-white border-[12px] border-emerald-500/20 rounded-[5rem] p-20 lg:p-32 shadow-3xl animate-in zoom-in-95 duration-1000 relative overflow-hidden group/success">
-                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent pointer-events-none" />
+                    <div className="bg-card border border-emerald-500/20 rounded-2xl p-6 shadow-sm space-y-6">
+                        <div className="h-1 bg-emerald-500 rounded-full" />
 
-                        <div className="flex flex-col items-center text-center space-y-16 relative z-10">
-                            <div className="size-48 rounded-[4rem] bg-emerald-500 border-[10px] border-emerald-500/20 text-white flex items-center justify-center shadow-3xl animate-bounce">
-                                <ShieldCheck className="size-24" />
+                        <div className="flex flex-col items-center text-center space-y-5">
+                            <div className="size-14 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-lg">
+                                <ShieldCheck className="size-7" />
                             </div>
-
-                            <div className="space-y-8">
-                                <div className="flex items-center justify-center gap-6">
-                                    <div className="h-1 w-20 bg-emerald-500/20 rounded-full" />
-                                    <span className="text-[12px] font-black text-emerald-600 uppercase tracking-[0.6em] italic block pt-1">PROTOCOLE SÉCURISÉ v5.1</span>
-                                    <div className="h-1 w-20 bg-emerald-500/20 rounded-full" />
-                                </div>
-                                <h2 className="text-7xl md:text-9xl font-black italic tracking-tighter text-black uppercase leading-[0.85]">INCIDENT <br /> <span className="text-emerald-500 not-italic">RÉPERTORIÉ.</span></h2>
-                                <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-sm mt-8 max-w-2xl mx-auto leading-relaxed border-l-[16px] border-emerald-500 pl-12 text-left italic">
-                                    NOTRE MOTEUR DE MÉDIATION NEURONALE BCA A ANALYSÉ VOTRE REQUÊTE INSTANTANÉMENT. LE DOSSIER EST SCÉLLÉ ET PRÊT POUR L'ARBITRAGE FINAL.
+                            <div>
+                                <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Décision réseau</p>
+                                <h3 className="text-lg font-bold text-foreground mt-1">Incident répertorié et scellé</h3>
+                                <p className="text-sm text-muted-foreground mt-2 max-w-md">
+                                    L'IA de médiation BCA a analysé votre requête. Le dossier est indexé pour arbitrage final sous 24h.
                                 </p>
                             </div>
 
-                            <div className="w-full p-16 bg-black rounded-[4rem] text-left relative overflow-hidden group/verdict shadow-3xl">
-                                <div className="absolute top-0 right-0 p-10 opacity-10 group-hover/verdict:opacity-30 transition-opacity">
-                                    <div className="p-4 bg-[#FF6600] rounded-2xl font-black text-white text-[12px] tracking-[0.4em] uppercase italic">NOYAU ALPHA IA v6.0</div>
+                            <div className="w-full p-5 bg-muted border border-border rounded-xl text-left space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <Sparkles className="size-4 text-primary" />
+                                    <h4 className="text-xs font-bold text-primary uppercase tracking-wide">Verdict préliminaire IA</h4>
                                 </div>
-
-                                <div className="flex items-center gap-6 mb-12 border-b-4 border-white/5 pb-8">
-                                    <div className="size-4 rounded-full bg-[#FF6600] animate-pulse shadow-[0_0_15px_rgba(255,102,0,0.5)]" />
-                                    <h4 className="text-[12px] font-black uppercase tracking-[0.5em] text-[#FF6600] italic leading-none pt-1">
-                                        VERDICT PRÉLIMINAIRE BCA EXECUTIF
-                                    </h4>
-                                </div>
-
-                                <div className="p-10 bg-white/[0.03] backdrop-blur-3xl rounded-[2.5rem] border-4 border-white/5 shadow-inner group-hover/verdict:border-[#FF6600]/20 transition-all duration-700">
-                                    <p className="text-2xl md:text-3xl font-black italic tracking-tight text-white leading-relaxed uppercase">"{mediationResult.solution_proposee_ia}"</p>
-                                </div>
+                                <p className="text-sm font-semibold text-foreground leading-relaxed">"{mediationResult.solution_proposee_ia}"</p>
                             </div>
 
-                            <div className="flex items-center gap-8 px-12 py-6 rounded-full bg-slate-50 border-4 border-black/5 italic text-[11px] font-black uppercase tracking-[0.3em] text-slate-500">
-                                <Clock className="size-6 text-[#FF6600] animate-pulse" />
-                                VALIDATION FINALE PAR LE CONSEIL D'ADMINISTRATION SOUS 24H
+                            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted border border-border text-xs text-muted-foreground">
+                                <Clock className="size-3.5 text-primary" />
+                                Validation finale par l'équipe admin (24h max)
                             </div>
 
                             <button
                                 onClick={() => navigate('/orders')}
-                                className="h-28 px-24 bg-black text-white hover:bg-[#FF6600] rounded-[2.5rem] font-black uppercase tracking-[0.5em] text-sm hover:scale-105 active:scale-95 transition-all duration-700 shadow-3xl italic leading-none pt-1 flex items-center gap-8 group/back"
+                                className="h-10 px-6 bg-foreground text-background rounded-xl font-semibold text-sm hover:bg-primary hover:text-primary-foreground transition-all flex items-center gap-2"
                             >
-                                <ChevronLeft className="size-8 group-hover/back:-translate-x-3 transition-transform" />
-                                RETOUR AU CENTRE D'OPÉRATIONS
+                                <ChevronLeft className="size-4" /> Retour aux commandes
                             </button>
                         </div>
                     </div>

@@ -1,10 +1,9 @@
 import axios from 'axios';
 
-// Utilisation d'une URL de base conditionnelle (dev/prod)
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import { API_BASE_URL } from '../constants/api';
 
 const api = axios.create({
-    baseURL: API_URL,
+    baseURL: API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -29,9 +28,9 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            // Optionnel : redirection vers login ou rafraîchissement du token
+            // Optionnel : ne pas forcer la redirection brute car cela casse l'accès aux pages publiques !
             localStorage.removeItem('token');
-            window.location.href = '/login';
+            // La redirection est gérée délicatement par le composant ProtectedRoute
         }
         return Promise.reject(error);
     }
