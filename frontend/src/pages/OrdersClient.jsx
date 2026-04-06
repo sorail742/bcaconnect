@@ -1,33 +1,26 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
-import DataTable from '../components/ui/DataTable';
 import StatusBadge from '../components/ui/StatusBadge';
-import { Button } from '../components/ui/Button';
 import { cn } from '../lib/utils';
-import { TableRowSkeleton, CardSkeleton } from '../components/ui/Loader';
-import { ErrorState, EmptyState } from '../components/ui/StatusStates';
-import { toast } from 'sonner';
+import { TableRowSkeleton } from '../components/ui/Loader';
+import { ErrorState } from '../components/ui/StatusStates';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Calendar,
-    Download,
-    TrendingUp,
-    Clock,
-    PackageCheck,
-    Search,
-    ChevronRight,
-    ShoppingBag,
-    Filter,
-    X,
-    ShieldCheck,
-    Activity,
-    Zap,
-    Sparkles,
-    Satellite,
-    FileText,
-    MapPin,
-    Smartphone
+    Clock, Search, ChevronRight, ShoppingBag, X,
+    Activity, Zap, FileText, MapPin, Smartphone,
+    TrendingUp, ShieldCheck, Box
 } from 'lucide-react';
 import orderService from '../services/orderService';
+import { toast as toastSonner } from 'sonner';
+
+const FILTERS = [
+    { key: "Tout", label: "Tout" },
+    { key: "en_attente_paiement", label: "En attente" },
+    { key: "payé", label: "Payé" },
+    { key: "expédié", label: "Expédié" },
+    { key: "livré", label: "Livré" },
+    { key: "annulé", label: "Annulé" }
+];
 
 const UserOrders = () => {
     const [orders, setOrders] = useState([]);
@@ -36,16 +29,15 @@ const UserOrders = () => {
     const [activeFilter, setActiveFilter] = useState('Tout');
     const [searchQuery, setSearchQuery] = useState('');
     const [isCancelling, setIsCancelling] = useState(null);
+    const [selectedOrder, setSelectedOrder] = useState(null);
 
     const fetchOrders = useCallback(async () => {
         setIsLoading(true);
         setHasError(false);
         try {
             const data = await orderService.getMyOrders();
-            const list = Array.isArray(data) ? data : (data?.orders || []);
-            setOrders(list);
-        } catch (err) {
-            console.error("Erreur chargement commandes:", err);
+            setOrders(Array.isArray(data) ? data : (data?.orders || []));
+        } catch {
             setHasError(true);
         } finally {
             setIsLoading(false);
@@ -55,322 +47,253 @@ const UserOrders = () => {
     useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
     const handleCancelOrder = async (orderId) => {
-        const confirmed = window.confirm('CONFIRMER L\'ANNULATION ? LE MONTANT SERA REMBOURSÉ DANS VOTRE PORTEFEUILLE EXÉCUTIF.');
-        if (!confirmed) return;
-
+        if (!window.confirm("Confirmer l'annulation ? Le montant sera remboursé dans votre portefeuille.")) return;
         setIsCancelling(orderId);
         try {
             await orderService.updateOrderStatus(orderId, 'annulé');
-            toast.success('COMMANDE RÉVOQUÉE. REMBOURSEMENT INTÉGRAL EFFECTUÉ.');
+            toastSonner.success('Commande annulée. Remboursement effectué.');
             setOrders(prev => prev.map(o => o.id === orderId ? { ...o, statut: 'annulé' } : o));
         } catch (err) {
-            toast.error(err.response?.data?.message || 'IMPOSSIBLE DE RÉVOQUER LA COMMANDE.');
+            toastSonner.error(err.response?.data?.message || 'Impossible d\'annuler la commande.');
         } finally {
             setIsCancelling(null);
         }
     };
 
-    const filters = [
-        { key: "Tout", label: "FLUX GLOBAL" },
-        { key: "en_attente_paiement", label: "PENDING" },
-        { key: "payé", label: "INDEXÉ" },
-        { key: "expédié", label: "TRANSIT" },
-        { key: "livré", label: "ARCHIVÉ" },
-        { key: "annulé", label: "RÉVOQUÉ" }
-    ];
-
-    const getStatusVariant = (status) => {
-        switch (status) {
-            case 'payé': return 'success';
-            case 'expédié': return 'primary';
-            case 'livré': return 'success';
-            case 'annulé': return 'danger';
-            case 'en_attente_paiement': return 'warning';
-            default: return 'neutral';
-        }
-    };
-
     const filteredOrders = orders.filter(o =>
         (activeFilter === 'Tout' || o.statut === activeFilter) &&
-        (String(o.id || '').toLowerCase().includes(searchQuery.toLowerCase()))
+        String(o.id || o.numero_commande || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
-
-    const [selectedOrder, setSelectedOrder] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-
-    const openOrderDetails = (order) => {
-        setSelectedOrder(order);
-        setIsModalOpen(true);
-    };
-
-    const columns = [
-        {
-            label: 'IDENTIFIANT FLUX',
-            render: (row) => (
-                <div className="flex items-center gap-6 py-3 group/item">
-                    <div className="size-14 rounded-2xl bg-white/[0.03] border-4 border-white/5 flex items-center justify-center text-slate-600 transition-all duration-700 group-hover/item:bg-[#FF6600]/10 group-hover/item:text-[#FF6600] group-hover/item:border-[#FF6600]/20 shadow-2xl relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-[#FF6600]/20 to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity" />
-                        <ShoppingBag className="size-6 relative z-10" />
-                    </div>
-                    <div className="min-w-[120px]">
-                        <span className="font-black text-white text-sm tracking-tighter italic uppercase pt-1 inline-block">NODE: {(row.id || '...').slice(0, 8).toUpperCase()}</span>
-                        <p className="text-[10px] text-[#FF6600] font-black uppercase tracking-[0.3em] mt-2 italic opacity-60 flex items-center gap-2">
-                            <Activity className="size-3" />
-                            {row.details?.length || 0} UNITÉS
-                        </p>
-                    </div>
-                </div>
-            )
-        },
-        {
-            label: 'INDEX TEMPOREL',
-            render: (row) => (
-                <div className="flex flex-col gap-1.5 py-1">
-                    <span className="text-[12px] font-black text-white uppercase tracking-wider italic">
-                        {new Date(row.createdAt).toLocaleDateString('fr-GN')}
-                    </span>
-                    <span className="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em] italic flex items-center gap-2">
-                        <Clock className="size-3 text-[#FF6600]" />
-                        {new Date(row.createdAt).toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                </div>
-            )
-        },
-        {
-            label: 'INVESTISSEMENT',
-            render: (row) => (
-                <div className="flex flex-col">
-                    <span className="text-sm font-black text-white tracking-tighter italic uppercase tabular-nums">
-                        {parseFloat(row.total_ttc).toLocaleString('fr-GN')} <small className="text-[10px] font-black text-[#FF6600] non-italic">GNF</small>
-                    </span>
-                </div>
-            )
-        },
-        {
-            label: 'STATUT RÉSEAU',
-            render: (row) => (
-                <StatusBadge status={row.statut} variant={getStatusVariant(row.statut)} className="text-[9px] font-black italic uppercase tracking-widest border-2" />
-            )
-        },
-        {
-            label: 'GOUVERNANCE',
-            render: (row) => (
-                <div className="flex items-center justify-end gap-6 pr-6">
-                    {row.statut === 'payé' && (
-                        <button
-                            disabled={isCancelling === row.id}
-                            onClick={(e) => { e.stopPropagation(); handleCancelOrder(row.id); }}
-                            className="text-[10px] font-black text-slate-600 hover:text-rose-500 transition-all duration-700 uppercase tracking-[0.4em] italic border-b-2 border-transparent hover:border-rose-500 pb-1"
-                        >
-                            {isCancelling === row.id ? 'ANNULATION...' : ' RÉVOQUER'}
-                        </button>
-                    )}
-                    <button
-                        onClick={() => openOrderDetails(row)}
-                        className="h-11 px-8 rounded-xl bg-white/[0.03] border-2 border-white/5 font-black text-[10px] uppercase tracking-[0.4em] text-slate-400 hover:text-white hover:border-[#FF6600]/40 transition-all duration-700 flex items-center gap-3 italic group/btn shadow-3xl"
-                    >
-                        DOSSIER
-                        <ChevronRight className="size-4 group-hover/btn:translate-x-2 transition-transform duration-700" />
-                    </button>
-                </div>
-            )
-        }
-    ];
 
     const totalInvested = orders.reduce((acc, o) => acc + parseFloat(o.total_ttc || 0), 0);
     const activeOrders = orders.filter(o => !['livré', 'annulé'].includes(o.statut)).length;
 
     return (
-        <DashboardLayout title="CENTRE DE SUIVI TRANSACTIONNEL">
-            <div className="w-full space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-1000 pb-32">
+        <DashboardLayout title="Mes Commandes">
+            <div className="space-y-6 pb-10">
 
-                {/* Stats Header */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                    <div className="p-10 bg-white/[0.02] rounded-[4rem] border-4 border-white/5 shadow-3xl group relative overflow-hidden flex items-center gap-8 border-l-[16px] border-l-[#FF6600]">
-                        <div className="absolute inset-x-0 bottom-0 h-1 bg-[#FF6600]/20 group-hover:h-full transition-all duration-700 opacity-20 pointer-events-none" />
-                        <div className="size-16 rounded-[1.5rem] bg-[#FF6600]/10 flex items-center justify-center text-[#FF6600] border-2 border-[#FF6600]/20 shadow-3xl group-hover:rotate-12 transition-transform duration-700 relative z-10">
-                            <TrendingUp className="size-8" />
+                {/* KPIs */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {[
+                        { title: "Total investi", value: `${totalInvested.toLocaleString('fr-GN')} GNF`, icon: TrendingUp },
+                        { title: "Commandes actives", value: activeOrders.toString(), icon: Zap },
+                        { title: "Total commandes", value: orders.length.toString(), icon: Box }
+                    ].map((kpi, idx) => (
+                        <div key={idx} className="bg-card border border-border rounded-xl p-4 shadow-sm flex items-center gap-4">
+                            <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                                <kpi.icon className="size-5" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-muted-foreground font-medium">{kpi.title}</p>
+                                <p className="text-lg font-bold text-foreground tabular-nums">{kpi.value}</p>
+                            </div>
                         </div>
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-3 italic">VALEUR TOTALE INDEXÉE</p>
-                            <p className="text-4xl font-black text-white uppercase italic tracking-tighter tabular-nums">{totalInvested.toLocaleString('fr-GN')} <small className="text-xs opacity-40 font-black italic">GNF</small></p>
-                        </div>
-                    </div>
-                    <div className="p-10 bg-white/[0.02] rounded-[4rem] border-4 border-white/5 shadow-3xl group relative overflow-hidden flex items-center gap-8 border-l-[16px] border-l-amber-500">
-                        <div className="absolute inset-x-0 bottom-0 h-1 bg-amber-500/20 group-hover:h-full transition-all duration-700 opacity-20 pointer-events-none" />
-                        <div className="size-16 rounded-[1.5rem] bg-amber-500/10 flex items-center justify-center text-amber-500 border-2 border-amber-500/20 shadow-3xl group-hover:rotate-12 transition-transform duration-700 relative z-10">
-                            <Zap className="size-8" />
-                        </div>
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-3 italic">FLUX ACTIFS</p>
-                            <p className="text-4xl font-black text-white uppercase italic tracking-tighter">{activeOrders}</p>
-                        </div>
-                    </div>
-                    <div className="p-10 bg-white/[0.02] rounded-[4rem] border-4 border-white/5 shadow-3xl group relative overflow-hidden flex items-center gap-8 border-l-[16px] border-l-slate-700">
-                        <div className="absolute inset-x-0 bottom-0 h-1 bg-white/10 group-hover:h-full transition-all duration-700 opacity-20 pointer-events-none" />
-                        <div className="size-16 rounded-[1.5rem] bg-white/5 flex items-center justify-center text-slate-400 border-2 border-white/10 shadow-3xl group-hover:rotate-12 transition-transform duration-700 relative z-10">
-                            <Clock className="size-8" />
-                        </div>
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-3 italic">ARCHIVES RÉSEAU</p>
-                            <p className="text-4xl font-black text-white uppercase italic tracking-tighter">{orders.length}</p>
-                        </div>
-                    </div>
+                    ))}
                 </div>
 
-                {/* Main Table Surface */}
-                <div className="bg-white/[0.01] border-4 border-white/5 rounded-[4rem] overflow-hidden shadow-3xl">
-                    <div className="p-12 border-b-4 border-white/5 bg-white/[0.02] flex flex-col lg:flex-row lg:items-center justify-between gap-12">
-                        <div className="flex items-center gap-6 overflow-x-auto pb-4 lg:pb-0 scrollbar-hide py-2">
-                            {filters.map((f, idx) => (
+                {/* Table card */}
+                <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                    {/* Filters + search */}
+                    <div className="p-4 border-b border-border space-y-3">
+                        <div className="flex flex-wrap gap-2">
+                            {FILTERS.map(f => (
                                 <button
-                                    key={idx}
+                                    key={f.key}
                                     onClick={() => setActiveFilter(f.key)}
                                     className={cn(
-                                        "px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] italic transition-all duration-700 border-4 whitespace-nowrap",
+                                        "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border",
                                         activeFilter === f.key
-                                            ? "bg-[#FF6600] text-white border-[#FF6600] shadow-3xl scale-110"
-                                            : "bg-white/5 border-transparent text-slate-600 hover:text-white"
+                                            ? "bg-primary text-primary-foreground border-primary"
+                                            : "bg-muted text-muted-foreground border-border hover:text-foreground hover:border-primary/40"
                                     )}
                                 >
                                     {f.label}
                                 </button>
                             ))}
                         </div>
-
-                        <div className="relative group w-full lg:w-[32rem]">
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#FF6600]/20 to-transparent blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-1000" />
-                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 size-6 group-focus-within:text-[#FF6600] transition-all duration-700 relative z-10" />
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                             <input
-                                className="w-full pl-16 pr-8 h-16 bg-white/[0.03] border-4 border-white/5 group-focus-within:border-[#FF6600]/40 rounded-2xl text-sm font-black uppercase tracking-[0.2em] italic placeholder:text-slate-700 outline-none relative z-10 transition-all duration-700 text-white"
-                                placeholder="REHERCHER IDENTIFIANT RÉSEAU..."
-                                type="text"
+                                className="w-full h-9 pl-9 pr-3 bg-background border border-border focus:border-primary/50 rounded-lg text-sm outline-none transition-all text-foreground placeholder:text-muted-foreground"
+                                placeholder="Rechercher une commande..."
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={e => setSearchQuery(e.target.value)}
                             />
                         </div>
                     </div>
 
-                    <div className="p-4">
+                    {/* Table */}
+                    <div className="overflow-x-auto">
                         {isLoading ? (
-                            <div className="p-12 space-y-8">
-                                {[1, 2, 3, 4, 5].map(i => <TableRowSkeleton key={i} className="h-20 bg-white/[0.02] rounded-2xl" />)}
+                            <div className="p-4 space-y-3">
+                                {[1,2,3,4].map(i => <TableRowSkeleton key={i} />)}
                             </div>
                         ) : hasError ? (
-                            <div className="p-24 text-center">
-                                <ErrorState />
-                            </div>
+                            <div className="p-12 text-center"><ErrorState /></div>
                         ) : filteredOrders.length > 0 ? (
-                            <DataTable
-                                columns={columns}
-                                data={filteredOrders}
-                                className="bg-transparent border-0"
-                            />
+                            <table className="w-full text-sm min-w-[640px]">
+                                <thead>
+                                    <tr className="bg-muted/50 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                        <th className="px-4 py-3 text-left">Commande</th>
+                                        <th className="px-4 py-3 text-left">Date</th>
+                                        <th className="px-4 py-3 text-left">Montant</th>
+                                        <th className="px-4 py-3 text-left">Statut</th>
+                                        <th className="px-4 py-3 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border">
+                                    {filteredOrders.map((row, idx) => (
+                                        <tr key={row.id || idx} className="hover:bg-muted/30 transition-colors">
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="size-8 rounded-lg bg-muted border border-border flex items-center justify-center">
+                                                        <Box className="size-4 text-muted-foreground" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-bold text-foreground">#{(row.id || row.numero_commande || '').slice(0, 8).toUpperCase()}</p>
+                                                        <p className="text-xs text-muted-foreground">{row.details?.length || 0} article(s)</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <p className="text-xs font-medium text-foreground">{new Date(row.createdAt).toLocaleDateString('fr-GN')}</p>
+                                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                                    <Clock className="size-3" />
+                                                    {new Date(row.createdAt).toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
+                                                </p>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span className="text-sm font-bold text-foreground tabular-nums">
+                                                    {parseFloat(row.total_ttc).toLocaleString('fr-GN')}
+                                                    <span className="text-xs text-primary ml-1">GNF</span>
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <StatusBadge status={row.statut} />
+                                            </td>
+                                            <td className="px-4 py-3 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    {row.statut === 'payé' && (
+                                                        <button
+                                                            disabled={isCancelling === row.id}
+                                                            onClick={() => handleCancelOrder(row.id)}
+                                                            className="text-xs font-medium text-muted-foreground hover:text-rose-500 transition-colors"
+                                                        >
+                                                            {isCancelling === row.id ? '...' : 'Annuler'}
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => setSelectedOrder(row)}
+                                                        className="flex items-center gap-1 px-3 py-1.5 bg-foreground text-background hover:bg-primary hover:text-primary-foreground rounded-lg text-xs font-semibold transition-all"
+                                                    >
+                                                        Détails <ChevronRight className="size-3" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         ) : (
-                            <div className="py-40 text-center opacity-20 flex flex-col items-center gap-10">
-                                <ShoppingBag className="size-24 animate-pulse text-slate-500" />
-                                <p className="text-[12px] font-black uppercase tracking-[0.6em] italic">AUCUN FLUX IDENTIFIÉ POUR CE FILTRE</p>
+                            <div className="py-16 text-center">
+                                <ShoppingBag className="size-10 text-muted-foreground/30 mx-auto mb-3" />
+                                <p className="text-sm text-muted-foreground">Aucune commande trouvée</p>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Detailed Modal Premium Design */}
-                {isModalOpen && selectedOrder && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-8 bg-black/80 backdrop-blur-3xl animate-in fade-in duration-500">
-                        <div className="bg-white group rounded-[4rem] border-x-[16px] border-[#FF6600] w-full max-w-4xl shadow-3xl animate-in zoom-in-95 duration-700 relative overflow-hidden flex flex-col lg:flex-row max-h-[90vh]">
-                            <div className="absolute top-0 right-0 size-[40rem] bg-[#FF6600]/10 rounded-full blur-[150px] -mr-64 -mt-64 transition-transform group-hover:scale-125 duration-[4s]" />
-
-                            {/* Left Side: Summary Card */}
-                            <div className="lg:w-2/5 bg-black p-12 flex flex-col justify-between relative z-10">
-                                <div className="space-y-12">
-                                    <div className="size-24 rounded-[2.5rem] bg-[#FF6600] flex items-center justify-center text-white shadow-3xl shadow-[#FF6600]/20 rotate-3 group-hover:rotate-12 transition-transform duration-1000">
-                                        <PackageCheck className="size-12" />
-                                    </div>
-                                    <div className="space-y-4">
-                                        <h3 className="text-4xl font-black text-white uppercase tracking-tighter leading-none italic">DOSSIER <br /> TRANSACTION</h3>
-                                        <div className="inline-flex items-center gap-4 px-6 py-2 bg-[#FF6600]/10 border-2 border-[#FF6600]/20 rounded-2xl text-[#FF6600] text-[10px] font-black uppercase tracking-[0.3em] italic">
-                                            #{(selectedOrder.id || '').slice(0, 12).toUpperCase()}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-10 pt-12 border-t border-white/10">
-                                    <div className="flex items-center gap-6">
-                                        <div className="size-12 rounded-xl bg-white/5 flex items-center justify-center text-[#FF6600] border-2 border-white/10">
-                                            <MapPin className="size-6" />
+                {/* Order detail modal */}
+                <AnimatePresence>
+                    {selectedOrder && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setSelectedOrder(null)}
+                                className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+                            />
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                className="bg-card rounded-2xl w-full max-w-2xl shadow-xl relative border border-border max-h-[85vh] flex flex-col"
+                            >
+                                {/* Modal header */}
+                                <div className="flex items-center justify-between p-5 border-b border-border">
+                                    <div className="flex items-center gap-3">
+                                        <div className="size-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                                            <FileText className="size-4 text-primary" />
                                         </div>
                                         <div>
-                                            <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.3em] italic mb-1">DESTINATION FLUX</p>
-                                            <p className="text-[12px] font-black text-white uppercase italic tracking-wider leading-relaxed">{selectedOrder.adresse_livraison}</p>
+                                            <h3 className="text-sm font-bold text-foreground">Détail commande</h3>
+                                            <p className="text-xs text-muted-foreground">#{(selectedOrder.id || '').slice(0, 14).toUpperCase()}</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-6">
-                                        <div className="size-12 rounded-xl bg-white/5 flex items-center justify-center text-[#FF6600] border-2 border-white/10">
-                                            <Smartphone className="size-6" />
-                                        </div>
-                                        <div>
-                                            <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.3em] italic mb-1">CANAL CONTACT</p>
-                                            <p className="text-[14px] font-black text-white font-mono">{selectedOrder.telephone_livraison}</p>
-                                        </div>
-                                    </div>
+                                    <button
+                                        onClick={() => setSelectedOrder(null)}
+                                        className="size-8 rounded-lg bg-muted hover:bg-rose-500/10 hover:text-rose-500 flex items-center justify-center text-muted-foreground transition-colors"
+                                    >
+                                        <X className="size-4" />
+                                    </button>
                                 </div>
-                            </div>
 
-                            {/* Right Side: List & Totals */}
-                            <div className="flex-1 bg-white p-12 lg:p-16 flex flex-col justify-between relative z-10 overflow-hidden">
-                                <button onClick={() => setIsModalOpen(false)} className="absolute top-10 right-10 size-14 rounded-2xl hover:bg-black/5 flex items-center justify-center text-slate-400 hover:text-black transition-all">
-                                    <X className="size-8" />
-                                </button>
+                                {/* Modal body */}
+                                <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                                    {/* Delivery info */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {[
+                                            { icon: MapPin, label: "Adresse", value: selectedOrder.adresse_livraison },
+                                            { icon: Smartphone, label: "Téléphone", value: selectedOrder.telephone_livraison }
+                                        ].map((info, i) => (
+                                            <div key={i} className="flex items-start gap-3 p-3 bg-muted rounded-xl">
+                                                <info.icon className="size-4 text-primary mt-0.5 shrink-0" />
+                                                <div>
+                                                    <p className="text-xs text-muted-foreground">{info.label}</p>
+                                                    <p className="text-sm font-medium text-foreground">{info.value || '—'}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
 
-                                <div className="space-y-10 flex-1 overflow-y-auto pr-6 scrollbar-hide mb-12">
-                                    <div className="space-y-6">
-                                        <div className="flex items-center gap-4">
-                                            <FileText className="size-5 text-[#FF6600]" />
-                                            <h4 className="text-[11px] font-black text-black uppercase tracking-[0.5em] italic">COMPOSITION DE L'EXPÉDITION</h4>
-                                        </div>
+                                    {/* Items */}
+                                    <div className="space-y-2">
+                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Articles</p>
                                         {selectedOrder.details?.map((item, idx) => (
-                                            <div key={idx} className="flex items-center gap-8 p-6 rounded-3xl border-4 border-black/5 bg-slate-50/50 group/item hover:bg-black hover:border-black transition-all duration-700 shadow-xl">
-                                                <div className="size-20 rounded-2xl bg-white border-2 border-black/5 flex items-center justify-center overflow-hidden shrink-0 group-hover/item:scale-110 transition-transform duration-700">
-                                                    {item.produit?.image_url ? <img src={item.produit.image_url} className="w-full h-full object-cover" /> : <ShoppingBag className="size-8 text-slate-300" />}
+                                            <div key={idx} className="flex items-center gap-3 p-3 bg-muted rounded-xl border border-border">
+                                                <div className="size-12 rounded-lg bg-background border border-border overflow-hidden shrink-0">
+                                                    {item.produit?.image_url
+                                                        ? <img src={item.produit.image_url} className="w-full h-full object-cover" alt="" />
+                                                        : <Box className="size-5 text-muted-foreground m-auto mt-3" />
+                                                    }
                                                 </div>
-                                                <div className="flex-1 space-y-2">
-                                                    <p className="font-black text-black text-sm uppercase tracking-tighter italic group-hover/item:text-[#FF6600] transition-colors">{item.produit?.nom_produit}</p>
-                                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em] italic group-hover/item:text-white/40">QUANTITÉ: {item.quantite} UNITÉS</p>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-semibold text-foreground truncate">{item.produit?.nom_produit}</p>
+                                                    <p className="text-xs text-muted-foreground">Qté : {item.quantite}</p>
                                                 </div>
-                                                <div className="text-right">
-                                                    <p className="font-black text-black text-lg tracking-tighter italic uppercase tabular-nums group-hover/item:text-white">{parseFloat(item.prix_unitaire_achat).toLocaleString('fr-GN')} <small className="text-[10px] font-black text-[#FF6600] non-italic">GNF</small></p>
+                                                <div className="text-right shrink-0">
+                                                    <p className="text-sm font-bold text-foreground tabular-nums">{parseFloat(item.prix_unitaire_achat).toLocaleString('fr-GN')}</p>
+                                                    <p className="text-xs text-primary">GNF</p>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
 
-                                <div className="pt-10 border-t-8 border-black space-y-6">
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.4em] italic text-slate-400">
-                                            <span>VALEUR BRUTE (HT)</span>
-                                            <span>{parseFloat(selectedOrder.total_ht || 0).toLocaleString('fr-GN')} GNF</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.4em] italic text-slate-400">
-                                            <span>TAXE INDEXÉE (GVT)</span>
-                                            <span>{parseFloat(selectedOrder.total_ttc - (selectedOrder.total_ht || 0)).toLocaleString('fr-GN')} GNF</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-between items-end bg-black p-8 rounded-[2rem] text-white shadow-3xl">
-                                        <div className="space-y-1">
-                                            <span className="text-[10px] font-black text-[#FF6600] uppercase tracking-[0.5em] italic">MONTANT TOTAL RÉGLÉ</span>
-                                            <p className="text-sm font-black text-white/40 uppercase tracking-[0.2em] italic">TRANSACTION CERTIFIÉE BCA</p>
-                                        </div>
-                                        <div className="flex flex-col items-end leading-none">
-                                            <span className="text-5xl font-black text-white tracking-tighter tabular-nums italic uppercase">{parseFloat(selectedOrder.total_ttc).toLocaleString('fr-GN')} <small className="text-xl font-black text-[#FF6600] non-italic">GNF</small></span>
-                                        </div>
+                                {/* Modal footer */}
+                                <div className="p-5 border-t border-border">
+                                    <div className="flex items-center justify-between bg-primary text-primary-foreground rounded-xl p-4">
+                                        <p className="text-sm font-semibold">Total</p>
+                                        <p className="text-lg font-bold tabular-nums">
+                                            {parseFloat(selectedOrder.total_ttc).toLocaleString('fr-GN')} GNF
+                                        </p>
                                     </div>
                                 </div>
-                            </div>
+                            </motion.div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </AnimatePresence>
             </div>
         </DashboardLayout>
     );

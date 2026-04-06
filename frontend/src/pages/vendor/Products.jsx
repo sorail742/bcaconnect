@@ -2,37 +2,37 @@ import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import {
     Plus, Search, Edit3, Trash2, Package, AlertCircle,
-    TrendingUp, Eye, RefreshCw, CheckCircle2,
-    XCircle, ChevronUp, ChevronDown, Filter, Zap,
-    Activity, ArrowUpRight, ChevronRight, ShoppingBag,
-    MoreVertical, Sparkles, Satellite, LayoutGrid
+    TrendingUp, RefreshCw, CheckCircle2,
+    XCircle, Zap,
+    ShoppingBag,
+    Satellite
 } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import productService from '../../services/productService';
 import { toast } from 'sonner';
 import DataTable from '../../components/ui/DataTable';
 import { TableRowSkeleton } from '../../components/ui/Loader';
-import { Button } from '../../components/ui/Button';
+import DashboardCard from '../../components/ui/DashboardCard';
 
 // ── Stock Badge ─────────────────────────────────────────
 const StockBadge = ({ qty }) => {
     if (qty === 0) return (
-        <span className="inline-flex items-center gap-3 px-4 py-1.5 bg-rose-600/10 text-rose-500 text-[9px] font-black uppercase tracking-[0.3em] rounded-xl border-2 border-rose-500/20 italic shadow-lg shadow-rose-500/5">
-            <div className="size-1.5 rounded-full bg-rose-500 animate-pulse" />
-            RUPTURE
+        <span className="inline-flex items-center gap-3 px-4 py-2 bg-rose-500/10 text-rose-500 text-[9px] font-black uppercase  rounded-[1rem] border-none shadow-inner">
+            <div className="size-2 rounded-full bg-rose-500 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.5)]" />
+            RUPTURE_FLUX
         </span>
     );
     if (qty <= 5) return (
-        <span className="inline-flex items-center gap-3 px-4 py-1.5 bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase tracking-[0.3em] rounded-xl border-2 border-amber-500/20 italic shadow-lg shadow-amber-500/5">
-            <div className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
-            CRITIQUE
+        <span className="inline-flex items-center gap-3 px-4 py-2 bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase  rounded-[1rem] border-none shadow-inner">
+            <div className="size-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+            CRITIQUE_NODE
         </span>
     );
     return (
-        <span className="inline-flex items-center gap-3 px-4 py-1.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-[0.3em] rounded-xl border-2 border-emerald-500/20 italic shadow-lg shadow-emerald-500/5">
-            <div className="size-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-            OPTIMAL
+        <span className="inline-flex items-center gap-3 px-4 py-2 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase  rounded-[1rem] border-none shadow-inner">
+            <div className="size-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+            OPTIMAL_SIG
         </span>
     );
 };
@@ -49,29 +49,29 @@ const StockEditor = ({ productId, initialStock, onUpdated }) => {
         try {
             await productService.patchStock(productId, parseInt(value));
             onUpdated(productId, parseInt(value));
-            toast.success("INDEX STOCK MIS À JOUR.");
+            toast.success("INDEX_STOCK_MIS_À_JOUR_ALPHA.");
         } catch (e) {
             setValue(initialStock);
-            toast.error("ÉCHEC DE LA MODIFICATION.");
+            toast.error("ÉCHEC_MODIFICATION_INDEX.");
         }
         finally { setIsSaving(false); setIsEditing(false); }
     };
 
     if (isEditing) {
         return (
-            <div className="flex items-center gap-3 bg-white/[0.03] p-1.5 rounded-xl border-2 border-[#FF6600]/20">
+            <div className="flex items-center gap-3 bg-white/[0.03] p-2 rounded-2xl border border-[#FFB703]/40 shadow-4xl animate-in zoom-in-95 duration-500">
                 <input
                     type="number" min={0}
                     value={value}
                     onChange={e => setValue(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && save()}
-                    className="w-16 h-10 px-2 text-xs font-black text-center text-white bg-transparent outline-none italic"
+                    className="w-16 h-10 px-2 text-[12px] font-black text-center text-foreground bg-transparent outline-none border-b border-foreground/10"
                     autoFocus
                 />
-                <button onClick={save} disabled={isSaving} className="size-10 flex items-center justify-center rounded-lg bg-[#FF6600] text-white hover:scale-110 transition-all shadow-3xl">
+                <button id={`save-stock-${productId}`} onClick={save} disabled={isSaving} className="size-6 flex items-center justify-center rounded-xl bg-[#FFB703] text-background hover:bg-white transition-all shadow-xl  border-none">
                     <CheckCircle2 className="size-5" />
                 </button>
-                <button onClick={() => { setValue(initialStock); setIsEditing(false); }} className="size-10 flex items-center justify-center rounded-lg bg-white/5 text-slate-500 hover:text-white transition-all">
+                <button id={`cancel-stock-${productId}`} onClick={() => { setValue(initialStock); setIsEditing(false); }} className="size-6 flex items-center justify-center rounded-xl bg-foreground/5 text-muted-foreground hover:text-foreground transition-all border-none">
                     <XCircle className="size-5" />
                 </button>
             </div>
@@ -80,11 +80,12 @@ const StockEditor = ({ productId, initialStock, onUpdated }) => {
 
     return (
         <button
+            id={`edit-stock-${productId}`}
             onClick={() => setIsEditing(true)}
-            className="flex items-center gap-4 group bg-white/[0.02] hover:bg-[#FF6600]/10 px-6 py-2.5 rounded-xl border-2 border-transparent hover:border-[#FF6600]/20 transition-all duration-700 shadow-inner group/stock"
+            className="flex items-center gap-3 group bg-white/[0.02] hover:bg-[#FFB703]/10 px-6 py-3 rounded-2xl border-none transition-all duration-700 shadow-inner group/stock"
         >
-            <span className="text-sm font-black text-white uppercase tracking-tighter italic pt-0.5">{value}</span>
-            <Edit3 className="size-4 text-slate-600 group-hover:text-[#FF6600] transition-colors" />
+            <span className="text-[13px] font-black text-foreground uppercase tracking-tighter tabular-nums">{value}</span>
+            <Edit3 className="size-4 text-muted-foreground group-hover:text-[#FFB703] transition-colors" />
         </button>
     );
 };
@@ -105,7 +106,7 @@ const Products = () => {
             const data = await productService.getMyProducts();
             setProducts(data || []);
         } catch (err) {
-            toast.error("ÉCHEC DU CHARGEMENT DES PRODUITS.");
+            toast.error("ÉCHEC_CHARGEMENT_INVENTAIRE_RÉSEAU.");
         } finally {
             setIsLoading(false);
         }
@@ -123,16 +124,16 @@ const Products = () => {
             await productService.delete(product.id);
             setProducts(prev => prev.filter(p => p.id !== product.id));
             setDeleteConfirm(null);
-            toast.success("OBJET RÉVOQUÉ DE L'INVENTAIRE.");
+            toast.success("OBJET_RÉVOQUÉ_INVENTAIRE_SCELLÉ.");
         } catch {
-            toast.error("IMPOSSIBLE DE SUPPRIMER LE PRODUIT.");
+            toast.error("IMPOSSIBLE_RÉVOCATION_ARTICLE.");
         } finally {
             setIsDeleting(false);
         }
     };
 
     const FILTERS = [
-        { key: 'tous', label: 'FLUX GLOBAL' },
+        { key: 'tous', label: 'GLOBAL' },
         { key: 'en_stock', label: 'INDEXÉ' },
         { key: 'faible', label: 'CRITIQUE' },
         { key: 'rupture', label: 'RUPTURE' },
@@ -151,84 +152,85 @@ const Products = () => {
     const totalStockValue = products.reduce((acc, p) => acc + parseFloat(p.prix_unitaire) * p.stock_quantite, 0);
 
     return (
-        <DashboardLayout title="CENTRE DE GESTION INVENTAIRE">
-            <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-1000 pb-20">
+        <DashboardLayout title="TERMINAL_INVENTAIRE_ALPHA">
+            <div className="space-y-6 animate-in fade-in duration-1000 pb-40 font-jakarta">
 
-                {/* Header Actions */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-12 bg-white rounded-[4rem] p-12 md:p-16 border-x-[16px] border-[#FF6600] shadow-3xl group relative overflow-hidden">
-                    <div className="absolute top-0 right-0 size-96 bg-[#FF6600]/10 rounded-full blur-[100px] -mr-48 -mt-48 transition-transform group-hover:scale-125 duration-[4s]" />
-
-                    <div className="space-y-8 relative z-10">
-                        <div className="flex items-center gap-4">
-                            <div className="size-3 bg-[#FF6600] rounded-full animate-pulse" />
-                            <span className="text-[10px] font-black text-[#FF6600] uppercase tracking-[0.4em] italic pt-0.5">CONTRÔLE QUANTIQUE INVENTAIRE</span>
+                {/* Executive Command Bar — Inventory Node */}
+                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 executive-card !py-8 bg-card border-[#FFB703]/20 relative overflow-hidden group/header shadow-4xl">
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#FFB703]/5 via-transparent to-transparent opacity-0 group-hover/header:opacity-100 transition-opacity duration-1000" />
+                    <div className="flex items-center gap-3 relative z-10">
+                        <div className="size-6 rounded-2xl bg-[#FFB703]/10 flex items-center justify-center text-[#FFB703] border-2 border-[#FFB703]/20 transition-all duration-700 group-hover/header:rotate-12 group-hover/header:scale-110 shadow-2xl shadow-[#FFB703]/20">
+                            <Package className="size-6" />
                         </div>
-                        <h2 className="text-6xl font-black text-black tracking-tighter leading-[0.8] uppercase italic">
-                            MES <span className="text-[#FF6600] not-italic underline decoration-black/10 decoration-8 underline-offset-[-15px]">PRODUITS.</span>
-                        </h2>
+                        <div className="space-y-3">
+                            <h2 className="text-sm font-black text-foreground uppercase tracking-tighter leading-none">
+                                INVENTAIRE_<span className="text-[#FFB703]">RÉSEAU</span>
+                            </h2>
+                            <p className="text-[10px] font-black text-muted-foreground uppercase  opacity-80 decoration-[#FFB703]/30 underline underline-offset-8 decoration-2">
+                                {products.length} RÉFÉRENCES_INDEXÉES — SYNC_TERMINAL_{new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}_SIG
+                            </p>
+                        </div>
                     </div>
-                    <div className="flex gap-6 relative z-10">
-                        <button onClick={load} className="size-20 bg-black/5 border-4 border-black/5 rounded-[1.5rem] flex items-center justify-center text-slate-400 hover:text-[#FF6600] hover:border-black/10 transition-all duration-700 shadow-inner group/refresh">
-                            <RefreshCw className={cn("size-8 group/refresh:rotate-180 transition-transform duration-700", isLoading && "animate-spin")} />
+                    <div className="flex items-center gap-3 relative z-10">
+                        <button id="btn-refresh-inventory" onClick={load} className="size-6 bg-white/[0.03] border-2 border-foreground/5 rounded-2xl flex items-center justify-center text-muted-foreground hover:text-[#FFB703] hover:border-[#FFB703]/20 transition-all group/refresh shadow-inner ">
+                            <RefreshCw className={cn("size-5 group-hover/refresh:rotate-180 transition-transform duration-1000", isLoading && "animate-spin")} />
                         </button>
                         <button
+                            id="btn-add-article"
                             onClick={() => navigate('/vendor/products/add')}
-                            className="h-20 px-12 bg-black text-white hover:bg-[#FF6600] rounded-[1.5rem] font-black text-xs uppercase tracking-[0.4em] shadow-3xl transition-all duration-700 hover:scale-105 active:scale-95 italic group/btn relative overflow-hidden flex items-center gap-6"
+                            className="h-12 px-10 bg-[#FFB703] text-background hover:bg-white rounded-2xl font-black text-[10px] uppercase  transition-all shadow-[0_20px_50px_rgba(255,183,3,0.3)]  flex items-center gap-3 group/btn relative overflow-hidden border-none"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_2s_infinite]" />
                             <Plus className="size-6 relative z-10" />
-                            <span className="relative z-10 pt-1">NOUVEL ARTICLE</span>
+                            <span className="relative z-10 pt-1">INDEXER_NOUVEL_ARTICLE</span>
                         </button>
                     </div>
                 </div>
 
-                {/* KPI Section */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                    <div className="p-10 bg-white/[0.02] rounded-[4rem] border-4 border-white/5 shadow-3xl group relative overflow-hidden flex items-center gap-8 border-l-[16px] border-l-[#FF6600]">
-                        <div className="absolute inset-x-0 bottom-0 h-1 bg-[#FF6600]/20 group-hover:h-full transition-all duration-700 opacity-20 pointer-events-none" />
-                        <div className="size-16 rounded-[1.5rem] bg-[#FF6600]/10 flex items-center justify-center text-[#FF6600] border-2 border-[#FF6600]/20 shadow-3xl group-hover:rotate-12 transition-transform duration-700 relative z-10">
-                            <Package className="size-8" />
+                {/* KPI Area — High Density Monitor */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="executive-card h-44 flex flex-col justify-between group/kpi border-foreground/5 hover:border-[#FFB703]/30 transition-all duration-700">
+                        <div className="p-4 rounded-xl bg-white/[0.03] border border-foreground/5 text-[#FFB703] w-fit group-hover/kpi:rotate-12 group-hover/kpi:scale-110 transition-all duration-700 shadow-inner">
+                            <Package className="size-5" />
                         </div>
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-3 italic">ARTICLES INDEXÉS</p>
-                            <p className="text-4xl font-black text-white uppercase italic tracking-tighter">{products.length}</p>
-                        </div>
-                    </div>
-                    <div className="p-10 bg-white/[0.02] rounded-[4rem] border-4 border-white/5 shadow-3xl group relative overflow-hidden flex items-center gap-8 border-l-[16px] border-l-emerald-500">
-                        <div className="absolute inset-x-0 bottom-0 h-1 bg-emerald-500/20 group-hover:h-full transition-all duration-700 opacity-20 pointer-events-none" />
-                        <div className="size-16 rounded-[1.5rem] bg-emerald-500/10 flex items-center justify-center text-emerald-500 border-2 border-emerald-500/20 shadow-3xl group-hover:rotate-12 transition-transform duration-700 relative z-10">
-                            <TrendingUp className="size-8" />
-                        </div>
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-3 italic">VALORISATION STOCK</p>
-                            <p className="text-4xl font-black text-white uppercase italic tracking-tighter tabular-nums">{totalStockValue.toLocaleString('fr-GN')} <small className="text-xs opacity-40 font-black italic">GNF</small></p>
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-black text-muted-foreground uppercase  opacity-60 leading-none">ARTICLES_ACTIFS_CORE</p>
+                            <p className="text-sm font-black text-foreground tracking-tighter uppercase leading-none truncate group-hover/kpi:translate-x-3 transition-transform duration-700">{products.length.toString()}</p>
                         </div>
                     </div>
-                    <div className="p-10 bg-white/[0.02] rounded-[4rem] border-4 border-white/5 shadow-3xl group relative overflow-hidden flex items-center gap-8 border-l-[16px] border-l-rose-500">
-                        <div className="absolute inset-x-0 bottom-0 h-1 bg-rose-500/20 group-hover:h-full transition-all duration-700 opacity-20 pointer-events-none" />
-                        <div className="size-16 rounded-[1.5rem] bg-rose-500/10 flex items-center justify-center text-rose-500 border-2 border-rose-500/20 shadow-3xl group-hover:rotate-12 transition-transform duration-700 relative z-10">
-                            <AlertCircle className="size-8" />
+                    <div className="executive-card h-44 flex flex-col justify-between group/kpi border-foreground/5 hover:border-[#FFB703]/30 transition-all duration-700">
+                        <div className="p-4 rounded-xl bg-white/[0.03] border border-foreground/5 text-[#FFB703] w-fit group-hover/kpi:rotate-12 group-hover/kpi:scale-110 transition-all duration-700 shadow-inner">
+                            <TrendingUp className="size-5" />
                         </div>
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-3 italic">ALERTES CRITIQUES</p>
-                            <p className="text-4xl font-black text-white uppercase italic tracking-tighter">{products.filter(p => p.stock_quantite <= 5).length}</p>
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-black text-muted-foreground uppercase  opacity-60 leading-none">VALORISATION_STOCK_ALPHA</p>
+                            <p className="text-sm font-black text-foreground tracking-tighter uppercase leading-none truncate group-hover/kpi:translate-x-3 transition-transform duration-700">{totalStockValue.toLocaleString('fr-GN')} <small className="text-sm">GNF</small></p>
+                        </div>
+                    </div>
+                    <div className="executive-card h-44 flex flex-col justify-between group/kpi border-foreground/5 hover:border-rose-500/30 transition-all duration-700">
+                        <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 w-fit group-hover/kpi:rotate-12 group-hover/kpi:scale-110 transition-all duration-700 shadow-inner scale-110">
+                            <AlertCircle className="size-5 animate-pulse" />
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-black text-muted-foreground uppercase  opacity-60 leading-none">ALERTES_CRITIQUES_NODE</p>
+                            <p className="text-sm font-black text-rose-500 tracking-tighter uppercase leading-none truncate group-hover/kpi:translate-x-3 transition-transform duration-700">{products.filter(p => p.stock_quantite <= 5).length.toString()}</p>
                         </div>
                     </div>
                 </div>
 
-                {/* Table Surface */}
-                <div className="bg-white/[0.01] border-4 border-white/5 rounded-[4rem] overflow-hidden shadow-3xl">
-                    <div className="p-12 border-b-4 border-white/5 bg-white/[0.02] flex flex-col lg:flex-row lg:items-center justify-between gap-12">
-                        <div className="flex items-center gap-6 overflow-x-auto pb-4 lg:pb-0 scrollbar-hide py-2">
+                {/* Registry Management — Alpha Flux Registry */}
+                <div className="executive-card !p-0 overflow-hidden shadow-4xl group/registry border-foreground/5 hover:border-[#FFB703]/20 transition-all duration-1000">
+                    <div className="p-4 border-b border-foreground/5 bg-white/[0.01] flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+                        <div className="flex items-center gap-4 overflow-x-auto pb-4 xl:pb-0 scrollbar-hide">
                             {FILTERS.map(f => (
                                 <button
+                                    id={`filter-${f.key}`}
                                     key={f.key}
                                     onClick={() => setActiveFilter(f.key)}
                                     className={cn(
-                                        "px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] italic transition-all duration-700 border-4",
+                                        "px-8 h-12 rounded-2xl text-[10px] font-black uppercase  transition-all duration-500 border-2  font-jakarta",
                                         activeFilter === f.key
-                                            ? "bg-[#FF6600] text-white border-[#FF6600] shadow-3xl scale-110"
-                                            : "bg-white/5 border-transparent text-slate-600 hover:text-white"
+                                            ? "bg-[#FFB703] text-background border-[#FFB703] shadow-2xl scale-105"
+                                            : "bg-foreground/5 border-foreground/5 text-muted-foreground hover:text-foreground hover:bg-white/[0.08]"
                                     )}
                                 >
                                     {f.label}
@@ -236,12 +238,12 @@ const Products = () => {
                             ))}
                         </div>
 
-                        <div className="relative group w-full lg:w-[32rem]">
-                            <div className="absolute inset-0 bg-gradient-to-r from-[#FF6600]/20 to-transparent blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-1000" />
-                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 size-6 group-focus-within:text-[#FF6600] transition-all duration-700 relative z-10" />
+                        <div className="relative group w-full xl:w-[35rem] font-jakarta">
+                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground size-6 group-focus-within:text-[#FFB703] transition-all relative z-10" />
                             <input
-                                className="w-full pl-16 pr-8 h-16 bg-white/[0.03] border-4 border-white/5 group-focus-within:border-[#FF6600]/40 rounded-2xl text-sm font-black uppercase tracking-[0.2em] italic placeholder:text-slate-700 outline-none relative z-10 transition-all duration-700 text-white"
-                                placeholder="RECHERCHER RÉFÉRENCE QUANTIQUE..."
+                                id="inventory-search"
+                                className="w-full pl-16 pr-8 h-11 bg-white/[0.03] border-2 border-foreground/5 group-focus-within:border-[#FFB703]/40 rounded-2xl text-[12px] font-black  placeholder:text-slate-600 outline-none relative z-10 transition-all text-foreground uppercase"
+                                placeholder="RECHERCHER_RÉFÉRENCE_INDEX..."
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
                             />
@@ -254,45 +256,48 @@ const Products = () => {
                             selectedIds={selectedIds}
                             onSelectionChange={setSelectedIds}
                             isLoading={isLoading}
-                            className="bg-transparent"
+                            className="bg-transparent border-0 text-foreground"
                             columns={[
                                 {
-                                    label: 'DÉSIGNATION',
+                                    label: 'DÉSIGNATION_TECHNIQUE',
                                     render: (p) => (
-                                        <div className="flex items-center gap-6 py-3 group/item">
-                                            <div className="size-16 rounded-2xl bg-white/[0.03] border-4 border-white/5 flex items-center justify-center overflow-hidden shrink-0 group-hover/item:scale-110 group-hover/item:rotate-3 transition-all duration-700 shadow-2xl relative">
-                                                <div className="absolute inset-0 bg-gradient-to-tr from-[#FF6600]/20 to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity" />
-                                                {p.image_url ? <img src={p.image_url} className="w-full h-full object-cover relative z-10" alt="" /> : <Package className="size-8 text-slate-700" />}
+                                        <div className="flex items-center gap-3 py-4 group/item">
+                                            <div className="size-6 rounded-2xl bg-foreground/5 border-2 border-foreground/10 flex items-center justify-center overflow-hidden shrink-0 group-hover/item:scale-110 group-hover/item:rotate-6 transition-all shadow-2xl relative">
+                                                <div className="absolute inset-0 bg-gradient-to-tr from-[#FFB703]/30 via-transparent to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity duration-700" />
+                                                {p.image_url ? <img src={p.image_url} className="w-full h-full object-cover relative z-10" alt="" /> : <Package className="size-6 text-slate-700" />}
                                             </div>
-                                            <p className="text-sm font-black text-white uppercase tracking-tighter italic group-hover/item:text-[#FF6600] transition-colors duration-700">{p.nom_produit}</p>
+                                            <div className="space-y-1">
+                                                <p className="text-[14px] font-black text-foreground uppercase tracking-tighter group-hover/item:text-[#FFB703] transition-colors truncate max-w-[250px] leading-none">{p.nom_produit}</p>
+                                                <p className="text-[9px] font-black text-slate-600 uppercase  leading-none">NODE_ID: {p.id.slice(0,8)}</p>
+                                            </div>
                                         </div>
                                     )
                                 },
                                 {
-                                    label: 'CATÉGORIE',
-                                    render: (p) => <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] italic">{p.categorie?.nom_categorie?.toUpperCase() || 'CLASSIFIÉ'}</span>
+                                    label: 'NOMENCLATURE',
+                                    render: (p) => <span className="text-[10px] font-black text-muted-foreground uppercase  font-jakarta">{p.categorie?.nom_categorie?.toUpperCase() || 'ALPHA_CLASSIFIED'}</span>
                                 },
                                 {
-                                    label: 'VALEUR UNITÉ',
-                                    render: (p) => <span className="text-sm font-black text-white italic tracking-tighter tabular-nums uppercase">{parseFloat(p.prix_unitaire).toLocaleString('fr-GN')} <small className="text-[11px] font-black text-[#FF6600] non-italic">GNF</small></span>
+                                    label: 'VALEUR_UNITÉ',
+                                    render: (p) => <span className="text-[14px] font-black text-foreground tracking-tighter tabular-nums uppercase font-jakarta">{parseFloat(p.prix_unitaire).toLocaleString('fr-GN')} <small className="text-[10px] font-black text-[#FFB703] tracking-widest ml-1">GNF</small></span>
                                 },
                                 {
-                                    label: 'INDEX STOCK',
+                                    label: 'STOCK_RÉEL_INDEX',
                                     render: (p) => <StockEditor productId={p.id} initialStock={p.stock_quantite} onUpdated={handleStockUpdated} />
                                 },
                                 {
-                                    label: 'STATUT FLUX',
+                                    label: 'STATUT_SYNC',
                                     render: (p) => <StockBadge qty={p.stock_quantite} />
                                 },
                                 {
-                                    label: 'OPÉRATIONS',
+                                    label: 'GOUVERNANCE_TERMINAL',
                                     render: (p) => (
-                                        <div className="flex items-center justify-end gap-4 pr-6">
-                                            <button onClick={() => navigate(`/vendor/products/edit/${p.id}`)} className="p-3 text-slate-500 hover:text-[#FF6600] hover:bg-[#FF6600]/10 border-2 border-transparent hover:border-[#FF6600]/20 rounded-xl transition-all duration-700 group/edit">
-                                                <Edit3 className="size-5 group-hover/edit:animate-pulse" />
+                                        <div className="flex items-center justify-end gap-3 pr-8">
+                                            <button id={`edit-p-${p.id}`} onClick={() => navigate(`/vendor/products/edit/${p.id}`)} className="size-6 flex items-center justify-center text-muted-foreground hover:text-foreground bg-foreground/5 border-2 border-foreground/5 rounded-2xl transition-all group/edit hover:border-[#FFB703]/30 ">
+                                                <Edit3 className="size-5 group-hover/edit:scale-110 transition-transform" />
                                             </button>
-                                            <button onClick={() => setDeleteConfirm(p)} className="p-3 text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 border-2 border-transparent hover:border-rose-500/20 rounded-xl transition-all duration-700 group/trash">
-                                                <Trash2 className="size-5 group-hover/trash:animate-bounce" />
+                                            <button id={`delete-p-${p.id}`} onClick={() => setDeleteConfirm(p)} className="size-6 flex items-center justify-center text-muted-foreground hover:text-rose-500 bg-foreground/5 border-2 border-foreground/5 rounded-2xl transition-all group/trash hover:border-rose-500/30 ">
+                                                <Trash2 className="size-5 group-hover/trash:scale-110 transition-transform" />
                                             </button>
                                         </div>
                                     )
@@ -302,32 +307,39 @@ const Products = () => {
                         />
 
                         {!isLoading && filtered.length === 0 && (
-                            <div className="py-40 text-center opacity-20 flex flex-col items-center gap-10">
-                                <ShoppingBag className="size-24 animate-pulse text-slate-500" />
-                                <p className="text-[12px] font-black uppercase tracking-[0.6em] italic">AUCUNE RÉFÉRENCE IDENTIFIÉE DANS CETTE SECTION</p>
+                            <div className="py-24 text-center opacity-40 flex flex-col items-center gap-3">
+                                <div className="relative">
+                                    <ShoppingBag className="size-6 text-slate-800 animate-pulse" />
+                                    <Satellite className="absolute -top-4 -right-4 size-6 text-[#FFB703] animate-bounce" />
+                                </div>
+                                <p className="text-[12px] font-black uppercase  text-foreground">AUCUNE_RÉFÉRENCE_IDENTIFIÉE_ALPHA</p>
+                                <button onClick={load} className="text-[#FFB703] text-[10px] font-black uppercase  border-b-2 border-[#FFB703]/20 pb-2 hover:border-[#FFB703] transition-all">RESCANNER_TERMINAL</button>
                             </div>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* Modal de Confirmation Correction Styles */}
+            {/* Modal de Confirmation — Executive Security Design */}
             {deleteConfirm && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-8 bg-black/80 backdrop-blur-3xl animate-in fade-in duration-500">
-                    <div className="bg-white group rounded-[4rem] border-x-[16px] border-rose-600 p-16 md:p-20 max-w-2xl w-full shadow-3xl animate-in zoom-in-95 duration-700 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 size-96 bg-rose-600/10 rounded-full blur-[100px] -mr-48 -mt-48 transition-transform group-hover:scale-125 duration-[4s]" />
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-3xl animate-in fade-in duration-500 font-jakarta">
+                    <div className="bg-card group rounded-2xl border-4 border-rose-500/20 p-20 max-w-2xl w-full shadow-[0_0_100px_rgba(244,63,94,0.1)] animate-in zoom-in-95 duration-700 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 size-[30rem] bg-rose-500/[0.03] rounded-full blur-[150px] -mr-60 -mt-60 transition-transform group-hover:scale-150 duration-[10s]" />
 
-                        <div className="size-24 rounded-[2rem] bg-rose-600/10 flex items-center justify-center text-rose-600 border-4 border-rose-600/20 shadow-3xl mb-12 relative z-10 group-hover:rotate-12 transition-transform duration-700">
-                            <Trash2 className="size-12" />
+                        <div className="size-6 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 border-2 border-rose-500/20 shadow-2xl mb-12 relative z-10 group-hover:rotate-12 transition-all duration-700">
+                            <Trash2 className="size-6" />
                         </div>
-                        <h3 className="text-5xl font-black text-black uppercase tracking-tighter italic mb-6 leading-none relative z-10">VÉRIFICATION <br /> DE DÉLÉTION</h3>
-                        <p className="text-md text-slate-600 font-extrabold mb-16 leading-relaxed italic uppercase tracking-widest border-l-8 border-rose-600/20 pl-10 relative z-10">VOULEZ-VOUS RÉVOQUER <span className="text-rose-600">"{deleteConfirm.nom_produit?.toUpperCase()}"</span> ? <br /> CETTE OPÉRATION EST IRRÉVERSIBLE DANS L'INDEX RÉSEAU.</p>
+                        <h3 className="text-sm font-black text-foreground uppercase tracking-tighter mb-6 underline decoration-rose-500/30 decoration-8 underline-offset-8 relative z-10">VÉRIFICATION_ALPHA_SÉCURITÉ</h3>
+                        <p className="text-[13px] text-muted-foreground font-black mb-16 leading-loose uppercase  border-l-4 border-rose-500/40 pl-10 relative z-10">
+                            CONFIRMER LA RÉVOCATION DÉFINITIVE DE <span className="text-rose-500">"{deleteConfirm.nom_produit?.toUpperCase()}"</span> ? <br /> 
+                            L'OPÉRATION EST IRRÉVERSIBLE DANS L'ARCHIVE RÉSEAU_BCA.
+                        </p>
 
-                        <div className="flex gap-8 relative z-10">
-                            <button onClick={() => setDeleteConfirm(null)} className="flex-1 h-20 rounded-2xl border-4 border-black text-black text-[11px] font-black uppercase tracking-[0.4em] italic hover:bg-black hover:text-white transition-all duration-700">CANCEL</button>
-                            <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 h-20 rounded-2xl bg-rose-600 text-white text-[11px] font-black uppercase tracking-[0.4em] italic shadow-3xl shadow-rose-600/20 hover:scale-110 active:scale-95 transition-all duration-700 flex items-center justify-center gap-6 group/confirm">
-                                <Trash2 className="size-6 group-confirm:animate-bounce" />
-                                CONFIRM
+                        <div className="flex gap-3 relative z-10">
+                            <button id="modal-cancel" onClick={() => setDeleteConfirm(null)} className="flex-1 h-12 rounded-2xl bg-foreground/5 border-2 border-foreground/5 text-muted-foreground text-[10px] font-black uppercase  hover:bg-foreground/10 hover:text-foreground transition-all ">ANNULER_PROCÉDURE</button>
+                            <button id="modal-confirm" onClick={() => handleDelete(deleteConfirm)} className="flex-1 h-12 rounded-2xl bg-rose-500 text-foreground text-[10px] font-black uppercase  shadow-2xl shadow-rose-500/40 hover:bg-rose-600  transition-all flex items-center justify-center gap-3 group/confirm border-none">
+                                <Trash2 className="size-6" />
+                                VALIDATION_RÉVOCATION_ALPHA
                             </button>
                         </div>
                     </div>

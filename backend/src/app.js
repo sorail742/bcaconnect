@@ -4,7 +4,6 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
-require('dotenv').config();
 
 const auditMiddleware = require('./middlewares/auditMiddleware');
 const sanitizeMiddleware = require('./middlewares/sanitizeMiddleware');
@@ -14,13 +13,17 @@ const path = require('path');
 const app = express();
 
 // ─── Sécurité & Performance ─────────────────────────────────────────────────
-app.use(helmet());
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
 // CORS configuré précisément (domaines autorisés)
+const CORS_ORIGINS = process.env.NODE_ENV === 'production'
+    ? ['https://bcaconnect-backend.onrender.com', 'https://bcaconnect.onrender.com', 'https://bcaconnect.vercel.app']
+    : ['http://localhost:5173', 'http://localhost:3000'];
+
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production'
-        ? ['https://bcaconnect-backend.onrender.com', 'https://bcaconnect.onrender.com', 'https://bcaconnect.vercel.app']
-        : '*',
+    origin: CORS_ORIGINS,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
 }));

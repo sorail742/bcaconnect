@@ -1,115 +1,75 @@
 import React from 'react';
-import PublicLayout from '../components/layout/PublicLayout';
-import { Shield, Lock, Eye, FileText, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
+import { Shield, Lock, Eye, Sparkles, ShieldCheck } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 const PrivacyPage = () => {
+    const { t, lang } = useLanguage();
+
     return (
-        <PublicLayout>
-            <div className="bg-[#0A0D14] min-h-screen text-white font-inter">
-                <div className="w-full space-y-32 animate-in fade-in slide-in-from-bottom-12 duration-1000 pb-48 px-6 md:px-12 max-w-7xl mx-auto pt-48">
-
-                    {/* Executive Header */}
-                    <div className="space-y-16 text-center relative group">
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 size-[60rem] bg-[#FF6600]/10 rounded-full blur-[200px] -z-10 mix-blend-screen pointer-events-none group-hover:scale-110 transition-transform duration-[4s]" />
-                        <div className="flex flex-col items-center gap-10">
-                            <div className="flex items-center gap-6">
-                                <div className="size-4 rounded-full bg-[#FF6600] animate-pulse shadow-[0_0_20px_rgba(255,102,0,0.4)]" />
-                                <span className="text-[11px] font-black text-[#FF6600] uppercase tracking-[0.6em] italic leading-none pt-0.5">JURIDIQUE & PROTECTION DES DONNÉES</span>
-                            </div>
-                            <h1 className="text-7xl md:text-[10rem] font-black tracking-tighter italic uppercase leading-[0.8] text-white drop-shadow-2xl">
-                                POLITIQUE DE <br />
-                                <span className="text-[#FF6600] not-italic underline decoration-white/10 decoration-8 underline-offset-[-12px]">CONFIDENTIALITÉ.</span>
-                            </h1>
+        <div className="bg-white dark:bg-[#0A0D14] min-h-screen text-slate-900 dark:text-foreground font-jakarta">
+            <div className="max-w-5xl mx-auto px-6 pt-44 pb-32 space-y-24 animate-in fade-in slide-in-from-bottom-12 duration-1000">
+                
+                {/* Header */}
+                <div className="text-center space-y-8 py-16 relative">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 size-[50rem] bg-[#FF6600]/5 rounded-full blur-[150px] -z-10 mix-blend-screen pointer-events-none" />
+                    <div className="flex flex-col items-center gap-6">
+                        <div className="flex items-center gap-4">
+                            <div className="size-2 rounded-full bg-[#FF6600] animate-pulse shadow-[0_0_15px_rgba(255,102,0,0.5)]" />
+                            <span className="text-[10px] font-black text-[#FF6600] uppercase   leading-none pt-0.5">{lang === 'FR' ? "PROTECTION DES DONNÉES" : "DATA PROTECTION"}</span>
                         </div>
-                        <p className="text-slate-500 font-black uppercase tracking-[0.4em] text-sm italic border-b-4 border-white/5 pb-8 inline-block">DERNIÈRE MISE À JOUR : 21 MARS 2026</p>
-                    </div>
-
-                    {/* Security Highlights */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-                        {[
-                            { icon: Lock, label: "DONNÉES SÉCURISÉES", desc: "CHIFFREMENT AES-256 DE GRADE MILITAIRE POUR TOUTES VOS INFORMATIONS PERSONNELLES ET TRANSACTIONNELLES.", borderColor: "border-[#FF6600]/30", iconColor: "text-[#FF6600]", bgColor: "bg-[#FF6600]/10" },
-                            { icon: Eye, label: "INTÉGRITÉ TOTALE", desc: "ENGAGEMENT CONTRACTUEL DE NON-PARTAGE DES FLUX DE DONNÉES AVEC DES ENTITÉS TIERCES SANS CONSENTEMENT.", borderColor: "border-blue-500/30", iconColor: "text-blue-500", bgColor: "bg-blue-500/10" },
-                            { icon: Shield, label: "SOUVERAINETÉ", desc: "CONTRÔLE ABSOLU SUR VOTRE EMPREINTE NUMÉRIQUE AVEC DROIT D'EFFACEMENT INTÉGRAL ET IMMÉDIAT.", borderColor: "border-emerald-500/30", iconColor: "text-emerald-500", bgColor: "bg-emerald-500/10" },
-                        ].map((item, i) => (
-                            <div key={i} className={`bg-white/[0.02] p-12 rounded-[4rem] border-4 ${item.borderColor} space-y-10 shadow-3xl group hover:scale-105 transition-all duration-700 relative overflow-hidden`}>
-                                <div className={`absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
-                                <div className={`size-24 rounded-[1.5rem] ${item.bgColor} flex items-center justify-center ${item.iconColor} shadow-inner group-hover:rotate-12 transition-transform duration-700 relative z-10`}>
-                                    <item.icon className="size-12" />
-                                </div>
-                                <div className="space-y-6 relative z-10">
-                                    <h3 className="text-2xl font-black italic tracking-tighter uppercase text-white leading-none">{item.label}</h3>
-                                    <p className="text-[11px] text-slate-500 font-black uppercase tracking-[0.2em] italic leading-relaxed border-l-8 border-white/5 pl-8">{item.desc}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Legal Framework */}
-                    <div className="bg-white/[0.02] border-4 border-white/5 rounded-[5rem] p-16 md:p-24 shadow-3xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 size-[40rem] bg-[#FF6600]/5 rounded-full blur-[200px] -mr-48 -mt-48 group-hover:bg-[#FF6600]/10 transition-colors duration-1000" />
-
-                        <div className="space-y-32 relative z-10">
-                            <section className="space-y-12 animate-in slide-in-from-left duration-1000">
-                                <div className="flex items-center gap-10 group/title">
-                                    <div className="p-4 bg-[#FF6600]/10 rounded-2xl text-[#FF6600] shadow-3xl border-2 border-[#FF6600]/20 group-hover:rotate-6 transition-transform">
-                                        <Sparkles className="size-8" />
-                                    </div>
-                                    <h2 className="text-4xl lg:text-6xl font-black text-white italic tracking-tighter uppercase leading-none pt-1">
-                                        1. COLLECTE INFORMATIONNELLE
-                                    </h2>
-                                </div>
-                                <div className="text-slate-400 font-black uppercase tracking-[0.3em] text-xs leading-[2.5] italic border-l-[12px] border-[#FF6600]/20 pl-16 py-4">
-                                    NOUS COLLECTONS LES INFORMATIONS QUE VOUS NOUS FOURNISSEZ DIRECTEMENT LORS DE LA CRÉATION DE VOTRE COMPTE : NOM, ADRESSE EMAIL, NUMÉRO DE TÉLÉPHONE, ADRESSE DE LIVRAISON ET INFORMATIONS DE PAIEMENT (MOBILE MONEY OU VIREMENT). CES DONNÉES SONT LES BRIQUES FONDAMENTALES DE VOTRE IDENTITÉ AU SEIN DE L'ÉCOSYSTÈME BCA.
-                                </div>
-                            </section>
-
-                            <section className="space-y-12 animate-in slide-in-from-right duration-1000 delay-100">
-                                <div className="flex items-center gap-10 group/title">
-                                    <div className="p-4 bg-[#FF6600]/10 rounded-2xl text-[#FF6600] shadow-3xl border-2 border-[#FF6600]/20 group-hover:rotate-6 transition-transform">
-                                        <ShieldCheck className="size-8" />
-                                    </div>
-                                    <h2 className="text-4xl lg:text-6xl font-black text-white italic tracking-tighter uppercase leading-none pt-1">
-                                        2. EXPLOITATION OPÉRATIONNELLE
-                                    </h2>
-                                </div>
-                                <div className="space-y-12">
-                                    <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-xs italic leading-relaxed border-r-[12px] border-[#FF6600]/20 pr-16 text-right">
-                                        VOS FLUX DE DONNÉES SONT EXPLOITÉS EXCLUSIVEMENT POUR GARANTIR L'EFFICIENCE OPÉRATIONNELLE DU RÉSEAU :
-                                    </p>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                        {[
-                                            "INGÉNIERIE DU TRAITEMENT DES COMMANDES ET FLUX LOGISTIQUES.",
-                                            "GOUVERNANCE DU PORTEFEUILLE VIRTUEL ET SÉCURISATION ESCROW.",
-                                            "OPTIMISATION DES SERVICES ET DÉTECTION D'ANOMALIES VIA IA.",
-                                            "DIFFUSION DE PROTOCOLES DE NOTIFICATION CRITIQUES."
-                                        ].map((item, i) => (
-                                            <div key={i} className="flex items-center gap-8 p-10 bg-white/[0.01] rounded-3xl border-4 border-white/5 group/item hover:border-[#FF6600]/20 transition-all">
-                                                <div className="size-4 rounded-full bg-[#FF6600] group-hover/item:scale-[4] transition-transform duration-700 shadow-[0_0_15px_rgba(255,102,0,0.4)]" />
-                                                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 leading-tight italic">{item}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </section>
-
-                            <section className="space-y-12 animate-in slide-in-from-left duration-1000 delay-200">
-                                <div className="flex items-center gap-10 group/title">
-                                    <div className="p-4 bg-[#FF6600]/10 rounded-2xl text-[#FF6600] shadow-3xl border-2 border-[#FF6600]/20 group-hover:rotate-6 transition-transform">
-                                        <Lock className="size-8" />
-                                    </div>
-                                    <h2 className="text-4xl lg:text-6xl font-black text-white italic tracking-tighter uppercase leading-none pt-1">
-                                        3. SANCTUARISATION
-                                    </h2>
-                                </div>
-                                <div className="text-slate-400 font-black uppercase tracking-[0.3em] text-xs leading-[2.5] italic border-l-[12px] border-[#FF6600]/20 pl-16 py-4">
-                                    BCA CONNECT DÉPLOIE DES ARCHITECTURES DE SÉCURITÉ MULTI-COUCHES (PHYSIQUES, LOGIQUES ET ADMINISTRATIVES) POUR SANCTUARISER VOS INFORMATIONS. TOUTES LES INTERACTIONS FINANCIÈRES SONT ROUTÉES VIA DES TERMINAUX CHIFFRÉS ET AUDITÉS EN PERMANENCE.
-                                </div>
-                            </section>
-                        </div>
+                        <h1 className="text-2xl md:text-2xl lg:text-xl font-semibold  tracking-tighter text-slate-900 dark:text-foreground uppercase leading-none mb-4">
+                            {t('privacyTitle').split(' ').slice(0, -1).join(' ')} <br /> <span className="text-[#FF6600]">{t('privacyTitle').split(' ').slice(-1)}</span>
+                        </h1>
+                        <div className="w-24 h-1 bg-slate-100 dark:bg-foreground/10 rounded-full mx-auto" />
+                        <p className="text-[10px] text-muted-foreground/80 font-bold uppercase tracking-widest  opacity-60 mt-4">{t('legalLastUpdate').toUpperCase()} : 21 MARS 2026</p>
                     </div>
                 </div>
+
+                {/* Highlights */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {[
+                        { icon: Lock, label: lang === 'FR' ? "CHIFFREMENT TOTAL" : "FULL ENCRYPTION", desc: lang === 'FR' ? "Vos données sont cryptées." : "Your data is encrypted.", color: "text-[#FF6600]", bg: "bg-[#FF6600]/10" },
+                        { icon: Eye, label: "ZÉRO PARTAGE", desc: lang === 'FR' ? "Pas de tiers impliqués." : "No third-party sharing.", color: "text-blue-500", bg: "bg-blue-500/10" },
+                        { icon: Shield, label: lang === 'FR' ? "VOTRE CONTRÔLE" : "YOUR CONTROL", desc: lang === 'FR' ? "Contrôle total sur vos données." : "Total control over your data.", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                    ].map((item, i) => (
+                        <div key={i} className="p-8 rounded-3xl bg-white dark:bg-[#0F1219] border-2 border-slate-50 dark:border-foreground/5 space-y-6 shadow-xl hover:border-[#FF6600]/20 transition-all duration-500">
+                            <div className={`size-10 rounded-xl ${item.bg} flex items-center justify-center ${item.color}`}>
+                                <item.icon className="size-5" />
+                            </div>
+                            <h3 className="text-lg font-black  text-slate-900 dark:text-foreground uppercase tracking-tighter">{item.label}</h3>
+                            <p className="text-[10px] text-muted-foreground/80 font-bold uppercase tracking-widest leading-relaxed  opacity-80">{item.desc}</p>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Content */}
+                <div className="space-y-16 py-12">
+                     <section className="space-y-6">
+                        <div className="flex items-center gap-4">
+                            <div className="size-8 rounded-xl bg-slate-50 dark:bg-foreground/5 border-2 border-slate-50 dark:border-foreground/5 flex items-center justify-center text-[#FF6600]">
+                                <Sparkles className="size-4" />
+                            </div>
+                            <h2 className="text-xl font-black  text-slate-900 dark:text-foreground uppercase tracking-tighter">1. {lang === 'FR' ? "Collecte des Informations" : "Information Collection"}</h2>
+                        </div>
+                        <div className="text-muted-foreground font-bold uppercase  text-[10px] leading-relaxed  border-l-4 border-[#FF6600]/20 pl-8 opacity-80">
+                            {lang === 'FR' ? "Nous collectons uniquement les informations nécessaires au bon fonctionnement de vos transactions." : "We only collect information necessary for the smooth operation of your transactions."}
+                        </div>
+                     </section>
+
+                     <section className="space-y-6 text-left">
+                        <div className="flex items-center gap-4">
+                            <div className="size-8 rounded-xl bg-slate-50 dark:bg-foreground/5 border-2 border-slate-50 dark:border-foreground/5 flex items-center justify-center text-emerald-500">
+                                <ShieldCheck className="size-4" />
+                            </div>
+                            <h2 className="text-xl font-black  text-slate-900 dark:text-foreground uppercase tracking-tighter">2. {lang === 'FR' ? "Sécurité Bancaire" : "Bank-Grade Security"}</h2>
+                        </div>
+                        <div className="text-muted-foreground font-bold uppercase  text-[10px] leading-relaxed  border-l-4 border-emerald-500/20 pl-8 opacity-80">
+                            {lang === 'FR' ? "Toutes les transactions financières sont chiffrées." : "All financial transactions are encrypted."}
+                        </div>
+                     </section>
+                </div>
             </div>
-        </PublicLayout>
+        </div>
     );
 };
 

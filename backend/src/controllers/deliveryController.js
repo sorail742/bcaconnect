@@ -8,7 +8,7 @@ const deliveryController = {
             const orders = await Order.findAll({
                 where: {
                     statut_livraison: 'pret',
-                    statut: { [Op.or]: ['payé', 'en_préparation'] }
+                    statut: { [Op.in]: ['payé', 'en_préparation'] }
                 },
                 include: ['details']
             });

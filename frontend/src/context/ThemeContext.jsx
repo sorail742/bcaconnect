@@ -15,10 +15,18 @@ export const ThemeProvider = ({ children }) => {
 
     useEffect(() => {
         const root = window.document.documentElement;
+        const body = window.document.body;
+
         if (theme === 'dark') {
             root.classList.add('dark');
+            body.classList.add('dark');
+            root.classList.remove('light');
+            body.classList.remove('light');
         } else {
             root.classList.remove('dark');
+            body.classList.remove('dark');
+            root.classList.add('light');
+            body.classList.add('light');
         }
         try {
             localStorage.setItem('bca-theme', theme);

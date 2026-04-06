@@ -81,14 +81,31 @@ const productController = {
 
     getAll: async (req, res, next) => {
         try {
-            const products = await Product.findAll({
+            const { page = 1, limit = 20, search = '', categorie_id = '' } = req.query;
+            const offset = (parseInt(page) - 1) * parseInt(limit);
+            const { Op } = require('sequelize');
+
+            const where = {};
+            if (search) where.nom_produit = { [Op.like]: `%${search}%` };
+            if (categorie_id) where.categorie_id = categorie_id;
+
+            const { count, rows: products } = await Product.findAndCountAll({
+                where,
                 include: [
                     { model: Store, attributes: ['nom_boutique', 'slug', 'id'] },
                     { model: Category, as: 'categorie', attributes: ['nom_categorie'] }
                 ],
-                order: [['createdAt', 'DESC']]
+                order: [['createdAt', 'DESC']],
+                limit: parseInt(limit),
+                offset
             });
-            res.json(products);
+
+            res.json({
+                total: count,
+                pages: Math.ceil(count / parseInt(limit)),
+                currentPage: parseInt(page),
+                products
+            });
         } catch (error) {
             next(error);
         }

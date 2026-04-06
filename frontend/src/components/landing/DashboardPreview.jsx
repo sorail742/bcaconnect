@@ -1,125 +1,159 @@
-import {
-    TrendingUp,
-    Package,
-    Users,
-    Bell,
-    Search,
-    ArrowUpRight
-} from "lucide-react"
-import { cn } from "../../lib/utils"
+import React from 'react';
+import { motion } from 'framer-motion';
+import { TrendingUp, Package, Users, Bell, Search, ArrowUpRight, ArrowRight, Zap, Activity, Terminal } from "lucide-react";
+import { cn } from "../../lib/utils";
+import { useLanguage } from "../../context/LanguageContext";
 
 export function DashboardPreview() {
+    const { lang } = useLanguage();
+
     return (
-        <section className="relative py-24 bg-white dark:bg-slate-950 overflow-hidden">
-            <div className="container mx-auto px-4 relative z-10">
-                <div className="max-w-3xl mx-auto text-center mb-16 animate-fade-in-up">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-primary/10 border border-primary/20 text-[10px] font-bold text-primary mb-6 uppercase tracking-widest">
-                        Interface Intuitive
+        <section className="relative py-16 bg-background overflow-hidden font-jakarta border-y border-border">
+            <div className="container mx-auto px-6 md:px-12 relative z-10">
+                <div className="max-w-3xl mx-auto text-center mb-10 space-y-4">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-foreground text-background text-xs font-semibold uppercase tracking-wide shadow-sm">
+                        <Activity className="size-4 text-primary animate-pulse" />
+                        {lang === 'FR' ? "Interface Intuitive" : "Intuitive Interface"}
                     </div>
-                    <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6 tracking-tight leading-tight">
-                        Une gestion simplifiée <br />
-                        <span className="text-primary">pour votre business</span>
+                    <h2 className="text-2xl md:text-4xl font-bold text-foreground tracking-tight">
+                        {lang === 'FR' ? "Une gestion " : "Simplified "}
+                        <span className="text-primary">{lang === 'FR' ? "simplifiée." : "management."}</span>
                     </h2>
-                    <p className="text-lg text-slate-600 dark:text-slate-400 font-medium leading-relaxed opacity-80">
-                        Pilotez votre activité avec une clarté absolue et des outils de performance intégrés.
+                    <p className="text-base text-muted-foreground leading-relaxed max-w-xl mx-auto">
+                        {lang === 'FR'
+                            ? "Pilotez votre activité avec une clarté absolue grâce à notre tableau de bord tout-en-un."
+                            : "Drive your operations with absolute clarity and high-velocity performance."}
                     </p>
                 </div>
 
-                <div className="relative max-w-6xl mx-auto animate-fade-in-up">
-                    <div className="rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl group transition-all duration-500 hover:border-primary/20">
-                        {/* Fake Header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                            <div className="flex items-center gap-4">
-                                <div className="size-9 rounded-xl bg-primary flex items-center justify-center text-white shadow-md">
-                                    <span className="font-bold text-xs uppercase">BC</span>
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="relative max-w-5xl mx-auto"
+                >
+                    <div className="rounded-2xl overflow-hidden border border-border bg-card shadow-sm hover:border-primary/40 transition-all duration-300">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-muted/50">
+                            <div className="flex items-center gap-3">
+                                <div className="size-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
+                                    <span className="font-bold text-xs">BCA</span>
                                 </div>
                                 <div className="hidden sm:block">
-                                    <p className="font-bold text-slate-900 dark:text-white text-xs tracking-tight leading-none uppercase">BCA Connect</p>
-                                    <p className="text-[10px] font-bold text-primary uppercase mt-0.5 opacity-80">Dashboard V4</p>
+                                    <p className="font-semibold text-foreground text-sm leading-none">BCA Connect</p>
+                                    <div className="flex items-center gap-1.5 mt-1">
+                                        <div className="size-1.5 rounded-full bg-primary animate-pulse" />
+                                        <span className="text-xs text-primary font-medium">Actif</span>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div className="flex items-center gap-4">
-                                <div className="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                                    <Search className="size-3.5 text-slate-400" />
-                                    <span className="text-[10px] text-slate-400 font-medium italic">Recherche...</span>
+                            <div className="flex items-center gap-3">
+                                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background border border-border">
+                                    <Search className="size-3.5 text-muted-foreground" />
+                                    <span className="text-xs text-muted-foreground">Rechercher...</span>
                                 </div>
-                                <button className="relative p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-                                    <Bell className="size-4 text-slate-600 dark:text-slate-400" />
-                                    <span className="absolute top-1.5 right-1.5 size-2 bg-primary rounded-full border border-white dark:border-slate-900" />
-                                </button>
-                                <div className="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700">
-                                    <Users className="size-4 text-slate-500" />
+                                <div className="relative p-2 rounded-lg bg-background border border-border cursor-pointer hover:border-primary/40 transition-colors">
+                                    <Bell className="size-4 text-foreground" />
+                                    <span className="absolute top-1.5 right-1.5 size-1.5 bg-primary rounded-full animate-pulse" />
+                                </div>
+                                <div className="size-8 rounded-full overflow-hidden border border-border">
+                                    <img src="https://ui-avatars.com/api/?name=BCA+Admin&background=FF6600&color=fff" alt="User" className="w-full h-full object-cover" />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Fake Content */}
-                        <div className="p-8 lg:p-10">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                        {/* Content */}
+                        <div className="p-5">
+                            {/* KPI row */}
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
                                 {[
-                                    { icon: TrendingUp, label: "Volume Ventes", val: "15,2M", unit: "GNF", color: "text-primary", bg: "bg-primary/10" },
-                                    { icon: Package, label: "Commandes", val: "284", unit: "Unités", color: "text-secondary", bg: "bg-secondary/10" },
-                                    { icon: Users, label: "Clients", val: "1,429", unit: "Actifs", color: "text-accent", bg: "bg-accent/10" },
-                                    { icon: TrendingUp, label: "Croissance", val: "94,2", unit: "%", color: "text-primary", bg: "bg-primary/10" },
+                                    { icon: TrendingUp, label: lang === 'FR' ? "Volume Ventes" : "Sales Volume", val: "15,2M", unit: "GNF", color: "text-primary", bg: "bg-primary/10" },
+                                    { icon: Package, label: lang === 'FR' ? "Commandes" : "Orders", val: "284", unit: "unités", color: "text-blue-500", bg: "bg-blue-500/10" },
+                                    { icon: Users, label: lang === 'FR' ? "Utilisateurs" : "Users", val: "1 429", unit: "actifs", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                                    { icon: Activity, label: lang === 'FR' ? "Croissance" : "Growth", val: "94,2", unit: "%", color: "text-purple-500", bg: "bg-purple-500/10" },
                                 ].map((stat, i) => (
-                                    <div key={i} className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 hover:border-primary/20 transition-all duration-300">
-                                        <div className={cn("size-10 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 shadow-sm", stat.bg)}>
-                                            <stat.icon className={cn("size-5", stat.color)} />
+                                    <div key={i} className="p-4 rounded-xl bg-muted border border-border hover:border-primary/30 transition-all shadow-sm">
+                                        <div className={cn("size-9 rounded-lg flex items-center justify-center mb-3 border border-border", stat.bg)}>
+                                            <stat.icon className={cn("size-4", stat.color)} />
                                         </div>
-                                        <p className="text-[9px] uppercase tracking-widest font-bold text-slate-400 mb-1">{stat.label}</p>
+                                        <p className="text-xs font-medium text-muted-foreground mb-1">{stat.label}</p>
                                         <div className="flex items-baseline gap-1">
-                                            <span className="text-2xl font-bold text-slate-900 dark:text-white tabular-nums tracking-tight">{stat.val}</span>
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase opacity-60">{stat.unit}</span>
+                                            <span className="text-lg font-bold text-foreground tabular-nums">{stat.val}</span>
+                                            <span className="text-xs text-muted-foreground">{stat.unit}</span>
                                         </div>
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                <div className="lg:col-span-2 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
-                                    <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/30 flex justify-between items-center">
-                                        <h4 className="font-bold text-sm text-slate-900 dark:text-white uppercase tracking-wider">Dernières Opérations</h4>
-                                        <span className="text-[10px] font-bold text-primary cursor-pointer hover:underline uppercase tracking-widest">Voir tout</span>
+                            {/* Bottom row */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                                <div className="lg:col-span-2 rounded-xl bg-muted border border-border overflow-hidden">
+                                    <div className="px-4 py-3 border-b border-border bg-background flex justify-between items-center">
+                                        <h4 className="font-semibold text-xs text-foreground border-l-4 border-primary pl-3 py-0.5">
+                                            {lang === 'FR' ? "Dernières Opérations" : "Recent Operations"}
+                                        </h4>
+                                        <span className="text-xs font-semibold text-primary cursor-pointer flex items-center gap-1">
+                                            {lang === 'FR' ? "Voir tout" : "View All"} <ArrowUpRight className="size-3" />
+                                        </span>
                                     </div>
-                                    <div className="p-2">
+                                    <div className="p-3 space-y-1">
                                         {[
-                                            { name: "Alpha Diallo", ref: "#BCA-2847", amount: "850k", status: "Livré", color: "text-secondary" },
-                                            { name: "Fatou Barry", ref: "#BCA-2846", amount: "1,2M", status: "En cours", color: "text-primary" },
-                                            { name: "Ibrahim Sow", ref: "#BCA-2845", amount: "2,5M", status: "Livré", color: "text-secondary" },
+                                            { name: "Alpha Diallo", ref: "#BCA-2847", amount: "850k", status: "Livré", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10" },
+                                            { name: "Fatou Barry", ref: "#BCA-2846", amount: "1,2M", status: "En cours", color: "text-primary", bg: "bg-primary/10" },
+                                            { name: "Ibrahim Sow", ref: "#BCA-2845", amount: "2,5M", status: "Livré", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-500/10" },
                                         ].map((row, i) => (
-                                            <div key={i} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-default">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-[10px] text-slate-400">{i + 1}</div>
+                                            <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-background border border-transparent hover:border-border transition-all cursor-default">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="size-7 rounded-lg bg-background border border-border flex items-center justify-center font-bold text-xs text-muted-foreground">0{i + 1}</div>
                                                     <div>
-                                                        <p className="text-xs font-bold text-slate-900 dark:text-white uppercase">{row.name}</p>
-                                                        <p className="text-[9px] text-slate-400 font-bold tracking-widest">{row.ref}</p>
+                                                        <p className="text-sm font-semibold text-foreground leading-none">{row.name}</p>
+                                                        <p className="text-xs text-muted-foreground mt-0.5">{row.ref}</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-6">
-                                                    <p className="text-xs font-bold text-slate-900 dark:text-white">{row.amount} GNF</p>
-                                                    <span className={cn("text-[9px] font-bold uppercase tracking-widest", row.color)}>{row.status}</span>
+                                                <div className="flex items-center gap-3">
+                                                    <p className="text-sm font-bold text-foreground tabular-nums">{row.amount} GNF</p>
+                                                    <span className={cn("px-2.5 py-1 rounded-full text-xs font-semibold", row.bg, row.color)}>{row.status}</span>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
 
-                                <div className="space-y-6">
-                                    <div className="p-8 rounded-3xl bg-primary text-white shadow-xl shadow-primary/20 cursor-pointer hover:scale-[1.02] transition-all group/promo">
-                                        <ArrowUpRight className="size-6 mb-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                                        <h5 className="text-xl font-bold tracking-tight leading-tight mb-2">Passez au niveau supérieur.</h5>
-                                        <p className="text-xs font-medium opacity-80 mb-6">Débloquez les analytics avancées et le support premium illimité.</p>
-                                        <div className="h-1 rounded-full bg-white/20">
-                                            <div className="h-full w-2/3 bg-white rounded-full" />
+                                <div className="space-y-3 flex flex-col justify-center">
+                                    <div className="p-5 rounded-xl bg-primary text-primary-foreground shadow-sm relative overflow-hidden cursor-pointer hover:bg-primary/90 transition-colors">
+                                        <div className="absolute top-0 right-0 p-4 opacity-10">
+                                            <Zap className="size-16 fill-current" />
                                         </div>
+                                        <div className="relative z-10 space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <ArrowUpRight className="size-5" />
+                                                <span className="px-2.5 py-1 bg-background/20 rounded-full text-xs font-semibold">Premium</span>
+                                            </div>
+                                            <h5 className="text-sm font-bold leading-tight">
+                                                {lang === 'FR' ? "Passez au niveau supérieur" : "Upgrade to Premium"}
+                                            </h5>
+                                            <p className="text-xs opacity-80 leading-relaxed">
+                                                {lang === 'FR' ? "Débloquez les analyses avancées." : "Unlock advanced analytics."}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 rounded-xl bg-foreground text-background border border-border flex items-center justify-between cursor-pointer hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <Terminal className="size-5 text-primary" />
+                                            <div>
+                                                <p className="text-sm font-semibold leading-none">Console</p>
+                                                <p className="text-xs opacity-60 mt-0.5">Interface système</p>
+                                            </div>
+                                        </div>
+                                        <ArrowRight className="size-4" />
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </motion.div>
             </div>
         </section>
-    )
+    );
 }

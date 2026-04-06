@@ -11,7 +11,7 @@ const validateRegister = (req, res, next) => {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('Email invalide.');
     if (!telephone || telephone.length < 8) errors.push('Téléphone invalide.');
     if (!mot_de_passe || mot_de_passe.length < 6) errors.push('Mot de passe trop court (min 6 caractères).');
-    if (!role || !['client', 'fournisseur', 'transporteur'].includes(role)) errors.push('Rôle invalide.');
+    if (!role || !['client', 'fournisseur', 'transporteur'].includes(role)) errors.push('Rôle invalide. Valeurs acceptées : client, fournisseur, transporteur.');
 
     if (errors.length > 0) {
         return res.status(422).json({ message: 'Données invalides', errors });

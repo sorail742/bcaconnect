@@ -10,7 +10,7 @@ const calculateInstallments = (montant, taux, mois) => {
     return Math.round(mensualite || (montant / mois)); // Fallback si taux est 0
 };
 
-exports.simulateCredit = async (req, res) => {
+exports.simulateCredit = async (req, res, next) => {
     try {
         const { montant, taux, mois } = req.body;
         const mensualite = calculateInstallments(montant, taux || 0, mois);
@@ -25,22 +25,34 @@ exports.simulateCredit = async (req, res) => {
             cout_du_credit: totalArembourser - montant
         });
     } catch (error) {
-        res.status(500).json({ message: "Erreur simulation", error: error.message });
+        next(error);
     }
 };
 
 /**
  * Demander un crédit (avec calcul de solvabilité IA simulé)
  */
-exports.requestCredit = async (req, res) => {
+exports.requestCredit = async (req, res, next) => {
     try {
         const { montant_principal, taux_interet, duree_mois, commande_id } = req.body;
         const utilisateur_id = req.user.id;
 
-        // IA Simulation : Score de solvabilité basé sur le montant et l'historique
-        // (Dans un vrai cas, on analyserait le nombre de commandes passées et payées)
-        let scoreIA = 0.5 + (Math.random() * 0.4); // Score entre 0.5 et 0.9
-        if (montant_principal > 10000000) scoreIA -= 0.2; // Risque plus élevé pour gros crédits
+        // Score de solvabilité basé sur l'historique réel de l'utilisateur
+        const completedOrders = await Order.count({
+            where: { utilisateur_id, statut: 'payé' }
+        });
+        const cancelledOrders = await Order.count({
+            where: { utilisateur_id, statut: 'annulé' }
+        });
+        const totalOrders = completedOrders + cancelledOrders;
+
+        // Score entre 0.3 et 0.95 basé sur le ratio de commandes complétées
+        let scoreIA = 0.5;
+        if (totalOrders > 0) {
+            scoreIA = 0.3 + (completedOrders / totalOrders) * 0.65;
+        }
+        if (montant_principal > 10000000) scoreIA = Math.max(0.3, scoreIA - 0.15);
+        scoreIA = Math.min(0.95, Math.round(scoreIA * 100) / 100);
 
         const credit = await Credit.create({
             utilisateur_id,
@@ -54,14 +66,14 @@ exports.requestCredit = async (req, res) => {
 
         res.status(201).json(credit);
     } catch (error) {
-        res.status(500).json({ message: "Erreur demande crédit", error: error.message });
+        next(error);
     }
 };
 
 /**
  * Approuver un crédit et générer l'échéancier (Admin)
  */
-exports.approveCredit = async (req, res) => {
+exports.approveCredit = async (req, res, next) => {
     const t = await sequelize.transaction();
     try {
         const { id } = req.params;
@@ -98,14 +110,14 @@ exports.approveCredit = async (req, res) => {
         res.json({ message: "Crédit approuvé et échéancier généré", credit });
     } catch (error) {
         await t.rollback();
-        res.status(500).json({ message: "Erreur approbation", error: error.message });
+        next(error);
     }
 };
 
 /**
  * Payer une échéance spécifique
  */
-exports.payInstallment = async (req, res) => {
+exports.payInstallment = async (req, res, next) => {
     const t = await sequelize.transaction();
     try {
         const { id } = req.params;
@@ -148,14 +160,14 @@ exports.payInstallment = async (req, res) => {
         res.json({ message: "Échéance payée avec succès !", echeance });
     } catch (error) {
         await t.rollback();
-        res.status(500).json({ message: "Erreur paiement échéance", error: error.message });
+        next(error);
     }
 };
 
 /**
  * Récupérer mes crédits et leurs échéanciers
  */
-exports.getMyCredits = async (req, res) => {
+exports.getMyCredits = async (req, res, next) => {
     try {
         const credits = await Credit.findAll({
             where: { utilisateur_id: req.user.id },
@@ -164,6 +176,6 @@ exports.getMyCredits = async (req, res) => {
         });
         res.json(credits);
     } catch (error) {
-        res.status(500).json({ message: "Erreur récupération crédits", error: error.message });
+        next(error);
     }
 };

@@ -44,15 +44,21 @@ const userController = {
         try {
             const { nom_complet, email, mot_de_passe, role, telephone } = req.body;
 
+            if (!mot_de_passe || mot_de_passe.length < 6) {
+                return res.status(422).json({ message: "Mot de passe trop court (min 6 caractères)." });
+            }
+
             const existingUser = await User.findOne({ where: { email } });
             if (existingUser) {
                 return res.status(400).json({ message: "Cet email est déjà utilisé." });
             }
 
+            const hashedPassword = await bcrypt.hash(mot_de_passe, 10);
+
             const user = await User.create({
                 nom_complet,
                 email,
-                mot_de_passe, // Sera haché par le hook du modèle
+                mot_de_passe: hashedPassword,
                 role: role || 'client',
                 telephone,
                 statut: 'actif'
@@ -101,12 +107,11 @@ const userController = {
         }
     },
 
-    // Suppression par un admin
+    // Suppression par un admin (anonymisation RGPD)
     delete: async (req, res, next) => {
         try {
             const { id } = req.params;
 
-            // Empêcher de se supprimer soi-même
             if (id === req.user.id.toString()) {
                 return res.status(400).json({ message: "Vous ne pouvez pas supprimer votre propre compte admin." });
             }
@@ -116,8 +121,18 @@ const userController = {
                 return res.status(404).json({ message: "Utilisateur non trouvé." });
             }
 
-            await user.destroy();
-            res.json({ message: "Utilisateur supprimé avec succès." });
+            // Anonymisation RGPD pour préserver l'intégrité référentielle
+            await user.update({
+                nom_complet: '[Compte supprimé]',
+                email: `deleted_${user.id}@bca.invalid`,
+                telephone: `000_${user.id.slice(0, 8)}`,
+                mot_de_passe: 'DELETED',
+                statut: 'supprime',
+                metadata_securite: null,
+                preferences_ia: null
+            });
+
+            res.json({ message: "Utilisateur anonymisé conformément au RGPD." });
         } catch (error) {
             next(error);
         }

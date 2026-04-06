@@ -2,50 +2,44 @@ import React, { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Modal from '../../components/ui/Modal';
 import DataTable from '../../components/ui/DataTable';
-import StatusBadge from '../../components/ui/StatusBadge';
 import {
     Search,
     Plus,
     TrendingUp,
-    TrendingDown,
     Edit2,
     Trash2,
     Shield,
-    User as UserIcon,
-    AlertCircle,
-    ChevronLeft,
-    ChevronRight,
-    SlidersHorizontal,
-    Mail,
-    Phone,
     Users as UsersIcon,
     Activity,
-    MoreVertical,
-    CheckCircle2
+    CheckCircle2,
+    Zap,
+    RefreshCcw,
+    ShieldCheck,
+    Lock,
+    UserCircle,
+    Fingerprint,
+    ChevronDown
 } from 'lucide-react';
 import userService from '../../services/userService';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
+import Button from '../../components/ui/Button';
 
-const ROLES = ['Tous', 'client', 'fournisseur', 'transporteur', 'admin'];
+const ROLES = ['TOUS', 'client', 'fournisseur', 'transporteur', 'admin'];
 
 const AdminUsers = () => {
     const [users, setUsers] = useState([]);
     const [stats, setStats] = useState({
         total: 0,
-        newMonth: 0,
         active: 0,
-        reports: 0
+        growth: 0
     });
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState('');
-    const [selectedRole, setSelectedRole] = useState('Tous');
+    const [selectedRole, setSelectedRole] = useState('TOUS');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
-    // Modal State
     const [showModal, setShowModal] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -61,18 +55,18 @@ const AdminUsers = () => {
     const fetchUsers = useCallback(async () => {
         setIsLoading(true);
         try {
-            const roleFilter = selectedRole === 'Tous' ? '' : selectedRole;
-            const data = await userService.getAll(page, 10, search, roleFilter);
+            const roleFilter = selectedRole === 'TOUS' ? '' : selectedRole;
+            const data = await userService.getAll(page, 15, search, roleFilter);
             setUsers(data.users || []);
             setTotalPages(data.pages || 1);
             setStats({
                 total: data.total || 0,
-                newMonth: Math.floor(data.total * 0.05),
-                active: Math.floor(data.total * 0.82),
-                reports: 0
+                active: Math.floor(data.total * 0.85) || 0,
+                growth: 12
             });
         } catch (error) {
-            toast.error("Échec de la synchronisation des membres.");
+            console.error(error);
+            toast.error("ÉCHEC DE LA SYNCHRONISATION DU REGISTRE.");
         } finally {
             setIsLoading(false);
         }
@@ -83,13 +77,13 @@ const AdminUsers = () => {
     }, [fetchUsers]);
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Révoquer définitivement l'accès de ce membre ?")) return;
+        if (!window.confirm("RÉVOQUER DÉFINITIVEMENT L'ACCÈS ?")) return;
         try {
             await userService.delete(id);
-            toast.success("Membre révoqué.");
+            toast.success("ACCÈS RÉVOQUÉ.");
             fetchUsers();
         } catch (error) {
-            toast.error("Impossible de révoquer ce membre.");
+            toast.error("ÉCHEC DE LA RÉVOCATION.");
         }
     };
 
@@ -118,11 +112,6 @@ const AdminUsers = () => {
         setShowModal(true);
     };
 
-    const handleFormChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSaving(true);
@@ -131,16 +120,15 @@ const AdminUsers = () => {
                 const payload = { ...formData };
                 if (!payload.mot_de_passe) delete payload.mot_de_passe;
                 await userService.update(editingUser.id, payload);
-                toast.success("Profil membre mis à jour.");
+                toast.success("INDEX MIS À JOUR.");
             } else {
-                if (!formData.mot_de_passe) return toast.error("Mot de passe requis.");
                 await userService.create(formData);
-                toast.success("Nouveau membre accrédité.");
+                toast.success("NOUVEAU NOEUD ACCRÉDITÉ.");
             }
             setShowModal(false);
             fetchUsers();
         } catch (error) {
-            toast.error("Une erreur est survenue lors de l'enregistrement.");
+            toast.error("ERREUR D'ENREGISTREMENT.");
         } finally {
             setIsSaving(false);
         }
@@ -148,179 +136,223 @@ const AdminUsers = () => {
 
     const columns = [
         {
-            label: 'Membre',
+            label: 'IDENTITÉ_NOEUD',
             render: (u) => (
-                <div className="flex items-center gap-4 py-2 group">
-                    <div className="size-12 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden transition-all group-hover:scale-105">
-                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${u.id}`} alt="" className="w-full h-full object-cover" />
+                <div className="flex items-center gap-4 py-2 group/u">
+                    <div className="size-6 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-foreground/5 flex items-center justify-center overflow-hidden shrink-0 shadow-sm relative">
+                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${u.id}`} alt="" className="size-full object-cover relative z-10 group-hover/u:scale-110 transition-transform" />
+                        <div className="absolute inset-0 bg-gradient-to-tr from-[#FF6600]/10 to-transparent" />
                     </div>
                     <div className="min-w-0">
-                        <p className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-tight truncate max-w-[180px]">
-                            {u.nom_complet}
-                        </p>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">
-                            {u.email}
-                        </p>
+                        <p className="text-[10px] font-black text-slate-800 dark:text-foreground uppercase truncate tracking-tight leading-none pt-0.5">{u.nom_complet}</p>
+                        <p className="text-[8px] font-black text-muted-foreground/80 uppercase tracking-widest leading-none mt-1 opacity-70">{u.email}</p>
                     </div>
                 </div>
             )
         },
         {
-            label: 'Privilèges',
+            label: 'PRIVILÈGES',
             render: (u) => (
-                <div className="flex items-center gap-2">
-                    <div className={cn(
-                        "px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest flex items-center gap-2",
-                        u.role === 'admin' ? "bg-primary/10 text-primary border border-primary/20" : "bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700"
-                    )}>
-                        {u.role === 'admin' && <Shield className="size-3" />}
-                        {u.role}
-                    </div>
+                <div className={cn(
+                    "px-3 h-7 rounded-lg text-[8px] font-black uppercase tracking-widest flex items-center gap-2 border w-fit",
+                    u.role === 'admin' ? "bg-[#FF6600]/5 border-[#FF6600]/10 text-[#FF6600]" : "bg-slate-50 dark:bg-foreground/5 border-slate-200 dark:border-foreground/5 text-muted-foreground/80"
+                )}>
+                    {u.role === 'admin' ? <Shield className="size-3" /> : <UserCircle className="size-3" />}
+                    {u.role?.toUpperCase()}
                 </div>
             )
         },
         {
-            label: 'Enregistrement',
+            label: 'INDEXATION',
             render: (u) => (
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">
+                <span className="text-[9px] font-black text-muted-foreground dark:text-muted-foreground/80 uppercase tracking-widest pt-0.5">
                     {new Date(u.createdAt).toLocaleDateString('fr-GN')}
                 </span>
             )
         },
         {
-            label: 'Statut',
+            label: 'SIGNAL_STATUT',
             render: (u) => (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                     <div className={cn(
-                        "size-2 rounded-full",
+                        "size-1.5 rounded-full",
                         u.statut === 'actif' ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-300"
                     )} />
                     <span className={cn(
-                        "text-[10px] font-bold uppercase tracking-widest",
-                        u.statut === 'actif' ? "text-emerald-500" : "text-slate-400"
+                        "text-[8px] font-black uppercase tracking-widest pt-0.5",
+                        u.statut === 'actif' ? "text-emerald-500" : "text-muted-foreground/80"
                     )}>
-                        {u.statut}
+                        {u.statut?.toUpperCase()}
                     </span>
                 </div>
             )
         },
         {
-            label: 'Actions',
+            label: 'GOUVERNANCE',
             render: (u) => (
-                <div className="flex items-center justify-end gap-2 pr-2">
-                    <button onClick={() => handleOpenModal(u)} className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"><Edit2 className="size-4" /></button>
-                    <button onClick={() => handleDelete(u.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 className="size-4" /></button>
+                <div className="flex items-center justify-end gap-3 pr-4">
+                    <button onClick={() => handleOpenModal(u)} className="size-6 rounded-lg bg-slate-50 dark:bg-foreground/5 border border-slate-200 dark:border-foreground/10 flex items-center justify-center text-muted-foreground/80 hover:text-[#FF6600] transition-all"><Edit2 className="size-4" /></button>
+                    <button onClick={() => handleDelete(u.id)} className="size-6 rounded-lg bg-slate-50 dark:bg-foreground/5 border border-slate-200 dark:border-foreground/10 flex items-center justify-center text-muted-foreground/80 hover:text-rose-500 transition-all"><Trash2 className="size-4" /></button>
                 </div>
             )
         }
     ];
 
     return (
-        <DashboardLayout title="Gestion des Membres">
-            <div className="max-w-7xl mx-auto space-y-10 animate-fade-in pb-24 px-6 md:px-10 pt-10">
+        <DashboardLayout title="ALPHA_REGISTRE_NODAL">
+            <div className="space-y-4 animate-in pb-16">
 
-                {/* Header Actions */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-100 dark:border-slate-800 pb-8">
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                            <div className="size-2 bg-primary rounded-full" />
-                            <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Registre Centralisé</span>
+                {/* Registry Command Infrastructure — Executive Control v4 */}
+                <div className="executive-card !p-4 group overflow-visible">
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#FFB703]/[0.02] to-transparent pointer-events-none" />
+                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 relative z-10">
+                        <div className="flex items-center gap-3">
+                            <div className="size-6 rounded-2xl bg-gradient-to-br from-[#FFB703] to-[#FB8500] flex items-center justify-center shadow-[0_20px_60px_rgba(255,183,3,0.2)] group-hover:rotate-6 transition-transform duration-700 ">
+                                <UsersIcon className="size-6 text-background drop-shadow-xl" />
+                            </div>
+                            <div className="space-y-2.5">
+                                <h2 className="text-sm font-black text-foreground uppercase tracking-tighter leading-none pt-0.5">
+                                    GOUVERNANCE_<span className="text-[#FFB703]">RÉSEAU</span>.
+                                </h2>
+                                <div className="flex items-center gap-3">
+                                    <div className="size-2 rounded-full bg-[#FFB703] animate-ping" />
+                                    <p className="text-[10px] font-black text-muted-foreground/80 uppercase  opacity-80 pt-0.5">
+                                        ID_REGISTRY: ALPHA_SEC_01 — STATUS: LIVE_SYNC
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        <h2 className="text-4xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">Contrôle <span className="text-primary italic">Membres.</span></h2>
-                    </div>
-                    <Button onClick={() => handleOpenModal()} className="h-14 px-10 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center gap-3 shadow-xl">
-                        <Plus className="size-5" /> Nouveau Membre
-                    </Button>
-                </div>
-
-                {/* KPI Section */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div className="p-8 bg-slate-900 rounded-[2rem] border border-slate-800 shadow-xl flex items-center gap-6">
-                        <div className="size-14 rounded-2xl bg-primary/20 flex items-center justify-center text-primary border border-primary/30">
-                            <UsersIcon className="size-7" />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Membres Total</p>
-                            <p className="text-xl font-bold text-white uppercase">{stats.total}</p>
-                        </div>
-                    </div>
-                    <div className="p-8 bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-6">
-                        <div className="size-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 border border-emerald-500/20">
-                            <Activity className="size-7" />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Taux d'Activité</p>
-                            <p className="text-xl font-bold text-slate-900 dark:text-white uppercase">{stats.active}</p>
-                        </div>
-                    </div>
-                    <div className="p-8 bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-6">
-                        <div className="size-14 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 border border-amber-500/20">
-                            <TrendingUp className="size-7" />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Croissance</p>
-                            <p className="text-xl font-bold text-slate-900 dark:text-white uppercase">+{stats.newMonth}</p>
-                        </div>
-                    </div>
-                    <div className="p-8 bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-6">
-                        <div className="size-14 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20">
-                            <AlertCircle className="size-7" />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Alertes</p>
-                            <p className="text-xl font-bold text-slate-900 dark:text-white uppercase">{stats.reports}</p>
+                        <div className="flex items-center gap-3">
+                            <button 
+                                id="btn-users-refresh-signal"
+                                onClick={fetchUsers} 
+                                className="size-6 rounded-2xl bg-white/[0.03] border border-foreground/10 flex items-center justify-center text-muted-foreground/80 hover:text-[#FFB703] hover:border-[#FFB703]/20 transition-all "
+                            >
+                                <RefreshCcw className={cn("size-5 transition-all duration-700", isLoading && "animate-spin")} />
+                            </button>
+                            <button
+                                id="btn-users-add-accreditation"
+                                onClick={() => handleOpenModal()} 
+                                className="h-11 px-6 bg-white text-background hover:bg-[#FFB703] rounded-2xl font-medium text-sm text-muted-foreground transition-all shadow-[0_30px_90px_rgba(0,0,0,0.5)]  flex items-center gap-3 group/btn border-0"
+                            >
+                                <Plus className="size-5 transition-transform group-hover/btn:rotate-90 group-hover/btn:scale-125" />
+                                <span>NOUVELLE_ACCRÉDITATION</span>
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                {/* Table Surface */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] overflow-hidden shadow-sm">
-                    <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-                        <div className="flex items-center gap-3 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
+                {/* Macro Node Indicators — HUD Node 03 */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="executive-card group ">
+                         <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <Fingerprint className="size-6" />
+                         </div>
+                         <div className="relative z-10 space-y-4">
+                             <p className="text-premium-label group-hover:text-foreground transition-colors uppercase ">NOEUDS_INDEXÉS</p>
+                             <h3 className="text-sm font-black text-foreground uppercase tracking-tighter tabular-nums leading-none">{stats.total}</h3>
+                         </div>
+                    </div>
+                    <div className="executive-card group  border-l-4 border-l-emerald-500/30">
+                         <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <Activity className="size-6" />
+                         </div>
+                         <div className="relative z-10 space-y-4">
+                             <p className="text-premium-label group-hover:text-emerald-400 transition-colors uppercase ">SIGNALS_ACTIFS</p>
+                             <div className="flex items-end justify-between">
+                                <h3 className="text-sm font-black text-emerald-500 uppercase tracking-tighter tabular-nums leading-none">{stats.active}</h3>
+                                <div className="text-[10px] font-black tracking-widest px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                    OPTIMAL
+                                </div>
+                             </div>
+                         </div>
+                    </div>
+                    <div className="executive-card group  border-l-4 border-l-[#FFB703]/30">
+                         <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <TrendingUp className="size-6" />
+                         </div>
+                         <div className="relative z-10 space-y-4">
+                             <p className="text-premium-label group-hover:text-[#FFB703] transition-colors uppercase ">CROISSANCE_EXP</p>
+                             <div className="flex items-end justify-between">
+                                <h3 className="text-sm font-black text-[#FFB703] uppercase tracking-tighter tabular-nums leading-none">+{stats.growth}%</h3>
+                                <div className="text-[10px] font-black tracking-widest px-4 py-1.5 rounded-full bg-[#FFB703]/10 text-[#FFB703] border border-[#FFB703]/20">
+                                    UPWARD
+                                </div>
+                             </div>
+                         </div>
+                    </div>
+                </div>
+
+                {/* Primary Registry Ledger — HUD Table */}
+                <div className="executive-card !p-0 overflow-hidden border-t-8 border-t-[#FFB703]">
+                    <div className="p-4 border-b border-white/[0.03] bg-white/[0.01] flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+                         <div className="flex items-center gap-4 overflow-x-auto no-scrollbar">
                             {ROLES.map(r => (
                                 <button
+                                    id={`tab-role-node-${r.toLowerCase()}`}
                                     key={r}
                                     onClick={() => { setSelectedRole(r); setPage(1); }}
                                     className={cn(
-                                        "px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border-2",
-                                        selectedRole === r ? "bg-slate-900 text-white border-slate-900 shadow-lg" : "bg-white dark:bg-slate-800 border-transparent text-slate-500 hover:text-slate-900"
+                                        "px-10 h-11 rounded-2xl text-[10px] font-black uppercase  transition-all border ",
+                                        selectedRole === r 
+                                            ? "bg-[#FFB703] text-background border-transparent shadow-[0_20px_40px_rgba(255,183,3,0.15)]" 
+                                            : "bg-white/[0.03] border-foreground/5 text-muted-foreground hover:text-foreground"
                                     )}
                                 >
                                     {r}
                                 </button>
                             ))}
-                        </div>
-
-                        <div className="relative group w-full lg:w-96">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 size-4 group-focus-within:text-primary transition-colors" />
+                         </div>
+                         <div className="relative group w-full xl:w-[40rem]">
+                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground size-6 group-focus-within:text-[#FFB703] transition-colors" />
                             <input
-                                className="w-full pl-12 pr-4 h-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold uppercase tracking-widest placeholder:text-slate-300 outline-none"
-                                placeholder="RECHERCHER MEMBRE..."
+                                id="input-search-registry"
+                                className="w-full pl-16 pr-8 h-12 bg-white/[0.02] border border-foreground/10 rounded-2xl text-[12px] font-black tracking-widest placeholder:text-slate-600 outline-none focus:border-[#FFB703]/30 transition-all text-foreground uppercase"
+                                placeholder="IDENTIFIER_UNITÉ_RÉSEAU..."
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
                             />
-                        </div>
+                         </div>
                     </div>
 
-                    <div className="p-0">
+                    <div className="p-4">
                         <DataTable
                             columns={columns}
                             data={users}
                             isLoading={isLoading}
-                            className="border-none shadow-none"
                         />
-
-                        {/* Pagination */}
+                        {!isLoading && users.length === 0 && (
+                            <div className="py-60 text-center opacity-40 flex flex-col items-center gap-3">
+                                 <Fingerprint className="size-6 animate-pulse text-muted-foreground" />
+                                 <div className="space-y-4">
+                                     <p className="text-sm font-black uppercase  text-muted-foreground/80">REGISTRY_EMPTY</p>
+                                     <p className="text-[10px] font-black uppercase  text-[#FFB703]">SYSTEM_PENDING_NODES</p>
+                                 </div>
+                            </div>
+                        )}
                         {!isLoading && users.length > 0 && (
-                            <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 flex items-center justify-between">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Page {page} sur {totalPages}</p>
+                            <div className="p-4 border-t border-white/[0.02] flex items-center justify-between bg-white/[0.01]">
+                                <div className="flex items-center gap-3">
+                                     <div className="size-3 rounded-full bg-[#FFB703] animate-ping shadow-[0_0_15px_#FFB703]" />
+                                     <p className="text-[12px] font-black text-muted-foreground/80 uppercase  pt-0.5">SEGMENT_{page}_OF_{totalPages}</p>
+                                </div>
                                 <div className="flex gap-3">
-                                    <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="size-10 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-20 transition-all">
-                                        <ChevronLeft className="size-4" />
-                                    </button>
-                                    <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="size-10 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-20 transition-all">
-                                        <ChevronRight className="size-4" />
-                                    </button>
+                                     <button 
+                                        id="btn-registry-prev"
+                                        onClick={() => setPage(p => Math.max(1, p - 1))} 
+                                        disabled={page === 1} 
+                                        className="size-6 rounded-2xl bg-white/[0.03] border border-foreground/10 flex items-center justify-center text-muted-foreground hover:text-[#FFB703] disabled:opacity-10 transition-all "
+                                     >
+                                         <Zap className="size-6 -rotate-90" />
+                                     </button>
+                                     <button 
+                                        id="btn-registry-next"
+                                        onClick={() => setPage(p => Math.min(totalPages, p + 1))} 
+                                        disabled={page === totalPages} 
+                                        className="size-6 rounded-2xl bg-white/[0.03] border border-foreground/10 flex items-center justify-center text-muted-foreground hover:text-[#FFB703] disabled:opacity-10 transition-all "
+                                     >
+                                         <Zap className="size-6 rotate-90" />
+                                     </button>
                                 </div>
                             </div>
                         )}
@@ -328,80 +360,94 @@ const AdminUsers = () => {
                 </div>
             </div>
 
-            {/* Modal de Modification */}
+            {/* Terminal Accréditation — Alpha Console Modal */}
             <Modal
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
-                title={editingUser ? "Édition Membre" : "Accréditation"}
+                title={editingUser ? "RÉVISION_UNITÉ_RÉSEAU" : "PROTOCOLE_ACCRÉDITATION_ALPHA"}
+                className="max-w-4xl"
             >
-                <form onSubmit={handleSubmit} className="space-y-8 p-6">
+                <form onSubmit={handleSubmit} className="p-4 space-y-4">
                     <div className="space-y-6">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Identité Complète</label>
-                            <Input
-                                name="nom_complet"
-                                required
-                                value={formData.nom_complet}
-                                onChange={handleFormChange}
-                                placeholder="JEAN-PIERRE..."
-                                className="h-14 px-6 rounded-xl font-bold text-sm uppercase"
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Email</label>
-                                <Input
-                                    name="email"
-                                    type="email"
-                                    required
-                                    value={formData.email}
-                                    onChange={handleFormChange}
-                                    placeholder="CONTACT@DOMAIN.GN"
-                                    className="h-14 px-6 rounded-xl font-bold text-xs lowercase"
+                         <div className="space-y-4">
+                            <label className="text-[10px] font-black uppercase  text-muted-foreground px-2 leading-none pt-0.5">DÉSIGNATION_IDENTITY_ALPHA</label>
+                            <div className="relative group/field">
+                                <UserCircle className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within/field:text-[#FFB703] size-5 z-20 transition-colors" />
+                                <input 
+                                    id="modal-node-identity"
+                                    name="nom_complet" 
+                                    required 
+                                    value={formData.nom_complet} 
+                                    onChange={(e) => setFormData({...formData, nom_complet: e.target.value})} 
+                                    placeholder="DESIGNATION_PERSONNELLE_..." 
+                                    className="w-full h-11 pl-16 pr-8 bg-white/[0.01] border border-foreground/10 rounded-2xl text-[16px] font-black uppercase tracking-tight focus:border-[#FFB703]/30 outline-none transition-all text-foreground shadow-inner" 
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Privilèges</label>
-                                <select
-                                    name="role"
-                                    value={formData.role}
-                                    onChange={handleFormChange}
-                                    className="w-full h-14 px-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[10px] font-bold uppercase tracking-widest outline-none transition-all"
-                                >
-                                    <option value="client">Client</option>
-                                    <option value="fournisseur">Fournisseur</option>
-                                    <option value="transporteur">Transporteur</option>
-                                    <option value="admin">Administrateur</option>
-                                </select>
+                         </div>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black uppercase  text-muted-foreground px-2 leading-none pt-0.5">CANAL_E-MAIL_ROUTING</label>
+                                <div className="relative group/field">
+                                    <ShieldCheck className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within/field:text-[#FFB703] size-6 z-20 transition-colors" />
+                                    <input 
+                                        id="modal-node-email"
+                                        name="email" 
+                                        type="email" 
+                                        required 
+                                        value={formData.email} 
+                                        onChange={(e) => setFormData({...formData, email: e.target.value})} 
+                                        placeholder="IDENT_ALPHA@NODE.GN" 
+                                        className="w-full h-11 pl-16 pr-8 bg-white/[0.01] border border-foreground/10 rounded-2xl text-[13px] font-black uppercase tracking-widest focus:border-[#FFB703]/30 outline-none transition-all text-foreground shadow-inner" 
+                                    />
+                                </div>
                             </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">
-                                {editingUser ? "Nouvelle Clef (Laisser vide pour garder l'ancienne)" : "Clef d'Accès Initiale"}
-                            </label>
-                            <Input
-                                name="mot_de_passe"
-                                type="password"
-                                required={!editingUser}
-                                value={formData.mot_de_passe}
-                                onChange={handleFormChange}
-                                placeholder="••••••••"
-                                className="h-14 px-6 rounded-xl font-bold text-sm tracking-[0.3em]"
-                            />
-                        </div>
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black uppercase  text-muted-foreground px-2 leading-none pt-0.5">HIÉRARCHIE_PRIVILÈGES</label>
+                                <div className="relative group/field">
+                                    <Shield className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within/field:text-[#FFB703] size-6 z-20 pointer-events-none" />
+                                    <select 
+                                        id="modal-node-role"
+                                        name="role" 
+                                        value={formData.role} 
+                                        onChange={(e) => setFormData({...formData, role: e.target.value})} 
+                                        className="w-full h-11 pl-16 pr-12 bg-white/[0.01] border border-foreground/10 rounded-2xl text-[12px] font-black uppercase  focus:border-[#FFB703]/30 outline-none transition-all text-foreground appearance-none"
+                                    >
+                                        <option value="client" className="bg-card">Client (NODE)</option>
+                                        <option value="fournisseur" className="bg-card">Fournisseur (VENDOR)</option>
+                                        <option value="transporteur" className="bg-card">Transporteur (HUB)</option>
+                                        <option value="admin" className="bg-card">Administrateur (ROOT)</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-8 top-1/2 -translate-y-1/2 size-6 text-slate-600 pointer-events-none group-focus-within/field:rotate-180 transition-transform duration-500" />
+                                </div>
+                            </div>
+                         </div>
+                         <div className="space-y-4">
+                            <label className="text-[10px] font-black uppercase  text-muted-foreground px-2 leading-none pt-0.5">INITIALISATION_CRYPT_KEY</label>
+                            <div className="relative group/field">
+                                <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within/field:text-[#FFB703] size-5 z-20 transition-colors" />
+                                <input 
+                                    id="modal-node-pass"
+                                    name="mot_de_passe" 
+                                    type="password" 
+                                    required={!editingUser} 
+                                    value={formData.mot_de_passe} 
+                                    onChange={(e) => setFormData({...formData, mot_de_passe: e.target.value})} 
+                                    placeholder="••••••••••••••••" 
+                                    className="w-full h-11 pl-16 pr-8 bg-white/[0.01] border border-foreground/10 rounded-2xl text-[16px] font-black  focus:border-[#FFB703]/30 outline-none transition-all text-foreground shadow-inner" 
+                                />
+                            </div>
+                         </div>
                     </div>
-
-                    <div className="flex gap-4 pt-6">
-                        <Button
-                            type="submit"
-                            disabled={isSaving}
-                            className="flex-1 h-14 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl"
+                    <div className="pt-10">
+                        <button 
+                            id="btn-modal-node-execute"
+                            type="submit" 
+                            disabled={isSaving} 
+                            className="w-full h-12 rounded-2xl bg-white text-background font-black text-[14px] uppercase  flex items-center justify-center gap-3 shadow-[0_40px_100px_rgba(0,0,0,0.5)] hover:bg-[#FFB703] hover:text-background transition-all  border-0 group/submit"
                         >
-                            {isSaving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
-                            {editingUser ? "Sauvegarder" : "Accréditer"}
-                        </Button>
+                            {isSaving ? <RefreshCcw className="size-6 animate-spin" /> : <ShieldCheck className="size-6 transition-all group-hover/submit:scale-125" />}
+                            <span>{editingUser ? "TERMINER_RÉVISION_INDEX" : "EXÉCUTER_L'ACCRÉDITATION"}</span>
+                        </button>
                     </div>
                 </form>
             </Modal>

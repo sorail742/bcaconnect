@@ -1,17 +1,22 @@
-const { Ticket, Review, Order, Product, sequelize } = require('../models');
+const { Ticket, Order } = require('../models');
 
 const supportController = {
     // 1. Créer un ticket SAV
     createTicket: async (req, res, next) => {
         try {
             const { sujet, description, priorite, type_sav, commande_id } = req.body;
+
+            if (!sujet || sujet.trim().length < 3) {
+                return res.status(422).json({ message: "Le sujet doit contenir au moins 3 caractères." });
+            }
+
             const ticket = await Ticket.create({
                 utilisateur_id: req.user.id,
-                sujet,
+                sujet: sujet.trim(),
                 description,
-                priorite,
-                type_sav,
-                commande_id,
+                priorite: priorite || 'moyenne',
+                type_sav: type_sav || 'assistance',
+                commande_id: commande_id || null,
                 statut: 'ouvert'
             });
             res.status(201).json(ticket);
@@ -33,36 +38,7 @@ const supportController = {
         }
     },
 
-    // 3. Soumettre un avis (Feedback) avec IA Sentiment
-    createReview: async (req, res, next) => {
-        try {
-            const { produit_id, commande_id, note, commentaire } = req.body;
-
-            // Simulation IA Sentiment : Analyse très simple pour le backend
-            let sentiment = 'neutre';
-            const keywordsNeg = ['mauvais', 'déçu', 'problème', 'nul', 'lent', 'cher'];
-            const keywordsPos = ['top', 'super', 'génial', 'merci', 'rapide', 'satisfait'];
-
-            const lowerCaseComment = (commentaire || '').toLowerCase();
-            if (keywordsNeg.some(k => lowerCaseComment.includes(k))) sentiment = 'negatif';
-            else if (keywordsPos.some(k => lowerCaseComment.includes(k))) sentiment = 'positif';
-
-            const review = await Review.create({
-                utilisateur_id: req.user.id,
-                produit_id,
-                commande_id,
-                note,
-                commentaire,
-                ia_sentiment: sentiment
-            });
-
-            res.status(201).json(review);
-        } catch (error) {
-            next(error);
-        }
-    },
-
-    // 4. Admin : Gérer un ticket
+    // 3. Admin : Gérer un ticket
     resolveTicket: async (req, res, next) => {
         try {
             const { id } = req.params;

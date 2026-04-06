@@ -7,7 +7,7 @@ const DataTable = ({
     title,
     actions,
     className,
-    emptyMessage = "Aucune donnée disponible",
+    emptyMessage = "AUCUNE DONNÉE DISPONIBLE",
     selectable = false,
     selectedIds = [],
     onSelectionChange
@@ -31,42 +31,47 @@ const DataTable = ({
     const allSelected = data.length > 0 && selectedIds.length === data.length;
 
     return (
-        <div className={cn("rounded-xl border border-slate-100 dark:border-white/5 bg-card overflow-hidden shadow-sm transition-all", className)}>
+        <div className={cn("rounded-2xl border border-slate-200 dark:border-foreground/5 bg-white dark:bg-[#0F1219] overflow-hidden transition-all font-jakarta shadow-sm", className)}>
             {(title || actions || (selectable && selectedIds.length > 0)) && (
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-50 dark:border-white/5 bg-slate-50/10 dark:bg-white/[0.01]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-6 border-b border-slate-100 dark:border-foreground/5 bg-slate-50/20 dark:bg-white/[0.01] gap-5">
                     <div className="flex items-center gap-4">
-                        {title && <h3 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">{title}</h3>}
+                        {title && (
+                            <div className="flex items-center gap-3">
+                                <div className="size-1.5 bg-[#FF6600] rounded-full shadow-md" />
+                                <h3 className="text-[9px] font-black text-slate-900 dark:text-foreground tracking-[0.2em] uppercase pt-0.5">{title}</h3>
+                            </div>
+                        )}
                         {selectable && selectedIds.length > 0 && (
-                            <div className="px-3 py-1 bg-primary/10 text-primary text-[10px] font-black rounded-lg border border-primary/20 animate-in fade-in zoom-in duration-300">
+                            <div className="px-3 py-1 bg-[#FF6600]/10 text-[#FF6600] text-[7px] font-black rounded-lg border border-[#FF6600]/10 animate-in fade-in zoom-in duration-300 uppercase tracking-widest leading-none">
                                 {selectedIds.length} SÉLECTIONNÉS
                             </div>
                         )}
                     </div>
-                    {actions && <div className="flex items-center gap-3">{actions}</div>}
+                    {actions && <div className="flex items-center gap-4">{actions}</div>}
                 </div>
             )}
-            <div className="overflow-x-auto text-[13px]">
+            <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className="border-b border-slate-50 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01]">
+                        <tr className="border-b border-slate-100 dark:border-foreground/5 bg-slate-50/30 dark:bg-white/[0.02]">
                             {selectable && (
-                                <th className="pl-6 py-3 w-10">
+                                <th className="pl-6 py-4 w-10">
                                     <input 
                                         type="checkbox" 
                                         checked={allSelected}
                                         onChange={handleSelectAll}
-                                        className="size-4 rounded border-border text-primary focus:ring-primary shadow-sm cursor-pointer"
+                                        className="size-4 rounded-md border border-slate-200 dark:border-foreground/10 text-[#FF6600] focus:ring-[#FF6600] shadow-sm cursor-pointer dark:bg-foreground/5"
                                     />
                                 </th>
                             )}
                             {columns.map((col, idx) => (
-                                <th key={idx} className="px-6 py-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/60">
+                                <th key={idx} className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/80">
                                     {col.label}
                                 </th>
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50 dark:divide-white/5">
+                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                         {data.length > 0 ? (
                             data.map((row, rowIdx) => {
                                 const rowId = row.id || row._id;
@@ -75,24 +80,24 @@ const DataTable = ({
                                     <tr 
                                         key={rowIdx} 
                                         className={cn(
-                                            "hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors duration-200 group cursor-default",
-                                            isSelected && "bg-primary/[0.02]"
+                                            "hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors duration-300 group cursor-default",
+                                            isSelected && "bg-[#FF6600]/[0.02]"
                                         )}
                                     >
                                         {selectable && (
-                                            <td className="pl-6 py-3">
+                                            <td className="pl-6 py-4">
                                                 <input 
                                                     type="checkbox" 
                                                     checked={isSelected}
                                                     onChange={() => handleSelectRow(rowId)}
-                                                    className="size-4 rounded border-border text-primary focus:ring-primary shadow-sm cursor-pointer"
+                                                    className="size-4 rounded-md border border-slate-200 dark:border-foreground/10 text-[#FF6600] focus:ring-[#FF6600] shadow-sm cursor-pointer dark:bg-foreground/5"
                                                 />
                                             </td>
                                         )}
                                         {columns.map((col, colIdx) => (
                                             <td key={colIdx} className={cn(
-                                                "px-6 py-3 text-[13px] font-medium transition-colors",
-                                                isSelected ? "text-primary" : "text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white"
+                                                "px-6 py-4 text-[10px] font-bold transition-all duration-300 uppercase tracking-widest",
+                                                isSelected ? "text-[#FF6600]" : "text-slate-600 dark:text-muted-foreground/80 group-hover:text-slate-900 dark:group-hover:text-foreground"
                                             )}>
                                                 {col.render ? col.render(row) : <span>{row[col.key]}</span>}
                                             </td>
@@ -102,8 +107,13 @@ const DataTable = ({
                             })
                         ) : (
                             <tr>
-                                <td colSpan={columns.length + (selectable ? 1 : 0)} className="px-10 py-16 text-center text-muted-foreground text-sm font-medium opacity-70">
-                                    {emptyMessage}
+                                <td colSpan={columns.length + (selectable ? 1 : 0)} className="px-8 py-20 text-center">
+                                    <div className="flex flex-col items-center gap-4 opacity-20">
+                                        <div className="size-1 w-px h-10 bg-slate-400 animate-pulse" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                                            {emptyMessage}
+                                        </span>
+                                    </div>
                                 </td>
                             </tr>
                         )}

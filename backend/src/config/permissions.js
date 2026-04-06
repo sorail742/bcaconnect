@@ -37,6 +37,14 @@ const permissions = {
         'view_own_history',
         'credit_wallet_request',
         'report_dispute'
+    ],
+
+    // Permissions Banque
+    banque: [
+        'view_financial_reports',
+        'view_all_transactions',
+        'manage_credits',
+        'view_admin_dashboard'
     ]
 };
 

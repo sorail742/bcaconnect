@@ -1,6 +1,6 @@
 import React from 'react';
 
-const BcaLogo = ({ className = "size-10", gradientId = "bca-gradient" }) => {
+const BcaLogo = ({ className = "size-6", gradientId = "bca-gradient" }) => {
     return (
         <svg
             viewBox="0 0 100 100"

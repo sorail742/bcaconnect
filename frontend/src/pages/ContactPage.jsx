@@ -1,24 +1,26 @@
 import React, { useState } from 'react';
-import PublicLayout from '../components/layout/PublicLayout';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import {
-    Mail, Phone, MapPin, MessageSquare, Send, CheckCircle2,
-    Clock, Headphones, Zap, ArrowRight, Loader2, ChevronDown,
-    ShieldCheck, Sparkles
+    Mail, Phone, MapPin, Send, CheckCircle2,
+    ArrowRight, ChevronDown, Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
-
-const CONTACT_REASONS = [
-    'Support technique',
-    'Litige / Réclamation',
-    'Demande de partenariat',
-    'Devenir fournisseur',
-    'Questions sur BCA Connect',
-    'Autre',
-];
+import { useLanguage } from '../context/LanguageContext';
 
 const ContactPage = () => {
+    const { t } = useLanguage();
+    
+    const CONTACT_REASONS = [
+        t('formReason'),
+        'Support technique',
+        'Litige / Réclamation',
+        'Demande de partenariat',
+        'Devenir fournisseur',
+        'Questions sur BCA Connect',
+        'Autre',
+    ];
+
     const [form, setForm] = useState({
         nom: '', email: '', telephone: '', raison: '', message: ''
     });
@@ -33,181 +35,164 @@ const ContactPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!form.nom || !form.email || !form.message) {
-            return toast.error("Protocole incomplet. Veuillez renseigner les champs obligatoires.");
+            return toast.error(t('lang') === 'FR' ? "Veuillez renseigner les champs obligatoires." : "Please fill in all required fields.");
         }
         setIsSending(true);
-        // Simulation d'envoi chiffré
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 1500));
         setIsSending(false);
         setSent(true);
-        toast.success("Dossier transmis au Pôle Exécutif. Réponse sous 24h.");
+        toast.success(t('messageSuccess'));
     };
 
     return (
-        <PublicLayout>
-            <div className="bg-[#0A0D14] min-h-screen text-white font-inter">
+        <div className="bg-white dark:bg-[#0A0D14] min-h-screen text-slate-900 dark:text-foreground font-jakarta">
+            {/* ══ PREMIUM HERO ══ */}
+            <section className="relative pt-44 pb-24 overflow-hidden text-center group">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 size-[60rem] bg-[#FF6600]/5 rounded-full blur-[200px] mix-blend-screen pointer-events-none group-hover:scale-110 transition-transform duration-[4s]" />
+                <div className="absolute inset-0 opacity-[0.02]" style={{
+                    backgroundImage: `linear-gradient(to right, #64748b 1px, transparent 1px), linear-gradient(to bottom, #64748b 1px, transparent 1px)`,
+                    backgroundSize: '4rem 4rem'
+                }} />
 
-                {/* ══════════════════════════════════════════════════
-                    EXECUTIVE HERO
-                ══════════════════════════════════════════════════ */}
-                <section className="relative pt-48 pb-32 overflow-hidden text-center border-b-8 border-white/5">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 size-[60rem] bg-[#FF6600]/10 rounded-full blur-[200px] mix-blend-screen pointer-events-none" />
-                    <div className="absolute inset-0 opacity-[0.03]" style={{
-                        backgroundImage: `linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)`,
-                        backgroundSize: '5rem 5rem'
-                    }} />
-
-                    <div className="relative z-10 max-w-7xl mx-auto px-6 space-y-16 animate-in slide-in-from-bottom duration-1000">
-                        <span className="inline-flex items-center gap-6 px-10 py-4 bg-white/5 border-2 border-white/10 text-[#FF6600] text-[11px] font-black uppercase tracking-[0.6em] rounded-full backdrop-blur-3xl shadow-2xl italic leading-none">
-                            <Headphones className="size-5" /> SUPPORT BCA SERVICE PRIVILÈGE v4.1
-                        </span>
-                        <h1 className="text-7xl md:text-[10rem] font-black tracking-tighter leading-[0.8] uppercase italic text-white drop-shadow-2xl">
-                            LIAISON <br />
-                            <span className="text-[#FF6600] not-italic underline decoration-white/10 decoration-8 underline-offset-[-4px]">DIRECTE.</span>
+                <div className="relative z-10 max-w-7xl mx-auto px-6 space-y-12 animate-in fade-in slide-in-from-bottom-12 duration-1000">
+                    <div className="flex flex-col items-center gap-6">
+                        <div className="flex items-center gap-4">
+                            <div className="size-2 rounded-full bg-[#FF6600] animate-pulse shadow-[0_0_15px_rgba(255,102,0,0.5)]" />
+                            <span className="text-[10px] font-black text-[#FF6600] uppercase   leading-none pt-0.5">{t('contact').toUpperCase()} • BCA CONNECT</span>
+                        </div>
+                        <h1 className="text-2xl md:text-2xl lg:text-xl font-semibold  tracking-tighter text-slate-900 dark:text-foreground uppercase leading-[0.85] mb-4">
+                            {t('contactHero').split(' ').slice(0, -2).join(' ')} <br /> <span className="text-[#FF6600]">{t('contactHero').split(' ').slice(-2).join(' ')}</span>
                         </h1>
-                        <p className="text-slate-500 text-sm md:text-lg font-black uppercase tracking-[0.4em] max-w-3xl mx-auto leading-relaxed italic border-l-8 border-[#FF6600]/20 pl-12">
-                            NOTRE DIRECTOIRE OPÉRATIONNEL BASÉ À CONAKRY ASSURE UNE VEILLE STRATÉGIQUE 24/7. RÉPONSE GARANTIE DANS LES FENÊTRES DE TRANSMISSION OFFICIELLES.
-                        </p>
                     </div>
-                </section>
+                    <p className="text-muted-foreground font-bold uppercase  text-sm leading-relaxed  border-x-4 border-[#FF6600]/20 px-8 max-w-4xl mx-auto opacity-80">
+                        {t('contactSubHero')}
+                    </p>
+                </div>
+            </section>
 
-                {/* ══════════════════════════════════════════════════
-                    CONTACT GRID
-                ══════════════════════════════════════════════════ */}
-                <section className="max-w-7xl mx-auto px-6 md:px-12 py-32 pb-48">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-24">
+            {/* ══ CONTACT CONTENT ══ */}
+            <section className="max-w-7xl mx-auto px-6 md:px-8 py-16 pb-32">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    
+                    {/* Sidebar Infos */}
+                    <div className="lg:col-span-4 space-y-12">
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-4">
+                                <div className="size-2 rounded-full bg-[#FF6600]" />
+                                <span className="text-[10px] font-black text-[#FF6600] uppercase tracking-widest">{t('contactInfo')}</span>
+                            </div>
+                            <h2 className="text-2xl font-black text-slate-900 dark:text-foreground tracking-tighter uppercase ">{t('whereToFind')}</h2>
+                        </div>
 
-                        {/* Sidebar Infos */}
-                        <div className="lg:col-span-4 space-y-16">
-                            <div>
-                                <div className="flex items-center gap-6 mb-10">
-                                    <div className="size-4 rounded-full bg-[#FF6600] animate-pulse shadow-[0_0_20px_rgba(255,102,0,0.4)]" />
-                                    <span className="text-[11px] font-black text-[#FF6600] uppercase tracking-[0.6em] italic">DIRECTOIRE BCA</span>
+                        <div className="space-y-6">
+                            {[
+                                { icon: Mail, label: "EMAIL", value: "support@bcaconnect.gn", sub: t('lang') === 'FR' ? "Réponse sous 24h" : "Reply within 24h" },
+                                { icon: Phone, label: t('formPhone').toUpperCase(), value: "+224 621 00 00 00", sub: t('lang') === 'FR' ? "Lun-Sam, 8h-18h" : "Mon-Sat, 8am-6pm" },
+                                { icon: MapPin, label: "ADRESSE", value: "Kaloum, Conakry", sub: "Guinée" },
+                            ].map((item, i) => (
+                                <div key={i} className="flex items-start gap-8 p-8 rounded-3xl bg-white dark:bg-[#0F1219] border-2 border-slate-100 dark:border-foreground/5 hover:border-[#FF6600]/40 transition-all group shadow-sm hover:shadow-xl duration-500 relative overflow-hidden">
+                                    <div className="size-10 rounded-xl bg-[#FF6600]/5 border-2 border-[#FF6600]/10 flex items-center justify-center shrink-0 group-hover:bg-[#FF6600] group-hover:text-foreground transition-all duration-500">
+                                        <item.icon className="size-5 text-[#FF6600] group-hover:text-foreground" />
+                                    </div>
+                                    <div className="flex flex-col justify-center">
+                                        <p className="text-[9px] font-semibold text-muted-foreground/80  mb-2">{item.label}</p>
+                                        <p className="font-black text-slate-900 dark:text-foreground  text-lg tracking-tighter leading-none">{item.value}</p>
+                                        <p className="text-[9px] text-[#FF6600] font-black mt-2 uppercase  opacity-80">{item.sub}</p>
+                                    </div>
                                 </div>
-                                <h2 className="text-6xl font-black italic tracking-tighter text-white uppercase leading-[0.9]">POINTS DE<br />LIAISON.</h2>
-                            </div>
+                            ))}
+                        </div>
 
-                            <div className="space-y-8">
-                                {[
-                                    { icon: Mail, label: "CANAL ÉLECTRONIQUE", value: "SUPPORT@BCACONNECT.GN", sub: "RÉPONSE SOUS 24H GARANTIE" },
-                                    { icon: Phone, label: "LIGNE DIRECTE SÉCURISÉE", value: "+224 621 000 000", sub: "LUN–SAM, 8H–18H (GMT)" },
-                                    { icon: MapPin, label: "SIÈGE SOCIAL EXÉCUTIF", value: "KABOUM, CONAKRY", sub: "RÉPUBLIQUE DE GUINÉE 🇬🇳" },
-                                ].map((item, i) => (
-                                    <div key={i} className="flex items-start gap-10 p-12 rounded-[4rem] bg-white/[0.02] border-4 border-white/5 hover:border-[#FF6600]/40 transition-all group shadow-2xl hover:shadow-3xl duration-1000 relative overflow-hidden">
-                                        <div className="absolute inset-0 bg-gradient-to-br from-[#FF6600]/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-                                        <div className="size-20 rounded-[1.5rem] bg-white/5 border-2 border-white/5 flex items-center justify-center shrink-0 group-hover:bg-[#FF6600] group-hover:text-white group-hover:scale-110 group-hover:rotate-6 transition-all duration-1000 shadow-inner relative z-10">
-                                            <item.icon className="size-8 text-slate-700 group-hover:text-white transition-colors" />
-                                        </div>
-                                        <div className="relative z-10 flex flex-col justify-center min-h-[5rem]">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 italic mb-4">{item.label}</p>
-                                            <p className="font-black text-white italic text-xl tracking-tighter leading-none">{item.value}</p>
-                                            <p className="text-[11px] text-[#FF6600] font-black mt-4 uppercase tracking-[0.1em] leading-none italic">{item.sub}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                        <div className="p-8 rounded-3xl bg-slate-900 dark:bg-foreground/5 text-foreground space-y-6 relative overflow-hidden group shadow-2xl">
+                             <div className="flex items-center gap-4">
+                                <Sparkles className="size-6 text-[#FF6600]" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">{t('liveSupport')}</span>
+                             </div>
+                             <p className="text-xs font-medium leading-relaxed opacity-70  border-l-4 border-[#FF6600] pl-6">
+                                {t('liveSupportDesc')}
+                             </p>
+                        </div>
+                    </div>
 
-                            <div className="p-12 rounded-[4.5rem] bg-[#FF6600]/5 border-4 border-[#FF6600]/10 relative overflow-hidden group/card shadow-2xl hover:shadow-3xl transition-all duration-1000">
-                                <div className="absolute top-0 right-0 size-64 bg-[#FF6600]/10 rounded-full blur-[100px] -mr-32 -mt-32 group-hover/card:bg-[#FF6600]/20 transition-colors duration-1000" />
-                                <div className="relative z-10 space-y-8">
-                                    <div className="flex items-center gap-6">
-                                        <div className="p-4 bg-[#FF6600]/10 rounded-2xl border-2 border-[#FF6600]/20 shadow-inner">
-                                            <Sparkles className="size-7 text-[#FF6600]" />
-                                        </div>
-                                        <p className="text-[11px] font-black text-white uppercase tracking-[0.4em] italic leading-none pt-0.5">ASSISTANCE LIVE v2.0</p>
-                                    </div>
-                                    <p className="text-[11px] text-slate-500 font-extrabold uppercase tracking-[0.2em] leading-loose italic border-l-8 border-[#FF6600]/40 pl-8">
-                                        POUR UNE ASSISTANCE IMMÉDIATE, UTILISEZ LE PROTOCOLE DE CHAT SÉCURISÉ ANALYTIQUE DISPONIBLE DIRECTEMENT SUR LE TABLEAU DE BORD.
+                    {/* Form Hub */}
+                    <div className="lg:col-span-8">
+                        {sent ? (
+                            <div className="h-full flex flex-col items-center justify-center gap-8 text-center p-24 rounded-3xl bg-white dark:bg-[#0F1219] border-2 border-emerald-500/20 shadow-xl animate-in zoom-in duration-1000">
+                                <div className="size-16 rounded-2xl bg-emerald-500 text-foreground flex items-center justify-center shadow-xl shadow-emerald-500/20 relative z-10 animate-bounce">
+                                    <CheckCircle2 className="size-12" />
+                                </div>
+                                <div className="space-y-6">
+                                    <h3 className="text-2xl md:text-xl font-semibold  tracking-tighter text-slate-900 dark:text-foreground uppercase leading-none">{t('messageSent').split(' ')[0]} <span className="text-emerald-500 not-">{t('messageSent').split(' ')[1]}</span></h3>
+                                    <p className="text-muted-foreground/80 font-bold uppercase  text-[10px] max-w-lg mx-auto leading-relaxed  border-l-8 border-emerald-500/20 pl-10 text-left opacity-80">
+                                        {t('messageSuccess')}
                                     </p>
                                 </div>
+                                <Button onClick={() => setSent(false)} className="h-12 px-14 rounded-2xl font-semibold text-[10px] bg-slate-900 text-foreground hover:scale-105 active:scale-95 transition-all  border-0">
+                                    {t('lang') === 'FR' ? "NOUVEAU MESSAGE" : "NEW MESSAGE"}
+                                </Button>
                             </div>
-                        </div>
-
-                        {/* Formulaire (Executive Card) */}
-                        <div className="lg:col-span-8">
-                            {sent ? (
-                                <div className="h-full flex flex-col items-center justify-center gap-16 text-center p-24 rounded-[5rem] bg-white/[0.02] border-4 border-emerald-500/20 shadow-3xl animate-in zoom-in duration-1000 relative overflow-hidden">
-                                    <div className="absolute inset-x-0 top-0 h-4 bg-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.4)]"></div>
-                                    <div className="size-48 rounded-[3rem] bg-emerald-500 text-white flex items-center justify-center shadow-3xl shadow-emerald-500/40 relative z-10 animate-bounce">
-                                        <CheckCircle2 className="size-24" />
-                                    </div>
-                                    <div className="space-y-10 relative z-10">
-                                        <h3 className="text-7xl font-black italic tracking-tighter text-white uppercase leading-tight">DOSSIER <br /> <span className="text-emerald-500 not-italic uppercase">TRANSMIS.</span></h3>
-                                        <p className="text-slate-500 font-black uppercase tracking-[0.4em] text-sm max-w-2xl mx-auto leading-loose italic border-l-8 border-emerald-500/20 pl-12">
-                                            PROTOCOLE DE RÉCEPTION VALIDÉ. {form.nom.split(' ')[0]}, NOTRE PÔLE EXÉCUTIF EXAMINE VOTRE REQUÊTE. UNE NOTIFICATION DE LIAISON SERA ENVOYÉE À <span className="text-white border-b-4 border-[#FF6600]/30">{form.email.toUpperCase()}</span>.
-                                        </p>
-                                    </div>
-                                    <Button onClick={() => setSent(false)} variant="outline" className="h-24 px-20 rounded-[2.5rem] font-black uppercase tracking-[0.4em] text-xs shadow-2xl border-4 border-white/5 hover:border-[#FF6600]/40 hover:scale-110 transition-all italic bg-white/5">
-                                        INITIER UN NOUVEAU PROTOCOLE
-                                    </Button>
+                        ) : (
+                            <form onSubmit={handleSubmit} className="p-8 md:p-20 rounded-3xl bg-white dark:bg-[#0F1219] border-2 border-slate-100 dark:border-foreground/5 space-y-12 shadow-xl hover:shadow-2xl transition-all duration-1000 relative overflow-hidden group/form">
+                                <div className="absolute top-0 right-0 size-[35rem] bg-[#FF6600]/5 rounded-full blur-[120px] -mr-32 -mt-24 opacity-40 group-hover/form:opacity-100 transition-opacity duration-1000" />
+                                
+                                <div className="space-y-4">
+                                    <h3 className="text-2xl font-black  tracking-tighter text-slate-900 dark:text-foreground uppercase leading-none">{t('leaveMessage').split(' ').slice(0, -1).join(' ')} <span className="text-[#FF6600] not-">{t('leaveMessage').split(' ').slice(-1)}</span></h3>
+                                    <p className="text-muted-foreground/80 text-[10px] font-bold uppercase tracking-widest  leading-none opacity-60">{t('lang') === 'FR' ? "Notre équipe reviendra vers vous dans les plus brefs délais." : "Our team will get back to you as soon as possible."}</p>
                                 </div>
-                            ) : (
-                                <form onSubmit={handleSubmit} className="p-16 md:p-24 rounded-[5rem] bg-white/[0.02] border-4 border-white/5 space-y-20 shadow-3xl hover:shadow-[#FF6600]/5 transition-all duration-1000 relative overflow-hidden group/form">
-                                    <div className="absolute top-0 right-0 size-[40rem] bg-[#FF6600]/5 rounded-full blur-[150px] -mr-48 -mt-48 group-hover/form:bg-[#FF6600]/10 transition-colors duration-1000" />
-                                    <div className="absolute inset-x-0 top-0 h-4 bg-[#FF6600]/0 group-hover/form:bg-[#FF6600] transition-all duration-1000"></div>
 
-                                    <div className="relative z-10 space-y-8">
-                                        <h3 className="text-6xl lg:text-8xl font-black italic tracking-tighter text-white uppercase leading-[0.85]">PROTOCOLE DE<br />COMMUNICATION <span className="text-[#FF6600] not-italic">SÉCURISÉ.</span></h3>
-                                        <p className="text-slate-700 text-[11px] font-black uppercase tracking-[0.5em] italic leading-none pt-2">PHASE III : TRANSMISSION DES PARAMÈTRES ET NATURE DU DOSSIER.</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-3">
+                                        <label className="text-[9px] font-semibold text-muted-foreground/80 ml-4">{t('formName')} *</label>
+                                        <Input name="nom" value={form.nom} onChange={handleChange} placeholder="Mamadou Diallo" className="h-14 rounded-2xl border-2 border-slate-100 dark:border-foreground/5 bg-slate-50 dark:bg-white/[0.01] focus:border-[#FF6600]/40 focus:ring-0 font-bold text-sm px-8 placeholder:text-slate-300  transition-all" />
                                     </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 relative z-10">
-                                        <div className="space-y-6">
-                                            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-600 ml-6 italic">NOM COMPLET CERTIFIÉ *</label>
-                                            <Input name="nom" value={form.nom} onChange={handleChange} placeholder="ELHADJ MAMADOU DIALLO" className="h-24 rounded-[2.5rem] border-4 border-white/5 bg-white/[0.02] focus:border-[#FF6600]/40 focus:ring-0 font-black text-base px-12 placeholder:text-slate-800 uppercase tracking-widest italic transition-all" />
-                                        </div>
-                                        <div className="space-y-6">
-                                            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-600 ml-6 italic">LIAISON ÉLECTRONIQUE *</label>
-                                            <Input name="email" type="email" value={form.email} onChange={handleChange} placeholder="DIRECTION@SOCIETE.GN" className="h-24 rounded-[2.5rem] border-4 border-white/5 bg-white/[0.02] focus:border-[#FF6600]/40 focus:ring-0 font-black text-base px-12 placeholder:text-slate-800 uppercase tracking-widest italic transition-all" />
-                                        </div>
-                                        <div className="space-y-6">
-                                            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-600 ml-6 italic">LIGNE TÉLÉPHONIQUE DIRECTE</label>
-                                            <Input name="telephone" value={form.telephone} onChange={handleChange} placeholder="+224 6XX XX XX XX" className="h-24 rounded-[2.5rem] border-4 border-white/5 bg-white/[0.02] focus:border-[#FF6600]/40 focus:ring-0 font-black text-base px-12 placeholder:text-slate-800 uppercase tracking-widest italic transition-all" />
-                                        </div>
-                                        <div className="space-y-6">
-                                            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-600 ml-6 italic">CLASSIFICATION STRATÉGIQUE</label>
-                                            <div className="relative group/select">
-                                                <select
-                                                    name="raison"
-                                                    value={form.raison}
-                                                    onChange={handleChange}
-                                                    className="w-full h-24 rounded-[2.5rem] border-4 border-white/5 bg-white/[0.02] px-12 text-base font-black italic focus:outline-none focus:border-[#FF6600]/40 shadow-inner appearance-none uppercase tracking-widest text-white transition-all cursor-pointer"
-                                                >
-                                                    <option value="" className="bg-[#0A0D14] text-slate-500 italic">SÉLECTIONNER CATEGORIE...</option>
-                                                    {CONTACT_REASONS.map(r => <option key={r} value={r} className="bg-[#0A0D14] text-white">{r.toUpperCase()}</option>)}
-                                                </select>
-                                                <div className="absolute right-10 top-1/2 -translate-y-1/2 pointer-events-none text-[#FF6600] group-hover/select:scale-125 transition-transform">
-                                                    <ChevronDown className="size-7" />
-                                                </div>
-                                            </div>
+                                    <div className="space-y-3">
+                                        <label className="text-[9px] font-semibold text-muted-foreground/80 ml-4">{t('formEmail')} *</label>
+                                        <Input name="email" type="email" value={form.email} onChange={handleChange} placeholder="votre@email.com" className="h-14 rounded-2xl border-2 border-slate-100 dark:border-foreground/5 bg-slate-50 dark:bg-white/[0.01] focus:border-[#FF6600]/40 focus:ring-0 font-bold text-sm px-8 placeholder:text-slate-300  transition-all" />
+                                    </div>
+                                    <div className="space-y-3">
+                                        <label className="text-[9px] font-semibold text-muted-foreground/80 ml-4">{t('formPhone')}</label>
+                                        <Input name="telephone" value={form.telephone} onChange={handleChange} placeholder="+224 6XX XX XX XX" className="h-14 rounded-2xl border-2 border-slate-100 dark:border-foreground/5 bg-slate-50 dark:bg-white/[0.01] focus:border-[#FF6600]/40 focus:ring-0 font-bold text-sm px-8 placeholder:text-slate-300  transition-all" />
+                                    </div>
+                                    <div className="space-y-3">
+                                        <label className="text-[9px] font-semibold text-muted-foreground/80 ml-4">{t('formReason')}</label>
+                                        <div className="relative group/select">
+                                            <select
+                                                name="raison"
+                                                value={form.raison}
+                                                onChange={handleChange}
+                                                className="w-full h-14 rounded-2xl border-2 border-slate-100 dark:border-foreground/5 bg-slate-50 dark:bg-white/[0.02] px-8 text-sm font-bold  focus:outline-none focus:border-[#FF6600]/40 shadow-sm appearance-none tracking-widest text-slate-900 dark:text-foreground transition-all cursor-pointer"
+                                            >
+                                                <option value="" className="bg-white dark:bg-[#0A0D14] text-muted-foreground/80 ">{t('lang') === 'FR' ? "Sélectionner..." : "Select..."}</option>
+                                                {CONTACT_REASONS.map(r => <option key={r} value={r} className="bg-white dark:bg-[#0A0D14] text-slate-900 dark:text-foreground">{r}</option>)}
+                                            </select>
+                                            <ChevronDown className="absolute right-8 top-1/2 -translate-y-1/2 size-5 text-slate-300 pointer-events-none" />
                                         </div>
                                     </div>
+                                </div>
 
-                                    <div className="space-y-6 relative z-10">
-                                        <label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-600 ml-6 italic">EXPOSÉ DES MOTIFS / REQUÊTE PRÉCISE *</label>
-                                        <textarea
-                                            name="message"
-                                            value={form.message}
-                                            onChange={handleChange}
-                                            placeholder="DÉTAILLEZ VOTRE REQUÊTE AVEC PRÉCISION STRATÉGIQUE..."
-                                            className="w-full min-h-[300px] rounded-[3rem] border-4 border-white/5 bg-white/[0.02] px-12 py-12 text-base font-black italic focus:outline-none focus:border-[#FF6600]/40 shadow-inner placeholder:text-slate-800 resize-none leading-relaxed transition-all uppercase tracking-widest"
-                                        />
+                                <div className="space-y-3">
+                                    <label className="text-[9px] font-semibold text-muted-foreground/80 ml-4">{t('formMessage')} *</label>
+                                    <textarea
+                                        name="message"
+                                        value={form.message}
+                                        onChange={handleChange}
+                                        placeholder={t('formPlaceholderMessage')}
+                                        className="w-full min-h-[160px] rounded-2xl border-2 border-slate-100 dark:border-foreground/5 bg-slate-50 dark:bg-white/[0.01] px-8 py-6 text-sm font-bold  focus:outline-none focus:border-[#FF6600]/40 shadow-sm placeholder:text-slate-300 resize-none leading-relaxed transition-all"
+                                    />
+                                </div>
+
+                                <Button type="submit" isLoading={isSending} className="w-full h-14 rounded-2xl font-semibold text-[10px] bg-[#FF6600] text-foreground shadow-xl shadow-[#FF6600]/20 hover:scale-105 active:scale-95 transition-all border-0  mt-8">
+                                    <div className="relative z-10 flex items-center justify-center gap-4">
+                                        {!isSending && <Send className="size-5 group-hover:-translate-y-1 group-hover:translate-x-1 transition-transform" />}
+                                        <span>{isSending ? t('sending') : t('sendMessage')}</span>
                                     </div>
-
-                                    <Button type="submit" isLoading={isSending} className="w-full h-28 rounded-[3rem] font-black uppercase tracking-[0.5em] text-sm gap-10 shadow-3xl shadow-[#FF6600]/20 relative overflow-hidden group/btn hover:scale-105 active:scale-95 transition-all border-4 border-[#FF6600] bg-[#FF6600] text-white italic">
-                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_2s_infinite]" />
-                                        <div className="relative z-10 flex items-center justify-center gap-10">
-                                            {!isSending && <Send className="size-8 group-hover/btn:-translate-y-2 group-hover/btn:translate-x-2 transition-transform" />}
-                                            <span>{isSending ? 'TRANSMISSION CHIFFRÉE...' : 'SOUMETTRE LE DOSSIER'}</span>
-                                        </div>
-                                    </Button>
-                                </form>
-                            )}
-                        </div>
+                                </Button>
+                            </form>
+                        )}
                     </div>
-                </section>
-            </div>
-        </PublicLayout>
+                </div>
+            </section>
+        </div>
     );
 };
 

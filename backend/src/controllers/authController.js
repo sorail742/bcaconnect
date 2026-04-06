@@ -1,4 +1,4 @@
-const { User, Wallet } = require('../models');
+const { User, Wallet, sequelize } = require('../models');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -148,22 +148,31 @@ const authController = {
         }
     },
 
-    // 5. Supprimer le compte
+    // 5. Supprimer le compte (RGPD - droit à l'oubli)
     deleteAccount: async (req, res, next) => {
+        const t = await sequelize.transaction();
         try {
-            const user = await User.findByPk(req.user.id);
+            const user = await User.findByPk(req.user.id, { transaction: t });
             if (!user) {
+                await t.rollback();
                 return res.status(404).json({ message: "Utilisateur non trouvé." });
             }
 
-            // Supprimer le portefeuille et l'utilisateur
-            // (Les relations avec onDelete: 'CASCADE' devraient gérer le reste si configurées, 
-            // sinon il faudrait nettoyer manuellement ou utiliser une transaction)
-            await Wallet.destroy({ where: { user_id: user.id } });
-            await user.destroy();
+            // Anonymiser plutôt que supprimer pour préserver l'intégrité des commandes/transactions
+            await user.update({
+                nom_complet: '[Compte supprimé]',
+                email: `deleted_${user.id}@bca.invalid`,
+                telephone: `000_${user.id.slice(0, 8)}`,
+                mot_de_passe: 'DELETED',
+                statut: 'supprime',
+                metadata_securite: null,
+                preferences_ia: null
+            }, { transaction: t });
 
-            res.json({ message: "Compte supprimé avec succès." });
+            await t.commit();
+            res.json({ message: "Compte supprimé conformément au RGPD." });
         } catch (error) {
+            await t.rollback();
             next(error);
         }
     }

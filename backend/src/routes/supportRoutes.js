@@ -8,7 +8,4 @@ router.post('/tickets', protect, supportController.createTicket);
 router.get('/tickets/me', protect, supportController.getMyTickets);
 router.put('/tickets/:id/resolve', protect, authorize('admin'), supportController.resolveTicket);
 
-// Avis & Feedback
-router.post('/reviews', protect, supportController.createReview);
-
 module.exports = router;

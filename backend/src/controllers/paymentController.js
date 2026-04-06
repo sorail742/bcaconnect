@@ -8,15 +8,21 @@ const paymentController = {
         today.setHours(0, 0, 0, 0);
 
         try {
+            // Compter les transactions du JOUR pour CET utilisateur spécifique
+            const wallet = await Wallet.findOne({ where: { user_id } });
+            if (!wallet) return false;
+
             const recentTransactions = await Transaction.count({
                 where: {
+                    portefeuille_id: wallet.id,
                     created_at: { [require('sequelize').Op.gte]: today },
                     statut: 'complete'
                 }
             });
 
-            if (montant > 5000000 || recentTransactions > 3) {
-                return true; // Suspect
+            // Seuil : montant > 5 000 000 GNF OU plus de 10 transactions dans la journée
+            if (montant > 5000000 || recentTransactions > 10) {
+                return true;
             }
             return false;
         } catch (error) {
@@ -90,7 +96,7 @@ const paymentController = {
                 const io = req.app.get('socketio');
                 if (io) {
                     const paymentNotif = await Notification.create({
-                        utilisateur_id: wallet.utilisateur_id,
+                        utilisateur_id: wallet.user_id,
                         titre: "Recharge réussie !",
                         message: `Votre portefeuille BCA a été crédité de <span class="font-black text-emerald-600">${transaction.montant.toLocaleString('fr-FR')} GNF</span>.`,
                         type: 'payment'

@@ -13,10 +13,10 @@ const SUGGESTIONS = [
 
 const BotMessage = ({ content }) => (
     <div className="flex items-start gap-3 animate-in slide-in-from-left-2 duration-300">
-        <div className="size-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+        <div className="size-6 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
             <Bot className="size-4 text-primary" />
         </div>
-        <div className="max-w-[85%] bg-muted/60 border border-border rounded-2xl rounded-tl-sm px-4 py-3 text-sm font-medium text-foreground leading-relaxed">
+        <div className="max-w-[85%] bg-muted/60 border border-border rounded-lg rounded-tl-sm px-4 py-3 text-sm font-medium text-foreground leading-relaxed">
             {content}
         </div>
     </div>
@@ -24,7 +24,7 @@ const BotMessage = ({ content }) => (
 
 const UserMessage = ({ content }) => (
     <div className="flex items-end justify-end gap-3 animate-in slide-in-from-right-2 duration-300">
-        <div className="max-w-[85%] bg-primary text-white rounded-2xl rounded-br-sm px-4 py-3 text-sm font-medium leading-relaxed">
+        <div className="max-w-[85%] bg-primary text-slate-900 dark:text-foreground rounded-lg rounded-br-sm px-4 py-3 text-sm font-medium leading-relaxed">
             {content}
         </div>
     </div>
@@ -92,15 +92,15 @@ const AIChat = () => {
             {isOpen && (
                 <div className={cn(
                     "fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-3rem)]",
-                    "bg-card border border-border rounded-[2rem] shadow-2xl shadow-black/20",
+                    "bg-card border border-border rounded-2xl shadow-2xl shadow-black/20",
                     "flex flex-col overflow-hidden transition-all duration-300 animate-in slide-in-from-bottom-4 fade-in",
                     isMinimized ? "h-[64px]" : "h-[520px]"
                 )}>
 
                     {/* Header */}
                     <div className="flex items-center gap-3 px-5 py-4 border-b border-border bg-gradient-to-r from-primary/10 via-primary/5 to-transparent shrink-0">
-                        <div className="size-9 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
-                            <Bot className="size-4.5 text-white" />
+                        <div className="size-9 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
+                            <Bot className="size-4.5 text-slate-900 dark:text-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-black text-foreground tracking-tight">BCA Assistant</p>
@@ -112,13 +112,13 @@ const AIChat = () => {
                         <div className="flex items-center gap-1">
                             <button
                                 onClick={() => setIsMinimized(p => !p)}
-                                className="size-8 rounded-xl hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-all"
+                                className="size-6 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-all"
                             >
                                 {isMinimized ? <ChevronDown className="size-4" /> : <Minimize2 className="size-3.5" />}
                             </button>
                             <button
                                 onClick={() => setIsOpen(false)}
-                                className="size-8 rounded-xl hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-all"
+                                className="size-6 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-all"
                             >
                                 <X className="size-4" />
                             </button>
@@ -136,10 +136,10 @@ const AIChat = () => {
                                 )}
                                 {isLoading && (
                                     <div className="flex items-start gap-3">
-                                        <div className="size-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                                        <div className="size-6 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                                             <Bot className="size-4 text-primary" />
                                         </div>
-                                        <div className="bg-muted/60 border border-border rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2">
+                                        <div className="bg-muted/60 border border-border rounded-lg rounded-tl-sm px-4 py-3 flex items-center gap-2">
                                             <Loader2 className="size-3.5 text-primary animate-spin" />
                                             <span className="text-xs text-muted-foreground font-medium italic">BCA Assistant réfléchit...</span>
                                         </div>
@@ -165,7 +165,7 @@ const AIChat = () => {
 
                             {/* Zone de saisie */}
                             <div className="p-3 border-t border-border shrink-0">
-                                <div className="flex items-center gap-2 bg-muted/40 border border-border rounded-2xl px-4 py-2 focus-within:border-primary/50 focus-within:bg-primary/3 transition-all">
+                                <div className="flex items-center gap-2 bg-muted/40 border border-border rounded-lg px-4 py-2 focus-within:border-primary/50 focus-within:bg-primary/3 transition-all">
                                     <input
                                         ref={inputRef}
                                         type="text"
@@ -180,9 +180,9 @@ const AIChat = () => {
                                         onClick={() => sendMessage()}
                                         disabled={!input.trim() || isLoading}
                                         className={cn(
-                                            "size-8 rounded-xl flex items-center justify-center transition-all duration-200",
+                                            "size-6 rounded-lg flex items-center justify-center transition-all duration-200",
                                             input.trim() && !isLoading
-                                                ? "bg-primary text-white shadow-lg shadow-primary/30 hover:scale-105"
+                                                ? "bg-primary text-slate-900 dark:text-foreground shadow-lg shadow-primary/30 hover:scale-105"
                                                 : "bg-muted text-muted-foreground cursor-not-allowed"
                                         )}
                                     >
@@ -202,12 +202,12 @@ const AIChat = () => {
                 onClick={() => { setIsOpen(p => !p); setHasUnread(false); }}
                 className={cn(
                     "fixed bottom-6 right-6 z-50 group",
-                    "size-14 rounded-2xl shadow-2xl shadow-primary/40",
+                    "size-6 rounded-lg shadow-2xl shadow-primary/40",
                     "flex items-center justify-center",
                     "transition-all duration-300 hover:scale-110 active:scale-95",
                     isOpen
                         ? "bg-muted border border-border text-foreground"
-                        : "bg-primary text-white"
+                        : "bg-primary text-slate-900 dark:text-foreground"
                 )}
             >
                 {isOpen
@@ -229,7 +229,7 @@ const AIChat = () => {
 
                 {/* Pulse ring */}
                 {!isOpen && (
-                    <span className="absolute inset-0 rounded-2xl bg-primary/30 animate-ping opacity-30" />
+                    <span className="absolute inset-0 rounded-lg bg-primary/30 animate-ping opacity-30" />
                 )}
             </button>
         </>

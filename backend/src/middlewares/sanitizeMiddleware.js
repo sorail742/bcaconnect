@@ -26,6 +26,7 @@ const sanitizeInput = (obj) => {
 const sanitizeMiddleware = (req, res, next) => {
     req.body = sanitizeInput(req.body);
     req.query = sanitizeInput(req.query);
+    req.params = sanitizeInput(req.params);
     next();
 };
 

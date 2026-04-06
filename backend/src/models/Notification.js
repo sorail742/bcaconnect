@@ -20,8 +20,11 @@ const Notification = sequelize.define('Notification', {
         allowNull: false,
     },
     type: {
-        type: DataTypes.ENUM('order', 'payment', 'message', 'system', 'dispute'),
+        type: DataTypes.STRING(20),
         defaultValue: 'system',
+        validate: {
+            isIn: [['order', 'payment', 'message', 'system', 'dispute']]
+        }
     },
     est_lu: {
         type: DataTypes.BOOLEAN,

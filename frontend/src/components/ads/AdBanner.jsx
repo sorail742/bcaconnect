@@ -45,21 +45,21 @@ const AdBanner = ({ format = 'banner', className }) => {
 
     return (
         <div className={cn(
-            "relative group overflow-hidden rounded-[1.5rem] border border-primary/20 bg-gradient-to-r from-primary/5 to-transparent",
-            format === 'banner' ? "h-24 px-6 flex items-center gap-6" : "p-6 flex flex-col gap-4",
+            "relative group overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 to-transparent",
+            format === 'banner' ? "h-14 px-6 flex items-center gap-6" : "p-6 flex flex-col gap-4",
             className
         )}>
             <button
                 onClick={() => setIsVisible(false)}
-                className="absolute top-2 right-2 p-1 rounded-full bg-white/10 hover:bg-white/20 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-2 right-2 p-1 rounded-full bg-foreground/10 hover:bg-foreground/20 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
             >
                 <X className="size-3" />
             </button>
 
             {ad.url_image && (
                 <div className={cn(
-                    "rounded-xl overflow-hidden shrink-0",
-                    format === 'banner' ? "size-16" : "w-full aspect-video"
+                    "rounded-lg overflow-hidden shrink-0",
+                    format === 'banner' ? "size-10" : "w-full aspect-video"
                 )}>
                     <img src={ad.url_image} alt={ad.titre} className="w-full h-full object-cover" />
                 </div>
@@ -79,7 +79,7 @@ const AdBanner = ({ format = 'banner', className }) => {
                 rel="noopener noreferrer"
                 onClick={() => handleAdClick(ad.id)}
                 className={cn(
-                    "inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-transform",
+                    "inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-slate-900 dark:text-foreground text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-transform",
                     format === 'banner' ? "ml-4" : "w-full justify-center"
                 )}
             >

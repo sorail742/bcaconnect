@@ -1,125 +1,159 @@
-import { Link } from "react-router-dom"
-import { Facebook, Twitter, Linkedin, Instagram, ArrowUpRight, Send, Globe } from "lucide-react"
-import { Button } from "../ui/Button"
-
-const socialLinks = [
-    { icon: Facebook, href: "#", label: "Facebook" },
-    { icon: Twitter, href: "#", label: "Twitter" },
-    { icon: Linkedin, href: "#", label: "LinkedIn" },
-    { icon: Instagram, href: "#", label: "Instagram" }
-]
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Send, Mail, MapPin, Phone, ShieldCheck, Zap, Star, Globe, Share2, Activity } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 
 export function Footer() {
-    return (
-        <footer className="relative py-32 bg-[#0A0D14] overflow-hidden border-t border-white/5">
-            {/* Atmospheric Backgrounds */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-[#FF6600]/50 to-transparent" />
-            <div className="absolute bottom-0 right-0 size-[400px] bg-[#FF6600]/5 blur-[120px] rounded-full pointer-events-none" />
+    const { t, lang } = useLanguage();
+    const currentYear = new Date().getFullYear();
 
-            <div className="container mx-auto px-4 relative z-10">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-16 mb-24">
-                    {/* Brand Column */}
-                    <div className="lg:col-span-2">
-                        <Link to="/" className="flex items-center gap-3 mb-10 group">
-                            <div className="size-14 rounded-2xl bg-[#FF6600] text-white flex items-center justify-center shadow-2xl shadow-[#FF6600]/20 group-hover:rotate-6 transition-all duration-500">
-                                <span className="font-black text-xl">BC</span>
+    const footerLinks = [
+        {
+            title: t('marketplace') || "Marché",
+            links: [
+                { to: "/marketplace", label: t('catalog') || "Catalogue" },
+                { to: "/vendors", label: t('vendors') || "Vendeurs" },
+                { to: "/tracking", label: t('tracking') || "Suivi" },
+            ]
+        },
+        {
+            title: t('help') || "Aide",
+            links: [
+                { to: "/faq", label: t('faq') || "FAQ" },
+                { to: "/help", label: t('guide') || "Guide" },
+                { to: "/contact", label: t('contact') || "Contact" },
+            ]
+        },
+        {
+            title: t('company') || "Entreprise",
+            links: [
+                { to: "/about", label: t('about') || "À propos" },
+                { to: "/terms", label: t('terms') || "CGU" },
+                { to: "/privacy", label: t('privacy') || "Confidentialité" },
+            ]
+        },
+        {
+            title: "Réseaux",
+            links: [
+                { to: "#", label: "LinkedIn" },
+                { to: "#", label: "Instagram" },
+                { to: "#", label: "Twitter" },
+            ]
+        }
+    ];
+
+    return (
+        <footer className="relative bg-background border-t border-border py-12 overflow-hidden">
+            <div className="absolute top-0 right-0 size-96 bg-primary/[0.03] blur-[120px] rounded-full pointer-events-none" />
+
+            <div className="container mx-auto px-6 md:px-12 relative z-10">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
+
+                    {/* Brand */}
+                    <div className="lg:col-span-4 space-y-5">
+                        <Link to="/" className="flex items-center gap-3 group w-fit">
+                            <div className="size-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-sm group-hover:scale-105 transition-transform">
+                                <Zap className="size-5 fill-current" />
                             </div>
-                            <span className="font-black text-3xl text-white tracking-tighter group-hover:text-[#FF6600] transition-colors">BCA<span className="text-[#FF6600]">Connect</span></span>
+                            <span className="font-bold text-xl text-foreground tracking-tight">
+                                BCA<span className="text-primary">Connect</span>
+                            </span>
                         </Link>
-                        <p className="text-lg text-slate-400 mb-10 max-w-sm leading-relaxed font-medium opacity-80">
-                            La passerelle moderne du commerce africain.
-                            Nous connectons les talents, les produits et les opportunités sur tout le continent.
+
+                        <p className="text-sm text-muted-foreground leading-relaxed max-w-xs border-l-4 border-primary/30 pl-4">
+                            {lang === 'FR'
+                                ? "La passerelle moderne du commerce africain. Connectez acheteurs, vendeurs et prestataires en un seul écosystème."
+                                : "The modern gateway for African commerce. Connect buyers, sellers and service providers in one ecosystem."}
                         </p>
-                        <div className="flex items-center gap-4">
-                            {socialLinks.map((social, index) => (
-                                <a
-                                    key={index}
-                                    href={social.href}
-                                    className="size-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-[#FF6600] hover:text-white hover:border-[#FF6600] group/social transition-all duration-500 hover:-translate-y-2"
-                                    aria-label={social.label}
-                                >
-                                    <social.icon className="size-5" />
+
+                        <div className="flex items-center gap-3">
+                            {[Share2, Globe, Mail].map((Icon, i) => (
+                                <a key={i} href="#"
+                                    className="size-9 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all">
+                                    <Icon className="size-4" />
                                 </a>
+                            ))}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            {[ShieldCheck, Zap, Star].map((Icon, i) => (
+                                <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted border border-border rounded-lg">
+                                    <Icon className="size-3.5 text-primary" />
+                                    <span className="text-xs text-muted-foreground">{['Sécurisé', 'Rapide', '99%'][i]}</span>
+                                </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* Links Columns */}
-                    <div>
-                        <h4 className="font-black text-white mb-8 text-[11px] uppercase tracking-[0.2em] text-[#FF6600]">Marketplace</h4>
-                        <ul className="space-y-4">
-                            {[
-                                { label: "Catalogue Global", href: "/marketplace" },
-                                { label: "Marchands Élite", href: "/vendors" },
-                                { label: "Track System", href: "/tracking" },
-                                { label: "Devenir Vendeur", href: "/register" }
-                            ].map((link, index) => (
-                                <li key={index}>
-                                    <Link to={link.href} className="group flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-white transition-all">
-                                        <ArrowUpRight className="size-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-[#FF6600]" />
-                                        {link.label}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
+                    {/* Nav links */}
+                    <div className="lg:col-span-5 grid grid-cols-2 md:grid-cols-4 gap-6">
+                        {footerLinks.map((section, idx) => (
+                            <div key={idx} className="space-y-3">
+                                <h4 className="text-xs font-bold text-foreground uppercase tracking-wide border-l-2 border-primary pl-2">
+                                    {section.title}
+                                </h4>
+                                <ul className="space-y-2">
+                                    {section.links.map((link, lIdx) => (
+                                        <li key={lIdx}>
+                                            <Link to={link.to}
+                                                className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group">
+                                                <div className="size-1 bg-border rounded-full group-hover:bg-primary transition-colors" />
+                                                {link.label}
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
                     </div>
 
-                    <div>
-                        <h4 className="font-black text-white mb-8 text-[11px] uppercase tracking-[0.2em] text-[#FF6600]">Société</h4>
-                        <ul className="space-y-4">
-                            {[
-                                { label: "Notre Vision", href: "/about" },
-                                { label: "Impact Social", href: "/impact" },
-                                { label: "Partenaires", href: "/partners" },
-                                { label: "Assistance", href: "/contact" }
-                            ].map((link, index) => (
-                                <li key={index}>
-                                    <Link to={link.href} className="group flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-white transition-all">
-                                        <ArrowUpRight className="size-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-[#FF6600]" />
-                                        {link.label}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+                    {/* Newsletter + Contact */}
+                    <div className="lg:col-span-3 space-y-5">
+                        <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+                            <div>
+                                <h5 className="text-xs font-bold text-primary uppercase tracking-wide">Newsletter</h5>
+                                <p className="text-xs text-muted-foreground mt-1">Restez informé des dernières actualités.</p>
+                            </div>
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                                <input type="email" placeholder="votre@email.com"
+                                    className="w-full h-10 bg-background border border-border rounded-xl text-sm pl-9 pr-12 outline-none focus:border-primary/50 transition-all text-foreground placeholder:text-muted-foreground" />
+                                <button className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
+                                    <Send className="size-3.5" />
+                                </button>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Activity className="size-3 text-emerald-500 animate-pulse" /> Système actif 100%
+                            </div>
+                        </div>
 
-                    <div>
-                        <h4 className="font-black text-white mb-8 text-[11px] uppercase tracking-[0.2em] text-[#FF6600]">Newsletter</h4>
-                        <p className="text-sm text-slate-400 mb-8 font-medium leading-relaxed opacity-80">Recevez l'essentiel de l'actu Tech & Business en Afrique.</p>
-                        <div className="relative group/input">
-                            <input
-                                type="email"
-                                placeholder="votre@email.com"
-                                className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl text-white text-xs font-bold px-5 focus:outline-none focus:border-[#FF6600]/50 transition-all pr-12"
-                            />
-                            <button className="absolute right-2 top-2 size-10 rounded-xl bg-[#FF6600] text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg shadow-[#FF6600]/20">
-                                <Send className="size-4" />
-                            </button>
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer">
+                                <MapPin className="size-4 text-primary shrink-0" />
+                                <span>Kipé, Ratoma, Conakry, Guinée</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer">
+                                <Phone className="size-4 text-emerald-500 shrink-0" />
+                                <span>+224 6XX XX XX XX</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Bottom Bar */}
-                <div className="pt-12 border-t border-white/5 flex flex-col lg:flex-row items-center justify-between gap-8">
-                    <div className="flex flex-col md:flex-row items-center gap-8">
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
-                            © 2026 BCA CONNECT. TOUS DROITS RÉSERVÉS.
-                        </p>
-                        <div className="flex items-center gap-6">
-                            <Link to="/privacy" className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-[0.2em] transition-colors">Confidentialité</Link>
-                            <Link to="/terms" className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-[0.2em] transition-colors">Conditions</Link>
-                        </div>
+                {/* Bottom bar */}
+                <div className="pt-6 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
+                    <p className="text-xs text-muted-foreground">
+                        © {currentYear} BCA Connect. Tous droits réservés.
+                    </p>
+                    <div className="flex items-center gap-4">
+                        <Link to="/privacy" className="text-xs text-muted-foreground hover:text-primary transition-colors">{t('privacy') || 'Confidentialité'}</Link>
+                        <Link to="/terms" className="text-xs text-muted-foreground hover:text-primary transition-colors">{t('terms') || 'CGU'}</Link>
                     </div>
-
-                    <div className="flex items-center gap-8">
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                            <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Opérationnel</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-slate-400">
-                            <Globe className="size-4" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">FR / EN / KIK</span>
-                        </div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                        <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                            {lang === 'FR' ? 'Opérationnel' : 'Operational'}
+                        </span>
                     </div>
                 </div>
             </div>

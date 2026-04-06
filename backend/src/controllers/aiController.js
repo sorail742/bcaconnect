@@ -2,6 +2,7 @@ const aiService = require('../services/aiService');
 const { Store, Order, OrderItem, Wallet, User } = require('../models');
 const axios = require('axios');
 
+// Config Groq — centralisée ici pour le chat direct (les autres appels passent par aiService)
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
@@ -34,7 +35,7 @@ const aiController = {
     // 3. Tendances du marché local (Guinée)
     getMarketTrends: async (req, res, next) => {
         try {
-            const trends = await aiService.fetchMarketTrends();
+            const trends = await aiService.getMarketTrends();
             res.json(trends);
         } catch (error) {
             next(error);
@@ -59,7 +60,7 @@ const aiController = {
     mediateDispute: async (req, res, next) => {
         try {
             const { disputeId, details } = req.body;
-            const mediation = await aiService.generateMediationReport(disputeId, details);
+            const mediation = await aiService.mediateDispute({ ...details, disputeId });
             res.json(mediation);
         } catch (error) {
             next(error);
@@ -145,8 +146,7 @@ Réponds toujours en français, de manière concise et très professionnelle.`
                     'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
                     'Content-Type': 'application/json'
                 },
-                timeout: 60000,
-                family: 4 // FORCER IPv4 pour éviter les timeouts DNS/IPv6 en local
+                timeout: 60000
             });
 
             const text = response.data.choices[0]?.message?.content;

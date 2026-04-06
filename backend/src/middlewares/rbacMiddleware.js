@@ -1,6 +1,6 @@
 /**
  * Matrice de permissions RBAC pour BCA Connect
- * Définition des actions par rôle
+ * Rôles : admin, fournisseur, transporteur, client, banque
  */
 
 const permissions = {
@@ -32,7 +32,11 @@ const permissions = {
     // Administration
     USER_MANAGE: ['admin'],
     SYSTEM_SETTINGS: ['admin'],
-    AUDIT_LOGS_VIEW: ['admin']
+    AUDIT_LOGS_VIEW: ['admin'],
+
+    // Finance (Banque)
+    FINANCIAL_REPORTS: ['admin', 'banque'],
+    CREDITS_MANAGE: ['admin', 'banque']
 };
 
 /**

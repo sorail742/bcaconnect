@@ -1,39 +1,84 @@
 #!/usr/bin/env node
 /**
- * BCA Connect — Script de démarrage pour la production.
+ * BCA Connect — Script de démarrage.
  * Vérifie les variables d'environnement essentielles avant de lancer le serveur.
  */
-require('dotenv').config(); // ← Doit être PREMIER
-
 require('dotenv').config();
-
-const requiredVars = ['JWT_SECRET'];
 
 // Vérification de la Base de Données
 const hasDbUrl = !!process.env.DATABASE_URL;
 const hasDbVars = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS'].every(v => !!process.env[v]);
 
 if (!hasDbUrl && !hasDbVars) {
-    console.warn('\n⚠️  ALERTE : Aucune base PostgreSQL. Mode SQLite actif.\n');
+    console.warn('\n⚠️  ALERTE : Aucune base PostgreSQL configurée. Mode SQLite actif.\n');
 }
 
-// Sécurité JWT souple (on ne crash pas, on met un défaut)
+// JWT_SECRET obligatoire — arrêt si absent en production
 if (!process.env.JWT_SECRET) {
-    console.error('❌ JWT_SECRET MANQUANT : Utilisation d\'une clé de secours instable.');
-    console.error('   Veuillez définir JWT_SECRET dans le dashboard Render.');
-    process.env.JWT_SECRET = 'bca_connect_super_secret_fallback_key_2024';
+    if (process.env.NODE_ENV === 'production') {
+        console.error('❌ FATAL : JWT_SECRET manquant en production. Arrêt du serveur.');
+        process.exit(1);
+    }
+    console.warn('⚠️  JWT_SECRET manquant. Utilisation d\'une clé de développement temporaire.');
+    process.env.JWT_SECRET = `bca_dev_secret_${Date.now()}`;
 }
 
 const app = require('./app');
 const { sequelize } = require('./models');
 const http = require('http');
 const { Server } = require('socket.io');
+const { QueryTypes } = require('sequelize');
+
+/**
+ * Migration douce : ajoute les colonnes manquantes sans DROP/RECREATE.
+ * Compatible SQLite avec contraintes FK.
+ */
+async function runSafeMigrations(sequelize) {
+    const qi = sequelize.getQueryInterface();
+
+    const migrations = [
+        // Table boutiques — colonnes carousel
+        {
+            table: 'boutiques',
+            column: 'use_carousel',
+            definition: { type: require('sequelize').DataTypes.BOOLEAN, defaultValue: false, allowNull: false }
+        },
+        {
+            table: 'boutiques',
+            column: 'banner_images',
+            definition: { type: require('sequelize').DataTypes.TEXT, allowNull: true }
+        }
+    ];
+
+    for (const m of migrations) {
+        try {
+            // Vérifier si la colonne existe déjà
+            const tableDesc = await sequelize.query(
+                `PRAGMA table_info(${m.table})`,
+                { type: QueryTypes.SELECT }
+            );
+            const exists = tableDesc.some(col => col.name === m.column);
+
+            if (!exists) {
+                await qi.addColumn(m.table, m.column, m.definition);
+                console.log(`✅ Migration : colonne '${m.column}' ajoutée à '${m.table}'`);
+            }
+        } catch (err) {
+            console.warn(`⚠️  Migration '${m.column}' ignorée : ${err.message}`);
+        }
+    }
+}
+
 
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
+const ALLOWED_ORIGINS = process.env.NODE_ENV === 'production'
+    ? ['https://bcaconnect-backend.onrender.com', 'https://bcaconnect.onrender.com', 'https://bcaconnect.vercel.app']
+    : ['http://localhost:5173', 'http://localhost:3000'];
+
 const io = new Server(server, {
     cors: {
-        origin: "*", // En dév, on laisse ouvert. En prod, à restreindre.
+        origin: ALLOWED_ORIGINS,
         methods: ["GET", "POST"]
     }
 });
@@ -44,13 +89,29 @@ app.set('socketio', io);
 io.on('connection', (socket) => {
     console.log('⚡ Un utilisateur s\'est connecté :', socket.id);
 
+    // Rejoindre le canal personnel
     socket.on('join', (userId) => {
         socket.join(userId);
+        socket.userId = userId;
         console.log(`👤 Utilisateur ${userId} a rejoint son canal personnel.`);
     });
 
+    // Rejoindre une room de conversation
+    socket.on('join_conversation', (conversationId) => {
+        socket.join(`conv_${conversationId}`);
+    });
+
+    // Indicateur de frappe
+    socket.on('typing', ({ conversationId, isTyping }) => {
+        socket.to(`conv_${conversationId}`).emit('user_typing', {
+            conversationId,
+            userId: socket.userId,
+            isTyping
+        });
+    });
+
     socket.on('disconnect', () => {
-        console.log('🔥 Utilisateur déconnecté');
+        console.log('🔥 Utilisateur déconnecté :', socket.id);
     });
 });
 
@@ -59,9 +120,12 @@ const start = async () => {
         await sequelize.authenticate();
         console.log('✅ Connexion PostgreSQL établie.');
 
-        // Synchronisation standard (Stable)
+        // Synchronisation standard (ne modifie pas les tables existantes)
         await sequelize.sync();
         console.log('✅ Modèles synchronisés.');
+
+        // Migration douce : ajout des colonnes manquantes sans toucher aux FK
+        await runSafeMigrations(sequelize);
 
         server.listen(PORT, () => {
             console.log(`\n🚀 BCA Connect Real-Time API v2.5 — Port ${PORT}`);

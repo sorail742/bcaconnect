@@ -27,14 +27,25 @@ const walletController = {
 
     getTransactions: async (req, res, next) => {
         try {
-            const wallet = await Wallet.findOne({ where: { user_id: req.user.id } });
-            if (!wallet) return res.json([]);
+            const { page = 1, limit = 20 } = req.query;
+            const offset = (parseInt(page) - 1) * parseInt(limit);
 
-            const transactions = await Transaction.findAll({
+            const wallet = await Wallet.findOne({ where: { user_id: req.user.id } });
+            if (!wallet) return res.json({ total: 0, pages: 0, currentPage: 1, transactions: [] });
+
+            const { count, rows: transactions } = await Transaction.findAndCountAll({
                 where: { portefeuille_id: wallet.id },
-                order: [['createdAt', 'DESC']]
+                order: [['createdAt', 'DESC']],
+                limit: parseInt(limit),
+                offset
             });
-            res.json(transactions);
+
+            res.json({
+                total: count,
+                pages: Math.ceil(count / parseInt(limit)),
+                currentPage: parseInt(page),
+                transactions
+            });
         } catch (error) {
             next(error);
         }
@@ -42,15 +53,25 @@ const walletController = {
 
     getAllTransactions: async (req, res, next) => {
         try {
-            const transactions = await Transaction.findAll({
+            const { page = 1, limit = 20 } = req.query;
+            const offset = (parseInt(page) - 1) * parseInt(limit);
+
+            const { count, rows: transactions } = await Transaction.findAndCountAll({
                 include: [{
                     model: Wallet,
                     include: [{ model: User, attributes: ['nom_complet', 'role', 'email'] }]
                 }],
                 order: [['createdAt', 'DESC']],
-                limit: 100
+                limit: parseInt(limit),
+                offset
             });
-            res.json(transactions);
+
+            res.json({
+                total: count,
+                pages: Math.ceil(count / parseInt(limit)),
+                currentPage: parseInt(page),
+                transactions
+            });
         } catch (error) {
             next(error);
         }

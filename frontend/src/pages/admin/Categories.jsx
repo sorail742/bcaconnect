@@ -110,44 +110,68 @@ const Categories = () => {
     );
 
     return (
-        <DashboardLayout title="Architecture Offre">
-            <div className="max-w-7xl mx-auto space-y-10 animate-fade-in pb-24 px-6 md:px-10 pt-10">
+        <DashboardLayout title="ARCHITECTURE_OFFRE_RÉSEAU">
+            <div className="space-y-4 animate-in pb-16">
 
-                {/* Header Actions */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-100 dark:border-slate-800 pb-8">
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                            <div className="size-2 bg-primary rounded-full" />
-                            <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Taxonomie du Réseau</span>
+                {/* Executive Command Center — Master Directive */}
+                <div className="executive-card !p-4 group overflow-visible">
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#FFB703]/[0.02] to-transparent pointer-events-none" />
+                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 relative z-10">
+                        <div className="flex items-center gap-3">
+                            <div className="size-6 rounded-[2.2rem] bg-[#FFB703]/10 flex items-center justify-center text-[#FFB703] border border-[#FFB703]/20 shadow-inner group-hover:rotate-6 transition-transform">
+                                <Layers className="size-6 shadow-sm" />
+                            </div>
+                            <div className="space-y-2.5">
+                                <h2 className="text-sm font-black text-foreground uppercase tracking-tighter leading-none pt-0.5">
+                                    GESTION_<span className="text-[#FFB703]">TAXONOMIE</span>.
+                                </h2>
+                                <div className="flex items-center gap-3">
+                                    <div className="size-2 rounded-full bg-[#FFB703] animate-pulse" />
+                                    <p className="text-[10px] font-black text-muted-foreground/80 uppercase  opacity-80 pt-0.5">
+                                        OFFRE_NODE SYNC — FLUX_ACTIF_{new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        <h2 className="text-4xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">Gestion des <span className="text-primary italic">Catégories.</span></h2>
-                    </div>
-                    <div className="flex gap-4">
-                        <button onClick={fetchCategories} className="size-12 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl flex items-center justify-center text-slate-400 hover:text-primary transition-all shadow-sm">
-                            <RefreshCcw className={cn("size-5", isLoading && "animate-spin")} />
-                        </button>
-                        <Button onClick={() => handleOpenModal()} className="h-14 px-10 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center gap-3 shadow-xl">
-                            <Plus className="size-5" /> Nouvelle Classe
-                        </Button>
+                        <div className="flex items-center gap-3">
+                            <button 
+                                id="btn-refresh-taxo-hub"
+                                onClick={fetchCategories} 
+                                className="size-6 rounded-[2.2rem] bg-white/[0.03] border border-foreground/10 flex items-center justify-center text-muted-foreground/80 hover:text-[#FFB703] hover:border-[#FFB703]/20 transition-all "
+                            >
+                                <RefreshCcw className={cn("size-6", isLoading && "animate-spin")} />
+                            </button>
+                            <button 
+                                id="btn-deploy-new-taxon"
+                                onClick={() => handleOpenModal()}
+                                className="h-11 px-6 bg-[#FFB703] text-background hover:bg-white rounded-2xl font-medium text-sm text-muted-foreground transition-all shadow-[0_30px_90px_rgba(255,183,3,0.3)]  flex items-center gap-3 group/deploy border-0"
+                            >
+                                <Plus className="size-5" />
+                                <span>DÉPLOYER_NOUVELLE_CLASSE</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Dashboard Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div className="p-8 bg-slate-900 rounded-[2rem] border border-slate-800 shadow-xl flex items-center justify-center gap-6">
-                        <Layers className="size-10 text-primary" />
-                        <div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Classes</p>
-                            <p className="text-xl font-bold text-white uppercase">{categories.length}</p>
+                {/* Dashboard Stats & Search — High Density */}
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
+                    <div className="xl:col-span-4 executive-card group/kpi hover-shine !py-12 flex items-center justify-center gap-3">
+                        <div className="size-6 rounded-2xl bg-[#FFB703]/5 border border-[#FFB703]/10 flex items-center justify-center">
+                            <Activity className="size-6 text-[#FFB703]" />
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-black text-muted-foreground uppercase  leading-none pt-1">INDEX_GLOBAL_CLASSES</p>
+                            <p className="text-sm font-black text-foreground tabular-nums tracking-tighter leading-none">{categories.length}</p>
                         </div>
                     </div>
-                    {/* Search Surface */}
-                    <div className="md:col-span-3 p-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] flex items-center shadow-sm">
+                    
+                    <div className="xl:col-span-8 executive-card !p-4 flex items-center bg-background/40 border-[#FFB703]/10">
                         <div className="relative group w-full">
-                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 size-5 group-focus-within:text-primary transition-colors" />
+                            <Search className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-600 size-5 group-focus-within:text-[#FFB703] transition-colors relative z-10" />
                             <input
-                                className="w-full pl-16 pr-8 h-16 bg-transparent text-sm font-bold uppercase tracking-widest placeholder:text-slate-300 outline-none"
-                                placeholder="FILTRER LES CLASSIFICATIONS..."
+                                id="input-search-taxo-ledger"
+                                className="w-full pl-20 pr-8 h-11 bg-transparent text-[16px] font-black uppercase tracking-widest placeholder:text-slate-800 text-foreground outline-none"
+                                placeholder="FILTRER_LES_CLASSIFICATIONS_RÉSEAU..."
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
                             />
@@ -155,46 +179,61 @@ const Categories = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {isLoading ? (
-                        [1, 2, 3, 4, 5, 6].map(n => <div key={n} className="h-48 bg-slate-100 dark:bg-slate-800/50 rounded-[2.5rem] animate-pulse border border-slate-200 dark:border-slate-700" />)
+                        [1, 2, 3, 4, 5, 6].map(n => <div key={n} className="h-64 bg-white/[0.02] border border-foreground/5 rounded-2xl animate-pulse" />)
                     ) : filtered.length === 0 ? (
-                        <div className="lg:col-span-3 py-24 flex flex-col items-center gap-6 opacity-30 text-center">
-                            <LayoutGrid className="size-16" />
-                            <p className="text-xs font-bold uppercase tracking-widest">Architecture Vierge</p>
+                        <div className="lg:col-span-3 py-24 executive-card flex flex-col items-center gap-3 opacity-20 text-center border-dashed border-foreground/10">
+                            <LayoutGrid className="size-6 text-foreground" />
+                            <p className="text-[14px] font-black uppercase  text-foreground">ARCHITECTURE_VIERGE_DÉPLOYÉE</p>
                         </div>
                     ) : (
                         filtered.map(cat => (
                             <div
                                 key={cat.id}
-                                className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-sm hover:shadow-md transition-all group relative overflow-hidden flex flex-col justify-between h-[280px]"
+                                className="executive-card p-4 group relative overflow-hidden flex flex-col justify-between h-[340px] hover:border-[#FFB703]/40 transition-all duration-500"
                             >
-                                <div className="absolute top-0 right-0 size-32 bg-primary/5 rounded-full blur-[40px] -mr-16 -mt-16 group-hover:bg-primary/10 transition-all" />
+                                <div className="absolute top-0 right-0 size-6 bg-[#FFB703]/5 rounded-full blur-[60px] -mr-16 -mt-16 group-hover:bg-[#FFB703]/15 transition-all duration-700 pointer-events-none" />
 
-                                <div>
-                                    <div className="flex items-start justify-between mb-6">
-                                        <div className="size-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 flex items-center justify-center overflow-hidden transition-all group-hover:scale-110 group-hover:-rotate-3">
-                                            {cat.image_url ? <img src={cat.image_url} alt="" className="w-full h-full object-cover" /> : <Tag className="size-6 text-slate-200" />}
+                                <div className="space-y-6">
+                                    <div className="flex items-start justify-between">
+                                        <div className="size-6 rounded-2xl bg-white/[0.03] border border-foreground/10 p-2 flex items-center justify-center overflow-hidden transition-all duration-700 group-hover:scale-110 group-hover:rotate-3 shadow-2xl">
+                                            {cat.image_url ? 
+                                                <img src={cat.image_url} alt="" className="w-full h-full object-cover rounded-lg" /> : 
+                                                <Tag className="size-6 text-slate-700" />
+                                            }
                                         </div>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => handleOpenModal(cat)} className="size-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-primary rounded-xl flex items-center justify-center transition-all shadow-sm"><Edit2 className="size-4" /></button>
-                                            <button onClick={() => handleDelete(cat.id)} className="size-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-red-500 rounded-xl flex items-center justify-center transition-all shadow-sm"><Trash2 className="size-4" /></button>
+                                        <div className="flex gap-4 opacity-40 group-hover:opacity-100 transition-opacity">
+                                            <button 
+                                                id={`btn-edit-taxon-${cat.id}`}
+                                                onClick={() => handleOpenModal(cat)} 
+                                                className="size-6 bg-white/[0.03] border border-foreground/10 text-muted-foreground/80 hover:text-[#FFB703] hover:border-[#FFB703]/20 rounded-xl flex items-center justify-center transition-all "
+                                            >
+                                                <Edit2 className="size-6" />
+                                            </button>
+                                            <button 
+                                                id={`btn-delete-taxon-${cat.id}`}
+                                                onClick={() => handleDelete(cat.id)} 
+                                                className="size-6 bg-white/[0.03] border border-foreground/10 text-muted-foreground/80 hover:text-rose-500 hover:border-rose-500/20 rounded-xl flex items-center justify-center transition-all "
+                                            >
+                                                <Trash2 className="size-6" />
+                                            </button>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <h3 className="text-xl font-bold text-slate-900 dark:text-white uppercase truncate group-hover:text-primary transition-colors">
-                                            {cat.nom_categorie}
+                                    <div className="space-y-4">
+                                        <h3 className="text-sm font-black text-foreground uppercase truncate tracking-tight group-hover:text-[#FFB703] transition-colors leading-none">
+                                            {cat.nom_categorie}.
                                         </h3>
-                                        <p className="text-[11px] text-slate-500 font-medium italic border-l-2 border-primary/20 pl-4 line-clamp-2 leading-relaxed">
-                                            {cat.description || "Aucune description fournie pour cette classification."}
+                                        <p className="text-[12px] text-muted-foreground font-black uppercase tracking-tight border-l-2 border-[#FFB703]/20 pl-6 line-clamp-2 leading-relaxed opacity-60">
+                                            {cat.description || "AUCUNE_INDEXATION_DÉTAILLÉE_POUR_CETTE_CLASSE_TAXONOMIQUE."}
                                         </p>
                                     </div>
                                 </div>
 
-                                <div className="pt-6 mt-auto border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                                    <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest italic truncate max-w-[120px]">UID: {cat.id}</span>
-                                    <ChevronRight className="size-5 text-slate-200 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                                <div className="pt-8 mt-auto border-t border-foreground/5 flex items-center justify-between">
+                                    <span className="text-[10px] font-black text-slate-600 uppercase  truncate max-w-[180px]">UID: {cat.id?.slice(0, 16)}</span>
+                                    <ChevronRight className="size-5 text-slate-800 group-hover:text-[#FFB703] group-hover:translate-x-2 transition-all duration-500" />
                                 </div>
                             </div>
                         ))
@@ -202,55 +241,59 @@ const Categories = () => {
                 </div>
             </div>
 
-            {/* Modal Form */}
+            {/* Executive Modal Form — High Density Taxon Deployment */}
             <Modal
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
-                title={editingCategory ? "Révision Classe" : "Déploiement Taxon"}
+                title={editingCategory ? "RÉVISION_TAXONOMIE_UNITAIRE" : "DÉPLOIEMENT_NOUVEL_ASSET_CLASSE"}
             >
-                <form onSubmit={handleSubmit} className="space-y-8 p-6">
+                <form onSubmit={handleSubmit} className="space-y-6 p-4 bg-card">
                     <div className="space-y-6">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Désignation Officielle</label>
-                            <Input
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-black uppercase  text-muted-foreground ml-1">DÉSIGNATION_STRUCTURELLE</label>
+                            <input
                                 required
                                 value={formData.nom_categorie}
                                 onChange={(e) => setFormData({ ...formData, nom_categorie: e.target.value })}
-                                placeholder="ÉLECTRONIQUE..."
-                                className="h-14 px-6 rounded-xl font-bold text-sm uppercase"
+                                placeholder="ALPHA_CONTRÔLE_..."
+                                className="w-full h-11 px-8 bg-white/[0.02] border border-foreground/10 rounded-2xl font-black text-[18px] uppercase tracking-tight text-foreground focus:border-[#FFB703]/40 outline-none transition-all shadow-inner"
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Définition</label>
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-black uppercase  text-muted-foreground ml-1">DÉFINITION_SYSTÉMIQUE</label>
                             <textarea
-                                className="w-full h-32 px-6 py-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold uppercase tracking-widest outline-none focus:border-primary transition-all resize-none placeholder:text-slate-300"
-                                placeholder="DÉCRIRE LA PORTÉE..."
+                                className="w-full h-40 px-8 py-6 bg-white/[0.02] border border-foreground/10 rounded-2xl text-[14px] font-black uppercase tracking-tight text-foreground outline-none focus:border-[#FFB703]/40 transition-all resize-none shadow-inner placeholder:text-slate-800"
+                                placeholder="INJECTION_DATAS_TECHNIQUES_..."
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Asset Iconographie (URL)</label>
-                            <Input
-                                value={formData.image_url}
-                                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                                placeholder="https://..."
-                                className="h-14 px-6 rounded-xl font-bold text-[10px] tracking-widest"
-                            />
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-black uppercase  text-muted-foreground ml-1">IMAGE_PROXY_RÉSEAU (URL)</label>
+                            <div className="relative group">
+                                <ImageIcon className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 size-6" />
+                                <input
+                                    value={formData.image_url}
+                                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                                    placeholder="HTTPS://STORAGE.BCA.GN/ASSETS/..."
+                                    className="w-full h-11 pl-16 pr-8 bg-white/[0.02] border border-foreground/10 rounded-2xl font-black text-[12px] uppercase tracking-widest text-[#FFB703] focus:border-[#FFB703]/40 outline-none transition-all shadow-inner"
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    <div className="pt-6">
-                        <Button
+                    <div className="pt-8">
+                        <button
+                            id="btn-confirm-taxon-seal"
                             type="submit"
                             disabled={isSaving}
-                            className="w-full h-14 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl"
+                            className="w-full h-11 bg-[#FFB703] text-background rounded-2xl font-black text-[13px] uppercase  shadow-[0_30px_70px_rgba(255,183,3,0.3)] hover:bg-white transition-all  border-0 flex items-center justify-center gap-3 group/save"
                         >
-                            {isSaving ? <RefreshCcw className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
-                            {editingCategory ? "Sceller MAJ" : "Valider Classe"}
-                        </Button>
+                            {isSaving ? <RefreshCcw className="size-6 animate-spin" /> : <CheckCircle2 className="size-6 transition-transform group-hover/save:scale-125" />}
+                            <span>{editingCategory ? "SCELLER_MODIFICATION" : "VALIDER_NOUVEL_ASSET"}</span>
+                        </button>
                     </div>
                 </form>
             </Modal>
