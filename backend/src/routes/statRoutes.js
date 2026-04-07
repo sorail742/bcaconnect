@@ -4,6 +4,7 @@ const dashboardController = require('../controllers/dashboardController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
 
 router.get('/admin', protect, authorize('admin'), dashboardController.getAdminStats);
+router.get('/admin/public', dashboardController.getAdminStats); // Route publique pour landing
 router.get('/financial', protect, authorize('admin', 'banque'), dashboardController.getFinancialReports);
 router.get('/vendor', protect, authorize('fournisseur', 'admin'), dashboardController.getVendorStats);
 

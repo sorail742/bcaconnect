@@ -3,7 +3,7 @@ import api from './api';
 const statService = {
     getAdminStats: async () => {
         try {
-            const response = await api.get('/stats/admin');
+            const response = await api.get('/stats/admin/public');
             return response.data;
         } catch (error) {
             console.error('Error fetching admin stats:', error);
