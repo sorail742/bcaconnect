@@ -5,7 +5,7 @@
 @layer base {
     :root {
         /* Light Mode — Lisible, contrasté, professionnel */
-        --background: 210 20% 96%;
+        --background: 0 0% 100%; /* Blanc pur */
         --foreground: 220 25% 10%;
         --card: 0 0% 100%;
         --card-foreground: 220 25% 10%;
@@ -71,11 +71,11 @@
 
     .dark {
         /* Starbank Aesthetic - Premium Black & Electric Orange */
-        --background: 0 0% 2%; /* #050505 - Deepest black */
+        --background: 0 0% 8%; /* #141414 - Noir doux, pas trop noir */
         --foreground: 0 0% 98%;
-        --card: 0 0% 5%; /* #0D0D0D */
+        --card: 0 0% 12%; /* #1F1F1F */
         --card-foreground: 0 0% 98%;
-        --popover: 0 0% 2%;
+        --popover: 0 0% 8%;
         --popover-foreground: 0 0% 98%;
         --primary: 22 100% 50%;   /* Orange BCA #FF6600 */
         --primary-foreground: 0 0% 100%;

@@ -13,7 +13,7 @@ import { CTASection } from "../components/landing/CTASection"
 export default function LandingPage() {
     return (
         <MainLayout>
-            <main className="min-h-screen bg-slate-50 dark:bg-[#0A0D14] text-slate-900 dark:text-foreground selection:bg-[#FF6600]/30 selection:text-slate-900 dark:text-foreground">
+            <main className="min-h-screen bg-white dark:bg-background text-slate-900 dark:text-foreground selection:bg-[#FF6600]/30 selection:text-slate-900 dark:text-foreground">
                 <Hero />
                 <CategorySection />
                 <ProblemSection />
