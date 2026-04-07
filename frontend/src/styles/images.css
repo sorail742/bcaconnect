@@ -1,0 +1,117 @@
+/* IMAGE OPTIMIZATION STYLES */
+
+/* Toutes les images */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    loading: lazy;
+    /* Améliore la clarté */
+    filter: brightness(1) contrast(1.05);
+}
+
+/* Images dans les conteneurs */
+.image-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.75rem;
+}
+
+.image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+/* Carousel images */
+.carousel-slide {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.carousel-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+/* Overlay très léger pour le texte */
+.carousel-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.1),
+        transparent 50%,
+        rgba(0, 0, 0, 0.05)
+    );
+    pointer-events: none;
+}
+
+/* Product images */
+.product-image {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 0.75rem;
+    transition: transform 0.3s ease;
+}
+
+.product-image:hover {
+    transform: scale(1.05);
+}
+
+/* Gallery images */
+.gallery-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0.75rem;
+}
+
+/* Avatar images */
+.avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+/* Background images */
+.bg-image {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Responsive images */
+@media (max-width: 768px) {
+    img {
+        /* Améliore la clarté sur mobile */
+        filter: brightness(1.05) contrast(1.1);
+    }
+}
+
+/* Dark mode adjustments */
+.dark img {
+    filter: brightness(0.95) contrast(1.1);
+}
+
+/* Supprime les overlays excessifs */
+.bg-cover {
+    background-size: cover;
+}
+
+.bg-center {
+    background-position: center;
+}
+
+/* Améliore la qualité des images */
+img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+}

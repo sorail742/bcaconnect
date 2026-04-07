@@ -1,51 +1,74 @@
 import api from './api';
 
-const aiService = {
-
-    // 1. Insights de ventes (vendeur)
-    getSalesInsights: async () => {
-        if (!navigator.onLine) {
-            return {
-                ia_conseil: "Mode Hors-ligne : Connectez-vous pour obtenir des recommandations IA personnalisées.",
-                recommendations: [],
-                global_trend: "Indisponible hors-ligne"
-            };
+/**
+ * Service IA pour la recherche intelligente
+ */
+export const aiService = {
+    /**
+     * Interpréter une requête de recherche avec l'IA
+     * Retourne l'interprétation, les mots-clés et la catégorie
+     */
+    interpretSearch: async (query) => {
+        try {
+            const response = await api.post('/ai/search/interpret', {
+                query,
+                language: 'fr'
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Erreur interprétation recherche:', error);
+            throw error;
         }
-        const response = await api.get('/ai/insights');
-        return response.data;
     },
 
-    // 2. Score de confiance utilisateur
-    getTrustAnalysis: async () => {
-        if (!navigator.onLine) {
-            return { score: 75, level: "Mode Hors-ligne", conseils: [] };
+    /**
+     * Trouver des produits similaires basé sur une description
+     */
+    findSimilarProducts: async (description) => {
+        try {
+            const response = await api.post('/ai/search/similar', {
+                description
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Erreur recherche similaire:', error);
+            throw error;
         }
-        const response = await api.get('/ai/trust-score');
-        return response.data;
     },
 
-    // 3. Tendances du marché guinéen
-    getMarketTrends: async () => {
-        const response = await api.get('/ai/market-trends');
-        return response.data;
+    /**
+     * Analyser une image pour la recherche
+     */
+    analyzeImage: async (imageFile) => {
+        try {
+            const formData = new FormData();
+            formData.append('image', imageFile);
+
+            const response = await api.post('/ai/search/image', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Erreur analyse image:', error);
+            throw error;
+        }
     },
 
-    // 4. Suggestion de prix pour un produit
-    suggestPrice: async (nom, categorie, description = '') => {
-        const response = await api.post('/ai/suggest-price', { nom, categorie, description });
-        return response.data;
-    },
-
-    // 5. Médiation de litige
-    mediateDispute: async (type, description, montant, statut_commande) => {
-        const response = await api.post('/ai/mediate', { type, description, montant, statut_commande });
-        return response.data;
-    },
-
-    // 6. Chat avec l'assistant BCA
+    /**
+     * Chat avec l'IA pour l'assistance
+     */
     chat: async (message) => {
-        const response = await api.post('/ai/chat', { message });
-        return response.data;
+        try {
+            const response = await api.post('/ai/chat', {
+                message
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Erreur chat IA:', error);
+            throw error;
+        }
     }
 };
 

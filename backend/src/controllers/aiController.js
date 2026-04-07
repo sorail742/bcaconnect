@@ -162,6 +162,168 @@ Réponds toujours en français, de manière concise et très professionnelle.`
                 error: errorMsg
             });
         }
+    },
+
+    // 7. Interpréter une requête de recherche
+    interpretSearch: async (req, res, next) => {
+        try {
+            const { query, language = 'fr' } = req.body;
+            if (!query) {
+                return res.status(400).json({ message: "Requête requise." });
+            }
+
+            const response = await axios.post(GROQ_API_URL, {
+                model: MODEL,
+                messages: [
+                    {
+                        role: 'system',
+                        content: `Tu es un expert en interprétation de requêtes de recherche pour une plateforme e-commerce africaine.
+Analyse la requête et retourne un JSON avec:
+- interpretation: explication claire de ce que l'utilisateur cherche
+- keywords: array de mots-clés pertinents
+- category: catégorie principale (ex: "Électronique", "Vêtements", "Alimentation", etc.)
+
+Réponds UNIQUEMENT avec le JSON, sans texte supplémentaire.`
+                    },
+                    { role: 'user', content: `Interprète cette recherche: "${query}"` }
+                ],
+                max_tokens: 300,
+                temperature: 0.5
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 30000
+            });
+
+            const content = response.data.choices[0]?.message?.content;
+            const parsed = JSON.parse(content);
+            
+            res.json({
+                data: parsed
+            });
+        } catch (error) {
+            console.error('[Search Interpret Error]', error.message);
+            res.status(500).json({
+                message: "Erreur lors de l'interprétation de la recherche",
+                error: error.message
+            });
+        }
+    },
+
+    // 8. Trouver des produits similaires
+    findSimilarProducts: async (req, res, next) => {
+        try {
+            const { description } = req.body;
+            if (!description) {
+                return res.status(400).json({ message: "Description requise." });
+            }
+
+            const response = await axios.post(GROQ_API_URL, {
+                model: MODEL,
+                messages: [
+                    {
+                        role: 'system',
+                        content: `Tu es un expert en recommandation de produits.
+Basé sur la description, suggère des mots-clés et catégories de produits similaires.
+Réponds avec un JSON contenant:
+- keywords: array de mots-clés
+- categories: array de catégories
+- suggestions: array de suggestions de produits
+
+Réponds UNIQUEMENT avec le JSON.`
+                    },
+                    { role: 'user', content: `Trouve des produits similaires à: "${description}"` }
+                ],
+                max_tokens: 300,
+                temperature: 0.5
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 30000
+            });
+
+            const content = response.data.choices[0]?.message?.content;
+            const parsed = JSON.parse(content);
+            
+            res.json({
+                data: parsed
+            });
+        } catch (error) {
+            console.error('[Similar Products Error]', error.message);
+            res.status(500).json({
+                message: "Erreur lors de la recherche de produits similaires",
+                error: error.message
+            });
+        }
+    },
+
+    // 9. Analyser une image pour la recherche
+    analyzeImage: async (req, res, next) => {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ message: "Image requise." });
+            }
+
+            // Convertir l'image en base64
+            const imageBase64 = req.file.buffer.toString('base64');
+
+            const response = await axios.post(GROQ_API_URL, {
+                model: MODEL,
+                messages: [
+                    {
+                        role: 'system',
+                        content: `Tu es un expert en analyse d'images pour e-commerce.
+Analyse l'image et retourne un JSON avec:
+- description: description détaillée de l'objet
+- category: catégorie principale
+- keywords: array de mots-clés
+- similar_products: suggestions de produits similaires
+
+Réponds UNIQUEMENT avec le JSON.`
+                    },
+                    {
+                        role: 'user',
+                        content: [
+                            {
+                                type: 'text',
+                                text: 'Analyse cette image et suggère des produits similaires'
+                            },
+                            {
+                                type: 'image_url',
+                                image_url: {
+                                    url: `data:${req.file.mimetype};base64,${imageBase64}`
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens: 500,
+                temperature: 0.5
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 60000
+            });
+
+            const content = response.data.choices[0]?.message?.content;
+            const parsed = JSON.parse(content);
+            
+            res.json({
+                data: parsed
+            });
+        } catch (error) {
+            console.error('[Image Analysis Error]', error.message);
+            res.status(500).json({
+                message: "Erreur lors de l'analyse de l'image",
+                error: error.message
+            });
+        }
     }
 };
 

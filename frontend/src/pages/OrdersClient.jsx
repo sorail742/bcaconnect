@@ -1,302 +1,165 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import DashboardLayout from '../components/layout/DashboardLayout';
-import StatusBadge from '../components/ui/StatusBadge';
-import { cn } from '../lib/utils';
-import { TableRowSkeleton } from '../components/ui/Loader';
-import { ErrorState } from '../components/ui/StatusStates';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-    Clock, Search, ChevronRight, ShoppingBag, X,
-    Activity, Zap, FileText, MapPin, Smartphone,
-    TrendingUp, ShieldCheck, Box
-} from 'lucide-react';
-import orderService from '../services/orderService';
-import { toast as toastSonner } from 'sonner';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useOrders } from '../hooks/useDomainData';
+import { LoadingState, ErrorState, EmptyState } from '../components/ui/DataStates';
+import { Package, Eye, MessageSquare, AlertCircle, CheckCircle, Clock, Truck } from 'lucide-react';
+import { motion } from 'framer-motion';
 
-const FILTERS = [
-    { key: "Tout", label: "Tout" },
-    { key: "en_attente_paiement", label: "En attente" },
-    { key: "payé", label: "Payé" },
-    { key: "expédié", label: "Expédié" },
-    { key: "livré", label: "Livré" },
-    { key: "annulé", label: "Annulé" }
-];
+const OrdersClient = () => {
+    const { data: orders = [], loading, error } = useOrders();
+    const [filterStatus, setFilterStatus] = useState('all');
 
-const UserOrders = () => {
-    const [orders, setOrders] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [hasError, setHasError] = useState(false);
-    const [activeFilter, setActiveFilter] = useState('Tout');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [isCancelling, setIsCancelling] = useState(null);
-    const [selectedOrder, setSelectedOrder] = useState(null);
-
-    const fetchOrders = useCallback(async () => {
-        setIsLoading(true);
-        setHasError(false);
-        try {
-            const data = await orderService.getMyOrders();
-            setOrders(Array.isArray(data) ? data : (data?.orders || []));
-        } catch {
-            setHasError(true);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => { fetchOrders(); }, [fetchOrders]);
-
-    const handleCancelOrder = async (orderId) => {
-        if (!window.confirm("Confirmer l'annulation ? Le montant sera remboursé dans votre portefeuille.")) return;
-        setIsCancelling(orderId);
-        try {
-            await orderService.updateOrderStatus(orderId, 'annulé');
-            toastSonner.success('Commande annulée. Remboursement effectué.');
-            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, statut: 'annulé' } : o));
-        } catch (err) {
-            toastSonner.error(err.response?.data?.message || 'Impossible d\'annuler la commande.');
-        } finally {
-            setIsCancelling(null);
-        }
+    const statuses = {
+        pending: { label: 'En attente', icon: Clock, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
+        confirmed: { label: 'Confirmée', icon: CheckCircle, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+        shipped: { label: 'Expédiée', icon: Truck, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+        delivered: { label: 'Livrée', icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+        cancelled: { label: 'Annulée', icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-500/10' },
     };
 
-    const filteredOrders = orders.filter(o =>
-        (activeFilter === 'Tout' || o.statut === activeFilter) &&
-        String(o.id || o.numero_commande || '').toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    const totalInvested = orders.reduce((acc, o) => acc + parseFloat(o.total_ttc || 0), 0);
-    const activeOrders = orders.filter(o => !['livré', 'annulé'].includes(o.statut)).length;
+    const filteredOrders = filterStatus === 'all' 
+        ? orders 
+        : orders.filter(o => o.statut === filterStatus);
 
     return (
-        <DashboardLayout title="Mes Commandes">
-            <div className="space-y-6 pb-10">
-
-                {/* KPIs */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {[
-                        { title: "Total investi", value: `${totalInvested.toLocaleString('fr-GN')} GNF`, icon: TrendingUp },
-                        { title: "Commandes actives", value: activeOrders.toString(), icon: Zap },
-                        { title: "Total commandes", value: orders.length.toString(), icon: Box }
-                    ].map((kpi, idx) => (
-                        <div key={idx} className="bg-card border border-border rounded-xl p-4 shadow-sm flex items-center gap-4">
-                            <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-                                <kpi.icon className="size-5" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-muted-foreground font-medium">{kpi.title}</p>
-                                <p className="text-lg font-bold text-foreground tabular-nums">{kpi.value}</p>
-                            </div>
-                        </div>
-                    ))}
+        <div className="min-h-screen bg-background pt-32 pb-16">
+            <div className="container mx-auto px-4 md:px-8">
+                {/* Header */}
+                <div className="mb-12">
+                    <div className="flex items-center gap-3 mb-4">
+                        <Package className="size-8 text-primary" />
+                        <h1 className="text-4xl md:text-5xl font-bold text-foreground">
+                            Mes Commandes
+                        </h1>
+                    </div>
+                    <p className="text-lg text-muted-foreground">
+                        Suivi et gestion de vos commandes
+                    </p>
                 </div>
 
-                {/* Table card */}
-                <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-                    {/* Filters + search */}
-                    <div className="p-4 border-b border-border space-y-3">
-                        <div className="flex flex-wrap gap-2">
-                            {FILTERS.map(f => (
-                                <button
-                                    key={f.key}
-                                    onClick={() => setActiveFilter(f.key)}
-                                    className={cn(
-                                        "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border",
-                                        activeFilter === f.key
-                                            ? "bg-primary text-primary-foreground border-primary"
-                                            : "bg-muted text-muted-foreground border-border hover:text-foreground hover:border-primary/40"
-                                    )}
-                                >
-                                    {f.label}
-                                </button>
-                            ))}
-                        </div>
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                            <input
-                                className="w-full h-9 pl-9 pr-3 bg-background border border-border focus:border-primary/50 rounded-lg text-sm outline-none transition-all text-foreground placeholder:text-muted-foreground"
-                                placeholder="Rechercher une commande..."
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Table */}
-                    <div className="overflow-x-auto">
-                        {isLoading ? (
-                            <div className="p-4 space-y-3">
-                                {[1,2,3,4].map(i => <TableRowSkeleton key={i} />)}
-                            </div>
-                        ) : hasError ? (
-                            <div className="p-12 text-center"><ErrorState /></div>
-                        ) : filteredOrders.length > 0 ? (
-                            <table className="w-full text-sm min-w-[640px]">
-                                <thead>
-                                    <tr className="bg-muted/50 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                        <th className="px-4 py-3 text-left">Commande</th>
-                                        <th className="px-4 py-3 text-left">Date</th>
-                                        <th className="px-4 py-3 text-left">Montant</th>
-                                        <th className="px-4 py-3 text-left">Statut</th>
-                                        <th className="px-4 py-3 text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-border">
-                                    {filteredOrders.map((row, idx) => (
-                                        <tr key={row.id || idx} className="hover:bg-muted/30 transition-colors">
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="size-8 rounded-lg bg-muted border border-border flex items-center justify-center">
-                                                        <Box className="size-4 text-muted-foreground" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-xs font-bold text-foreground">#{(row.id || row.numero_commande || '').slice(0, 8).toUpperCase()}</p>
-                                                        <p className="text-xs text-muted-foreground">{row.details?.length || 0} article(s)</p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <p className="text-xs font-medium text-foreground">{new Date(row.createdAt).toLocaleDateString('fr-GN')}</p>
-                                                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                                    <Clock className="size-3" />
-                                                    {new Date(row.createdAt).toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
-                                                </p>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <span className="text-sm font-bold text-foreground tabular-nums">
-                                                    {parseFloat(row.total_ttc).toLocaleString('fr-GN')}
-                                                    <span className="text-xs text-primary ml-1">GNF</span>
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <StatusBadge status={row.statut} />
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    {row.statut === 'payé' && (
-                                                        <button
-                                                            disabled={isCancelling === row.id}
-                                                            onClick={() => handleCancelOrder(row.id)}
-                                                            className="text-xs font-medium text-muted-foreground hover:text-rose-500 transition-colors"
-                                                        >
-                                                            {isCancelling === row.id ? '...' : 'Annuler'}
-                                                        </button>
-                                                    )}
-                                                    <button
-                                                        onClick={() => setSelectedOrder(row)}
-                                                        className="flex items-center gap-1 px-3 py-1.5 bg-foreground text-background hover:bg-primary hover:text-primary-foreground rounded-lg text-xs font-semibold transition-all"
-                                                    >
-                                                        Détails <ChevronRight className="size-3" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        ) : (
-                            <div className="py-16 text-center">
-                                <ShoppingBag className="size-10 text-muted-foreground/30 mx-auto mb-3" />
-                                <p className="text-sm text-muted-foreground">Aucune commande trouvée</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Order detail modal */}
-                <AnimatePresence>
-                    {selectedOrder && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                onClick={() => setSelectedOrder(null)}
-                                className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-                            />
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                className="bg-card rounded-2xl w-full max-w-2xl shadow-xl relative border border-border max-h-[85vh] flex flex-col"
+                {/* Filters */}
+                <div className="mb-8 flex flex-wrap gap-2">
+                    <button
+                        onClick={() => setFilterStatus('all')}
+                        className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                            filterStatus === 'all'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-foreground hover:bg-muted/80'
+                        }`}
+                    >
+                        Toutes ({orders.length})
+                    </button>
+                    {Object.entries(statuses).map(([key, status]) => {
+                        const count = orders.filter(o => o.statut === key).length;
+                        return (
+                            <button
+                                key={key}
+                                onClick={() => setFilterStatus(key)}
+                                className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+                                    filterStatus === key
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-muted text-foreground hover:bg-muted/80'
+                                }`}
                             >
-                                {/* Modal header */}
-                                <div className="flex items-center justify-between p-5 border-b border-border">
-                                    <div className="flex items-center gap-3">
-                                        <div className="size-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                                            <FileText className="size-4 text-primary" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-sm font-bold text-foreground">Détail commande</h3>
-                                            <p className="text-xs text-muted-foreground">#{(selectedOrder.id || '').slice(0, 14).toUpperCase()}</p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => setSelectedOrder(null)}
-                                        className="size-8 rounded-lg bg-muted hover:bg-rose-500/10 hover:text-rose-500 flex items-center justify-center text-muted-foreground transition-colors"
-                                    >
-                                        <X className="size-4" />
-                                    </button>
-                                </div>
+                                <status.icon className="size-4" />
+                                {status.label} ({count})
+                            </button>
+                        );
+                    })}
+                </div>
 
-                                {/* Modal body */}
-                                <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                                    {/* Delivery info */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        {[
-                                            { icon: MapPin, label: "Adresse", value: selectedOrder.adresse_livraison },
-                                            { icon: Smartphone, label: "Téléphone", value: selectedOrder.telephone_livraison }
-                                        ].map((info, i) => (
-                                            <div key={i} className="flex items-start gap-3 p-3 bg-muted rounded-xl">
-                                                <info.icon className="size-4 text-primary mt-0.5 shrink-0" />
+                {/* Content */}
+                {loading ? (
+                    <LoadingState message="Chargement de vos commandes..." />
+                ) : error ? (
+                    <ErrorState error={error} />
+                ) : filteredOrders.length > 0 ? (
+                    <div className="space-y-4">
+                        {filteredOrders.map((order, idx) => {
+                            const status = statuses[order.statut] || statuses.pending;
+                            const StatusIcon = status.icon;
+
+                            return (
+                                <motion.div
+                                    key={order.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: idx * 0.1 }}
+                                    className="bg-card border border-border rounded-lg p-6 hover:border-primary/40 transition-all"
+                                >
+                                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <h3 className="text-lg font-bold text-foreground">
+                                                    Commande #{order.id.slice(0, 8)}
+                                                </h3>
+                                                <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${status.bg}`}>
+                                                    <StatusIcon className={`size-4 ${status.color}`} />
+                                                    <span className={`text-sm font-semibold ${status.color}`}>
+                                                        {status.label}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <p className="text-sm text-muted-foreground mb-3">
+                                                {new Date(order.created_at).toLocaleDateString('fr-FR', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric'
+                                                })}
+                                            </p>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                                                 <div>
-                                                    <p className="text-xs text-muted-foreground">{info.label}</p>
-                                                    <p className="text-sm font-medium text-foreground">{info.value || '—'}</p>
+                                                    <p className="text-muted-foreground">Total</p>
+                                                    <p className="font-bold text-primary">
+                                                        {order.total_ttc?.toLocaleString('fr-FR', {
+                                                            style: 'currency',
+                                                            currency: 'GNF'
+                                                        })}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-muted-foreground">Articles</p>
+                                                    <p className="font-bold text-foreground">{order.items_count || 0}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-muted-foreground">Livraison</p>
+                                                    <p className="font-bold text-foreground">
+                                                        {order.frais_port?.toLocaleString('fr-FR', {
+                                                            style: 'currency',
+                                                            currency: 'GNF'
+                                                        })}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-muted-foreground">Adresse</p>
+                                                    <p className="font-bold text-foreground truncate">{order.adresse_livraison}</p>
                                                 </div>
                                             </div>
-                                        ))}
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <Link
+                                                to={`/tracking?orderId=${order.id}`}
+                                                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-all flex items-center gap-2"
+                                            >
+                                                <Eye className="size-4" />
+                                                Suivre
+                                            </Link>
+                                            <button className="px-4 py-2 bg-muted text-foreground rounded-lg font-semibold hover:bg-muted/80 transition-all flex items-center gap-2">
+                                                <MessageSquare className="size-4" />
+                                                Contact
+                                            </button>
+                                        </div>
                                     </div>
-
-                                    {/* Items */}
-                                    <div className="space-y-2">
-                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Articles</p>
-                                        {selectedOrder.details?.map((item, idx) => (
-                                            <div key={idx} className="flex items-center gap-3 p-3 bg-muted rounded-xl border border-border">
-                                                <div className="size-12 rounded-lg bg-background border border-border overflow-hidden shrink-0">
-                                                    {item.produit?.image_url
-                                                        ? <img src={item.produit.image_url} className="w-full h-full object-cover" alt="" />
-                                                        : <Box className="size-5 text-muted-foreground m-auto mt-3" />
-                                                    }
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-semibold text-foreground truncate">{item.produit?.nom_produit}</p>
-                                                    <p className="text-xs text-muted-foreground">Qté : {item.quantite}</p>
-                                                </div>
-                                                <div className="text-right shrink-0">
-                                                    <p className="text-sm font-bold text-foreground tabular-nums">{parseFloat(item.prix_unitaire_achat).toLocaleString('fr-GN')}</p>
-                                                    <p className="text-xs text-primary">GNF</p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Modal footer */}
-                                <div className="p-5 border-t border-border">
-                                    <div className="flex items-center justify-between bg-primary text-primary-foreground rounded-xl p-4">
-                                        <p className="text-sm font-semibold">Total</p>
-                                        <p className="text-lg font-bold tabular-nums">
-                                            {parseFloat(selectedOrder.total_ttc).toLocaleString('fr-GN')} GNF
-                                        </p>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <EmptyState message="Vous n'avez pas encore de commandes" />
+                )}
             </div>
-        </DashboardLayout>
+        </div>
     );
 };
 
-export default UserOrders;
+export default OrdersClient;

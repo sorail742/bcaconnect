@@ -1,120 +1,467 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
-
-// Pages Publiques
-import StorePage from '../pages/StorePage';
-import AboutPage from '../pages/AboutPage';
-import ContactPage from '../pages/ContactPage';
-import FaqPage from '../pages/FaqPage';
-import PrivacyPage from '../pages/PrivacyPage';
-import TermsPage from '../pages/TermsPage';
-import HelpCenter from '../pages/HelpCenter';
-
-// Importation des pages (Refactorisées et Réorganisées)
-import Login from '../pages/auth/Login';
-import Register from '../pages/auth/Register';
-import Dashboard from '../pages/dashboard/Dashboard';
-
-// Pages Vendeur
-import VendorDashboard from '../pages/vendor/VendorDashboard';
-import Products from '../pages/vendor/Products';
-import AddProduct from '../pages/vendor/AddProduct'; // Formulaire unifié ajout + édition
-import StoreSettings from '../pages/vendor/StoreSettings';
-import OrdersVendor from '../pages/vendor/OrdersVendor';
-
-// Pages Transporteur
-import CarrierDashboard from '../pages/carrier/CarrierDashboard';
-
-// Pages Admin
-import AdminDashboard from '../pages/admin/AdminDashboard';
-import Users from '../pages/admin/Users';
-import AdminProducts from '../pages/admin/AdminProducts';
-import AdminTransactions from '../pages/admin/AdminTransactions';
-import Categories from '../pages/admin/Categories';
-import Returns from '../pages/admin/Returns';
-import AdManager from '../pages/admin/AdManager';
-import AdminDisputes from '../pages/admin/AdminDisputes';
-
-// Pages Client & Commun
-import ProductCatalogue from '../pages/Catalogue';
-import ProductDetail from '../pages/ProductDetails';
-import CartPage from '../pages/CartPage';
-import OrdersClient from '../pages/OrdersClient';
-import UserWallet from '../pages/Wallet';
-import UserProfile from '../pages/Profile';
-import Messages from '../pages/Messages';
-import Notifications from '../pages/Notifications';
-import Checkout from '../pages/Checkout';
-import VendorsList from '../pages/VendorsList';
-import Tracking from '../pages/Tracking';
-import DisputeReport from '../pages/DisputeReport';
-
-// Pages Banque
-import BankDashboard from '../pages/bank/BankDashboard';
-
-import LandingPage from '../pages/LandingPage';
-import NotFound from '../pages/NotFound';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
+import { LoadingState } from '../components/ui/DataStates';
+
+// Fallback component for lazy loading
+const LazyFallback = () => (
+    <MainLayout>
+        <LoadingState message="Chargement de la page..." />
+    </MainLayout>
+);
+
+// Public Pages - Lazy Loaded
+const LandingPage = lazy(() => import('../pages/LandingPage'));
+const Login = lazy(() => import('../pages/auth/Login'));
+const Register = lazy(() => import('../pages/auth/Register'));
+const ProductCatalogue = lazy(() => import('../pages/Catalogue'));
+const ProductDetail = lazy(() => import('../pages/ProductDetails'));
+const CartPage = lazy(() => import('../pages/CartPage'));
+const SearchPage = lazy(() => import('../pages/SearchPage'));
+const StorePage = lazy(() => import('../pages/StorePage'));
+const VendorsList = lazy(() => import('../pages/VendorsList'));
+const AboutPage = lazy(() => import('../pages/AboutPage'));
+const ContactPage = lazy(() => import('../pages/ContactPage'));
+const FaqPage = lazy(() => import('../pages/FaqPage'));
+const PrivacyPage = lazy(() => import('../pages/PrivacyPage'));
+const TermsPage = lazy(() => import('../pages/TermsPage'));
+const HelpCenter = lazy(() => import('../pages/HelpCenter'));
+const NotFound = lazy(() => import('../pages/NotFound'));
+
+// Protected Pages - Lazy Loaded
+const Dashboard = lazy(() => import('../pages/dashboard/Dashboard'));
+const OrdersClient = lazy(() => import('../pages/OrdersClient'));
+const UserWallet = lazy(() => import('../pages/Wallet'));
+const UserProfile = lazy(() => import('../pages/Profile'));
+const Messages = lazy(() => import('../pages/Messages'));
+const Notifications = lazy(() => import('../pages/Notifications'));
+const Checkout = lazy(() => import('../pages/Checkout'));
+const Tracking = lazy(() => import('../pages/Tracking'));
+const DisputeReport = lazy(() => import('../pages/DisputeReport'));
+
+// Vendor Pages - Lazy Loaded
+const VendorDashboard = lazy(() => import('../pages/vendor/VendorDashboard'));
+const Products = lazy(() => import('../pages/vendor/Products'));
+const AddProduct = lazy(() => import('../pages/vendor/AddProduct'));
+const StoreSettings = lazy(() => import('../pages/vendor/StoreSettings'));
+const OrdersVendor = lazy(() => import('../pages/vendor/OrdersVendor'));
+
+// Carrier Pages - Lazy Loaded
+const CarrierDashboard = lazy(() => import('../pages/carrier/CarrierDashboard'));
+
+// Bank Pages - Lazy Loaded
+const BankDashboard = lazy(() => import('../pages/bank/BankDashboard'));
+
+// Admin Pages - Lazy Loaded
+const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard'));
+const Users = lazy(() => import('../pages/admin/Users'));
+const AdminProducts = lazy(() => import('../pages/admin/AdminProducts'));
+const AdminTransactions = lazy(() => import('../pages/admin/AdminTransactions'));
+const Categories = lazy(() => import('../pages/admin/Categories'));
+const Returns = lazy(() => import('../pages/admin/Returns'));
+const AdManager = lazy(() => import('../pages/admin/AdManager'));
+const AdminDisputes = lazy(() => import('../pages/admin/AdminDisputes'));
 
 const AppRoutes = () => {
     return (
         <Routes>
-            <Route path="/" element={<LandingPage />} />
+            {/* Public Routes */}
+            <Route path="/" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <LandingPage />
+                </Suspense>
+            } />
 
-            {/* Auth Routes (Standalone) */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/marketplace" element={<MainLayout><ProductCatalogue /></MainLayout>} />
-            <Route path="/catalog" element={<MainLayout><ProductCatalogue /></MainLayout>} />
-            <Route path="/vendors" element={<MainLayout><VendorsList /></MainLayout>} />
-            <Route path="/product/:id" element={<MainLayout><ProductDetail /></MainLayout>} />
-            <Route path="/cart" element={<MainLayout><CartPage /></MainLayout>} />
-            <Route path="/tracking" element={<ProtectedRoute><Tracking /></ProtectedRoute>} />
-            <Route path="/shop/:slug" element={<MainLayout><StorePage /></MainLayout>} />
-            <Route path="/about" element={<MainLayout><AboutPage /></MainLayout>} />
-            <Route path="/contact" element={<MainLayout><ContactPage /></MainLayout>} />
-            <Route path="/faq" element={<MainLayout><FaqPage /></MainLayout>} />
-            <Route path="/terms" element={<MainLayout><TermsPage /></MainLayout>} />
-            <Route path="/privacy" element={<MainLayout><PrivacyPage /></MainLayout>} />
-            <Route path="/help" element={<MainLayout><HelpCenter /></MainLayout>} />
+            <Route path="/login" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <Login />
+                </Suspense>
+            } />
 
-            {/* Protected Routes (Usually have their own specific layout like DashboardLayout) */}
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/orders" element={<ProtectedRoute><OrdersClient /></ProtectedRoute>} />
-            <Route path="/wallet" element={<ProtectedRoute><UserWallet /></ProtectedRoute>} />
-            <Route path="/payments" element={<ProtectedRoute><UserWallet /></ProtectedRoute>} />
-            <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
-            <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-            <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-            <Route path="/dispute/:orderId" element={<ProtectedRoute><DisputeReport /></ProtectedRoute>} />
+            <Route path="/register" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <Register />
+                </Suspense>
+            } />
+
+            <Route path="/marketplace" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <MainLayout>
+                        <ProductCatalogue />
+                    </MainLayout>
+                </Suspense>
+            } />
+
+            <Route path="/catalog" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <MainLayout>
+                        <ProductCatalogue />
+                    </MainLayout>
+                </Suspense>
+            } />
+
+            <Route path="/product/:id" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <MainLayout>
+                        <ProductDetail />
+                    </MainLayout>
+                </Suspense>
+            } />
+
+            <Route path="/cart" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <MainLayout>
+                        <CartPage />
+                    </MainLayout>
+                </Suspense>
+            } />
+
+            <Route path="/search" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <MainLayout>
+                        <SearchPage />
+                    </MainLayout>
+                </Suspense>
+            } />
+
+            <Route path="/shop/:slug" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <MainLayout>
+                        <StorePage />
+                    </MainLayout>
+                </Suspense>
+            } />
+
+            <Route path="/vendors" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <MainLayout>
+                        <VendorsList />
+                    </MainLayout>
+                </Suspense>
+            } />
+
+            <Route path="/about" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <MainLayout>
+                        <AboutPage />
+                    </MainLayout>
+                </Suspense>
+            } />
+
+            <Route path="/contact" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <MainLayout>
+                        <ContactPage />
+                    </MainLayout>
+                </Suspense>
+            } />
+
+            <Route path="/faq" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <MainLayout>
+                        <FaqPage />
+                    </MainLayout>
+                </Suspense>
+            } />
+
+            <Route path="/terms" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <MainLayout>
+                        <TermsPage />
+                    </MainLayout>
+                </Suspense>
+            } />
+
+            <Route path="/privacy" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <MainLayout>
+                        <PrivacyPage />
+                    </MainLayout>
+                </Suspense>
+            } />
+
+            <Route path="/help" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <MainLayout>
+                        <HelpCenter />
+                    </MainLayout>
+                </Suspense>
+            } />
+
+            {/* Protected Routes */}
+            <Route path="/dashboard" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <Dashboard />
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/orders" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <OrdersClient />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/wallet" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <UserWallet />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/payments" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <UserWallet />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/messages" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <Messages />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/notifications" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <Notifications />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/profile" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <UserProfile />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/settings" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <UserProfile />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/checkout" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <Checkout />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/tracking" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <Tracking />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/dispute/:orderId" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <DisputeReport />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
 
             {/* Vendor Routes */}
-            <Route path="/vendor/dashboard" element={<ProtectedRoute><VendorDashboard /></ProtectedRoute>} />
-            <Route path="/vendor/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
-            <Route path="/vendor/products/add" element={<ProtectedRoute><AddProduct /></ProtectedRoute>} />
-            <Route path="/vendor/products/edit/:id" element={<ProtectedRoute><AddProduct /></ProtectedRoute>} />
-            <Route path="/vendor/store" element={<ProtectedRoute><StoreSettings /></ProtectedRoute>} />
-            <Route path="/vendor/orders" element={<ProtectedRoute><OrdersVendor /></ProtectedRoute>} />
+            <Route path="/vendor/dashboard" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <VendorDashboard />
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/vendor/products" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <Products />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/vendor/products/add" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <AddProduct />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/vendor/products/edit/:id" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <AddProduct />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/vendor/store" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <StoreSettings />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/vendor/orders" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <OrdersVendor />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
 
             {/* Carrier Routes */}
-            <Route path="/carrier/dashboard" element={<ProtectedRoute><CarrierDashboard /></ProtectedRoute>} />
+            <Route path="/carrier/dashboard" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <CarrierDashboard />
+                    </ProtectedRoute>
+                </Suspense>
+            } />
 
             {/* Bank Routes */}
-            <Route path="/bank/dashboard" element={<ProtectedRoute><BankDashboard /></ProtectedRoute>} />
+            <Route path="/bank/dashboard" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <BankDashboard />
+                    </ProtectedRoute>
+                </Suspense>
+            } />
 
             {/* Admin Routes */}
-            <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-            <Route path="/admin/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
-            <Route path="/admin/products" element={<ProtectedRoute><AdminProducts /></ProtectedRoute>} />
-            <Route path="/admin/transactions" element={<ProtectedRoute><AdminTransactions /></ProtectedRoute>} />
-            <Route path="/admin/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
-            <Route path="/admin/returns" element={<ProtectedRoute><Returns /></ProtectedRoute>} />
-            <Route path="/admin/ads" element={<ProtectedRoute><AdManager /></ProtectedRoute>} />
-            <Route path="/admin/disputes" element={<ProtectedRoute><AdminDisputes /></ProtectedRoute>} />
+            <Route path="/admin/dashboard" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <AdminDashboard />
+                    </ProtectedRoute>
+                </Suspense>
+            } />
 
-            <Route path="*" element={<MainLayout><NotFound /></MainLayout>} />
+            <Route path="/admin/users" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <Users />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/admin/products" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <AdminProducts />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/admin/transactions" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <AdminTransactions />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/admin/categories" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <Categories />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/admin/returns" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <Returns />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/admin/ads" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <AdManager />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/admin/disputes" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <AdminDisputes />
+                        </MainLayout>
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            {/* 404 Route */}
+            <Route path="*" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <MainLayout>
+                        <NotFound />
+                    </MainLayout>
+                </Suspense>
+            } />
         </Routes>
     );
 };

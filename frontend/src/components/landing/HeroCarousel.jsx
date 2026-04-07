@@ -45,10 +45,10 @@ export function HeroCarousel() {
                         style={{ backgroundImage: `url(${carouselImages[currentIndex].src})` }}
                     />
                     
-                    {/* Overlays adaptatifs light/dark */}
-                    <div className="absolute inset-0 bg-background/60" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/40" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background/20" />
+                    {/* Overlays adaptatifs light/dark - TRÈS LÉGERS */}
+                    <div className="absolute inset-0 bg-background/20" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/30 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-background/20 via-transparent to-transparent" />
                 </motion.div>
             </AnimatePresence>
         </div>

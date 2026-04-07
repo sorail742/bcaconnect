@@ -1,3 +1,9 @@
+/* Import cleanup styles */
+@import './styles/cleanup.css';
+
+/* Import image optimization styles */
+@import './styles/images.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -99,22 +105,22 @@
 
 @layer components {
     .premium-glass {
-        @apply bg-background/40 backdrop-blur-[100px] border border-foreground/10;
-        box-shadow: var(--glass-shadow);
+        @apply bg-background border border-border rounded-lg;
+        box-shadow: var(--card-shadow);
     }
 
     .bento-card {
-        @apply relative bg-card border border-border rounded-2xl overflow-hidden transition-all duration-300 hover:border-primary/40 active-press;
+        @apply relative bg-card border border-border rounded-lg overflow-hidden transition-all duration-300 hover:border-primary/40 active-press;
         box-shadow: var(--card-shadow);
     }
 
     .executive-card {
-        @apply relative bg-card border border-border rounded-2xl p-4 overflow-hidden transition-all duration-300 hover:border-primary/40 active-press;
+        @apply relative bg-card border border-border rounded-lg p-4 overflow-hidden transition-all duration-300 hover:border-primary/40 active-press;
         box-shadow: var(--card-shadow);
     }
 
     .stat-glow {
-        @apply absolute -inset-1 blur-3xl opacity-0 group-hover:opacity-10 transition-all duration-1000;
+        @apply absolute -inset-1 opacity-0 group-hover:opacity-5 transition-all duration-500;
         background: radial-gradient(circle at center, var(--primary), transparent 70%);
     }
 
@@ -124,7 +130,7 @@
     }
 
     .btn-premium {
-        @apply relative px-8 py-4 bg-primary text-white font-bold rounded-full overflow-hidden transition-all duration-500 hover:shadow-[0_0_60px_-10px_rgba(255,95,0,0.5)] active:scale-95;
+        @apply relative px-8 py-4 bg-primary text-primary-foreground font-bold rounded-lg overflow-hidden transition-all duration-300 hover:bg-primary/90 active:scale-95 shadow-lg hover:shadow-xl;
     }
 
     .active-press {
