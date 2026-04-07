@@ -4,24 +4,10 @@
  * Vérifie les variables d'environnement essentielles avant de lancer le serveur.
  */
 require('dotenv').config();
+const validateEnv = require('./config/env.validation');
 
-// Vérification de la Base de Données
-const hasDbUrl = !!process.env.DATABASE_URL;
-const hasDbVars = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS'].every(v => !!process.env[v]);
-
-if (!hasDbUrl && !hasDbVars) {
-    console.warn('\n⚠️  ALERTE : Aucune base PostgreSQL configurée. Mode SQLite actif.\n');
-}
-
-// JWT_SECRET obligatoire — arrêt si absent en production
-if (!process.env.JWT_SECRET) {
-    if (process.env.NODE_ENV === 'production') {
-        console.error('❌ FATAL : JWT_SECRET manquant en production. Arrêt du serveur.');
-        process.exit(1);
-    }
-    console.warn('⚠️  JWT_SECRET manquant. Utilisation d\'une clé de développement temporaire.');
-    process.env.JWT_SECRET = `bca_dev_secret_${Date.now()}`;
-}
+// Validation critique des secrets et configurations (Standard BCA v2.5)
+validateEnv(process.env);
 
 const app = require('./app');
 const { sequelize } = require('./models');

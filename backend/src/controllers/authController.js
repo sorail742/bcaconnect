@@ -1,6 +1,7 @@
 const { User, Wallet, sequelize } = require('../models');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const tokenService = require('../services/tokenService');
+const twoFactorService = require('../services/twoFactorService');
 
 const authController = {
     // 1. Inscription d'un nouvel utilisateur
@@ -8,23 +9,15 @@ const authController = {
         try {
             const { nom_complet, email, telephone, mot_de_passe, role } = req.body;
 
-            // Vérification si l'utilisateur existe déjà (email)
             const existingEmail = await User.findOne({ where: { email } });
-            if (existingEmail) {
-                return res.status(400).json({ message: "Cet email est déjà utilisé." });
-            }
+            if (existingEmail) return res.status(400).json({ message: "Cet email est déjà utilisé." });
 
-            // Vérification si l'utilisateur existe déjà (téléphone)
             const existingPhone = await User.findOne({ where: { telephone } });
-            if (existingPhone) {
-                return res.status(400).json({ message: "Ce numéro de téléphone est déjà utilisé." });
-            }
+            if (existingPhone) return res.status(400).json({ message: "Ce numéro de téléphone est déjà utilisé." });
 
-            // Hachage du mot de passe
             const salt = await bcrypt.genSalt(10);
             const hashedContext = await bcrypt.hash(mot_de_passe, salt);
 
-            // Création de l'utilisateur
             const newUser = await User.create({
                 nom_complet,
                 email,
@@ -33,16 +26,11 @@ const authController = {
                 role
             });
 
-            // Création automatique du portefeuille vide pour l'utilisateur
             await Wallet.create({ user_id: newUser.id });
 
             res.status(201).json({
                 message: "Utilisateur créé avec succès",
-                user: {
-                    id: newUser.id,
-                    nom_complet: newUser.nom_complet,
-                    role: newUser.role
-                }
+                user: { id: newUser.id, nom_complet: newUser.nom_complet, role: newUser.role }
             });
         } catch (error) {
             next(error);
@@ -54,101 +42,168 @@ const authController = {
         try {
             const { email, mot_de_passe } = req.body;
 
-            // Trouver l'utilisateur
             const user = await User.findOne({ where: { email } });
-            if (!user) {
-                return res.status(401).json({ message: "Identifiants invalides." });
-            }
+            if (!user) return res.status(401).json({ message: "Identifiants invalides." });
 
-            // Vérifier le mot de passe
             const isMatch = await bcrypt.compare(mot_de_passe, user.mot_de_passe);
-            if (!isMatch) {
-                return res.status(401).json({ message: "Identifiants invalides." });
+            if (!isMatch) return res.status(401).json({ message: "Identifiants invalides." });
+
+            // 🛡️ Vérification 2FA obligatoire pour les admins (Standard BCA v2.5)
+            if (user.two_factor_enabled) {
+                return res.json({
+                    message: "Authentification à deux facteurs requise.",
+                    require2FA: true,
+                    userId: user.id
+                });
             }
 
-            // Génération du JWT
-            const token = jwt.sign(
-                { id: user.id, role: user.role },
-                process.env.JWT_SECRET,
-                { expiresIn: '24h' }
-            );
+            const tokens = await tokenService.getTokens(user);
 
             res.json({
                 message: "Connexion réussie",
-                token,
-                user: {
-                    id: user.id,
-                    nom_complet: user.nom_complet,
-                    role: user.role
-                }
+                ...tokens,
+                user: { id: user.id, nom_complet: user.nom_complet, role: user.role }
             });
         } catch (error) {
             next(error);
         }
     },
 
-    // 3. Récupérer le profil de l'utilisateur connecté
+    // 🔒 Étape 2 de l'authentification : Vérification du code 2FA
+    verify2FA: async (req, res, next) => {
+        try {
+            const { userId, code } = req.body;
+            const user = await User.findByPk(userId);
+            
+            if (!user || !user.two_factor_enabled) {
+                return res.status(401).json({ message: "Action non autorisée." });
+            }
+
+            // Vérifier si c'est un code de secours (backup)
+            let isValid = twoFactorService.useBackupCode(user.two_factor_backup_codes || [], code);
+            
+            if (isValid) {
+                await user.save(); // Sauvegarder l'utilisation du code de backup
+            } else {
+                // Sinon vérifier le TOTP
+                isValid = twoFactorService.verifyToken(user.two_factor_secret, code);
+            }
+
+            if (!isValid) {
+                return res.status(401).json({ message: "Code de sécurité invalide." });
+            }
+
+            const tokens = await tokenService.getTokens(user);
+            res.json({
+                message: "Vérification 2FA réussie",
+                ...tokens,
+                user: { id: user.id, nom_complet: user.nom_complet, role: user.role }
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // ⚙️ Configuration 2FA - Étape 1 : Génération du secret
+    setup2FA: async (req, res, next) => {
+        try {
+            const user = await User.findByPk(req.user.id);
+            if (!user) return res.status(404).json({ message: "Utilisateur non trouvé." });
+
+            const data = await twoFactorService.generateSecret(user.email);
+            
+            // On stocke temporairement le secret (non encore activé)
+            user.two_factor_secret = data.secret;
+            user.two_factor_backup_codes = data.backupCodes;
+            await user.save();
+
+            res.json({
+                qrCode: data.qrCode,
+                secret: data.secret,
+                backupCodes: data.backupCodes
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // ⚙️ Configuration 2FA - Étape 2 : Confirmation et Activation
+    confirm2FA: async (req, res, next) => {
+        try {
+            const { code } = req.body;
+            const user = await User.findByPk(req.user.id);
+            
+            if (!user.two_factor_secret) {
+                return res.status(400).json({ message: "Le secret 2FA n'a pas été généré." });
+            }
+
+            const isValid = twoFactorService.verifyToken(user.two_factor_secret, code);
+            if (!isValid) {
+                return res.status(401).json({ message: "Code invalide. Activation échouée." });
+            }
+
+            user.two_factor_enabled = true;
+            await user.save();
+
+            res.json({ message: "Authentification 2FA activée avec succès." });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    refreshToken: async (req, res, next) => {
+        try {
+            const { refreshToken, userId } = req.body;
+            if (!refreshToken) return res.status(400).json({ message: "Refresh token requis." });
+
+            const user = await User.findByPk(userId);
+            if (!user) return res.status(401).json({ message: "Utilisateur non reconnu." });
+
+            const newTokens = await tokenService.refresh(refreshToken, user);
+            res.json(newTokens);
+        } catch (error) {
+            res.status(401).json({ message: error.message });
+        }
+    },
+
     getMe: async (req, res, next) => {
         try {
             const user = await User.findByPk(req.user.id, {
-                attributes: { exclude: ['mot_de_passe'] },
+                attributes: { exclude: ['mot_de_passe', 'two_factor_secret'] },
                 include: [{ model: Wallet, as: 'portefeuille' }]
             });
-            if (!user) {
-                return res.status(404).json({ message: "Utilisateur non trouvé." });
-            }
+            if (!user) return res.status(404).json({ message: "Utilisateur non trouvé." });
             res.json(user);
-        } catch (error) {
-            next(error);
-        }
+        } catch (error) { next(error); }
     },
 
-    // 4. Mettre à jour le profil
     updateProfile: async (req, res, next) => {
         try {
             const { nom_complet, telephone, email, mot_de_passe } = req.body;
             const user = await User.findByPk(req.user.id);
+            if (!user) return res.status(404).json({ message: "Utilisateur non trouvé." });
 
-            if (!user) {
-                return res.status(404).json({ message: "Utilisateur non trouvé." });
-            }
-
-            // Vérifier si l'email est déjà pris par un autre utilisateur
             if (email && email !== user.email) {
                 const existingUser = await User.findOne({ where: { email } });
-                if (existingUser) {
-                    return res.status(400).json({ message: "Cet email est déjà utilisé." });
-                }
+                if (existingUser) return res.status(400).json({ message: "Cet email est déjà utilisé." });
                 user.email = email;
             }
 
             if (nom_complet) user.nom_complet = nom_complet;
             if (telephone) user.telephone = telephone;
-
-            // Si un nouveau mot de passe est fourni, le hacher
             if (mot_de_passe) {
                 const salt = await bcrypt.genSalt(10);
                 user.mot_de_passe = await bcrypt.hash(mot_de_passe, salt);
             }
 
             await user.save();
-
             res.json({
                 message: "Profil mis à jour avec succès",
-                user: {
-                    id: user.id,
-                    nom_complet: user.nom_complet,
-                    email: user.email,
-                    telephone: user.telephone,
-                    role: user.role
-                }
+                user: { id: user.id, nom_complet: user.nom_complet, email: user.email, role: user.role }
             });
-        } catch (error) {
-            next(error);
-        }
+        } catch (error) { next(error); }
     },
 
-    // 5. Supprimer le compte (RGPD - droit à l'oubli)
     deleteAccount: async (req, res, next) => {
         const t = await sequelize.transaction();
         try {
@@ -157,24 +212,18 @@ const authController = {
                 await t.rollback();
                 return res.status(404).json({ message: "Utilisateur non trouvé." });
             }
-
-            // Anonymiser plutôt que supprimer pour préserver l'intégrité des commandes/transactions
             await user.update({
                 nom_complet: '[Compte supprimé]',
                 email: `deleted_${user.id}@bca.invalid`,
                 telephone: `000_${user.id.slice(0, 8)}`,
                 mot_de_passe: 'DELETED',
                 statut: 'supprime',
-                metadata_securite: null,
-                preferences_ia: null
+                two_factor_enabled: false,
+                two_factor_secret: null
             }, { transaction: t });
-
             await t.commit();
             res.json({ message: "Compte supprimé conformément au RGPD." });
-        } catch (error) {
-            await t.rollback();
-            next(error);
-        }
+        } catch (error) { await t.rollback(); next(error); }
     }
 };
 

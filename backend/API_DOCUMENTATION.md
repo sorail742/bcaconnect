@@ -8,20 +8,26 @@ Bienvenue dans la documentation officielle de l'API **BCA Connect**. Cette API R
 - **Base URL** : `http://localhost:5000/api`
 - **Authentification** : Porteur de jeton JWT (`Authorization: Bearer <TOKEN>`)
 - **Format** : Toutes les requêtes et réponses sont en **JSON**.
-- **Sécurité** : 
-  - Rate Limiting (AntidDoS)
-  - Protection Brute-force sur le login (15 essais / 15 min)
-  - Sanitisation Anti-XSS & Injections NoSQL.
+- **Sécurité (Standard BCA v2.6)** : 
+  - JWT Asymétrique (**RS256**) & Rotation.
+  - **Défense Périphérique** : Helmet (CSP, HSTS), Rate Limiting.
+  - **Chiffrement AES-256-GCM** des Sensitive Data (PII).
+  - **Monitoring** : Sentry Error Tracking & Winston Logs.
+  - **Validation DTO** : express-validator strict.
 
 ---
 
-## 🔑 1. Authentification & Profil (`/auth`)
+## 🔑 1. Authentification & Sécurité (`/auth`)
 
 | Méthode | Endpoint | Accès | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/auth/register` | Public | **Inscription** : Requiert (nom_complet, email, telephone, mot_de_passe, role). Rôles : `client`, `fournisseur`, `transporteur`. |
-| `POST` | `/auth/login` | Public | **Connexion** : Retourne un token JWT et les infos de l'utilisateur. |
-| `GET` | `/auth/me` | Connecté| **Profil** : Récupère les infos complètes de l'utilisateur connecté (incluant son Wallet). |
+| `POST` | `/auth/register` | Public | **Inscription** : Requiert (nom_complet, email, telephone, mot_de_passe, role). |
+| `POST` | `/auth/login` | Public | **Connexion** : Retourne un token JWT. Si 2FA activé, retourne `require2FA: true`. |
+| `POST` | `/auth/verify-2fa`| Public*| **Vérification 2FA** : Envoie (userId, code) pour obtenir les tokens finaux. |
+| `POST` | `/auth/refresh` | Public | **Rotation** : Envoie (refreshToken, userId) pour obtenir une nouvelle paire de tokens. |
+| `GET` | `/auth/me` | Connecté| **Profil** : Récupère les infos complètes de l'utilisateur connecté. |
+| `GET` | `/setup-2fa` | Connecté| **Configuration 2FA** : Génère le QR Code et les codes de backup. |
+| `POST` | `/confirm-2fa` | Connecté| **Activation 2FA** : Confirme le code TOTP pour activer le service. |
 
 ---
 
@@ -29,9 +35,9 @@ Bienvenue dans la documentation officielle de l'API **BCA Connect**. Cette API R
 
 | Méthode | Endpoint | Accès | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/orders` | Client | **Paiement Immédiat** : Crée une commande et débite automatiquement le Wallet de l'utilisateur. |
+| `POST` | `/orders` | Client | **Paiement Immédiat** : Crée une commande et débite automatiquement le Wallet. |
 | `GET` | `/orders/me` | Client | **Historique** : Liste toutes vos commandes avec leurs détails (items). |
-| `PATCH` | `/orders/:id/status`| Client/Adm| **Annulation/Retour** : Change le statut du paiement ou de la livraison. |
+| `PATCH` | `/orders/:id/status`| Ad/Transp| **Logistique** : Change le statut du paiement ou de la livraison. |
 
 ---
 
@@ -40,10 +46,9 @@ Bienvenue dans la documentation officielle de l'API **BCA Connect**. Cette API R
 | Méthode | Endpoint | Accès | Description |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/available` | Transpo* | **Marché des colis** : Liste les commandes payées prêtes au ramassage. |
-| `POST` | `/assign` | Transpo* | **Prise en charge** : S'assigne un colis. Génère un **Code OTP** envoyé au client. |
-| `POST` | `/tracking` | Transpo* | **GPS Localisation** : Enregistre les coordonnées (lat, long) actuelles du colis. |
-| `POST` | `/verify` | Transpo* | **Finalisation** : Le transporteur saisit l'OTP du client. Si correct, l'argent du séquestre est libéré au vendeur. |
-| `GET` | `/history/:id` | Tous | **Trace GPS** : Historique complet des déplacements d'un colis spécifique. |
+| `POST` | `/assign` | Transpo* | **Prise en charge** : S'assigne un colis. Génère un **Code OTP**. |
+| `POST` | `/tracking` | Transpo* | **GPS Localisation** : Enregistre les coordonnées actuelles. |
+| `POST` | `/verify` | Transpo* | **Finalisation** : Le transporteur saisit l'OTP client. Libération des fonds. |
 
 ---
 
@@ -51,52 +56,30 @@ Bienvenue dans la documentation officielle de l'API **BCA Connect**. Cette API R
 
 | Méthode | Endpoint | Accès | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/simulate` | Public | **Simulateur** : Calcule mensualités, coût total et taux sans créer de dossier. |
-| `POST` | `/request` | Client | **Demande IA** : Soumet un dossier. Un **Score de Solvabilité IA** est calculé en temps réel pour aider l'admin. |
-| `GET` | `/my` | Client | **Mes Financements** : Liste vos crédits et l'échéancier complet (dates et montants). |
-| `POST` | `/pay/:id` | Client | **Remboursement** : Payer une mensualité spécifique via le Wallet. |
-| `PUT` | `/:id/approve` | Admin | **Décision** : Approuver un crédit (génère l'échéancier auto). |
+| `POST` | `/simulate` | Public | **Simulateur** : Calcule mensualités, coût total et taux. |
+| `POST` | `/request` | Client | **Demande IA** : Score de Solvabilité IA calculé en temps réel. |
+| `GET` | `/my` | Client | **Mes Financements** : Liste vos crédits et l'échéancier complet. |
+| `POST` | `/pay/:id` | Client | **Remboursement** : Payer une mensualité spécifique via Wallet. |
 
 ---
 
-## 🛠️ 5. SAV, Support & Feedback IA (`/support`)
+## 📊 5. Statistiques & IA d'Affaires (`/stats`)
 
 | Méthode | Endpoint | Accès | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/tickets` | Connecté| **Support Ticket** : Ouvrir une demande (Assistance, Installation, Maintenance). |
-| `GET` | `/tickets/me`| Connecté| **Mes Demandes** : Suivre l'avancement de vos tickets Support. |
-| `POST` | `/reviews` | Client | **Feedback IA** : Laisser un avis. Le système analyse le texte pour classer le sentiment (`positif`, `neutre`, `negatif`). |
-| `PUT` | `/tickets/:id/resolve`| Admin | **Clôture** : Répondre ou fermer un ticket. |
-
----
-
-## 📊 6. Statistiques & Intelligence d'Affaires (`/stats`)
-
-| Méthode | Endpoint | Accès | Description |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/admin` | Admin | **Dashboard Général** : GMV (Volume d'affaires), Revenus BCA, Distribution des utilisateurs et Croissance mensuelle. |
-| `GET` | `/financial` | Admin | **Rapports Financiers** : Analyse détaillée des types de transactions et flux monétaires. |
-| `GET` | `/trends` | Tous | **Prédictions IA** : Analyse de la demande future par catégories (ex: "Solaire : Forte hausse prévue"). |
-
----
-
-## 📢 7. Régie Publicitaire & Marketing (`/ads`)
-
-| Méthode | Endpoint | Accès | Description |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/active` | Tous | **Affichage** : Récupère les bannières actives et ciblées selon le profil utilisateur. |
-| `POST` | `/create` | Fournis* | **Campagne** : Créer une pub (Budget, Cible, Date). |
-| `POST` | `/:id/click` | Public | **Statistiques** : Enregistre les clics pour mesurer le CTR (taux de clic). |
+| `GET` | `/admin` | Admin | **Dashboard** : GMV, Revenus BCA, Distribution et Croissance. |
+| `GET` | `/financial` | Admin | **Rapports Financiers** : Flux monétaires détaillés. |
+| `GET` | `/trends` | Tous | **IA Prédiction** : Analyse de la demande future par catégories. |
 
 ---
 
 ## ⚡ Codes de Statut Standardisés
 - **200 OK** : Succès.
-- **201 Created** : Ressource créée (Commande, Ticket, Avis).
+- **201 Created** : Ressource créée.
 - **401 Unauthorized** : Token manquant ou expiré.
-- **403 Forbidden** : Rôle insuffisant (ex: client vers dashboard admin).
-- **422 Unprocessable Content** : Données invalides (ex: email mal formé).
-- **500 Internal Error** : Erreur serveur (logguée dans `src/logs/error.log`).
+- **403 Forbidden** : Rôle insuffisant.
+- **422 Unprocessed** : Validation DTO échouée (Erreur 2FA ou Input).
+- **500 Error** : Interne (Sentry logguée).
 
 ---
-*Dernière mise à jour : 18 Mars 2026 | BCA Connect Dev Team - Robustesse & Intelligence IA*
+*Dernière mise à jour : 07 Avril 2026 | BCA Connect Dev Team - Robustesse & Sécurité Phase 2*

@@ -1,43 +1,80 @@
+const { body, validationResult } = require('express-validator');
+
 /**
- * Helpers de validation pour les routes critiques.
- * Usage: router.post('/route', validateRegister, controller.action)
+ * Middleware global pour intercepter les erreurs de validation express-validator.
  */
-
-const validateRegister = (req, res, next) => {
-    const { nom_complet, email, telephone, mot_de_passe, role } = req.body;
-    const errors = [];
-
-    if (!nom_complet || nom_complet.trim().length < 2) errors.push('Nom complet invalide.');
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('Email invalide.');
-    if (!telephone || telephone.length < 8) errors.push('Téléphone invalide.');
-    if (!mot_de_passe || mot_de_passe.length < 6) errors.push('Mot de passe trop court (min 6 caractères).');
-    if (!role || !['client', 'fournisseur', 'transporteur'].includes(role)) errors.push('Rôle invalide. Valeurs acceptées : client, fournisseur, transporteur.');
-
-    if (errors.length > 0) {
-        return res.status(422).json({ message: 'Données invalides', errors });
+const validateRequest = (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(422).json({
+            message: 'Données invalides (Standard BCA v2.5)',
+            errors: errors.array().map(e => ({
+                field: e.path,
+                message: e.msg
+            }))
+        });
     }
     next();
 };
 
-const validateCreditRequest = (req, res, next) => {
-    const { montant, duree_mois } = req.body;
-    const errors = [];
+/**
+ * Validation de l'inscription (Register)
+ */
+const validateRegister = [
+    body('nom_complet')
+        .trim()
+        .isLength({ min: 2, max: 100 }).withMessage('Le nom doit faire entre 2 et 100 caractères.')
+        .escape(),
+    body('email')
+        .isEmail().withMessage('Format d\'email invalide.')
+        .normalizeEmail(),
+    body('telephone')
+        .trim()
+        .isLength({ min: 8, max: 20 }).withMessage('Le numéro de téléphone est invalide (min 8 chiffres).'),
+    body('mot_de_passe')
+        .isLength({ min: 8 }).withMessage('Le mot de passe doit faire au moins 8 caractères (Sécurité P0).')
+        .matches(/\d/).withMessage('Le mot de passe doit contenir au moins un chiffre.')
+        .escape(),
+    body('role')
+        .isIn(['client', 'fournisseur', 'transporteur', 'admin', 'banque'])
+        .withMessage('Rôle de réseau invalide.'),
+    validateRequest
+];
 
-    if (!montant || isNaN(montant) || montant < 10000) errors.push('Montant minimum : 10 000 GNF.');
-    if (!duree_mois || isNaN(duree_mois) || duree_mois < 1 || duree_mois > 60) errors.push('Durée entre 1 et 60 mois.');
+/**
+ * Validation du login
+ */
+const validateLogin = [
+    body('email').isEmail().withMessage('Email requis.').normalizeEmail(),
+    body('mot_de_passe').notEmpty().withMessage('Mot de passe requis.'),
+    validateRequest
+];
 
-    if (errors.length > 0) {
-        return res.status(422).json({ message: 'Données invalides', errors });
-    }
-    next();
+/**
+ * Validation d'une demande de crédit (Finance)
+ */
+const validateCreditRequest = [
+    body('montant')
+        .isFloat({ min: 10000 }).withMessage('Montant minimum : 10 000 GNF.'),
+    body('duree_mois')
+        .isInt({ min: 1, max: 60 }).withMessage('Durée : entre 1 et 60 mois.'),
+    validateRequest
+];
+
+/**
+ * Validation d'une commande (e-Commerce)
+ */
+const validateOrderCreate = [
+    body('items')
+        .isArray({ min: 1 }).withMessage('La commande doit contenir au moins un article.'),
+    body('items.*.produit_id').notEmpty().withMessage('ID produit requis.'),
+    body('items.*.quantite').isInt({ min: 1 }).withMessage('Quantité minimum : 1.'),
+    validateRequest
+];
+
+module.exports = { 
+    validateRegister, 
+    validateLogin,
+    validateCreditRequest, 
+    validateOrderCreate 
 };
-
-const validateOrderCreate = (req, res, next) => {
-    const { items } = req.body;
-    if (!items || !Array.isArray(items) || items.length === 0) {
-        return res.status(422).json({ message: 'La commande doit contenir au moins un article.' });
-    }
-    next();
-};
-
-module.exports = { validateRegister, validateCreditRequest, validateOrderCreate };

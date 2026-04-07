@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+const tokenService = require('../services/tokenService');
 const { hasPermission } = require('../config/permissions');
 
 const authMiddleware = (req, res, next) => {
@@ -9,7 +9,7 @@ const authMiddleware = (req, res, next) => {
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = tokenService.verifyAccessToken(token);
         req.user = decoded;
         next();
     } catch (error) {
@@ -61,7 +61,7 @@ const optionalAuth = (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     if (token) {
         try {
-            req.user = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = tokenService.verifyAccessToken(token);
         } catch (_) {
             // Token invalide ignoré
         }

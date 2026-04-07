@@ -4,20 +4,48 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const Sentry = require('@sentry/node');
+const path = require('path');
 
 const auditMiddleware = require('./middlewares/auditMiddleware');
 const sanitizeMiddleware = require('./middlewares/sanitizeMiddleware');
 const responseTimeMiddleware = require('./middlewares/responseTime');
+const logger = require('./utils/logger');
 
-const path = require('path');
 const app = express();
+
+// ─── Monitoring (Sentry) - DOIT ÊTRE EN PREMIER ──────────────────────────────
+if (process.env.SENTRY_DSN && process.env.NODE_ENV === 'production') {
+    Sentry.init({ 
+        dsn: process.env.SENTRY_DSN,
+        environment: process.env.NODE_ENV,
+        integrations: [
+            new Sentry.Integrations.Http({ tracing: true }),
+            new Sentry.Integrations.Express({ app }),
+        ],
+    });
+    app.use(Sentry.Handlers.requestHandler());
+    app.use(Sentry.Handlers.tracingHandler());
+}
 
 // ─── Sécurité & Performance ─────────────────────────────────────────────────
 app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" }
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            imgSrc: ["'self'", "data:", "https:", "http://localhost:5000"],
+            connectSrc: ["'self'", "https:", "http://localhost:5000", "ws://localhost:5000"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            objectSrc: ["'none'"],
+            upgradeInsecureRequests: [],
+        },
+    },
+    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 
-// CORS configuré précisément (domaines autorisés)
 const CORS_ORIGINS = process.env.NODE_ENV === 'production'
     ? ['https://bcaconnect-backend.onrender.com', 'https://bcaconnect.onrender.com', 'https://bcaconnect.vercel.app']
     : ['http://localhost:5173', 'http://localhost:3000'];
@@ -28,59 +56,34 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Compression gzip (réduit la taille des réponses de ~70%)
 app.use(compression());
-
-// Logging des requêtes HTTP (format court en dev, combiné en prod)
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
-
-// Parsing JSON avec limite de taille (protection contre les payloads géants)
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
-
-// Monitoring du temps de réponse
 app.use(responseTimeMiddleware);
-
-// Sanitisation des inputs malveillants (XSS, NoSQL Injection)
 app.use(sanitizeMiddleware);
 
-// ─── Rate Limiting par zone ──────────────────────────────────────────────────
+// ─── Rate Limiting ───────────────────────────────────────────────────────────
 const globalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 min
+    windowMs: 15 * 60 * 1000,
     max: 150,
-    standardHeaders: true,
-    legacyHeaders: false,
     message: { message: 'Trop de requêtes. Réessayez dans 15 minutes.' },
 });
-
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 15, // Plus strict pour le login/register
-    message: { message: 'Trop de tentatives de connexion. Réessayez dans 15 minutes.' },
-});
-
 app.use('/api/', globalLimiter);
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
 
-// ─── Audit des actions sensibles ─────────────────────────────────────────────
+// ─── Audit ───────────────────────────────────────────────────────────────────
 app.use(auditMiddleware);
 
-// ─── Route de santé ──────────────────────────────────────────────────────────
+// ─── Routes ──────────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {
     res.json({
         status: 'ok',
-        version: '2.5',
+        version: '2.6',
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
     });
 });
 
-app.get('/', (req, res) => {
-    res.json({ message: "Bienvenue sur l'API BCA Connect 🚀 v2.5" });
-});
-
-// ─── Routes API ───────────────────────────────────────────────────────────────
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/stores', require('./routes/storeRoutes'));
@@ -101,28 +104,27 @@ app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/reviews', require('./routes/reviewRoutes'));
 
-// Service des fichiers statiques avec CORS
-app.use('/uploads', cors(), express.static(path.join(__dirname, '../uploads'), {
-    setHeaders: (res, path) => {
-        res.setHeader('Access-Control-Allow-Origin', '*');
-    }
-}));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// ─── Gestion des 404 ─────────────────────────────────────────────────────────
-app.use((req, res) => {
-    res.status(404).json({ message: `Route introuvable : ${req.method} ${req.originalUrl}` });
-});
+// ─── Gestion des erreurs ─────────────────────────────────────────────────────
+app.use((req, res) => res.status(404).json({ message: 'Route introuvable' }));
 
-// ─── Gestion globale des erreurs ─────────────────────────────────────────────
+if (process.env.SENTRY_DSN && process.env.NODE_ENV === 'production') {
+    app.use(Sentry.Handlers.errorHandler());
+}
+
 app.use((err, req, res, next) => {
     const status = err.status || 500;
-    console.error(`[ERROR] ${err.message}`);
+    logger.error(`[Express Error] ${req.method} ${req.url}`, {
+        message: err.message,
+        status,
+        stack: err.stack,
+        userId: req.user?.id
+    });
+
     res.status(status).json({
-        message: err.message || 'Une erreur interne est survenue',
-        ...(process.env.NODE_ENV === 'development' && {
-            stack: err.stack,
-            original: err.original,
-        }),
+        message: status === 500 ? 'Une erreur interne est survenue (Standard BCA v2.6)' : err.message,
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
     });
 });
 
