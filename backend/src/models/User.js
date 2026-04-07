@@ -74,20 +74,20 @@ const User = sequelize.define('User', {
     hooks: {
         beforeSave: (user) => {
             // Chiffrement données sensibles
-            if (user.telephone && !user.telephone.includes(':')) {
+            if (typeof user.telephone === 'string' && !user.telephone.includes(':')) {
                 user.telephone = encryptionService.encrypt(user.telephone);
             }
-            if (user.two_factor_secret && !user.two_factor_secret.includes(':')) {
+            if (typeof user.two_factor_secret === 'string' && !user.two_factor_secret.includes(':')) {
                 user.two_factor_secret = encryptionService.encrypt(user.two_factor_secret);
             }
         },
         afterFind: (users) => {
             if (!users) return;
             const decryptUser = (u) => {
-                if (u.telephone && u.telephone.includes(':')) {
+                if (typeof u.telephone === 'string' && u.telephone.includes(':')) {
                     u.telephone = encryptionService.decrypt(u.telephone);
                 }
-                if (u.two_factor_secret && u.two_factor_secret.includes(':')) {
+                if (typeof u.two_factor_secret === 'string' && u.two_factor_secret.includes(':')) {
                     u.two_factor_secret = encryptionService.decrypt(u.two_factor_secret);
                 }
             };

@@ -14,19 +14,13 @@ const logger = require('./utils/logger');
 
 const app = express();
 
-// ─── Monitoring (Sentry) - DOIT ÊTRE EN PREMIER ──────────────────────────────
-if (process.env.SENTRY_DSN && process.env.NODE_ENV === 'production') {
-    Sentry.init({ 
-        dsn: process.env.SENTRY_DSN,
-        environment: process.env.NODE_ENV,
-        integrations: [
-            new Sentry.Integrations.Http({ tracing: true }),
-            new Sentry.Integrations.Express({ app }),
-        ],
-    });
-    app.use(Sentry.Handlers.requestHandler());
-    app.use(Sentry.Handlers.tracingHandler());
-}
+// ─── Monitoring (Sentry) ─────────────────────────────────────────────────────
+// Note: Sentry.init est appelé dans instrument.js chargé au sommet de index.js
+
+// Route de test pour Sentry
+app.get("/debug-sentry", function mainHandler(req, res) {
+    throw new Error("My first Sentry error!");
+});
 
 // ─── Sécurité & Performance ─────────────────────────────────────────────────
 app.use(helmet({
@@ -109,9 +103,8 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // ─── Gestion des erreurs ─────────────────────────────────────────────────────
 app.use((req, res) => res.status(404).json({ message: 'Route introuvable' }));
 
-if (process.env.SENTRY_DSN && process.env.NODE_ENV === 'production') {
-    app.use(Sentry.Handlers.errorHandler());
-}
+// The Sentry error handler must be registered before any other error middleware and after all controllers
+Sentry.setupExpressErrorHandler(app);
 
 app.use((err, req, res, next) => {
     const status = err.status || 500;

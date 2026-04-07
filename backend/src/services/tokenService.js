@@ -22,7 +22,7 @@ class TokenService {
      * Génère un Access Token (RS256 ou HS256 fallback)
      */
     generateAccessToken(user) {
-        const isRS256 = this.privateKey && 
+        const isRS256 = typeof this.privateKey === 'string' && 
                         this.privateKey.includes('BEGIN RSA PRIVATE KEY') && 
                         !this.privateKey.includes('...'); // Éviter les placeholders
         
@@ -56,7 +56,7 @@ class TokenService {
      * Vérifie un Access Token
      */
     verifyAccessToken(token) {
-        const isRS256 = this.publicKey && 
+        const isRS256 = typeof this.publicKey === 'string' && 
                         this.publicKey.includes('BEGIN PUBLIC KEY') && 
                         !this.publicKey.includes('...'); // Éviter les placeholders
         

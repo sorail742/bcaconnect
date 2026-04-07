@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+require('./instrument.js');
 /**
  * BCA Connect — Script de démarrage.
  * Vérifie les variables d'environnement essentielles avant de lancer le serveur.
@@ -38,12 +39,9 @@ async function runSafeMigrations(sequelize) {
 
     for (const m of migrations) {
         try {
-            // Vérifier si la colonne existe déjà
-            const tableDesc = await sequelize.query(
-                `PRAGMA table_info(${m.table})`,
-                { type: QueryTypes.SELECT }
-            );
-            const exists = tableDesc.some(col => col.name === m.column);
+            // Vérifier si la colonne existe déjà (Compatible Postgres & SQLite)
+            const tableDesc = await qi.describeTable(m.table);
+            const exists = Object.keys(tableDesc).includes(m.column);
 
             if (!exists) {
                 await qi.addColumn(m.table, m.column, m.definition);
