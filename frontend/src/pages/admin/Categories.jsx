@@ -18,17 +18,17 @@ import {
     Layers
 } from 'lucide-react';
 import categoryService from '../../services/categoryService';
+import { useCategories } from '../../hooks/useDomainData';
+import useApiMutation from '../../hooks/useApiMutation';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 
 const Categories = () => {
-    const [categories, setCategories] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const { data: categories = [], loading: isLoading, refetch } = useCategories();
     const [search, setSearch] = useState('');
     const [showModal, setShowModal] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
     const [editingCategory, setEditingCategory] = useState(null);
     const [formData, setFormData] = useState({
         nom_categorie: '',
@@ -36,31 +36,31 @@ const Categories = () => {
         image_url: ''
     });
 
-    const fetchCategories = useCallback(async () => {
-        try {
-            setIsLoading(true);
-            const data = await categoryService.getAll();
-            setCategories(data || []);
-        } catch (error) {
-            toast.error("Impossible de synchroniser l'architecture.");
-        } finally {
-            setIsLoading(false);
+    const { mutate: crudMutation, isPending: isSaving } = useApiMutation(
+        async (payload) => {
+            if (editingCategory) {
+                return categoryService.update(editingCategory.id, payload);
+            }
+            return categoryService.create(payload);
+        },
+        {
+            invalidateKeys: ['categories'],
+            successMessage: editingCategory ? "Taxonomie mise à jour." : "Nouvelle classe créée.",
+            onSuccess: () => setShowModal(false)
         }
-    }, []);
+    );
 
-    useEffect(() => {
-        fetchCategories();
-    }, [fetchCategories]);
+    const { mutate: deleteMutation } = useApiMutation(
+        (id) => categoryService.delete(id),
+        {
+            invalidateKeys: ['categories'],
+            successMessage: "Classification révoquée."
+        }
+    );
 
-    const handleDelete = async (id) => {
+    const handleDelete = (id) => {
         if (!window.confirm("Révoquer définitivement cette classification taxonomique ?")) return;
-        try {
-            await categoryService.delete(id);
-            toast.success("Classification révoquée.");
-            fetchCategories();
-        } catch (error) {
-            toast.error("Échec de la suppression.");
-        }
+        deleteMutation(id);
     };
 
     const handleOpenModal = (cat = null) => {
@@ -78,30 +78,14 @@ const Categories = () => {
         setShowModal(true);
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
-        setIsSaving(true);
-        try {
-            const payload = {
-                nom_categorie: formData.nom_categorie.trim(),
-                description: formData.description.trim(),
-                image_url: formData.image_url.trim() || null
-            };
-
-            if (editingCategory) {
-                await categoryService.update(editingCategory.id, payload);
-                toast.success("Taxonomie mise à jour.");
-            } else {
-                await categoryService.create(payload);
-                toast.success("Nouvelle classe créée.");
-            }
-            setShowModal(false);
-            fetchCategories();
-        } catch (error) {
-            toast.error("Erreur d'enregistrement.");
-        } finally {
-            setIsSaving(false);
-        }
+        const payload = {
+            nom_categorie: formData.nom_categorie.trim(),
+            description: formData.description.trim(),
+            image_url: formData.image_url.trim() || null
+        };
+        crudMutation(payload);
     };
 
     const filtered = categories.filter(c =>
@@ -136,7 +120,7 @@ const Categories = () => {
                         <div className="flex items-center gap-3">
                             <button 
                                 id="btn-refresh-taxo-hub"
-                                onClick={fetchCategories} 
+                                onClick={() => refetch()} 
                                 className="size-6 rounded-[2.2rem] bg-white/[0.03] border border-foreground/10 flex items-center justify-center text-muted-foreground/80 hover:text-[#FFB703] hover:border-[#FFB703]/20 transition-all "
                             >
                                 <RefreshCcw className={cn("size-6", isLoading && "animate-spin")} />

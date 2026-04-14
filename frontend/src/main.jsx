@@ -1,23 +1,42 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { BrowserRouter } from 'react-router-dom'
+import { ThemeProvider } from './context/ThemeContext'
+import { LanguageProvider } from './context/LanguageContext'
 import './index.css'
 import App from './App.jsx'
 
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            staleTime: 2 * 60_000,   // 2 min avant de considérer les données périmées (Production standard)
+            gcTime: 10 * 60_000,     // 10 min de cache en mémoire
+            retry: 2,                // 2 tentatives avant échec définitif
+            refetchOnWindowFocus: false, // Évite les appels réseau excessifs au focus
+            refetchOnReconnect: true,     // Essentiel pour la résilience réseau (Guinée/Mobile)
+        },
+    },
+})
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <ThemeProvider>
+          <LanguageProvider>
+            <App />
+          </LanguageProvider>
+        </ThemeProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
   </StrictMode>
 )
 
-/* 
-// Désactivé temporairement pour résoudre le conflit de cache React
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then((registration) => {
-      console.log('SW enregistré avec succès:', registration.scope);
-    }).catch((error) => {
-      console.log('Erreur d\'enregistrement du SW:', error);
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      // Fail silently in production or handle gracefully
     });
   });
 }
-*/

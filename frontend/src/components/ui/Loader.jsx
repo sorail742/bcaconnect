@@ -36,6 +36,20 @@ export const TableRowSkeleton = () => (
     </div>
 );
 
+export const ProductSkeleton = () => (
+    <div className="space-y-4">
+        <Skeleton className="aspect-[3/4] w-full rounded-2xl md:rounded-3xl" />
+        <div className="space-y-2">
+            <Skeleton className="h-4 w-2/3 rounded-full" />
+            <Skeleton className="h-3 w-1/2 rounded-full" />
+            <div className="flex justify-between items-center pt-2">
+                <Skeleton className="h-6 w-20 rounded-lg" />
+                <Skeleton className="size-8 rounded-full" />
+            </div>
+        </div>
+    </div>
+);
+
 export const PageLoader = () => (
     <div className="fixed inset-0 bg-foreground/60 dark:bg-slate-950/60 backdrop-blur-xl z-[100] flex items-center justify-center">
         <div className="flex flex-col items-center gap-5">
@@ -47,3 +61,62 @@ export const PageLoader = () => (
         </div>
     </div>
 );
+
+/* ── WalletSkeleton ── */
+export const WalletSkeleton = () => (
+    <div className="space-y-8 pt-32 pb-16 container mx-auto px-4 md:px-8">
+        <div className="space-y-3">
+            <Skeleton className="h-5 w-32 rounded-full" />
+            <Skeleton className="h-10 w-64 rounded-xl" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Skeleton className="h-48 rounded-3xl" />
+            <Skeleton className="h-48 rounded-3xl" />
+            <Skeleton className="h-48 rounded-3xl" />
+        </div>
+        <div className="flex gap-4 p-4 bg-muted rounded-3xl border border-border">
+            <Skeleton className="h-14 w-48 rounded-2xl" />
+            <Skeleton className="h-14 w-40 rounded-2xl" />
+            <Skeleton className="h-14 w-52 rounded-2xl" />
+        </div>
+    </div>
+);
+
+/* ── MessagesSkeleton ── */
+export const MessagesSkeleton = () => (
+    <div className="space-y-3">
+        {[1, 2, 3, 4, 5].map(i => (
+            <div key={i} className="flex items-center gap-4 p-4 bg-muted/40 rounded-2xl border border-border/50">
+                <Skeleton className="size-12 rounded-2xl shrink-0" />
+                <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/3 rounded-full" />
+                    <Skeleton className="h-3 w-2/3 rounded-full" />
+                </div>
+                <Skeleton className="h-3 w-12 rounded-full shrink-0" />
+            </div>
+        ))}
+    </div>
+);
+
+/* ── ProfileSkeleton ── */
+export const ProfileSkeleton = () => (
+    <div className="space-y-8 pt-32 pb-16 container mx-auto px-4 md:px-8 max-w-2xl">
+        <div className="flex items-center gap-6">
+            <Skeleton className="size-20 rounded-3xl shrink-0" />
+            <div className="space-y-3 flex-1">
+                <Skeleton className="h-6 w-40 rounded-lg" />
+                <Skeleton className="h-4 w-24 rounded-full" />
+            </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} className="space-y-2">
+                    <Skeleton className="h-3 w-20 rounded-full" />
+                    <Skeleton className="h-12 w-full rounded-2xl" />
+                </div>
+            ))}
+        </div>
+        <Skeleton className="h-14 w-full rounded-2xl" />
+    </div>
+);
+

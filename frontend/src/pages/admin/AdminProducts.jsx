@@ -23,22 +23,26 @@ import {
     Briefcase
 } from 'lucide-react';
 import productService from '../../services/productService';
-import categoryService from '../../services/categoryService';
+import { useProducts, useCategories } from '../../hooks/useDomainData';
+import useApiMutation from '../../hooks/useApiMutation';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 import DashboardCard from '../../components/ui/DashboardCard';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQueryClient } from '@tanstack/react-query';
 
 const AdminProducts = () => {
-    const [products, setProducts] = useState([]);
-    const [categories, setCategories] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const queryClient = useQueryClient();
     const [search, setSearch] = useState('');
-    const [stats, setStats] = useState({ total: 0, active: 0, lowStock: 0 });
-
     const [showModal, setShowModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
-    const [isSaving, setIsSaving] = useState(false);
+
+    // React Query Hooks
+    const { data: productsRaw, loading: isLoading } = useProducts();
+    const { data: categories = [] } = useCategories();
+
+    const products = Array.isArray(productsRaw) ? productsRaw : (productsRaw?.products || []);
+
     const [formData, setFormData] = useState({
         nom_produit: '',
         description: '',
@@ -50,40 +54,35 @@ const AdminProducts = () => {
         statut: 'Publié'
     });
 
-    const fetchData = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const [prods, cats] = await Promise.all([
-                productService.getAll(),
-                categoryService.getAll()
-            ]);
-            setProducts(prods || []);
-            setCategories(cats || []);
+    // Stats calculées dynamiquement à partir des données
+    const stats = {
+        total: products.length,
+        active: products.filter(p => !p.est_supprime).length,
+        lowStock: products.filter(p => p.stock_quantite <= 10).length
+    };
 
-            const total = prods.length;
-            const active = prods.filter(p => !p.est_supprime).length;
-            const low = prods.filter(p => p.stock_quantite <= 10).length;
-            setStats({ total, active, lowStock: low });
-        } catch (error) {
-            toast.error("ÉCHEC DE LA SYNCHRONISATION DU CATALOGUE.");
-        } finally {
-            setIsLoading(false);
+    // Mutation: Suppression
+    const { mutate: deleteProduct } = useApiMutation(
+        (id) => productService.delete(id),
+        {
+            successMessage: "PRODUIT RÉVOQUÉ.",
+            invalidateKeys: ['products', 'stats-global']
         }
-    }, []);
+    );
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+    // Mutation: Création / Mise à jour
+    const { mutate: saveProduct, isPending: isSaving } = useApiMutation(
+        (data) => editingProduct ? productService.update(editingProduct.id, data) : productService.create(data),
+        {
+            successMessage: editingProduct ? "CATALOGUE ACTUALISÉ." : "RÉFÉRENCE AJOUTÉE.",
+            invalidateKeys: ['products', 'stats-global'],
+            onSuccess: () => setShowModal(false)
+        }
+    );
 
-    const handleDelete = async (id) => {
+    const handleDelete = (id) => {
         if (!window.confirm("RÉVOQUER DÉFINITIVEMENT CET ACTIF ?")) return;
-        try {
-            await productService.delete(id);
-            toast.success("PRODUIT RÉVOQUÉ.");
-            fetchData();
-        } catch (error) {
-            toast.error("ÉCHEC DE L'OPÉRATION.");
-        }
+        deleteProduct(id);
     };
 
     const handleOpenModal = (product = null) => {
@@ -115,24 +114,13 @@ const AdminProducts = () => {
         setShowModal(true);
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
-        setIsSaving(true);
-        try {
-            if (editingProduct) {
-                await productService.update(editingProduct.id, formData);
-                toast.success("CATALOGUE ACTUALISÉ.");
-            } else {
-                await productService.create(formData);
-                toast.success("RÉFÉRENCE AJOUTÉE.");
-            }
-            setShowModal(false);
-            fetchData();
-        } catch (error) {
-            toast.error("ÉCHEC DE L'ENREGISTREMENT.");
-        } finally {
-            setIsSaving(false);
-        }
+        saveProduct(formData);
+    };
+
+    const fetchData = () => {
+        queryClient.invalidateQueries({ queryKey: ['products'] });
     };
 
     const filtered = products.filter(

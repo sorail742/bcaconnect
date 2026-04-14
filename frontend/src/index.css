@@ -105,40 +105,44 @@
 
 @layer components {
     .premium-glass {
-        @apply bg-background border border-border rounded-lg;
-        box-shadow: var(--card-shadow);
+        @apply bg-background/80 backdrop-blur-xl border border-white/10 rounded-3xl;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     }
 
     .bento-card {
-        @apply relative bg-card border border-border rounded-lg overflow-hidden transition-all duration-300 hover:border-primary/40 active-press;
-        box-shadow: var(--card-shadow);
+        @apply relative bg-card border border-border/50 rounded-[2rem] overflow-hidden transition-all duration-500 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/10 active-press;
     }
 
     .executive-card {
-        @apply relative bg-card border border-border rounded-lg p-4 overflow-hidden transition-all duration-300 hover:border-primary/40 active-press;
+        @apply relative bg-card border border-border/50 rounded-3xl p-6 overflow-hidden transition-all duration-500 hover:border-primary/40 active-press;
         box-shadow: var(--card-shadow);
     }
 
     .stat-glow {
-        @apply absolute -inset-1 opacity-0 group-hover:opacity-5 transition-all duration-500;
+        @apply absolute -inset-1 opacity-0 group-hover:opacity-10 transition-all duration-700 blur-2xl;
         background: radial-gradient(circle at center, var(--primary), transparent 70%);
     }
 
     .text-starbank-title {
-        @apply font-black tracking-tight leading-[0.85] text-foreground uppercase;
+        @apply font-black tracking-[-0.04em] leading-[0.9] text-foreground uppercase;
         font-family: 'Outfit', 'Inter', sans-serif;
     }
 
     .btn-premium {
-        @apply relative px-8 py-4 bg-primary text-primary-foreground font-bold rounded-lg overflow-hidden transition-all duration-300 hover:bg-primary/90 active:scale-95 shadow-lg hover:shadow-xl;
+        @apply relative px-10 py-5 bg-primary text-primary-foreground font-black rounded-2xl overflow-hidden transition-all duration-500 hover:scale-[1.02] active:scale-95 shadow-2xl shadow-primary/30 uppercase tracking-widest text-xs;
     }
 
     .active-press {
-        @apply active:scale-[0.98] transition-transform duration-500 ease-linear;
+        @apply active:scale-[0.97] transition-all duration-200 ease-out;
     }
 
     .signal-glow {
-        box-shadow: 0 0 80px -20px var(--primary);
+        box-shadow: 0 0 80px -20px hsl(var(--primary) / 0.5);
+    }
+
+    .grid-pattern {
+        background-image: radial-gradient(circle at 2px 2px, hsl(var(--foreground) / 0.05) 1px, transparent 0);
+        background-size: 32px 32px;
     }
 
     .sidebar-transition {
@@ -162,7 +166,7 @@
 
     * {
         @apply border-border;
-        font-style: normal !important;
+        /* Note: Ne pas forcer font-style ici — laisser les composants gérer leurs propres styles */
     }
     
     body {

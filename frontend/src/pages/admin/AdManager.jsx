@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
+import { useAdminAds } from '../../hooks/useDomainData';
+import useApiMutation from '../../hooks/useApiMutation';
 
 const Field = ({ label, icon: Icon, ...props }) => (
     <div className="space-y-1.5">
@@ -27,39 +29,42 @@ const Field = ({ label, icon: Icon, ...props }) => (
 );
 
 const AdsManager = () => {
-    const [ads, setAds] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { data: ads = [], loading, refetch } = useAdminAds();
     const [showModal, setShowModal] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
     const [editingAd, setEditingAd] = useState(null);
     const [formData, setFormData] = useState({
         titre: '', image_url: '', lien_redirection: '', priorite: 1, statut: 'actif'
     });
 
-    const fetchAds = useCallback(async () => {
-        try {
-            setLoading(true);
-            const response = await api.get('/ads');
-            setAds(Array.isArray(response.data) ? response.data : []);
-        } catch {
-            toast.error("Impossible de charger les campagnes.");
-            setAds([]);
-        } finally {
-            setLoading(false);
+    // Mutation for Deletion
+    const { mutate: deleteMutation } = useApiMutation(
+        (id) => api.delete(`/ads/${id}`),
+        {
+            invalidateKeys: [['admin-ads']],
+            successMessage: "Campagne supprimée.",
+            errorMessage: "Erreur lors de la suppression."
         }
-    }, []);
+    );
 
-    useEffect(() => { fetchAds(); }, [fetchAds]);
+    // Mutation for Creation/Update
+    const { mutate: saveMutation, isPending: isSaving } = useApiMutation(
+        (data) => {
+            if (editingAd) {
+                return api.put(`/ads/${editingAd.id}`, data);
+            }
+            return api.post('/ads', data);
+        },
+        {
+            invalidateKeys: [['admin-ads']],
+            successMessage: editingAd ? "Campagne mise à jour." : "Campagne créée.",
+            errorMessage: "Erreur lors de l'enregistrement.",
+            onSuccess: () => setShowModal(false)
+        }
+    );
 
-    const handleDelete = async (id) => {
+    const handleDelete = (id) => {
         if (!window.confirm("Supprimer définitivement cette campagne ?")) return;
-        try {
-            await api.delete(`/ads/${id}`);
-            toast.success("Campagne supprimée.");
-            fetchAds();
-        } catch {
-            toast.error("Erreur lors de la suppression.");
-        }
+        deleteMutation(id);
     };
 
     const handleOpenModal = (ad = null) => {
@@ -77,31 +82,15 @@ const AdsManager = () => {
         setShowModal(true);
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
-        setIsSaving(true);
-        try {
-            const data = {
-                titre: formData.titre.trim(),
-                image_url: formData.image_url.trim(),
-                lien_redirection: formData.lien_redirection.trim(),
-                priorite: parseInt(formData.priorite),
-                statut: formData.statut
-            };
-            if (editingAd) {
-                await api.put(`/ads/${editingAd.id}`, data);
-                toast.success("Campagne mise à jour.");
-            } else {
-                await api.post('/ads', data);
-                toast.success("Campagne créée.");
-            }
-            setShowModal(false);
-            fetchAds();
-        } catch {
-            toast.error("Erreur lors de l'enregistrement.");
-        } finally {
-            setIsSaving(false);
-        }
+        saveMutation({
+            titre: formData.titre.trim(),
+            image_url: formData.image_url.trim(),
+            lien_redirection: formData.lien_redirection.trim(),
+            priorite: parseInt(formData.priorite),
+            statut: formData.statut
+        });
     };
 
     return (

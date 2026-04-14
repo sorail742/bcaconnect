@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, ShieldCheck, Truck, Package, ArrowLeft, Tag, Zap, AlertCircle } from 'lucide-react';
-import { useCart } from '../context/CartContext';
+import useCart from '../hooks/useCart';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 import { useLanguage } from '../context/LanguageContext';
@@ -16,12 +16,15 @@ const CartPage = () => {
     const total = (cartTotal || 0) + DELIVERY_FEE;
 
     const handleRemove = (item) => {
-        removeFromCart(item.id);
-        toast.info(`${item.nom_produit || item.name} retiré du panier.`);
+        removeFromCart(item.productId);
+        toast.info(`${item.name} retiré du panier.`);
     };
 
     const handleCheckout = () => {
-        if (cartItems.length === 0) { toast.error('Votre panier est vide.'); return; }
+        if (cartItems.length === 0) {
+            toast.error('Votre panier est vide.');
+            return;
+        }
         navigate('/checkout');
     };
 
@@ -40,7 +43,12 @@ const CartPage = () => {
                         </h1>
                     </div>
                     {cartItems.length > 0 && (
-                        <button onClick={() => { clearCart(); toast.info('Panier vidé.'); }}
+                        <button onClick={() => { 
+                            if (window.confirm('Êtes-vous sûr de vouloir vider votre panier ?')) {
+                                clearCart(); 
+                                toast.info('Panier vidé.');
+                            }
+                        }}
                             className="flex items-center gap-2 text-sm font-medium text-rose-500 hover:bg-rose-500/10 px-4 py-2 rounded-xl border border-rose-500/20 hover:border-rose-500/40 transition-all">
                             <Trash2 className="size-4" /> Vider
                         </button>
@@ -65,11 +73,11 @@ const CartPage = () => {
                         {/* Items */}
                         <div className="lg:col-span-2 space-y-4">
                             {cartItems.map(item => {
-                                const price = parseFloat(item.prix_unitaire || item.prix || 0);
-                                const name = item.nom_produit || item.name || 'Produit';
-                                const img = item.image_url || item.image || item.images?.[0]?.url_image;
+                                const price = parseFloat(item.price || 0);
+                                const name = item.name || 'Produit';
+                                const img = item.image;
                                 return (
-                                    <div key={item.id} className="flex gap-4 p-4 bg-card rounded-2xl border border-border hover:border-primary/30 transition-all group shadow-sm">
+                                    <div key={item.productId} className="flex gap-4 p-4 bg-card rounded-2xl border border-border hover:border-primary/30 transition-all group shadow-sm">
                                         <div className="size-20 rounded-xl bg-muted border border-border overflow-hidden shrink-0">
                                             {img ? <img src={img} alt={name} className="w-full h-full object-cover" onError={e => e.target.style.display='none'} />
                                                 : <Package className="size-6 text-muted-foreground m-auto mt-7" />}
@@ -81,17 +89,14 @@ const CartPage = () => {
                                                     <Trash2 className="size-3.5" />
                                                 </button>
                                             </div>
-                                            {item.categorie?.nom_categorie && (
-                                                <span className="text-xs text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">{item.categorie.nom_categorie}</span>
-                                            )}
                                             <div className="flex items-center justify-between mt-3">
                                                 <div className="flex items-center gap-1 bg-muted border border-border rounded-lg p-0.5">
-                                                    <button onClick={() => updateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1}
+                                                    <button onClick={() => updateQuantity(item.productId, item.quantity - 1)}
                                                         className="size-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors">
                                                         <Minus className="size-3.5" />
                                                     </button>
                                                     <span className="w-8 text-center text-sm font-bold text-foreground tabular-nums">{item.quantity}</span>
-                                                    <button onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                    <button onClick={() => updateQuantity(item.productId, item.quantity + 1)}
                                                         className="size-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
                                                         <Plus className="size-3.5" />
                                                     </button>

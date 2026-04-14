@@ -2,20 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { ShieldCheck, CreditCard, Truck, Package, ArrowRight, Lock, CheckCircle2, ChevronRight, Home, Smartphone, Zap, ArrowLeft, Info, AlertCircle } from 'lucide-react';
-import { useCart } from '../context/CartContext';
+import useCart from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 import orderService from '../services/orderService';
 import walletService from '../services/walletService';
+import cartService from '../services/cartService';
+import { useWallet } from '../hooks/useDomainData';
+import useApiMutation from '../hooks/useApiMutation';
 import { useLanguage } from '../context/LanguageContext';
+import { checkoutStep1Schema } from '../lib/validation';
 
 const DELIVERY_FEE = 50000;
 
 const Field = ({ label, ...props }) => (
     <div className="space-y-1.5">
         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</label>
-        <input className="h-10 w-full px-3 bg-background border border-border rounded-xl text-sm outline-none focus:border-primary/50 transition-all text-foreground placeholder:text-muted-foreground" {...props} />
+        <input className="size-10 w-full px-3 bg-background border border-border rounded-xl text-sm outline-none focus:border-primary/50 transition-all text-foreground placeholder:text-muted-foreground" {...props} />
     </div>
 );
 
@@ -24,10 +28,11 @@ const Checkout = () => {
     const { cartItems, cartTotal, clearCart } = useCart();
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [step, setStep] = useState(1);
-    const [wallet, setWallet] = useState(null);
-
+    
+    // React Query Hooks
+    const { data: wallet, isLoading: walletLoading } = useWallet();
+    
     const [formData, setFormData] = useState({
         prenom: '', nom: user?.nom_complet || '', email: user?.email || '',
         telephone: user?.telephone || '', adresse: '', ville: 'Conakry',
@@ -37,47 +42,72 @@ const Checkout = () => {
     const total = (cartTotal || 0) + DELIVERY_FEE;
 
     useEffect(() => { if (cartItems.length === 0) navigate('/marketplace'); }, [cartItems, navigate]);
-    useEffect(() => {
-        walletService.getMyWallet().then(setWallet).catch(() => {});
-    }, []);
+
+    // Mutation pour créer la commande
+    const { mutate: createOrder, isPending: isSubmitting } = useApiMutation(
+        (payload) => orderService.create(payload),
+        {
+            successMessage: 'PÉRIMÈTRE D\'ACQUISITION SÉCURISÉ : COMMANDE VALIDÉE.',
+            invalidateKeys: ['wallet', 'orders', 'user-profile'],
+            onSuccess: () => {
+                clearCart();
+                navigate('/dashboard/orders');
+            }
+        }
+    );
 
     const handleChange = (e) => setFormData(p => ({ ...p, [e.target.name]: e.target.value }));
 
     const validateStep1 = () => {
-        if (!formData.nom || !formData.telephone || !formData.adresse || !formData.quartier) {
-            toast.error('Veuillez remplir tous les champs obligatoires.');
+        try {
+            checkoutStep1Schema.parse(formData);
+            return true;
+        } catch (error) {
+            if (error.errors && error.errors.length > 0) {
+                toast.error(error.errors[0].message);
+            } else {
+                toast.error('Veuillez vérifier vos informations.');
+            }
             return false;
         }
-        return true;
     };
 
-    const handleProcessOrder = async () => {
-        try {
-            setIsSubmitting(true);
-            if (formData.paymentMethod === 'wallet') {
-                const balance = wallet ? parseFloat(wallet.solde_virtuel) : 0;
-                if (balance < total) { toast.error('Solde insuffisant.'); setIsSubmitting(false); return; }
-            }
-            const response = await orderService.createOrder({
-                items: cartItems.map(item => ({ produit_id: item.id, quantite: item.quantity, prix_unitaire: parseFloat(item.prix_unitaire || 0) })),
-                shipping_address: `${formData.adresse}, ${formData.quartier}, ${formData.ville}`,
-                total_amount: total, payment_method: formData.paymentMethod,
-                customer_phone: formData.telephone,
-                customer_name: `${formData.prenom} ${formData.nom}`.trim()
-            });
-            if (response.success || response.id) {
-                toast.success('Commande validée avec succès !');
-                clearCart();
-                navigate('/orders');
-            }
-        } catch (error) {
-            toast.error(error.message || 'Erreur lors de la validation.');
-        } finally {
-            setIsSubmitting(false);
+    const handleProcessOrder = () => {
+        // Sécurité supplémentaire : Vérifier si le panier n'est pas devenu vide
+        if (cartItems.length === 0) {
+            toast.error('Votre panier est vide. Veuillez ajouter des produits avant de commander.');
+            navigate('/marketplace');
+            return;
         }
+
+        if (formData.paymentMethod === 'wallet') {
+            const balance = wallet ? parseFloat(wallet.solde_virtuel) : 0;
+            if (balance < total) { 
+                toast.error('ERREUR : SOLDE_INSUFFISANT. VEUILLEZ ALIMENTER VOTRE WALLET.'); 
+                return; 
+            }
+        }
+
+        // Transformation via cartService
+        const deliveryInfo = {
+            nom: `${formData.prenom} ${formData.nom}`.trim(),
+            telephone: formData.telephone,
+            adresse: `${formData.adresse}, ${formData.quartier}, ${formData.ville}`
+        };
+
+        const orderPayload = cartService.formatOrderData(
+            cartItems, 
+            deliveryInfo, 
+            formData.paymentMethod
+        );
+
+        // Exécution de la mutation
+        createOrder(orderPayload);
     };
 
     if (cartItems.length === 0) return null;
+
+    const isBalanceInsufficient = formData.paymentMethod === 'wallet' && wallet && parseFloat(wallet.solde_virtuel) < total;
 
     return (
         <div className="bg-background min-h-screen text-foreground pb-16">
@@ -87,7 +117,7 @@ const Checkout = () => {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-border">
                     <div className="space-y-3">
                         <button onClick={() => navigate('/cart')} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
-                            <ArrowLeft className="size-4" /> Modifier le panier
+                            <ArrowLeft className="size-4" /> Retour au panier
                         </button>
                         <h1 className="text-2xl md:text-3xl font-bold text-foreground">
                             {t('ckSecureCheckout') || 'Paiement'} <span className="text-primary">sécurisé</span>
@@ -95,8 +125,8 @@ const Checkout = () => {
                         <div className="flex items-center gap-3 text-sm">
                             {[{ n: 1, label: t('ckLogistics') || 'Livraison' }, { n: 2, label: t('ckTransaction') || 'Paiement' }].map(s => (
                                 <React.Fragment key={s.n}>
-                                    <span className={cn("flex items-center gap-2 font-medium transition-all", step >= s.n ? "text-primary" : "text-muted-foreground")}>
-                                        <span className={cn("size-6 rounded-full flex items-center justify-center text-xs font-bold", step >= s.n ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground border border-border")}>{s.n}</span>
+                                    <span className={cn("flex items-center gap-2 font-medium transition-all font-black text-[10px] uppercase tracking-widest", step >= s.n ? "text-primary" : "text-muted-foreground")}>
+                                        <span className={cn("size-6 rounded-lg flex items-center justify-center text-[10px] font-black", step >= s.n ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "bg-muted text-muted-foreground border border-border")}>{s.n}</span>
                                         {s.label}
                                     </span>
                                     {s.n < 2 && <ChevronRight className="size-4 text-muted-foreground" />}
@@ -104,60 +134,56 @@ const Checkout = () => {
                             ))}
                         </div>
                     </div>
-                    <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                        <Lock className="size-4 text-emerald-500" />
-                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{t('ckDataProtection') || 'Données protégées'}</span>
-                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Form */}
                     <div className="lg:col-span-2 space-y-6">
                         {step === 1 ? (
-                            <div className="space-y-6">
-                                <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-5">
+                            <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500">
+                                <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-6">
                                     <div className="flex items-center gap-3 pb-4 border-b border-border">
-                                        <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center"><Home className="size-4 text-primary" /></div>
-                                        <h3 className="text-sm font-bold text-foreground">{t('ckShippingCoords') || 'Coordonnées de livraison'}</h3>
+                                        <div className="size-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center"><Home className="size-5 text-primary" /></div>
+                                        <h3 className="text-xs font-black text-foreground uppercase tracking-widest">{t('ckShippingCoords') || 'Coordonnées de livraison'}</h3>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <Field label={t('ckFirstName') || 'Prénom'} name="prenom" value={formData.prenom} onChange={handleChange} placeholder="Jean" />
-                                        <Field label={`${t('ckLastName') || 'Nom'} *`} name="nom" value={formData.nom} onChange={handleChange} placeholder="Sylla" />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <Field label={t('ckFirstName') || 'Prénom'} name="prenom" value={formData.prenom} onChange={handleChange} placeholder="SYLLA" />
+                                        <Field label={`${t('ckLastName') || 'Nom'} *`} name="nom" value={formData.nom} onChange={handleChange} placeholder="OUMAR" />
                                         <Field label={`${t('ckPhone') || 'Téléphone'} *`} name="telephone" value={formData.telephone} onChange={handleChange} placeholder="+224 6XX XX XX XX" />
-                                        <Field label={t('ckEmailOptional') || 'Email (optionnel)'} name="email" type="email" value={formData.email} onChange={handleChange} placeholder="email@exemple.com" />
+                                        <Field label={t('ckEmailOptional') || 'Email (optionnel)'} name="email" type="email" value={formData.email} onChange={handleChange} placeholder="alpha@bca.com" />
                                     </div>
                                 </div>
 
-                                <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-5">
+                                <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-6">
                                     <div className="flex items-center gap-3 pb-4 border-b border-border">
-                                        <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center"><Truck className="size-4 text-primary" /></div>
-                                        <h3 className="text-sm font-bold text-foreground">{t('ckLogisticsProtocol') || 'Adresse de livraison'}</h3>
+                                        <div className="size-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center"><Truck className="size-5 text-primary" /></div>
+                                        <h3 className="text-xs font-black text-foreground uppercase tracking-widest">{t('ckLogisticsProtocol') || 'Adresse de livraison'}</h3>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-1.5">
-                                            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('ckCity') || 'Ville'}</label>
-                                            <input disabled value={formData.ville} className="h-10 w-full px-3 bg-muted border border-border rounded-xl text-sm text-muted-foreground cursor-not-allowed" />
+                                            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{t('ckCity') || 'Ville'}</label>
+                                            <input disabled value={formData.ville} className="h-12 w-full px-4 bg-muted border border-border rounded-2xl text-[10px] font-black text-muted-foreground uppercase cursor-not-allowed" />
                                         </div>
-                                        <Field label={`${t('ckDistrict') || 'Quartier'} *`} name="quartier" value={formData.quartier} onChange={handleChange} placeholder="Kipe / Ratoma" />
+                                        <Field label={`${t('ckDistrict') || 'Quartier'} *`} name="quartier" value={formData.quartier} onChange={handleChange} placeholder="KIPE / RATOMA" />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{`${t('ckPreciseAddress') || 'Adresse précise'} *`}</label>
-                                        <textarea name="adresse" value={formData.adresse} onChange={handleChange} placeholder="Bureau / Domicile - Indications spécifiques" rows={3}
-                                            className="w-full px-3 py-2.5 bg-background border border-border rounded-xl text-sm outline-none focus:border-primary/50 transition-all text-foreground placeholder:text-muted-foreground resize-none" />
+                                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{`${t('ckPreciseAddress') || 'Adresse précise'} *`}</label>
+                                        <textarea name="adresse" value={formData.adresse} onChange={handleChange} placeholder="INDICATIONS PRÉCISES DU POINT D'ACQUISITION" rows={3}
+                                            className="w-full px-4 py-3 bg-background border border-border rounded-2xl text-xs font-medium outline-none focus:border-primary/50 transition-all text-foreground placeholder:text-muted-foreground resize-none" />
                                     </div>
                                 </div>
 
                                 <Button onClick={() => validateStep1() && setStep(2)}
-                                    className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-bold text-sm border-none hover:bg-primary/90 flex items-center justify-center gap-2">
-                                    {t('ckGoToPayment') || 'Continuer vers le paiement'} <ArrowRight className="size-4" />
+                                    className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-black text-xs uppercase tracking-widest border-none hover:bg-primary/90 flex items-center justify-center gap-3 shadow-lg shadow-primary/20">
+                                    {t('ckGoToPayment') || 'Continuer vers le paiement'} <ArrowRight className="size-5" />
                                 </Button>
                             </div>
                         ) : (
-                            <div className="space-y-6">
-                                <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-5">
+                            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                                <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-6">
                                     <div className="flex items-center gap-3 pb-4 border-b border-border">
-                                        <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center"><CreditCard className="size-4 text-primary" /></div>
-                                        <h3 className="text-sm font-bold text-foreground">{t('ckPaymentMethod') || 'Mode de paiement'}</h3>
+                                        <div className="size-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center"><CreditCard className="size-5 text-primary" /></div>
+                                        <h3 className="text-xs font-black text-foreground uppercase tracking-widest">{t('ckPaymentMethod') || 'Mode de paiement'}</h3>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {[
@@ -165,42 +191,53 @@ const Checkout = () => {
                                             { key: 'cod', icon: Smartphone, label: t('ckCashAtBusiness') || 'Paiement à la livraison', sub: t('ckMobileMoney') || 'Mobile Money / Espèces', color: 'emerald' },
                                         ].map(opt => (
                                             <button key={opt.key} onClick={() => setFormData(p => ({ ...p, paymentMethod: opt.key }))}
-                                                className={cn("p-4 rounded-xl border-2 transition-all text-left flex items-start gap-3 relative",
+                                                className={cn("p-5 rounded-3xl border-2 transition-all text-left flex items-start gap-4 relative overflow-hidden",
                                                     formData.paymentMethod === opt.key
-                                                        ? opt.color === 'primary' ? "border-primary bg-primary/5" : "border-emerald-500 bg-emerald-500/5"
-                                                        : "border-border bg-muted hover:border-primary/30"
+                                                        ? opt.color === 'primary' ? "border-primary bg-primary/5 shadow-inner" : "border-emerald-500 bg-emerald-500/5 shadow-inner"
+                                                        : "border-border bg-card hover:border-primary/30"
                                                 )}>
-                                                <div className={cn("size-9 rounded-lg flex items-center justify-center shrink-0",
+                                                <div className={cn("size-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg",
                                                     formData.paymentMethod === opt.key
                                                         ? opt.color === 'primary' ? "bg-primary text-primary-foreground" : "bg-emerald-500 text-white"
-                                                        : "bg-background border border-border text-muted-foreground"
+                                                        : "bg-muted border border-border text-muted-foreground"
                                                 )}>
-                                                    <opt.icon className="size-4" />
+                                                    <opt.icon className="size-5" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-semibold text-foreground">{opt.label}</p>
-                                                    <p className="text-xs text-muted-foreground mt-0.5">{opt.sub}</p>
+                                                    <p className="text-xs font-black text-foreground uppercase tracking-tight">{opt.label}</p>
+                                                    <p className="text-[10px] font-black text-muted-foreground mt-1 opacity-70 uppercase tracking-widest">{opt.sub}</p>
                                                 </div>
                                                 {formData.paymentMethod === opt.key && (
-                                                    <CheckCircle2 className={cn("size-4 absolute top-3 right-3", opt.color === 'primary' ? "text-primary" : "text-emerald-500")} />
+                                                    <CheckCircle2 className={cn("size-5 absolute top-4 right-4", opt.color === 'primary' ? "text-primary" : "text-emerald-500")} />
                                                 )}
                                             </button>
                                         ))}
                                     </div>
-                                    <div className="flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-xl">
-                                        <Info className="size-4 text-primary shrink-0" />
-                                        <p className="text-xs text-muted-foreground">{t('ckAgreement') || 'En confirmant, vous acceptez nos conditions générales de vente.'}</p>
+
+                                    {isBalanceInsufficient && (
+                                        <div className="flex items-center gap-3 p-4 bg-rose-500/5 border border-rose-500/20 rounded-2xl animate-pulse">
+                                            <AlertCircle className="size-5 text-rose-500 shrink-0" />
+                                            <div className="space-y-1">
+                                                 <p className="text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest">SOLDE INSUFFISANT</p>
+                                                 <p className="text-[9px] font-medium text-muted-foreground">Veuillez alimenter votre compte ou choisir un autre mode de paiement.</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-center gap-3 p-4 bg-primary/5 border border-primary/20 rounded-2xl">
+                                        <Info className="size-5 text-primary shrink-0" />
+                                        <p className="text-[10px] font-black text-muted-foreground uppercase opacity-70 tracking-widest">{t('ckAgreement') || 'En confirmant, vous acceptez nos conditions générales de vente.'}</p>
                                     </div>
                                 </div>
 
-                                <div className="flex gap-3">
-                                    <button onClick={() => setStep(1)} className="h-11 px-5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all flex items-center gap-2">
+                                <div className="flex gap-4">
+                                    <button onClick={() => setStep(1)} className="h-14 px-8 rounded-2xl border border-border text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all flex items-center gap-3">
                                         <ArrowLeft className="size-4" /> {t('ckBack') || 'Retour'}
                                     </button>
-                                    <Button onClick={handleProcessOrder} disabled={isSubmitting}
-                                        className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground font-bold text-sm border-none hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-60">
-                                        {isSubmitting ? <><div className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Traitement...</>
-                                            : <><ShieldCheck className="size-4" /> {t('ckConfirmAcquisition') || 'Confirmer la commande'}</>}
+                                    <Button onClick={handleProcessOrder} disabled={isSubmitting || isBalanceInsufficient}
+                                        className="flex-1 h-14 rounded-2xl bg-primary text-primary-foreground font-black text-xs uppercase tracking-widest border-none hover:bg-primary/90 flex items-center justify-center gap-3 shadow-lg shadow-primary/20 disabled:opacity-50">
+                                        {isSubmitting ? <><div className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Traitement Alpha...</>
+                                            : <><ShieldCheck className="size-5" /> {t('ckConfirmAcquisition') || 'Confirmer la commande'}</>}
                                     </Button>
                                 </div>
                             </div>

@@ -1,47 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useAds } from '../../hooks/useDomainData';
+import useApiMutation from '../../hooks/useApiMutation';
+import api from '../../services/api';
 import { ExternalLink, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
 const AdBanner = ({ format = 'banner', className }) => {
-    const [ads, setAds] = useState([]);
     const [isVisible, setIsVisible] = useState(true);
-    const [loading, setLoading] = useState(true);
+    const { data: ads = [], loading } = useAds();
 
-    useEffect(() => {
-        const fetchAds = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-                const response = await axios.get(`${API_URL}/ads/serve`, config);
+    const { mutate: recordClick } = useApiMutation(
+        (adId) => api.post(`/ads/${adId}/click`),
+        { showToast: false } // Muet UX
+    );
 
-                // Filtrer par format si spécifié
-                const filteredAds = response.data.filter(ad => ad.format === format);
-                setAds(filteredAds);
-            } catch (error) {
-                console.error("Erreur chargement publicités:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const filteredAds = (ads || []).filter(ad => ad.format === format);
 
-        fetchAds();
-    }, [format]);
-
-    const handleAdClick = async (adId) => {
-        try {
-            await axios.post(`${API_URL}/ads/${adId}/click`);
-        } catch (error) {
-            console.error("Erreur enregistrement clic:", error);
-        }
+    const handleAdClick = (adId) => {
+        recordClick(adId);
     };
 
-    if (!isVisible || loading || ads.length === 0) return null;
+    if (!isVisible || loading || filteredAds.length === 0) return null;
 
     // Pour l'instant on affiche la plus récente correspondant au format
-    const ad = ads[0];
+    const ad = filteredAds[0];
 
     return (
         <div className={cn(

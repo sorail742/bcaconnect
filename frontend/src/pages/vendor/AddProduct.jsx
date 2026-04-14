@@ -12,6 +12,7 @@ import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
 import aiService from '../../services/aiService';
 import { cn } from '../../lib/utils';
+import { productSchema } from '../../lib/validation';
 
 const FormField = ({ label, required, children, error }) => (
     <div className="space-y-2.5">
@@ -196,13 +197,25 @@ const AddProduct = () => {
     };
 
     const validate = () => {
-        const newErrors = {};
-        if (!formData.nom_produit.trim()) newErrors.nom_produit = "NOM REQUIS POUR INDEXATION.";
-        if (!formData.prix_unitaire || parseFloat(formData.prix_unitaire) <= 0) newErrors.prix_unitaire = "PRIX RÉSEAU INVALIDE.";
-        if (formData.stock_quantite === '' || parseInt(formData.stock_quantite) < 0) newErrors.stock_quantite = "QUANTITÉ INVALIDE.";
-        if (!formData.categorie_id) newErrors.categorie_id = "CATÉGORIE REQUISE.";
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        try {
+            // Transformation des types pour Zod
+            const dataToValidate = {
+                ...formData,
+                prix_unitaire: parseFloat(formData.prix_unitaire || '0'),
+                stock_quantite: parseInt(formData.stock_quantite || '0')
+            };
+
+            productSchema.parse(dataToValidate);
+            setErrors({});
+            return true;
+        } catch (error) {
+            const newErrors = {};
+            error.errors.forEach(err => {
+                newErrors[err.path[0]] = err.message;
+            });
+            setErrors(newErrors);
+            return false;
+        }
     };
 
     const handleSubmit = async (e) => {

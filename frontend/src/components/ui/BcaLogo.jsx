@@ -1,58 +1,39 @@
 import React from 'react';
+import { motion } from 'framer-motion';
+import { Zap } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
-const BcaLogo = ({ className = "size-6", gradientId = "bca-gradient" }) => {
+const BcaLogo = ({ className, size = "h-10", variant = "color", hideText = false }) => {
+    // Brand colors from screenshot
+    const orangeBrand = "#FF6600";
+    
     return (
-        <svg
-            viewBox="0 0 100 100"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className={className}
-            translate="no"
-            role="img"
-            aria-label="Logo BCA Connect"
-        >
-            <defs>
-                <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#2563eb" />
-                    <stop offset="100%" stopColor="#1d4ed8" />
-                </linearGradient>
-            </defs>
+        <div translate="no" className={cn("inline-flex items-center gap-3 select-none group", className)}>
+            {/* Logo Icon: Orange Square with White Zap */}
+            <motion.div 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={cn(
+                    "flex items-center justify-center rounded-xl transition-shadow",
+                    size, "aspect-square shadow-lg shadow-orange-500/20"
+                )}
+                style={{ backgroundColor: orangeBrand }}
+            >
+                <Zap className="size-1/2 text-white fill-white" />
+            </motion.div>
 
-            {/* Background Circle to ensure perfect circularity */}
-            <circle
-                cx="50"
-                cy="50"
-                r="48"
-                className="fill-white/5 dark:fill-white/10"
-            />
-
-            {/* Main Circle Outline - Thicker and Perfectly Centered */}
-            <circle
-                cx="50"
-                cy="50"
-                r="44"
-                stroke={`url(#${gradientId})`}
-                strokeWidth="8"
-                strokeLinecap="round"
-            />
-
-            {/* Styled 'B' and 'A' integrated into a fluid mark */}
-            <path
-                d="M35 35 V65 M35 35 H45 C55 35 55 48 45 48 H35 M35 48 H45 C55 48 55 65 45 65 H35"
-                stroke={`url(#${gradientId})`}
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-
-            <path
-                d="M55 65 L65 35 L75 65 M58 55 H72"
-                stroke={`url(#${gradientId})`}
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </svg>
+            {!hideText && (
+                <div className="flex flex-col leading-none">
+                    <span className="text-xl md:text-2xl font-black tracking-tighter flex items-center">
+                        <span className="text-slate-950 dark:text-white">BCA</span>
+                        <span style={{ color: orangeBrand }} className="ml-1 uppercase">CONNECT</span>
+                    </span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mt-0.5">
+                        Premier Hub de Guinée
+                    </span>
+                </div>
+            )}
+        </div>
     );
 };
 

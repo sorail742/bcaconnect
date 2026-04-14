@@ -9,25 +9,11 @@ import walletService from '../../services/walletService';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 
+import { useAllTransactions } from '../../hooks/useDomainData';
+
 const AdminTransactions = () => {
     const [search, setSearch] = useState('');
-    const [transactions, setTransactions] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    const fetchTransactions = useCallback(async () => {
-        try {
-            setIsLoading(true);
-            const data = await walletService.getAllTransactions();
-            setTransactions(Array.isArray(data) ? data : []);
-        } catch {
-            toast.error("Erreur lors du chargement des transactions.");
-            setTransactions([]);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => { fetchTransactions(); }, [fetchTransactions]);
+    const { data: transactions = [], loading: isLoading, refetch: fetchTransactions } = useAllTransactions();
 
     const filtered = transactions.filter(t => {
         const user = t.Wallet?.User?.nom_complet || '';

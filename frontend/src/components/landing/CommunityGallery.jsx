@@ -2,22 +2,23 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../../context/LanguageContext';
 import { Activity, Globe, Zap, Cpu } from "lucide-react";
+import LazyImage from '../ui/LazyImage';
 
-import img1 from '../../assets/Un_cultivateur_apres_recolte_embarque_pour_le_marche.webp';
-import img2 from '../../assets/administrateur_d_un_site_multiservices.jpg';
-import img3 from '../../assets/biden_administration_revamps_gig_worker_rule.webp';
-import img4 from '../../assets/boutique_veste.jpg';
-import img5 from '../../assets/comment_prendre_en_charge_un_client_en_point_de_vente.jpg';
-import img6 from '../../assets/d_un_fournisseur.webp';
-import img7 from '../../assets/image_banque.avif';
-import img8 from '../../assets/ingenier-conseil-bet.jpg';
-import img9 from '../../assets/personnel-affaires-utilisant-ordinateur-portable-multitache-pour-terminer-taches-demarrage-quotidiennes_482257-83416.avif';
-import img10 from '../../assets/pizza-hut_en_mode_transport.jpg';
-import img11 from '../../assets/portrait-jeune-homme-africain-accepte-commande-par-telephone-dans-boites-moto-pizza-s-assoit-son-velo-lieu-urbain_496169-2169.avif';
-import img12 from '../../assets/premium_photo-ingenieurs.avif';
-import img13 from '../../assets/technique-daccueil-client.jpg';
-import img14 from '../../assets/transporteur-pas-cher.jpg';
-import img15 from '../../assets/travailleur-service-voiture-musculaire-reparant-vehicule_146671-19605.avif';
+import img1 from '../../assets/guinea_hub.png';
+import img2 from '../../assets/guinea_agri.png';
+import img3 from '../../assets/guinea_marketplace.png';
+import img4 from '../../assets/guinea_logistics.png';
+import img5 from '../../assets/guinea_tech.png';
+import img6 from '../../assets/Un_cultivateur_apres_recolte_embarque_pour_le_marche.webp';
+import img7 from '../../assets/orange_money.png';
+import img8 from '../../assets/mtn_mobile_money.png';
+import img9 from '../../assets/paycard.png';
+import img10 from '../../assets/bca_marketplace.png';
+import img11 from '../../assets/guinea_agriculture.png';
+import img12 from '../../assets/guinea_tech.png';
+import img13 from '../../assets/guinea_logistics.png';
+import img14 from '../../assets/bca_logistics.png';
+import img15 from '../../assets/bca_showcase.png';
 
 export function CommunityGallery() {
     const { lang } = useLanguage();
@@ -63,9 +64,13 @@ export function CommunityGallery() {
                             whileHover={{ y: -8, scale: 1.03 }}
                             className="w-[320px] h-[220px] shrink-0 rounded-2xl overflow-hidden border border-border shadow-sm group cursor-pointer relative"
                         >
-                            <img src={src} alt="BCA Network" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
+                            <LazyImage src={src} alt="BCA Network" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 flex items-end p-8">
-                                <p className="text-[12px] font-semibold text-white uppercase tracking-wider">Network Node 0{i % 9}</p>
+                                <p className="text-[12px] font-semibold text-white uppercase tracking-wider">
+                                    {i % 4 === 0 ? "Hub Logistique Conakry" : 
+                                     i % 4 === 1 ? "Producteurs Locaux 224" :
+                                     i % 4 === 2 ? "Marché de Madina" : "Digital Finance Hub"}
+                                </p>
                             </div>
                         </motion.div>
                     ))}
@@ -79,9 +84,13 @@ export function CommunityGallery() {
                             whileHover={{ y: 8, scale: 1.03 }}
                             className="w-[320px] h-[220px] shrink-0 rounded-2xl overflow-hidden border border-border shadow-sm group cursor-pointer relative"
                         >
-                            <img src={src} alt="BCA Professionals" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
+                            <LazyImage src={src} alt="BCA Professionals" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
                             <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 flex items-start p-8">
-                                <p className="text-[12px] font-semibold text-white uppercase tracking-wider">Professional Node 0{i % 9}</p>
+                                <p className="text-[12px] font-semibold text-white uppercase tracking-wider">
+                                    {i % 4 === 0 ? "Innovation Technologique" : 
+                                     i % 4 === 1 ? "Échanges Inter-régionaux" :
+                                     i % 4 === 2 ? "Services Financiers" : "Excellence Opérationnelle"}
+                                </p>
                             </div>
                         </motion.div>
                     ))}

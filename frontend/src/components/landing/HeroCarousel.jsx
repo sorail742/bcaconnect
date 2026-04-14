@@ -2,21 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 
-// Import choice high-quality assets for the hero
-import img1 from '../../assets/demerer_maintenant.jpg';
-import img2 from '../../assets/Ai_logistique.png';
-import img3 from '../../assets/Marche_fermier.jpg';
-import img4 from '../../assets/image_banque.avif';
-import img5 from '../../assets/boutique_Veste2.webp';
-import img6 from '../../assets/coordinateur-logistique-coordinatrice-logistique.png';
+import img1 from '../../assets/guinea_hub.png';
+import img2 from '../../assets/guinea_agri.png';
+import img3 from '../../assets/guinea_tech.png';
+import img4 from '../../assets/guinea_logistics.png';
 
 const carouselImages = [
-    { src: img1, title: 'BCA Connect' },
-    { src: img2, title: 'Intelligence Artificielle' },
-    { src: img3, title: 'Agriculture Moderne' },
-    { src: img4, title: 'Solutions Bancaires' },
-    { src: img5, title: 'E-commerce Élite' },
-    { src: img6, title: 'Logistique Globale' }
+    { src: img1, title: 'BCA Connect - Le Marché Guinéen' },
+    { src: img2, title: 'Logistique & Agriculture Durable' },
+    { src: img3, title: 'Innovation & Finance à Conakry' },
+    { src: img4, title: 'Livraison Partout en Guinée' }
 ];
 
 export function HeroCarousel() {
@@ -34,21 +29,25 @@ export function HeroCarousel() {
             <AnimatePresence mode="wait">
                 <motion.div
                     key={currentIndex}
-                    initial={{ opacity: 0, scale: 1.1 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 2, ease: "easeInOut" }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 1.5, ease: "easeInOut" }}
                     className="absolute inset-0"
                 >
                     <div 
-                        className="absolute inset-0 w-full h-full bg-cover bg-center"
-                        style={{ backgroundImage: `url(${carouselImages[currentIndex].src})` }}
+                        className="absolute inset-0 w-full h-full bg-cover bg-center transition-all duration-700"
+                        style={{ 
+                            backgroundImage: `url(${carouselImages[currentIndex].src})`,
+                            filter: 'contrast(1.05) brightness(0.95)'
+                        }}
                     />
                     
-                    {/* Overlays adaptatifs light/dark - TRÈS LÉGERS */}
-                    <div className="absolute inset-0 bg-background/20" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/30 via-transparent to-transparent" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-background/20 via-transparent to-transparent" />
+                    {/* Overlay de contraste minimal pour le texte */}
+                    <div className="absolute inset-0 bg-black/30" />
+                    
+                    {/* Dégradé directionnel unique pour la lisibilité en bas/gauche */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-black/60 via-transparent to-transparent opacity-80" />
                 </motion.div>
             </AnimatePresence>
         </div>

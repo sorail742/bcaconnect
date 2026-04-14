@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Modal from '../../components/ui/Modal';
+import { useQuery } from '@tanstack/react-query';
+import useApiMutation from '../../hooks/useApiMutation';
 import DataTable from '../../components/ui/DataTable';
 import {
     Search,
@@ -21,28 +23,17 @@ import {
     ChevronDown
 } from 'lucide-react';
 import userService from '../../services/userService';
-import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 import Button from '../../components/ui/Button';
 
 const ROLES = ['TOUS', 'client', 'fournisseur', 'transporteur', 'admin'];
 
 const AdminUsers = () => {
-    const [users, setUsers] = useState([]);
-    const [stats, setStats] = useState({
-        total: 0,
-        active: 0,
-        growth: 0
-    });
-    const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [selectedRole, setSelectedRole] = useState('TOUS');
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-
     const [showModal, setShowModal] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
-    const [isSaving, setIsSaving] = useState(false);
     const [formData, setFormData] = useState({
         nom_complet: '',
         email: '',
@@ -52,39 +43,44 @@ const AdminUsers = () => {
         mot_de_passe: ''
     });
 
-    const fetchUsers = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const roleFilter = selectedRole === 'TOUS' ? '' : selectedRole;
-            const data = await userService.getAll(page, 15, search, roleFilter);
-            setUsers(data.users || []);
-            setTotalPages(data.pages || 1);
-            setStats({
-                total: data.total || 0,
-                active: Math.floor(data.total * 0.85) || 0,
-                growth: 12
-            });
-        } catch (error) {
-            console.error(error);
-            toast.error("ÉCHEC DE LA SYNCHRONISATION DU REGISTRE.");
-        } finally {
-            setIsLoading(false);
+    const roleFilter = selectedRole === 'TOUS' ? '' : selectedRole;
+    const { data, isLoading, refetch } = useQuery({
+        queryKey: ['admin-users', page, search, roleFilter],
+        queryFn: () => userService.getAll(page, 15, search, roleFilter),
+        keepPreviousData: true,
+    });
+
+    const users = data?.users || [];
+    const totalPages = data?.pages || 1;
+    const stats = {
+        total: data?.total || 0,
+        active: Math.floor((data?.total || 0) * 0.85),
+        growth: 12,
+    };
+
+    const { mutate: deleteMutation } = useApiMutation(
+        (id) => userService.delete(id),
+        { invalidateKeys: ['admin-users'], successMessage: "ACCÈS RÉVOQUÉ." }
+    );
+
+    const { mutate: crudMutation, isPending: isSaving } = useApiMutation(
+        async (payload) => {
+            if (editingUser) {
+                if (!payload.mot_de_passe) delete payload.mot_de_passe;
+                return userService.update(editingUser.id, payload);
+            }
+            return userService.create(payload);
+        },
+        {
+            invalidateKeys: ['admin-users'],
+            successMessage: editingUser ? "INDEX MIS À JOUR." : "NOUVEAU NOEUD ACCRÉDITÉ.",
+            onSuccess: () => setShowModal(false)
         }
-    }, [page, search, selectedRole]);
+    );
 
-    useEffect(() => {
-        fetchUsers();
-    }, [fetchUsers]);
-
-    const handleDelete = async (id) => {
+    const handleDelete = (id) => {
         if (!window.confirm("RÉVOQUER DÉFINITIVEMENT L'ACCÈS ?")) return;
-        try {
-            await userService.delete(id);
-            toast.success("ACCÈS RÉVOQUÉ.");
-            fetchUsers();
-        } catch (error) {
-            toast.error("ÉCHEC DE LA RÉVOCATION.");
-        }
+        deleteMutation(id);
     };
 
     const handleOpenModal = (user = null) => {
@@ -100,38 +96,14 @@ const AdminUsers = () => {
             });
         } else {
             setEditingUser(null);
-            setFormData({
-                nom_complet: '',
-                email: '',
-                telephone: '',
-                role: 'client',
-                statut: 'actif',
-                mot_de_passe: ''
-            });
+            setFormData({ nom_complet: '', email: '', telephone: '', role: 'client', statut: 'actif', mot_de_passe: '' });
         }
         setShowModal(true);
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
-        setIsSaving(true);
-        try {
-            if (editingUser) {
-                const payload = { ...formData };
-                if (!payload.mot_de_passe) delete payload.mot_de_passe;
-                await userService.update(editingUser.id, payload);
-                toast.success("INDEX MIS À JOUR.");
-            } else {
-                await userService.create(formData);
-                toast.success("NOUVEAU NOEUD ACCRÉDITÉ.");
-            }
-            setShowModal(false);
-            fetchUsers();
-        } catch (error) {
-            toast.error("ERREUR D'ENREGISTREMENT.");
-        } finally {
-            setIsSaving(false);
-        }
+        crudMutation({ ...formData });
     };
 
     const columns = [
@@ -225,7 +197,7 @@ const AdminUsers = () => {
                         <div className="flex items-center gap-3">
                             <button 
                                 id="btn-users-refresh-signal"
-                                onClick={fetchUsers} 
+                                onClick={() => refetch()} 
                                 className="size-6 rounded-2xl bg-white/[0.03] border border-foreground/10 flex items-center justify-center text-muted-foreground/80 hover:text-[#FFB703] hover:border-[#FFB703]/20 transition-all "
                             >
                                 <RefreshCcw className={cn("size-5 transition-all duration-700", isLoading && "animate-spin")} />

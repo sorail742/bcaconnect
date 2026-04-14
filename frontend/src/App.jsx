@@ -1,49 +1,73 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter } from 'react-router-dom';
 import AppRoutes from './routes/AppRoutes';
-import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider } from './context/ThemeContext';
-import { CartProvider } from './context/CartContext';
-import { LanguageProvider } from './context/LanguageContext';
 import OfflineBanner from './components/layout/OfflineBanner';
 import { syncService } from './services/syncService';
 import AIChat from './components/ui/AIChat';
 import SmoothScroll from './components/layout/SmoothScroll';
+import MainLayout from './components/layout/MainLayout';
+import ErrorBoundary from './components/ui/ErrorBoundary';
 import './App.css';
 
+import useAuthStore from './store/authStore';
+import authService from './services/authService';
+import useSocket from './hooks/useSocket';
+import { toast, Toaster } from 'sonner';
+import SocketHandler from './components/SocketHandler';
+import NetworkProgressBar from './components/layout/NetworkProgressBar';
+
 function App() {
+  const setAuth = useAuthStore(state => state.setAuth);
+  const clearAuth = useAuthStore(state => state.clearAuth);
+  const setLoading = useAuthStore(state => state.setLoading);
+
   useEffect(() => {
-    const handleOnline = () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        syncService.syncOrders(token);
+    const bootstrapAuth = async () => {
+      const { setAuth, clearAuth, setLoading, isAuthenticated } = useAuthStore.getState();
+
+      if (!isAuthenticated) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const userData = await authService.getCurrentUser();
+        setAuth(userData, null);
+      } catch (error) {
+        console.error('Échec de la restauration de session (Cookie Expired):', error);
+        clearAuth();
+      } finally {
+        setLoading(false);
       }
     };
 
-    window.addEventListener('online', handleOnline);
-    handleOnline();
-
-    return () => window.removeEventListener('online', handleOnline);
+    bootstrapAuth();
+    sessionStorage.removeItem('chunk_failed_reload');
   }, []);
 
   return (
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <ThemeProvider>
-        <LanguageProvider>
-          <AuthProvider>
-            <CartProvider>
-              <SmoothScroll>
-                <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 selection:text-foreground">
-                  <OfflineBanner />
-                  <AppRoutes />
-                </div>
-                <AIChat />
-              </SmoothScroll>
-            </CartProvider>
-          </AuthProvider>
-        </LanguageProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+    <SmoothScroll>
+      <MainLayout>
+        <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 selection:text-foreground">
+          <NetworkProgressBar />
+          <Toaster
+            position="bottom-right"
+            richColors
+            closeButton
+            duration={3000}
+            visibleToasts={3}
+            toastOptions={{
+              style: { fontSize: '13px', fontWeight: '600' },
+            }}
+          />
+          <OfflineBanner />
+          <SocketHandler />
+          <ErrorBoundary>
+            <AppRoutes />
+          </ErrorBoundary>
+        </div>
+        <AIChat />
+      </MainLayout>
+    </SmoothScroll>
   );
 }
 

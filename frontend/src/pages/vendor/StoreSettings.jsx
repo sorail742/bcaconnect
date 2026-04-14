@@ -13,6 +13,8 @@ import storeService from '../../services/storeService';
 import api from '../../services/api';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
+import { useMyStore } from '../../hooks/useDomainData';
+import useApiMutation from '../../hooks/useApiMutation';
 
 const Toggle = ({ enabled, onChange, label, sublabel }) => (
     <div className="flex items-center justify-between group p-4 bg-white/[0.02] border border-foreground/5 rounded-2xl hover:border-[#FFB703]/20 transition-all duration-700 shadow-inner">
@@ -40,9 +42,10 @@ const Toggle = ({ enabled, onChange, label, sublabel }) => (
 const StoreSettings = () => {
     const fileInputRef = useRef(null);
     const bannerInputRef = useRef(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
-    const [isNew, setIsNew] = useState(false);
+    
+    // React Query Data
+    const { data: storeInfo, loading: isLoading, refetch: refreshStore } = useMyStore();
+    const isNew = !storeInfo;
     
     const [shopData, setShopData] = useState({
         name: '',
@@ -57,6 +60,22 @@ const StoreSettings = () => {
     
     const [isUploading, setIsUploading] = useState(false);
     const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+
+    // Initialisation synchrone avec useMyStore
+    useEffect(() => {
+        if (storeInfo) {
+            setShopData({
+                name: storeInfo.nom_boutique || '',
+                url: storeInfo.slug || '',
+                email: storeInfo.email_boutique || '',
+                phone: storeInfo.telephone_boutique || '',
+                description: storeInfo.description || '',
+                logo_url: storeInfo.logo_url || '',
+                use_carousel: storeInfo.use_carousel || false,
+                banner_images: storeInfo.banner_images || []
+            });
+        }
+    }, [storeInfo]);
 
     const handleFileUpload = async (e, type = 'logo') => {
         const files = Array.from(e.target.files);
@@ -122,74 +141,37 @@ const StoreSettings = () => {
         }));
     };
 
-    useEffect(() => {
-        const fetchStore = async () => {
-            try {
-                const data = await storeService.getMyStore();
-                if (!data) {
-                    setIsNew(true);
-                    return;
-                }
-                setShopData({
-                    name: data.nom_boutique || '',
-                    url: data.slug || '',
-                    email: data.email_boutique || '',
-                    phone: data.telephone_boutique || '',
-                    description: data.description || '',
-                    logo_url: data.logo_url || '',
-                    use_carousel: data.use_carousel || false,
-                    banner_images: data.banner_images || []
-                });
-                setIsNew(false);
-            } catch (error) {
-                if (error.response?.status === 404) setIsNew(true);
-                else toast.error("CONFLIT_SYNC_PROTOCOLE.");
-            } finally {
-                setIsLoading(false);
+    const { mutate: saveStore, isPending: isSaving } = useApiMutation(
+        (payload) => isNew ? storeService.createStore(payload) : storeService.updateStore(payload),
+        {
+            invalidateKeys: [['my-store']],
+            successMessage: isNew ? "TERMINAL_CRÉÉ_RÉSEAU." : "PARAMÈTRES_ENREGISTRÉS.",
+            errorMessage: "ÉCHEC_ENREGISTREMENT_CORE.",
+            onSuccess: (data) => {
+                if (data?.slug) setShopData(prev => ({ ...prev, url: data.slug }));
             }
-        };
-        fetchStore();
-    }, []);
+        }
+    );
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setShopData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSave = async () => {
+    const handleSave = () => {
         if (!shopData.name.trim()) return toast.error("IDENTIFIANT_LÉGAL_REQUIS.");
-
-        setIsSaving(true);
-        try {
-            const payload = {
-                nom_boutique: shopData.name.trim(),
-                description: shopData.description,
-                email_boutique: shopData.email,
-                telephone_boutique: shopData.phone,
-                logo_url: shopData.logo_url,
-                use_carousel: shopData.use_carousel,
-                banner_images: shopData.banner_images
-            };
-
-            if (isNew) {
-                const newStore = await storeService.createStore(payload);
-                setShopData(prev => ({
-                    ...prev,
-                    url: newStore.slug || '',
-                    name: newStore.nom_boutique || prev.name,
-                }));
-                setIsNew(false);
-                toast.success("TERMINAL_CRÉÉ_RÉSEAU.");
-            } else {
-                const updated = await storeService.updateStore(payload);
-                if (updated?.slug) setShopData(prev => ({ ...prev, url: updated.slug }));
-                toast.success("PARAMÈTRES_ENREGISTRÉS.");
-            }
-        } catch (error) {
-            toast.error("ÉCHEC_ENREGISTREMENT_CORE.");
-        } finally {
-            setIsSaving(false);
-        }
+        
+        const payload = {
+            nom_boutique: shopData.name.trim(),
+            description: shopData.description,
+            email_boutique: shopData.email,
+            telephone_boutique: shopData.phone,
+            logo_url: shopData.logo_url,
+            use_carousel: shopData.use_carousel,
+            banner_images: shopData.banner_images
+        };
+        
+        saveStore(payload);
     };
 
     if (isLoading) {

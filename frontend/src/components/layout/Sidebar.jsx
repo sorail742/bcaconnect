@@ -41,11 +41,12 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
             { path: '/admin/users', label: 'Utilisateurs', icon: Users, permission: 'manage_users' },
             { path: '/admin/products', label: 'Produits', icon: Package },
             { path: '/admin/categories', label: 'Catégories', icon: Folder, permission: 'manage_categories' },
+            { path: '/admin/trends', label: 'IA Trends', icon: Zap },
             { path: '/admin/disputes', label: 'Litiges', icon: Gavel, permission: 'solve_disputes' },
             { path: '/admin/transactions', label: 'Transactions', icon: Receipt, permission: 'view_all_transactions' },
+            { path: '/admin/financial', label: 'Finances', icon: Landmark, permission: 'view_all_transactions' },
             { path: '/admin/ads', label: 'Publicités', icon: Megaphone, permission: 'manage_ads' },
             { path: '/messages', label: 'Messages', icon: MessageSquare, badge: unreadMessages },
-            { path: '/bank/dashboard', label: 'Panel Financier', icon: Landmark, permission: 'view_all_transactions' },
         ],
         fournisseur: [
             { path: '/vendor/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
@@ -105,7 +106,7 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
                         </div>
                         {!isCollapsed && (
                             <div className="flex flex-col min-w-0 animate-in text-left">
-                                <h1 className="text-foreground text-sm font-bold tracking-tight uppercase">BCA Connect</h1>
+                                <h1 translate="no" className="text-foreground text-sm font-bold tracking-tight uppercase">BCA Connect</h1>
                                 <div className="flex items-center gap-2 mt-1">
                                     <div className="size-1.5 rounded-full bg-primary animate-pulse" />
                                     <p className="text-primary text-[8px] font-bold uppercase tracking-widest leading-none">

@@ -17,106 +17,181 @@ import {
     RefreshCcw,
     Shield,
     Globe,
-    MapPin
+    MapPin,
+    PackageSearch,
+    UserCheck,
+    Play,
+    Flag
 } from 'lucide-react';
 import deliveryService from '../../services/deliveryService';
+import useSocket from '../../hooks/useSocket';
+import OtpVerificationModal from '../../components/carrier/OtpVerificationModal';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 
 const CarrierDashboard = () => {
-    const [deliveries, setDeliveries] = useState([]);
+    // États de données
+    const [availableDeliveries, setAvailableDeliveries] = useState([]);
+    const [myDeliveries, setMyDeliveries] = useState([]);
     const [stats, setStats] = useState({ 
         assigned: '0', 
         inProgress: '0', 
         completed: '0', 
         available: '0' 
     });
+    
+    // États UI
     const [isLoading, setIsLoading] = useState(true);
-    const [filter, setFilter] = useState('Tous');
+    const [activeTab, setActiveTab] = useState('AVAILABLE'); // AVAILABLE | MINE
+    const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+    const [selectedOrderId, setSelectedOrderId] = useState(null);
 
-    const fetchDeliveries = useCallback(async () => {
+    const { on, off } = useSocket();
+
+    // Récupération des données
+    const fetchData = useCallback(async () => {
         try {
             setIsLoading(true);
-            const data = await deliveryService.getAvailableOrders();
-            setDeliveries(data || []);
+            const [available, mine] = await Promise.all([
+                deliveryService.getAvailableOrders(),
+                deliveryService.getMyDeliveries()
+            ]);
+            
+            setAvailableDeliveries(available || []);
+            setMyDeliveries(mine || []);
 
             setStats({
-                assigned: (data || []).filter(d => d.statut === 'expédié').length.toString(),
-                inProgress: (data || []).filter(d => d.statut_livraison === 'en_cours').length.toString(),
-                completed: (data || []).filter(d => d.statut_livraison === 'livré').length.toString(),
-                available: (data || []).length.toString(),
+                assigned: (mine || []).length.toString(),
+                inProgress: (mine || []).filter(d => d.statut_livraison === 'en_route').length.toString(),
+                completed: '0', // Nécessiterait un endpoint history propre
+                available: (available || []).length.toString(),
             });
         } catch (error) {
-            console.error("Erreur chargement livraisons:", error);
-            toast.error("ÉCHEC DE LA SYNCHRONISATION LOGISTIQUE.");
+            console.error("Erreur chargement logistique:", error);
+            toast.error("ERREUR DE SYNCHRONISATION RÉSEAU.");
         } finally {
             setIsLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        fetchDeliveries();
-    }, [fetchDeliveries]);
+        fetchData();
+    }, [fetchData]);
 
-    const handleAction = async (orderId, currentStatus) => {
-        let nextStatus = '';
-        if (currentStatus === 'payé' || currentStatus === 'expédié') nextStatus = 'en_cours';
-        else if (currentStatus === 'en_cours') nextStatus = 'livré';
+    // Temps réel
+    useEffect(() => {
+        if (!on) return;
+        
+        const handleUpdate = () => {
+            fetchData();
+        };
 
-        if (!nextStatus) return;
+        on('notification_received', handleUpdate);
+        return () => off('notification_received', handleUpdate);
+    }, [on, off, fetchData]);
 
+    // Actions
+    const handleAssign = async (orderId) => {
         try {
-            await deliveryService.updateStatus(orderId, nextStatus);
-            toast.success(`STATUT RÉSEAU ACTUALISÉ : ${nextStatus.toUpperCase()}`);
-            fetchDeliveries();
+            await deliveryService.assignOrder(orderId);
+            toast.success("MISSION ASSIGNÉE. VEUILLEZ RAMASSER LE COLIS.");
+            fetchData();
+            setActiveTab('MINE');
         } catch (err) {
-            toast.error("ERREUR DE COMMANDE TACTIQUE.");
+            toast.error("ERREUR D'ASSIGNATION TACTIQUE.");
         }
     };
 
-    const deliveryColumns = [
+    const handleStartJourney = async (orderId) => {
+        try {
+            await deliveryService.updateTracking({
+                orderId,
+                status: 'en_route',
+                commentaire: 'Transporteur en route vers la destination'
+            });
+            toast.success("MISSION EN COURS : SIGNAL GPS ACTIVÉ.");
+            fetchData();
+        } catch (err) {
+            toast.error("ERREUR DE DÉMARRAGE DU FLUX.");
+        }
+    };
+
+    const openOtpModal = (orderId) => {
+        setSelectedOrderId(orderId);
+        setIsOtpModalOpen(true);
+    };
+
+    // Colonnes pour "DISPONIBLES"
+    const availableColumns = [
         {
-            label: 'ORD-ID SOURCE',
+            label: 'UNITÉ SOURCE',
             render: (row) => (
-                <span className="font-black text-[#FF6600] uppercase text-[9px] tracking-widest bg-[#FF6600]/5 px-2 py-1 rounded-lg border border-[#FF6600]/10 shadow-sm">
+                <span className="font-black text-[#FF6600] uppercase text-[9px] tracking-widest bg-[#FF6600]/5 px-2 py-1 rounded-lg border border-[#FF6600]/10">
                     #{row.id.slice(0, 8).toUpperCase()}
                 </span>
             )
         },
         {
-            label: 'DESTINATAIRE ALPHA',
+            label: 'ZONE DE RAMASSAGE',
             render: (row) => (
-                <div className="flex flex-col gap-1 py-1">
-                    <span className="font-black text-slate-800 dark:text-foreground text-[11px] uppercase tracking-tight leading-none pt-0.5">{row.nom_destinataire || 'CLIENT RÉSEAU'}</span>
-                    <span className="text-[8px] text-muted-foreground/80 font-black tracking-widest uppercase opacity-70 leading-none">TEL: {row.telephone_livraison || 'NON INDEXÉ'}</span>
+                <div className="flex flex-col gap-1">
+                    <span className="font-black text-slate-800 dark:text-foreground text-[10px] uppercase">BOUTIQUE SOURCE</span>
+                    <span className="text-[8px] text-muted-foreground font-black uppercase tracking-widest truncate max-w-[150px]">
+                        CONAKRY / {row.adresse_livraison.split(',')[0]}
+                    </span>
                 </div>
             )
         },
         {
-            label: 'COORDONNÉES TERMINAL',
+            label: 'PÉRIMÈTRE CIBLE',
             render: (row) => (
-                <div className="max-w-[220px] truncate font-black text-muted-foreground dark:text-muted-foreground/80 text-[9px] uppercase tracking-widest leading-relaxed pt-0.5" title={row.adresse_livraison}>
-                    {row.adresse_livraison || 'ZONE NON RÉPERTORIÉE'}
+                <div className="max-w-[200px] truncate font-black text-muted-foreground text-[9px] uppercase tracking-widest" title={row.adresse_livraison}>
+                    {row.adresse_livraison}
                 </div>
             )
         },
         {
-            label: 'STATUT FLUX',
+            label: 'ACTION',
+            render: (row) => (
+                <div className="text-right">
+                    <button
+                        onClick={() => handleAssign(row.id)}
+                        className="h-8 px-4 bg-[#FF6600] text-foreground text-[9px] font-black rounded-lg transition-all shadow-md active:scale-95 uppercase tracking-widest hover:brightness-110 flex items-center gap-2 ml-auto"
+                    >
+                        <UserCheck className="size-3" /> ACCEPTER
+                    </button>
+                </div>
+            )
+        }
+    ];
+
+    // Colonnes pour "MES MISSIONS"
+    const myMissionsColumns = [
+        {
+            label: 'ID MISSION',
+            render: (row) => (
+                <span className="font-black text-emerald-500 uppercase text-[9px] tracking-widest bg-emerald-500/5 px-2 py-1 rounded-lg border border-emerald-500/10">
+                    #{row.id.slice(0, 8).toUpperCase()}
+                </span>
+            )
+        },
+        {
+            label: 'STATUT OPÉRATIONNEL',
             render: (row) => {
-                const status = row.statut_livraison || row.statut;
+                const status = row.statut_livraison;
                 return (
                     <div className="flex items-center gap-2">
                         <div className={cn(
                             "size-1.5 rounded-full",
-                            status === 'livré' ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" :
-                                status === 'en_cours' ? "bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "bg-slate-300 dark:bg-foreground/10"
+                            status === 'livre' ? "bg-emerald-500" :
+                            status === 'en_route' ? "bg-amber-500 animate-pulse" : "bg-blue-500"
                         )} />
                         <span className={cn(
                             "text-[8px] font-black uppercase tracking-widest",
-                            status === 'livré' ? "text-emerald-500" :
-                                status === 'en_cours' ? "text-amber-500" : "text-muted-foreground/80"
+                            status === 'livre' ? "text-emerald-500" :
+                            status === 'en_route' ? "text-amber-500" : "text-blue-500"
                         )}>
-                            {status?.toUpperCase() || 'IDLE'}
+                            {status === 'ramasse' ? 'COLIS RÉCUPÉRÉ' : status === 'en_route' ? 'EN TRANSIT' : status?.toUpperCase() || 'ASSIGNÉ'}
                         </span>
                     </div>
                 );
@@ -125,18 +200,23 @@ const CarrierDashboard = () => {
         {
             label: 'GOUVERNANCE',
             render: (row) => (
-                <div className="text-right pr-4">
-                    {row.statut !== 'livré' ? (
+                <div className="flex justify-end gap-2">
+                    {row.statut_livraison !== 'en_route' && row.statut_livraison !== 'livre' ? (
                         <button
-                            onClick={() => handleAction(row.id, row.statut_livraison || row.statut)}
-                            className="h-8 px-6 bg-slate-900 dark:bg-white text-foreground dark:text-slate-900 text-[9px] font-black rounded-xl transition-all shadow-md active:scale-95 uppercase tracking-widest hover:bg-[#FF6600] hover:text-foreground border-0"
+                            onClick={() => handleStartJourney(row.id)}
+                            className="h-8 px-4 bg-slate-900 dark:bg-white text-foreground dark:text-slate-900 text-[9px] font-black rounded-lg transition-all uppercase tracking-widest flex items-center gap-2"
                         >
-                            {row.statut === 'payé' ? 'RÉCUPÉRER' : row.statut_livraison === 'en_cours' ? 'TERMINER' : 'ACTUALISER'}
+                            <Play className="size-3" /> DÉMARRER
+                        </button>
+                    ) : row.statut_livraison === 'en_route' ? (
+                        <button
+                            onClick={() => openOtpModal(row.id)}
+                            className="h-8 px-4 bg-emerald-500 text-slate-900 text-[9px] font-black rounded-lg transition-all uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-emerald-500/10"
+                        >
+                            <Flag className="size-3" /> TERMINER
                         </button>
                     ) : (
-                        <div className="flex items-center justify-end gap-2 text-emerald-500 text-[8px] font-black uppercase tracking-widest opacity-80 decoration-emerald-500/20 underline underline-offset-4">
-                            <CheckCircle2 className="size-3" /> FLUX TERMINÉ
-                        </div>
+                        <span className="text-emerald-500 text-[8px] font-black uppercase tracking-widest">FLUX TERMINÉ</span>
                     )}
                 </div>
             )
@@ -147,133 +227,124 @@ const CarrierDashboard = () => {
         <DashboardLayout title="CENTRE LOGISTIQUE">
             <div className="space-y-8 animate-in fade-in duration-700 pb-24">
 
-                {/* Compact Command Bar */}
-                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white dark:bg-[#0F1219] p-6 rounded-2xl border border-slate-200 dark:border-foreground/5 shadow-sm overflow-hidden relative group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#FF6600]/[0.01] to-transparent pointer-events-none" />
-                    <div className="flex items-center gap-6 relative z-10">
-                        <div className="size-12 rounded-xl bg-[#FF6600]/10 flex items-center justify-center text-[#FF6600] border border-[#FF6600]/5 group-hover:rotate-6 transition-transform">
-                            <Truck className="size-6 shadow-sm" />
-                        </div>
-                        <div className="space-y-1">
-                            <h2 className="text-xl font-black text-slate-900 dark:text-foreground uppercase tracking-tight leading-none pt-0.5">
-                                OPS <span className="text-[#FF6600]">LOGISTIQUE</span>.
-                            </h2>
-                            <p className="text-[9px] font-black text-muted-foreground/80 uppercase tracking-widest opacity-80 decoration-[#FF6600]/20 underline underline-offset-4">
-                                TERMINAL CARRIER — SYNC : {new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-4 relative z-10">
-                        <button onClick={fetchDeliveries} className="size-10 rounded-xl bg-slate-50 dark:bg-foreground/5 border border-slate-100 dark:border-foreground/5 flex items-center justify-center text-muted-foreground/80 hover:text-[#FF6600] transition-all shadow-sm">
-                            <RefreshCcw className={cn("size-5", isLoading && "animate-spin")} />
-                        </button>
-                        <div className="flex items-center gap-3 px-5 h-10 bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
-                            <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest pt-0.5">RÉSEAU OPTIMAL</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* KPI Area — Strategic Grid */}
+                {/* KPI Area */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <DashboardCard title="ASSIGNÉES" value={stats.assigned} icon={ClipboardList} trend="up" trendValue="SYNC" className="h-32" />
-                    <DashboardCard title="TRANSIT" value={stats.inProgress} icon={Truck} trend="up" trendValue="LIVE" className="h-32" />
-                    <DashboardCard title="TERMINÉES" value={stats.completed} icon={CheckCircle2} trend="up" trendValue="TOTAL" className="h-32" />
-                    <DashboardCard title="FLUX LIBRES" value={stats.available} icon={Hourglass} trend="up" trendValue="QUEUE" className="h-32" />
+                    <DashboardCard title="MY ASSIGNATIONS" value={stats.assigned} icon={ClipboardList} className="h-32 border-[#FF6600]/10" />
+                    <DashboardCard title="EN TRANSIT" value={stats.inProgress} icon={Truck} className="h-32" />
+                    <DashboardCard title="HISTORIQUE" value={stats.completed} icon={CheckCircle2} className="h-32" />
+                    <DashboardCard title="OFFRES LIBRES" value={stats.available} icon={Hourglass} className="h-32" />
                 </div>
 
-                {/* Main Content: Tracking Terminal */}
+                {/* Main Control Panel */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     
-                    {/* Live Tracking List */}
-                    <div className="lg:col-span-8 bg-white dark:bg-[#0F1219] border border-slate-200 dark:border-foreground/5 rounded-2xl shadow-sm overflow-hidden flex flex-col h-fit">
-                        <div className="p-6 border-b border-slate-100 dark:border-foreground/5 bg-slate-50/20 dark:bg-white/[0.01] flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-                             <div className="flex items-center gap-3 text-muted-foreground/80">
-                                 <Activity className="size-4" />
-                                 <span className="text-[9px] font-semibold pt-0.5">FLUX DE LIVRAISON RÉEL</span>
-                             </div>
-                             <div className="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 scrollbar-hide">
-                                {['TOUS', 'LIVRÉ'].map((f) => (
-                                    <button
-                                        key={f}
-                                        onClick={() => setFilter(f === 'TOUS' ? 'Tous' : 'Livré')}
-                                        className={cn(
-                                            "px-4 h-8 text-[8px] font-black uppercase tracking-widest rounded-lg border transition-all",
-                                            filter.toUpperCase() === f
-                                                ? 'bg-slate-900 dark:bg-white text-foreground dark:text-slate-900 border-transparent shadow-md'
-                                                : 'text-muted-foreground/80 border-slate-200 dark:border-foreground/10 hover:text-slate-900 dark:hover:text-foreground'
-                                        )}
-                                    >
-                                        {f}
-                                    </button>
-                                ))}
-                             </div>
+                    {/* Mission Terminal */}
+                    <div className="lg:col-span-8 space-y-6">
+                        {/* Tab Switcher */}
+                        <div className="flex items-center gap-4 bg-white dark:bg-[#0F1219] p-2 rounded-2xl border border-slate-200 dark:border-foreground/5 shadow-sm">
+                            <button
+                                onClick={() => setActiveTab('AVAILABLE')}
+                                className={cn(
+                                    "flex-1 h-12 rounded-xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all",
+                                    activeTab === 'AVAILABLE' 
+                                        ? "bg-[#FF6600] text-foreground shadow-lg shadow-[#FF6600]/20" 
+                                        : "text-muted-foreground hover:bg-slate-50 dark:hover:bg-foreground/5"
+                                )}
+                            >
+                                <PackageSearch className="size-4" /> MISSIONS DISPONIBLES
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('MINE')}
+                                className={cn(
+                                    "flex-1 h-12 rounded-xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all",
+                                    activeTab === 'MINE' 
+                                        ? "bg-slate-900 dark:bg-white text-foreground dark:text-slate-900 shadow-xl shadow-black/10" 
+                                        : "text-muted-foreground hover:bg-slate-50 dark:hover:bg-foreground/5"
+                                )}
+                            >
+                                <UserCheck className="size-4" /> MON JOURNAL DE BORD
+                            </button>
                         </div>
 
-                        <div className="p-2">
-                             <DataTable
-                                columns={deliveryColumns}
-                                data={deliveries}
-                                isLoading={isLoading}
-                                className="bg-transparent border-0"
-                            />
-                            {!isLoading && deliveries.length === 0 && (
-                                <div className="py-24 text-center opacity-30 flex flex-col items-center gap-4">
-                                     <Box className="size-8" />
-                                     <p className="text-[9px] font-black uppercase ">AUCUN FLUX ACTIF IDENTIFIÉ</p>
+                        {/* List Area */}
+                        <div className="bg-white dark:bg-[#0F1219] border border-slate-200 dark:border-foreground/5 rounded-3xl shadow-sm overflow-hidden min-h-[400px]">
+                            <div className="p-6 border-b border-slate-100 dark:border-foreground/5 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <Activity className="size-4 text-primary" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">
+                                        {activeTab === 'AVAILABLE' ? 'MARCHÉ DES FLUX LOGISTIQUES' : 'SUIVI DES OPÉRATIONS'}
+                                    </span>
                                 </div>
-                            )}
+                                <button onClick={fetchData} className="size-8 rounded-lg bg-slate-50 dark:bg-foreground/5 flex items-center justify-center text-muted-foreground hover:text-primary transition-all">
+                                    <RefreshCcw className={cn("size-4", isLoading && "animate-spin")} />
+                                </button>
+                            </div>
+
+                            <div className="p-4">
+                                <DataTable
+                                    columns={activeTab === 'AVAILABLE' ? availableColumns : myMissionsColumns}
+                                    data={activeTab === 'AVAILABLE' ? availableDeliveries : myDeliveries}
+                                    isLoading={isLoading}
+                                    className="bg-transparent border-0"
+                                />
+                                {!isLoading && (activeTab === 'AVAILABLE' ? availableDeliveries.length === 0 : myDeliveries.length === 0) && (
+                                    <div className="py-24 text-center opacity-30 flex flex-col items-center gap-6">
+                                         <Box className="size-12" />
+                                         <div className="space-y-2">
+                                             <p className="text-[10px] font-black uppercase tracking-widest">TERMINAL VIDE</p>
+                                             <p className="text-[8px] font-black opacity-60">AUCUNE DONNÉE RÉPERTORIÉE DANS CE CANAL</p>
+                                         </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    {/* Secondary Hub: Map & Support */}
-                    <div className="lg:col-span-4 space-y-8">
-                        {/* Compact Location Card */}
-                        <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800 space-y-6 shadow-xl relative overflow-hidden group/map">
+                    {/* Side Info Panel */}
+                    <div className="lg:col-span-4 space-y-6">
+                         {/* Map Hub - Placeholder */}
+                         <div className="bg-slate-900 rounded-3xl p-6 border border-slate-800 space-y-6 shadow-2xl relative overflow-hidden group/map">
                             <div className="flex items-center justify-between relative z-10">
-                                <div className="size-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 shadow-inner">
-                                    <Globe className="size-5" />
-                                </div>
-                                <div className="flex items-center gap-2 px-3 h-6 bg-emerald-500/20 rounded-full border border-emerald-500/30">
-                                     <div className="size-1 bg-emerald-500 rounded-full animate-pulse" />
-                                     <span className="text-[7px] font-black text-emerald-500 uppercase tracking-widest">SIGNAL ALPHA</span>
+                                <Globe className="size-6 text-emerald-500" />
+                                <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                                     <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest animate-pulse">GPS ACTIVE</span>
                                 </div>
                             </div>
                             <div className="space-y-1 relative z-10">
-                                <h4 className="text-sm font-black text-foreground uppercase tracking-tight">INDEXATION GÉOSPATIALE</h4>
-                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">STATION LOGISTIQUE CONAKRY</p>
+                                <h4 className="text-sm font-black text-white uppercase">ZONE CONAKRY ALPHA</h4>
+                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60">STATION TERMINAL 01</p>
                             </div>
-                            <div className="aspect-square bg-black rounded-xl overflow-hidden relative border border-foreground/5 opacity-40 grayscale group-hover/map:grayscale-0 transition-all duration-700 group-hover/map:opacity-80">
-                                <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Guinea_Map.png/800px-Guinea_Map.png')" }} />
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                                     <div className="size-2 bg-[#FF6600] rounded-full shadow-[0_0_15px_#FF6600] animate-ping" />
-                                </div>
+                            <div className="aspect-[4/3] bg-black rounded-2xl border border-white/5 opacity-50 grayscale hover:grayscale-0 transition-all duration-500 hover:opacity-80">
+                                <div className="w-full h-full bg-[url('https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Guinea_Map.png/800px-Guinea_Map.png')] bg-cover bg-center" />
                             </div>
                         </div>
 
-                        {/* Support Console */}
-                        <div className="bg-white dark:bg-[#0F1219] border border-slate-200 dark:border-foreground/5 rounded-2xl p-6 space-y-6 shadow-sm group">
-                             <div className="flex items-center gap-4">
-                                 <div className="size-9 rounded-xl bg-slate-900 dark:bg-white text-foreground dark:text-slate-900 flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform">
-                                    <Headset className="size-4" />
-                                 </div>
-                                 <p className="text-[10px] font-black text-slate-800 dark:text-foreground uppercase tracking-widest">UNITÉ DE SUPPORT SYNC</p>
-                             </div>
-                             <p className="text-[9px] font-black text-muted-foreground/80 uppercase tracking-widest leading-relaxed border-l-2 border-[#FF6600]/20 pl-4">INTERVENTION RÉSEAU PRIORITAIRE 24/7 SUR TOUT LE TERRITOIRE ALPHA_GUINÉE.</p>
-                             <div className="space-y-2 pt-2">
-                                 <button className="w-full h-10 bg-slate-900 dark:bg-white text-foreground dark:text-slate-900 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all hover:bg-[#FF6600] hover:text-foreground shadow-md active:scale-95 flex items-center justify-center gap-3">
-                                     <LifeBuoy className="size-4" />
-                                     <span>SUPPORT DIRECT</span>
-                                 </button>
-                                 <button className="w-full h-10 bg-transparent border border-slate-200 dark:border-foreground/10 text-muted-foreground/80 font-black rounded-xl text-[9px] uppercase tracking-widest hover:border-[#FF6600] hover:text-[#FF6600] transition-colors flex items-center justify-center gap-3">
-                                     <BookOpen className="size-4" />
-                                     <span>GUIDE OPÉ</span>
-                                 </button>
-                             </div>
+                        {/* Status Console */}
+                        <div className="bg-[#FF6600]/5 border border-[#FF6600]/20 rounded-3xl p-6 space-y-4">
+                            <div className="flex items-center gap-3">
+                                <Shield className="size-5 text-[#FF6600]" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-[#FF6600]">STATUT CARRIER</span>
+                            </div>
+                            <p className="text-[9px] font-black leading-relaxed text-muted-foreground uppercase opacity-80">
+                                VOTRE COMPTE EST ACTUELLEMENT EN RÈGLE. VOUS POUVEZ ACCEPTER JUSQU'À 5 MISSIONS SIMULTANÉES.
+                            </p>
+                            <div className="pt-2">
+                                <button className="w-full h-12 bg-slate-900 dark:bg-white text-foreground dark:text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#FF6600] hover:text-foreground">
+                                    CONTACTER LE HUB
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* Modal de vérification OTP */}
+            <OtpVerificationModal
+                isOpen={isOtpModalOpen}
+                onClose={() => setIsOtpModalOpen(false)}
+                orderId={selectedOrderId}
+                onSuccess={fetchData}
+            />
         </DashboardLayout>
     );
 };

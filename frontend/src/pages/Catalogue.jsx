@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import ProductCard from '../components/produits/ProductCard';
 import { Button } from '../components/ui/Button';
 import { LoadingState, ErrorState, EmptyState } from '../components/ui/DataStates';
-import { useProducts, useCategories, useVendors } from '../hooks/useDomainData';
+import { useProducts, useCategories, useVendors, useHeroSlides } from '../hooks/useDomainData';
 import { cn } from '../lib/utils';
 import {
     Search, ChevronLeft, ChevronRight, LayoutGrid, List, ArrowRight,
@@ -12,52 +12,55 @@ import {
 import socketService from '../services/socketService';
 import { toast } from 'sonner';
 import { useLanguage } from '../context/LanguageContext';
+import { ProductSkeleton } from '../components/ui/Loader';
 
 const ProductCatalogue = () => {
     const { t, lang } = useLanguage();
-    const { data: products = [], loading: productsLoading, error: productsError } = useProducts();
-    const { data: categories = [], loading: categoriesLoading } = useCategories();
-    const { data: vendors = [], loading: vendorsLoading } = useVendors();
     
-    const [activeCategory, setActiveCategory] = useState("Tous");
+    const [page, setPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
+    const [activeCategory, setActiveCategory] = useState("Tous");
+    const [priceRange, setPriceRange] = useState([0, 100000000]);
+    const [sortBy, setSortBy] = useState('newest');
     const [viewMode, setViewMode] = useState('grid');
     const [currentSlide, setCurrentSlide] = useState(0);
-    const [priceRange, setPriceRange] = useState([0, 50000000]);
 
-    const HERO_SLIDES = [
+    // Fetching categories and hero slides
+    const { data: categoriesRaw, loading: categoriesLoading } = useCategories();
+    const { data: heroSlidesRaw, loading: heroLoading } = useHeroSlides();
+    const { data: vendorsRaw, loading: vendorsLoading } = useVendors();
+
+    const categories = Array.isArray(categoriesRaw) ? categoriesRaw : [];
+    const heroSlides = Array.isArray(heroSlidesRaw) ? heroSlidesRaw : [];
+    const vendors = Array.isArray(vendorsRaw) ? vendorsRaw : [];
+
+    // Fetching products with server-side filters
+    const { data: productsData, loading: productsLoading, error: productsError } = useProducts({
+        page,
+        search: searchQuery,
+        categorie_id: activeCategory === 'Tous' ? '' : activeCategory,
+        min_price: priceRange[0],
+        max_price: priceRange[1],
+        sort: sortBy,
+        limit: 12
+    });
+
+    const products = productsData?.products || [];
+    const totalPages = productsData?.pages || 1;
+
+    // Fallback slides si l'API ne renvoie rien
+    const DEFAULT_SLIDES = [
         {
-            tag: lang === 'FR' ? "COLLECTION_EXCLUSIVE_2024" : "EXCLUSIVE_COLLECTION_2024",
-            title: "Innovation Technologique",
-            subtitle: "Découvrez les dernières innovations en électronique et technologie",
-            cta: lang === 'FR' ? "EXPLORER_L'INNOVATION" : "EXPLORE_INNOVATION",
-            ctaLink: "/marketplace?cat=Électronique",
-            img: "https://images.unsplash.com/photo-1491933382434-500287f9b54b?auto=format&fit=crop&q=80&w=1200",
-        },
-        {
-            tag: lang === 'FR' ? "ARTISANAT_D'EXCEPTION" : "EXCEPTIONAL_CRAFTSMANSHIP",
-            title: "Mode et Élégance",
-            subtitle: "Explorez notre collection exclusive de vêtements et accessoires",
-            cta: lang === 'FR' ? "DÉCOUVRIR_LA_MODE" : "DISCOVER_FASHION",
-            ctaLink: "/marketplace?cat=Mode",
-            img: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80&w=1200",
-        },
-        {
-            tag: lang === 'FR' ? "LOGISTIQUE_INTELLIGENTE" : "SMART_LOGISTICS",
-            title: "Livraison Rapide",
-            subtitle: "Bénéficiez de notre réseau logistique optimisé",
-            cta: lang === 'FR' ? "COMMANDER_MAINTENANT" : "ORDER_NOW",
+            tag: "INNOVATION",
+            title: "Performance & Mobilité",
+            subtitle: "La nouvelle gamme d'ordinateurs professionnels est arrivée.",
+            cta: "DÉCOUVRIR",
             ctaLink: "/marketplace",
-            img: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=1200",
-        },
+            img: "https://images.unsplash.com/photo-1491933382434-500287f9b54b?auto=format&fit=crop&q=80&w=1200",
+        }
     ];
 
-    const TRUST_BADGES = [
-        { icon: ShieldCheck, title: "Paiement Sécurisé", desc: "Transactions cryptées SSL", color: "text-emerald-500" },
-        { icon: Truck, title: "Livraison Rapide", desc: "48h à Conakry", color: "text-primary" },
-        { icon: RotateCcw, title: "Retours Faciles", desc: "30 jours garantis", color: "text-muted-foreground" },
-        { icon: Award, title: "Produits Certifiés", desc: "Marchands vérifiés", color: "text-primary" },
-    ];
+    const displaySlides = heroSlides.length > 0 ? heroSlides : DEFAULT_SLIDES;
 
     useEffect(() => {
         socketService.connect();
@@ -68,220 +71,217 @@ const ProductCatalogue = () => {
         };
         socketService.on('product_added', handleNewProduct);
         return () => socketService.off('product_added', handleNewProduct);
-    }, [lang]);
+    }, []);
 
     useEffect(() => {
+        if (displaySlides.length <= 1) return;
         const timer = setInterval(() => {
-            setCurrentSlide(prev => (prev + 1) % HERO_SLIDES.length);
-        }, 12000);
+            setCurrentSlide(prev => (prev + 1) % displaySlides.length);
+        }, 8000);
         return () => clearInterval(timer);
-    }, [HERO_SLIDES.length]);
+    }, [displaySlides.length]);
 
-    const filteredProducts = products.filter(p => {
-        const matchesCategory = activeCategory === "Tous" ||
-            p.categorie?.nom_categorie === activeCategory ||
-            p.nom_categorie === activeCategory;
-        const matchesSearch = (p.nom_produit?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
-            (p.description?.toLowerCase() || "").includes(searchQuery.toLowerCase());
-        const matchesPrice = parseFloat(p.prix_unitaire || 0) <= priceRange[1];
-
-        return matchesCategory && matchesSearch && matchesPrice;
-    });
-
-    const slide = HERO_SLIDES[currentSlide];
-    const topVendors = vendors.slice(0, 3);
+    const slide = displaySlides[currentSlide] || DEFAULT_SLIDES[0];
 
     return (
         <div className="relative bg-card min-h-screen text-foreground font-jakarta selection:bg-primary selection:text-background">
             {/* Hero Section */}
-            <section className="relative min-h-[60vh] flex items-center overflow-hidden pt-24 pb-16">
-                <div className="absolute inset-0 transition-all duration-[3s]">
-                    <img src={slide.img} className="w-full h-full object-cover scale-105" alt="" />
+            <section className="relative min-h-[50vh] flex items-center overflow-hidden pt-20">
+                <div className="absolute inset-0 transition-all duration-[2s]">
+                    <img src={slide.img} className="w-full h-full object-cover" alt="" />
                     <div className="absolute inset-0 bg-background/60" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-transparent" />
                 </div>
 
                 <div className="container mx-auto px-8 relative z-10">
-                    <div className="max-w-[1200px] space-y-16">
-                        <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full border border-primary/30 bg-primary/10 text-xs font-bold uppercase tracking-wide text-primary">
-                            <Sparkles className="size-4 animate-pulse" />
+                    <div className="max-w-[800px] space-y-8">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/10 text-[10px] font-black uppercase tracking-widest text-primary">
+                            <Sparkles className="size-3" />
                             {slide.tag}
                         </div>
-                        <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-foreground tracking-tight leading-tight">
-                            {slide.title.split(' ').slice(0, -2).join(' ')} <br />
-                            <span className="text-primary">{slide.title.split(' ').slice(-2).join(' ')}</span>
+                        <h1 className="text-4xl md:text-6xl font-black text-foreground tracking-tighter leading-[0.9]">
+                            {slide.title}
                         </h1>
-                        <p className="text-muted-foreground text-base md:text-lg font-medium leading-relaxed max-w-2xl border-l-4 border-primary/40 pl-5">
+                        <p className="text-muted-foreground text-base md:text-lg font-medium leading-relaxed max-w-xl">
                             {slide.subtitle}
                         </p>
-                        <div className="flex flex-wrap items-center gap-4 pt-6">
-                            <Button className="h-11 px-7 bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-bold rounded-xl shadow-lg group border-none transition-all">
-                                {slide.cta}
-                                <ArrowRight className="size-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                            </Button>
+                        <div className="flex items-center gap-4 pt-4">
+                            <Link to={slide.ctaLink || '/marketplace'}>
+                                <Button className="h-12 px-8 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-black rounded-xl shadow-lg group border-none">
+                                    {slide.cta}
+                                    <ArrowRight className="size-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                                </Button>
+                            </Link>
                         </div>
                     </div>
                 </div>
-
-                <div className="absolute bottom-16 right-16 flex flex-col gap-8 items-end">
-                    <div className="flex items-center gap-6">
-                        {HERO_SLIDES.map((_, i) => (
-                            <button key={i} onClick={() => setCurrentSlide(i)}
-                                className={cn(
-                                    "transition-all duration-1000",
-                                    currentSlide === i ? "w-8 h-2 bg-primary rounded-full" : "size-2 bg-foreground/30 rounded-full hover:bg-primary/60"
-                                )}
-                            />
-                        ))}
-                    </div>
-                </div>
             </section>
 
-            {/* Trust Badges */}
-            <section className="relative z-20 max-w-[1400px] mx-auto px-4 md:px-8 py-6">
-                <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
-                    <div className="grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-border">
-                        {TRUST_BADGES.map((badge, i) => (
-                            <div key={i} className="flex items-center gap-4 px-5 py-4 group hover:bg-muted/50 transition-colors cursor-default">
-                                <div className={cn("size-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-105",
-                                    i % 2 === 1 ? "bg-primary/10 border border-primary/20" : "bg-muted border border-border"
-                                )}>
-                                    <badge.icon className={cn("size-5", i % 2 === 1 ? "text-primary" : "text-foreground")} />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-semibold text-foreground">{badge.title}</p>
-                                    <p className="text-xs text-muted-foreground">{badge.desc}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Main Catalogue */}
-            <section className="max-w-[1400px] mx-auto px-4 md:px-8 py-10 flex flex-col lg:flex-row gap-6">
-                {/* Sidebar */}
-                <aside className="lg:w-72 shrink-0 space-y-4">
-                    <div className="bg-card border border-border rounded-xl p-5 space-y-5">
+            {/* Main Catalogue Grid */}
+            <section className="max-w-[1600px] mx-auto px-4 md:px-8 py-12 flex flex-col lg:flex-row gap-8">
+                
+                {/* Advanced Filtering Rails */}
+                <aside className="lg:w-80 shrink-0 space-y-6">
+                    <div className="bg-muted/30 border border-border rounded-2xl p-6 space-y-8 sticky top-24">
                         <div>
-                            <span className="text-xs font-bold text-primary uppercase tracking-wide">Filtres</span>
-                            <div className="h-0.5 w-10 bg-primary rounded-full mt-1" />
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-foreground flex items-center gap-2">
-                                <Search className="size-4 text-primary" />
-                                Rechercher
-                            </label>
+                            <h3 className="text-sm font-black text-foreground uppercase tracking-widest mb-4">Filtrage Intelligent</h3>
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                                 <input
-                                    className="h-10 w-full pl-9 pr-3 bg-background border border-border focus:border-primary/50 rounded-lg text-sm outline-none transition-all text-foreground placeholder:text-muted-foreground"
-                                    placeholder="Rechercher..."
+                                    className="h-11 w-full pl-10 pr-4 bg-background border border-border focus:border-primary/50 rounded-xl text-sm outline-none transition-all"
+                                    placeholder="Rechercher un produit..."
                                     value={searchQuery}
-                                    onChange={e => setSearchQuery(e.target.value)}
+                                    onChange={e => { setSearchQuery(e.target.value); setPage(1); }}
                                 />
                             </div>
                         </div>
 
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                                <label className="text-xs font-semibold text-foreground flex items-center gap-2">
-                                    <Tag className="size-4 text-primary" />
-                                    Prix Max
-                                </label>
-                                <span className="text-xs font-bold text-primary tabular-nums">{priceRange[1].toLocaleString()} GNF</span>
+                        <div className="space-y-4">
+                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Catégories</h4>
+                            <div className="flex flex-wrap gap-2">
+                                <button 
+                                    onClick={() => { setActiveCategory('Tous'); setPage(1); }}
+                                    className={cn(
+                                        "px-4 py-2 rounded-xl text-xs font-bold border transition-all",
+                                        activeCategory === 'Tous' ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20" : "bg-background border-border text-muted-foreground hover:border-primary/40"
+                                    )}
+                                >
+                                    Tous
+                                </button>
+                                {categories.map(cat => (
+                                    <button 
+                                        key={cat.id}
+                                        onClick={() => { setActiveCategory(cat.id); setPage(1); }}
+                                        className={cn(
+                                            "px-4 py-2 rounded-xl text-xs font-bold border transition-all",
+                                            activeCategory === cat.id ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20" : "bg-background border-border text-muted-foreground hover:border-primary/40"
+                                        )}
+                                    >
+                                        {cat.nom_categorie}
+                                    </button>
+                                ))}
                             </div>
-                            <input type="range" min={0} max={50000000} step={1000000}
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Budget (GNF)</h4>
+                                <span className="text-[10px] font-black text-primary">{priceRange[1].toLocaleString()}</span>
+                            </div>
+                            <input 
+                                type="range" 
+                                min={0} 
+                                max={100000000} 
+                                step={100000}
                                 value={priceRange[1]}
-                                onChange={e => setPriceRange([0, parseInt(e.target.value)])}
-                                className="w-full h-2 bg-border rounded-full appearance-none cursor-pointer accent-primary"
+                                onChange={e => { setPriceRange([0, parseInt(e.target.value)]); setPage(1); }}
+                                className="w-full h-1.5 bg-border rounded-full appearance-none accent-primary cursor-pointer"
                             />
                         </div>
-                    </div>
 
-                    {/* Top Vendors */}
-                    <div className="bg-card border border-border rounded-xl p-5">
-                        <h5 className="text-xs font-bold text-primary uppercase tracking-wide mb-4">Marchands Certifiés</h5>
-                        <div className="space-y-3">
-                            {vendorsLoading ? (
-                                <div className="space-y-2">
-                                    {[1, 2, 3].map(i => <div key={i} className="h-12 bg-muted rounded-lg animate-pulse" />)}
-                                </div>
-                            ) : (
-                                topVendors.map(v => (
-                                    <Link key={v.id} to={`/shop/${v.slug}`} className="flex items-center gap-3 group/v hover:bg-muted/50 rounded-lg p-2 transition-colors">
-                                        <div className="size-10 rounded-xl bg-muted border border-border overflow-hidden shrink-0">
-                                            <img src={v.logo_url || `https://api.dicebear.com/7.x/initials/svg?seed=${v.nom_boutique}`} className="w-full h-full object-cover" alt="" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-foreground group-hover/v:text-primary transition-colors truncate">{v.nom_boutique}</p>
-                                            <div className="flex items-center gap-1">
-                                                <ShieldCheck className="size-3 text-emerald-500" />
-                                                <span className="text-xs text-muted-foreground">Vérifié</span>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                ))
-                            )}
+                        <div className="space-y-4">
+                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Trier par</h4>
+                            <select 
+                                value={sortBy}
+                                onChange={e => { setSortBy(e.target.value); setPage(1); }}
+                                className="w-full h-11 px-4 bg-background border border-border rounded-xl text-xs font-bold outline-none"
+                            >
+                                <option value="newest">Nouveautés</option>
+                                <option value="price_asc">Prix croissant</option>
+                                <option value="price_desc">Prix décroissant</option>
+                                <option value="popular">Popularité</option>
+                            </select>
                         </div>
-                        <Link to="/vendors" className="mt-4 flex items-center justify-center gap-2 h-10 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl text-xs font-semibold transition-colors">
-                            Voir tous <ArrowRight className="size-4" />
-                        </Link>
                     </div>
                 </aside>
 
-                {/* Products Grid */}
-                <div className="flex-1 space-y-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border pb-4 gap-3">
-                        <div>
-                            <p className="text-xs text-muted-foreground">Résultats</p>
-                            <h2 className="text-xl font-bold text-foreground">
-                                {filteredProducts.length} <span className="text-primary">produits</span>
-                            </h2>
+                {/* Unified Terminal Grid */}
+                <div className="flex-1 space-y-8">
+                    <div className="flex items-center justify-between border-b border-border pb-6">
+                        <div className="flex items-center gap-4">
+                            <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                <LayoutGrid className="size-5" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-black text-foreground">Catalogue Global</h2>
+                                <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">{productsData?.total || 0} Résultats trouvés</p>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2 p-1 bg-muted rounded-xl border border-border">
-                            <button onClick={() => setViewMode('grid')} className={cn("size-9 flex items-center justify-center rounded-lg transition-all", viewMode === 'grid' ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground")}>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => setViewMode('grid')} className={cn("size-10 flex items-center justify-center rounded-xl transition-all", viewMode === 'grid' ? "bg-foreground text-background" : "bg-muted text-muted-foreground hover:text-foreground")}>
                                 <LayoutGrid className="size-4" />
                             </button>
-                            <button onClick={() => setViewMode('list')} className={cn("size-9 flex items-center justify-center rounded-lg transition-all", viewMode === 'list' ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground")}>
+                            <button onClick={() => setViewMode('list')} className={cn("size-10 flex items-center justify-center rounded-xl transition-all", viewMode === 'list' ? "bg-foreground text-background" : "bg-muted text-muted-foreground hover:text-foreground")}>
                                 <List className="size-4" />
                             </button>
                         </div>
                     </div>
 
                     {productsLoading ? (
-                        <LoadingState message="Chargement des produits..." />
+                        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {[1,2,3,4,5,6,7,8].map(i => (
+                                <ProductSkeleton key={i} />
+                            ))}
+                        </div>
                     ) : productsError ? (
                         <ErrorState error={productsError} />
-                    ) : filteredProducts.length > 0 ? (
-                        <div className={cn(
-                            "grid gap-4",
-                            viewMode === 'grid' ? "grid-cols-2 sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1"
-                        )}>
-                            {filteredProducts.map(p => <ProductCard key={p.id} product={p} layout={viewMode} />)}
-                        </div>
+                    ) : products.length > 0 ? (
+                        <>
+                            <div className={cn(
+                                "grid gap-6",
+                                viewMode === 'grid' ? "grid-cols-2 md:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"
+                            )}>
+                                {products.map(p => <ProductCard key={p.id} product={p} layout={viewMode} />)}
+                            </div>
+
+                            {/* Pagination Terminal */}
+                            <div className="flex items-center justify-center gap-2 pt-12">
+                                <Button 
+                                    disabled={page <= 1}
+                                    onClick={() => setPage(page - 1)}
+                                    className="size-11 rounded-xl bg-muted border-none text-foreground hover:bg-foreground hover:text-background disabled:opacity-30"
+                                >
+                                    <ChevronLeft className="size-5" />
+                                </Button>
+                                <div className="h-11 px-6 bg-muted rounded-xl flex items-center justify-center text-xs font-black border-border border">
+                                    PAGE {page} SUR {totalPages}
+                                </div>
+                                <Button 
+                                    disabled={page >= totalPages}
+                                    onClick={() => setPage(page + 1)}
+                                    className="size-11 rounded-xl bg-muted border-none text-foreground hover:bg-foreground hover:text-background disabled:opacity-30"
+                                >
+                                    <ChevronRight className="size-5" />
+                                </Button>
+                            </div>
+                        </>
                     ) : (
-                        <EmptyState message="Aucun produit ne correspond à vos critères" />
+                        <EmptyState message="Aucun produit ne correspond à ces critères d'exécution." />
                     )}
                 </div>
             </section>
 
             {/* CTA Section */}
-            <section className="py-14 bg-primary relative overflow-hidden">
-                <div className="relative z-10 max-w-4xl mx-auto px-6 text-center space-y-5">
-                    <h2 className="text-2xl md:text-4xl font-bold text-primary-foreground tracking-tight">
+            <section className="py-20 bg-primary relative overflow-hidden">
+                <div className="relative z-10 max-w-4xl mx-auto px-6 text-center space-y-6">
+                    <h2 className="text-3xl md:text-5xl font-black text-primary-foreground tracking-tighter">
                         Prenez le contrôle de vos achats
                     </h2>
-                    <p className="text-primary-foreground/80 text-base md:text-lg max-w-2xl mx-auto">
-                        Rejoignez des milliers de clients satisfaits sur BCA Connect
+                    <p className="text-primary-foreground/70 text-base md:text-lg max-w-2xl mx-auto font-medium">
+                        Rejoignez des milliers de clients satisfaits sur la plateforme BCA Connect.
                     </p>
-                    <Link to="/register">
-                        <Button className="h-11 px-7 bg-background text-foreground hover:bg-foreground hover:text-background font-bold rounded-xl border-none shadow-lg transition-all">
-                            Créer un compte
-                            <ArrowRight className="size-4 ml-2" />
-                        </Button>
-                    </Link>
+                    <div className="flex justify-center">
+                        <Link to="/register">
+                            <Button className="h-14 px-10 bg-background text-foreground hover:bg-foreground hover:text-background font-black rounded-2xl border-none shadow-2xl transition-all scale-100 hover:scale-105">
+                                Créer un compte maintenant
+                                <ArrowRight className="size-5 ml-2" />
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+                {/* Decorative Pattern */}
+                <div className="absolute top-0 right-0 p-20 opacity-10">
+                    <Sparkles className="size-64" />
                 </div>
             </section>
         </div>

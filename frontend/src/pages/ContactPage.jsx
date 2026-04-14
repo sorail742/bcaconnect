@@ -7,9 +7,10 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '../context/LanguageContext';
+import supportService from '../services/supportService';
 
 const ContactPage = () => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     
     const CONTACT_REASONS = [
         t('formReason'),
@@ -35,13 +36,24 @@ const ContactPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!form.nom || !form.email || !form.message) {
-            return toast.error(t('lang') === 'FR' ? "Veuillez renseigner les champs obligatoires." : "Please fill in all required fields.");
+            return toast.error(lang === 'FR' ? "Veuillez renseigner les champs obligatoires." : "Please fill in all required fields.");
         }
         setIsSending(true);
-        await new Promise(r => setTimeout(r, 1500));
-        setIsSending(false);
-        setSent(true);
-        toast.success(t('messageSuccess'));
+        try {
+            await supportService.createTicket({
+                sujet: form.raison || "Demande de contact",
+                description: `Message de ${form.nom} (${form.telephone}): ${form.message}`,
+                type_sav: form.raison === 'Litige / Réclamation' ? 'litige' : 'assistance',
+                priorite: 'moyenne'
+            });
+            setSent(true);
+            toast.success(t('messageSuccess'));
+        } catch (error) {
+            toast.error(lang === 'FR' ? "Erreur lors de l'envoi du message." : "Error sending message.");
+            console.error(error);
+        } finally {
+            setIsSending(false);
+        }
     };
 
     return (

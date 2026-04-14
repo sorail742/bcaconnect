@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+// Importation de l'instance API centralisée au lieu d'axios brut
+import api from '../../services/api';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import {
     Gavel, MessageSquare, CheckCircle, AlertCircle,
@@ -12,50 +13,35 @@ import { cn } from '../../lib/utils';
 import { Button } from '../../components/ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import { API_BASE_URL } from '../../constants/api';
+
+import { useAdminDisputes } from '../../hooks/useDomainData';
+import useApiMutation from '../../hooks/useApiMutation';
 
 const AdminDisputes = () => {
-    const [disputes, setDisputes] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { data: disputes = [], loading, refetch: fetchDisputes } = useAdminDisputes();
     const [selectedDispute, setSelectedDispute] = useState(null);
     const [decision, setDecision] = useState('');
 
-    const fetchDisputes = useCallback(async () => {
-        try {
-            setLoading(true);
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/disputes/admin`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setDisputes(response.data || []);
-        } catch (error) {
-            toast.error("ÉCHEC DE LA SYNCHRONISATION DES LITIGES.");
-        } finally {
-            setLoading(false);
+    const { mutate: resolveMutation, isPending: resolving } = useApiMutation(
+        ({ id, decision_finale }) => api.put(`/disputes/${id}/resolve`, {
+            decision_finale,
+            statut: 'resolu'
+        }),
+        {
+            invalidateKeys: [['admin-disputes']],
+            successMessage: "DÉCISION APPLIQUÉE. LITIGE RÉSOLU.",
+            errorMessage: "ÉCHEC DE L'APPLICATION DU JUGEMENT.",
+            onSuccess: () => {
+                setSelectedDispute(null);
+                setDecision('');
+            }
         }
-    }, []);
+    );
 
-    useEffect(() => {
-        fetchDisputes();
-    }, [fetchDisputes]);
-
-    const handleResolve = async (id) => {
+    const handleResolve = (id) => {
         if (!decision.trim()) return toast.error("Veuillez formuler un décret final.");
-        try {
-            const token = localStorage.getItem('token');
-            await axios.put(`${API_URL}/disputes/${id}/resolve`, {
-                decision_finale: decision,
-                statut: 'resolu'
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success("DÉCISION APPLIQUÉE. LITIGE RÉSOLU.");
-            setSelectedDispute(null);
-            setDecision('');
-            fetchDisputes();
-        } catch (error) {
-            toast.error("ÉCHEC DE L'APPLICATION DU JUGEMENT.");
-        }
+        resolveMutation({ id, decision_finale: decision });
     };
 
     return (

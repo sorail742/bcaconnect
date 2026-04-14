@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import {
     RotateCcw,
@@ -20,49 +19,33 @@ import {
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 import { Button } from '../../components/ui/Button';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import { useAdminDisputes } from '../../hooks/useDomainData';
+import useApiMutation from '../../hooks/useApiMutation';
+import api from '../../services/api';
 
 const Returns = () => {
-    const [returns, setReturns] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const { data: disputes = [], loading, refetch } = useAdminDisputes();
 
-    const fetchReturns = useCallback(async () => {
-        try {
-            setLoading(true);
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/returns/admin`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setReturns(response.data || []);
-        } catch (error) {
-            toast.error("Impossible d'auditer les dossiers retours.");
-        } finally {
-            setLoading(false);
+    const { mutate: resolveMutation, isPending: isResolving } = useApiMutation(
+        ({ id, status, decision }) => api.put(`/disputes/${id}/resolve`, { statut: status, decision_finale: decision }),
+        {
+            onSuccess: () => {
+                refetch();
+            },
+            successMessage: "Protocole de litige mis à jour avec succès.",
+            errorMessage: "Échec de la mise à jour du protocole."
         }
-    }, []);
+    );
 
-    useEffect(() => {
-        fetchReturns();
-    }, [fetchReturns]);
-
-    const handleAction = async (id, status) => {
-        try {
-            const token = localStorage.getItem('token');
-            await axios.put(`${API_URL}/returns/${id}/status`, { statut: status }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success(`Dossier ${status === 'approuve' ? 'validé' : 'révoqué'}.`);
-            fetchReturns();
-        } catch (error) {
-            toast.error("Échec de la validation de protocole.");
-        }
+    const handleAction = (id, status) => {
+        const decision = status === 'resolu' ? "Retour approuvé par l'administration." : "Retour rejeté par l'administration.";
+        resolveMutation({ id, status, decision });
     };
 
-    const filtered = returns.filter(r =>
+    const filtered = disputes.filter(r =>
         (r.id || '').toLowerCase().includes(search.toLowerCase()) ||
-        (r.User?.nom_complet || '').toLowerCase().includes(search.toLowerCase())
+        (r.demandeur?.nom_complet || '').toLowerCase().includes(search.toLowerCase())
     );
 
     return (
@@ -78,7 +61,7 @@ const Returns = () => {
                                 <ArrowRightLeft className="size-6 shadow-sm" />
                             </div>
                             <div className="space-y-2.5">
-                                <h2 className="text-sm font-black text-foreground uppercase tracking-tighter leading-none pt-0.5">
+                                <h2 className="text-sm font-black text-foreground uppercase tracking-tighter leading-none pt-0.5" translate="no">
                                     GESTION_<span className="text-[#FFB703]">RETOURS</span>.
                                 </h2>
                                 <div className="flex items-center gap-3">
@@ -91,8 +74,9 @@ const Returns = () => {
                         </div>
                         <button 
                             id="btn-refresh-returns-hub"
-                            onClick={fetchReturns} 
-                            className="size-6 rounded-[2.2rem] bg-white/[0.03] border border-foreground/10 flex items-center justify-center text-muted-foreground/80 hover:text-[#FFB703] hover:border-[#FFB703]/20 transition-all  shadow-sm"
+                            onClick={() => refetch()} 
+                            disabled={loading || isResolving}
+                            className="size-6 rounded-[2.2rem] bg-white/[0.03] border border-foreground/10 flex items-center justify-center text-muted-foreground/80 hover:text-[#FFB703] hover:border-[#FFB703]/20 transition-all  shadow-sm disabled:opacity-50"
                         >
                             <RefreshCcw className={cn("size-6", loading && "animate-spin")} />
                         </button>
@@ -131,11 +115,11 @@ const Returns = () => {
                                 <div className="absolute top-0 right-0 p-4">
                                     <div className={cn(
                                         "px-6 py-2 rounded-2xl text-[10px] font-black uppercase  border backdrop-blur-2xl transition-all duration-500",
-                                        item.statut === 'approuve' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" :
+                                        item.statut === 'resolu' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" :
                                             item.statut === 'rejete' ? "bg-rose-500/10 text-rose-500 border-rose-500/20" :
                                                 "bg-amber-500/10 text-amber-500 border-amber-500/20 animate-pulse"
                                     )}>
-                                        {item.statut === 'en_attente' ? 'ANALYSE_PULSE' : item.statut === 'approuve' ? 'PROTOCOLE_VALIDÉ' : 'RECOUVREMENT_REJETÉ'}
+                                        {item.statut === 'ouvert' ? 'ANALYSE_PULSE' : item.statut === 'resolu' ? 'PROTOCOLE_VALIDÉ' : 'RECOUVREMENT_REJETÉ'}
                                     </div>
                                 </div>
 
@@ -147,7 +131,7 @@ const Returns = () => {
                                         </div>
                                         <div className="space-y-2">
                                             <p className="text-sm font-black text-foreground uppercase truncate max-w-[280px] tracking-tight pt-1 leading-none">
-                                                {item.User?.nom_complet || "ACTEUR_INCONNU"}
+                                                {item.demandeur?.nom_complet || "ACTEUR_INCONNU"}
                                             </p>
                                             <p className="text-[10px] font-black text-muted-foreground uppercase  leading-none">ID_LOGS: #{item.id?.slice(0, 8).toUpperCase()}</p>
                                         </div>
@@ -158,7 +142,7 @@ const Returns = () => {
                                             <ShieldAlert className="size-6 text-[#FFB703] shrink-0 mt-1" />
                                             <div className="space-y-2">
                                                 <p className="text-[9px] font-black text-slate-600 uppercase  leading-none pt-1">MOTIF_DÉCLARÉ_UNITÉ</p>
-                                                <p className="text-[13px] text-foreground font-black uppercase leading-relaxed tracking-tight group-hover:text-[#FFB703] transition-colors">"{item.motif || "AUCUNE_INDEXATION_DÉTAILLÉE_ASSET."}"</p>
+                                                <p className="text-[13px] text-foreground font-black uppercase leading-relaxed tracking-tight group-hover:text-[#FFB703] transition-colors">"{item.description || "AUCUNE_INDEXATION_DÉTAILLÉE_ASSET."}"</p>
                                             </div>
                                         </div>
                                         <div className="pt-8 border-t border-foreground/5 grid grid-cols-2 gap-3">
@@ -173,19 +157,21 @@ const Returns = () => {
                                         </div>
                                     </div>
 
-                                    {item.statut === 'en_attente' && (
+                                    {item.statut === 'ouvert' && (
                                         <div className="flex gap-3 pt-4">
                                             <button
                                                 id={`btn-reject-return-${item.id}`}
                                                 onClick={() => handleAction(item.id, 'rejete')}
-                                                className="flex-1 h-12 bg-white/[0.03] border border-foreground/10 text-rose-500 rounded-2xl text-[10px] font-black uppercase  hover:bg-rose-500/10 hover:border-rose-500/30 transition-all flex items-center justify-center gap-4  shadow-sm"
+                                                disabled={isResolving}
+                                                className="flex-1 h-12 bg-white/[0.03] border border-foreground/10 text-rose-500 rounded-2xl text-[10px] font-black uppercase  hover:bg-rose-500/10 hover:border-rose-500/30 transition-all flex items-center justify-center gap-4  shadow-sm disabled:opacity-50"
                                             >
                                                 <XCircle className="size-5" /> REJETER_UNITÉ
                                             </button>
                                             <button
                                                 id={`btn-approve-return-${item.id}`}
-                                                onClick={() => handleAction(item.id, 'approuve')}
-                                                className="flex-1 h-12 bg-white text-background rounded-2xl text-[10px] font-black uppercase  hover:bg-[#FFB703] transition-all flex items-center justify-center gap-4  shadow-2xl shadow-white/5 border-0"
+                                                onClick={() => handleAction(item.id, 'resolu')}
+                                                disabled={isResolving}
+                                                className="flex-1 h-12 bg-white text-background rounded-2xl text-[10px] font-black uppercase  hover:bg-[#FFB703] transition-all flex items-center justify-center gap-4  shadow-2xl shadow-white/5 border-0 disabled:opacity-50"
                                             >
                                                 <CheckCircle2 className="size-5" /> VALIDER_FLUX
                                             </button>

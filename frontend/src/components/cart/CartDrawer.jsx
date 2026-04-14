@@ -1,11 +1,18 @@
 import React from 'react';
 import { X, Trash2, ShoppingBag, ArrowRight, Minus, Plus } from 'lucide-react';
-import { useCart } from '../../context/CartContext';
+import { useNavigate } from 'react-router-dom';
+import useCart from '../../hooks/useCart';
 import { cn } from '../../lib/utils';
 import Button from '../ui/Button';
 
 export function CartDrawer({ isOpen, onClose }) {
-    const { cartItems, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
+    const { cartItems, removeFromCart, updateQuantity, cartTotal, clearCart, totalQuantity } = useCart();
+    const navigate = useNavigate();
+
+    const handleCheckout = () => {
+        onClose();
+        navigate('/checkout');
+    };
 
     return (
         <>
@@ -33,7 +40,7 @@ export function CartDrawer({ isOpen, onClose }) {
                         </div>
                         <div>
                             <h2 className="text-xl font-black text-slate-900 dark:text-foreground tracking-tight">Votre Panier</h2>
-                            <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">{cartItems.length} Articles</p>
+                            <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">{totalQuantity} Articles</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="size-10 rounded-full hover:bg-slate-100 dark:hover:bg-foreground/5 flex items-center justify-center text-muted-foreground/80 hover:text-slate-900 dark:hover:text-foreground transition-all">
@@ -54,37 +61,37 @@ export function CartDrawer({ isOpen, onClose }) {
                         </div>
                     ) : (
                         cartItems.map((item) => (
-                            <div key={item.id} className="flex gap-6 group animate-in slide-in-from-right-4 duration-300">
+                            <div key={item.productId} className="flex gap-6 group animate-in slide-in-from-right-4 duration-300">
                                 <div className="size-16 rounded-2xl overflow-hidden bg-slate-50 dark:bg-foreground/5 border border-slate-100 dark:border-foreground/5 shrink-0">
-                                    <img src={item.image || '/placeholder-product.jpg'} alt={item.nom} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                    <img src={item.image || '/placeholder-product.jpg'} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                 </div>
                                 <div className="flex-1 flex flex-col justify-between py-1">
                                     <div>
                                         <div className="flex justify-between items-start mb-1">
-                                            <h4 className="text-base font-black text-slate-900 dark:text-foreground tracking-tight leading-tight">{item.nom}</h4>
-                                            <button onClick={() => removeFromCart(item.id)} className="text-muted-foreground/80 hover:text-red-500 transition-colors p-1 translate-x-2">
+                                            <h4 className="text-base font-black text-slate-900 dark:text-foreground tracking-tight leading-tight">{item.name}</h4>
+                                            <button onClick={() => removeFromCart(item.productId)} className="text-muted-foreground/80 hover:text-red-500 transition-colors p-1 translate-x-2">
                                                 <Trash2 className="size-4" />
                                             </button>
                                         </div>
-                                        <p className="text-xs text-muted-foreground font-bold mb-3 uppercase tracking-widest">{item.categorie || 'Multiservice'}</p>
+                                        <p className="text-xs text-muted-foreground font-bold mb-3 uppercase tracking-widest">{item.category || item.categorie || 'BCA Connect'}</p>
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center bg-slate-100 dark:bg-foreground/5 rounded-lg p-1 border border-slate-200 dark:border-foreground/5">
                                             <button 
-                                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                onClick={() => updateQuantity(item.productId, item.quantity - 1)}
                                                 className="size-8 flex items-center justify-center text-slate-600 dark:text-muted-foreground/80 hover:text-slate-900 dark:hover:text-foreground transition-all"
                                             >
                                                 <Minus className="size-3" />
                                             </button>
                                             <span className="w-10 text-center text-xs font-black text-slate-900 dark:text-foreground">{item.quantity}</span>
                                             <button 
-                                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                onClick={() => updateQuantity(item.productId, item.quantity + 1)}
                                                 className="size-8 flex items-center justify-center text-slate-600 dark:text-muted-foreground/80 hover:text-slate-900 dark:hover:text-foreground transition-all"
                                             >
                                                 <Plus className="size-3" />
                                             </button>
                                         </div>
-                                        <p className="text-base font-black text-[#FF6600] tracking-tight">{(item.prix * item.quantity).toLocaleString()} GNF</p>
+                                        <p className="text-base font-black text-[#FF6600] tracking-tight">{(item.price * item.quantity).toLocaleString()} GNF</p>
                                     </div>
                                 </div>
                             </div>
@@ -110,7 +117,11 @@ export function CartDrawer({ isOpen, onClose }) {
                             </div>
                         </div>
                         <div className="grid grid-cols-1 gap-4">
-                            <Button className="w-full h-16 rounded-2xl bg-[#FF6600] text-sm font-black uppercase tracking-[0.2em] shadow-xl shadow-[#FF6600]/20 group">
+                            <Button 
+                                id="btn-checkout"
+                                onClick={handleCheckout}
+                                className="w-full h-16 rounded-2xl bg-[#FF6600] text-sm font-black uppercase tracking-[0.2em] shadow-xl shadow-[#FF6600]/20 group"
+                            >
                                 <span className="flex items-center gap-3">
                                     Commander maintenant
                                     <ArrowRight className="size-4 group-hover:translate-x-2 transition-transform" />

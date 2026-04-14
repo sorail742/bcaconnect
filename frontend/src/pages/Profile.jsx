@@ -12,6 +12,12 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import authService from '../services/authService';
+import useApiMutation from '../hooks/useApiMutation';
+import { RefreshCcw as RefreshIcon, QrCode, X } from 'lucide-react';
+import { profileUpdateSchema } from '../lib/validation';
+
+
 
 const Toggle = ({ enabled, onChange, id }) => (
     <button
@@ -48,7 +54,7 @@ const FormField = ({ label, icon: Icon, ...props }) => (
 
 const UserProfile = () => {
     const { t } = useLanguage();
-    const { user, updateProfile, deleteAccount } = useAuth();
+    const { user, updateProfile, deleteAccount, refreshUser } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -68,37 +74,93 @@ const UserProfile = () => {
     const [email, setEmail] = useState(user?.email || '');
     const [motDePasse, setMotDePasse] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [emailAlerts, setEmailAlerts] = useState(true);
-    const [pushNotifs, setPushNotifs] = useState(false);
-    const [isUpdating, setIsUpdating] = useState(false);
+    const [emailAlerts, setEmailAlerts] = useState(user?.settings?.emailAlerts ?? true);
+    const [pushNotifs, setPushNotifs] = useState(user?.settings?.pushNotifs ?? false);
 
-    const handleUpdate = async (e) => {
+    // 2FA States
+    const [show2FASetup, setShow2FASetup] = useState(false);
+    const [twoFactorData, setTwoFactorData] = useState(null);
+    const [otpCode, setOtpCode] = useState('');
+
+    // Mutations
+    const { mutate: updateProfileMutation, isPending: isUpdating } = useApiMutation(
+        (data) => updateProfile(data),
+        {
+            successMessage: 'Profil mis à jour avec succès.',
+            invalidateKeys: ['user-profile'],
+            onSuccess: () => {
+                setMotDePasse('');
+                setConfirmPassword('');
+            }
+        }
+    );
+
+    const { mutate: deleteAccountMutation } = useApiMutation(
+        () => deleteAccount(),
+        {
+            successMessage: "Compte supprimé.",
+            onSuccess: () => navigate('/')
+        }
+    );
+
+    const { mutate: confirm2FAMutation, isPending: isConfiguring2FA } = useApiMutation(
+        (code) => authService.confirm2FA(code),
+        {
+            successMessage: "Authentification 2FA activée !",
+            invalidateKeys: ['user-profile'],
+            onSuccess: async () => {
+                setShow2FASetup(false);
+                setOtpCode('');
+                if (refreshUser) await refreshUser();
+            }
+        }
+    );
+
+    const handleSetup2FA = async () => {
+        try {
+            const data = await authService.setup2FA();
+            setTwoFactorData(data);
+            setShow2FASetup(true);
+        } catch (error) {
+            toast.error("Erreur lors de l'initialisation de la 2FA.");
+        }
+    };
+
+    const handleConfirm2FA = () => {
+        if (!otpCode) return toast.error("Veuillez entrer le code de vérification.");
+        confirm2FAMutation(otpCode);
+    };
+
+    const handleUpdate = (e) => {
         if (e) e.preventDefault();
+        
+        try {
+            profileUpdateSchema.parse({ nom_complet: nomComplet, telephone, email, mot_de_passe: motDePasse });
+        } catch (error) {
+            if (error.errors && error.errors.length > 0) {
+                toast.error(error.errors[0].message);
+            } else {
+                toast.error("Données de formulaire invalides.");
+            }
+            return;
+        }
+
         if (motDePasse && motDePasse !== confirmPassword) {
             toast.error('Les mots de passe ne correspondent pas.');
             return;
         }
-        setIsUpdating(true);
-        try {
-            await updateProfile({ nom_complet: nomComplet, telephone, email, mot_de_passe: motDePasse || undefined });
-            toast.success('Profil mis à jour avec succès.');
-            setMotDePasse('');
-            setConfirmPassword('');
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Erreur lors de la mise à jour.');
-        } finally {
-            setIsUpdating(false);
-        }
+
+        updateProfileMutation({ 
+            nom_complet: nomComplet, 
+            telephone, 
+            email, 
+            mot_de_passe: motDePasse || undefined 
+        });
     };
 
-    const handleDelete = async () => {
+    const handleDelete = () => {
         if (window.confirm("Confirmer la suppression du compte ? Cette action est irréversible.")) {
-            try {
-                await deleteAccount();
-                toast.success("Compte supprimé.");
-            } catch {
-                toast.error('Erreur lors de la suppression.');
-            }
+            deleteAccountMutation();
         }
     };
 
@@ -236,7 +298,9 @@ const UserProfile = () => {
                                         <div className="space-y-1">
                                             <h4 className="text-sm font-bold text-primary-foreground">Score de confiance réseau</h4>
                                             <p className="text-xs text-primary-foreground/70">
-                                                Stabilité : <span className="font-semibold text-primary-foreground">99% — Optimal</span>
+                                                Stabilité : <span className="font-semibold text-primary-foreground">
+                                                {user?.score_confiance || 100}% — {user?.score_confiance >= 90 ? 'Optimal' : user?.score_confiance >= 70 ? 'Stable' : 'Vigilance'}
+                                            </span>
                                             </p>
                                         </div>
                                         <div className="size-12 rounded-xl bg-primary-foreground/10 border border-primary-foreground/20 flex items-center justify-center">
@@ -270,6 +334,43 @@ const UserProfile = () => {
                                         <div className="flex items-center gap-3 p-3 bg-muted rounded-xl border border-border">
                                             <Clock className="size-4 text-muted-foreground shrink-0" />
                                             <p className="text-xs text-muted-foreground">Laissez vide pour conserver le mot de passe actuel.</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Two-Factor Authentication (2FA) */}
+                                    <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 size-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+                                        
+                                        <div className="flex items-center gap-3 pb-4 border-b border-border relative z-10">
+                                            <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                                                <QrCode className="size-4 text-primary" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-bold text-foreground">Double Authentification (2FA)</h3>
+                                                <p className="text-xs text-muted-foreground">Sécurisez votre compte avec un deuxième facteur</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border hover:border-primary/30 transition-colors relative z-10">
+                                            <div className="flex items-center gap-4">
+                                                <div className={cn("size-2 rounded-full", user?.two_factor_enabled ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-muted-foreground")} />
+                                                <div>
+                                                    <p className="text-sm font-semibold text-foreground">Status : {user?.two_factor_enabled ? 'Activé' : 'Désactivé'}</p>
+                                                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mt-0.5">Technologie TOTP (Google Authenticator, etc.)</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={handleSetup2FA}
+                                                disabled={user?.two_factor_enabled}
+                                                className={cn(
+                                                    "h-9 px-5 rounded-xl text-xs font-bold transition-all",
+                                                    user?.two_factor_enabled 
+                                                        ? "bg-emerald-500/10 text-emerald-500 cursor-default border border-emerald-500/20"
+                                                        : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20"
+                                                )}
+                                            >
+                                                {user?.two_factor_enabled ? 'SÉCURISÉ' : 'CONFIGURER'}
+                                            </button>
                                         </div>
                                     </div>
 
@@ -325,6 +426,88 @@ const UserProfile = () => {
                     </div>
                 </div>
             </div>
+
+            {/* ── Modal Configuration 2FA ── */}
+            <AnimatePresence>
+                {show2FASetup && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-background/80 backdrop-blur-md"
+                            onClick={() => setShow2FASetup(false)}
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="bg-card border-2 border-border rounded-3xl w-full max-w-md shadow-2xl relative z-10 overflow-hidden"
+                        >
+                            <div className="p-6 border-b border-border bg-muted/50 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                                        <QrCode className="size-5 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-foreground uppercase tracking-tight">Configuration 2FA</h3>
+                                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">Niveau de sécurité : ALPHA_MAX</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setShow2FASetup(false)} className="size-8 rounded-lg bg-muted hover:bg-rose-500/10 hover:text-rose-500 flex items-center justify-center transition-colors">
+                                    <X className="size-4" />
+                                </button>
+                            </div>
+
+                            <div className="p-8 space-y-8 text-center">
+                                <div className="space-y-3">
+                                    <p className="text-xs text-muted-foreground leading-relaxed uppercase font-bold px-4">
+                                        Scannez ce QR Code avec votre application d'authentification (Google, Authy, Microsoft).
+                                    </p>
+                                </div>
+
+                                <div className="flex justify-center">
+                                    <div className="p-4 bg-white rounded-2xl border-4 border-slate-100 dark:border-white/5 shadow-inner group">
+                                        <img
+                                            src={twoFactorData?.qrCode}
+                                            alt="QR Code 2FA"
+                                            className="size-48 object-contain"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="p-3 bg-muted rounded-xl border border-border">
+                                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">Code Secret (Fallback)</p>
+                                        <p className="text-xs font-mono font-bold text-primary tracking-[0.2em]">{twoFactorData?.secret}</p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black text-foreground uppercase tracking-widest">Entrez le code à 6 chiffres</label>
+                                        <input
+                                            type="text"
+                                            maxLength={6}
+                                            placeholder="000000"
+                                            className="w-full h-12 bg-background border-2 border-border rounded-xl text-center text-xl font-mono tracking-[0.5em] focus:border-primary transition-all outline-none"
+                                            value={otpCode}
+                                            onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                                        />
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={handleConfirm2FA}
+                                    disabled={otpCode.length < 6 || isConfiguring2FA}
+                                    className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl font-bold text-sm transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-40"
+                                >
+                                    {isConfiguring2FA ? <RefreshIcon className="size-5 animate-spin" /> : <Shield className="size-5" />}
+                                    ACTIVER LA SÉCURITÉ ALPHA
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </DashboardLayout>
     );
 };

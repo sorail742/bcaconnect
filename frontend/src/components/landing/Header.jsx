@@ -8,12 +8,12 @@ import {
     BookOpen, MessageSquare, User, Globe, Zap,
     Activity, Shield, Laptop, LogOut, LayoutDashboard
 } from "lucide-react"
-import { useCart } from "../../context/CartContext"
 import { useAuth } from "../../hooks/useAuth"
 import ThemeToggle from "../ui/ThemeToggle"
 import { cn } from "../../lib/utils"
 import { useLanguage } from "../../context/LanguageContext"
 import BcaLogo from "../ui/BcaLogo"
+import useCart from "../../hooks/useCart"
 
 export function Header() {
     const { t, lang, setLanguage } = useLanguage()
@@ -21,11 +21,9 @@ export function Header() {
     const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false)
     const [isSupportDropdownOpen, setIsSupportDropdownOpen] = useState(false)
     const [isScrolled, setIsScrolled] = useState(false)
-    const { cartItems } = useCart()
+    const { totalQuantity: cartCount } = useCart()
     const { user, logout } = useAuth()
     const navigate = useNavigate()
-
-    const cartCount = cartItems.reduce((acc, item) => acc + (item.quantity || 1), 0)
 
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 20)
@@ -70,13 +68,13 @@ export function Header() {
                         >
                             <BcaLogo className="size-10" />
                         </motion.div>
-                        <div className="flex flex-col leading-none text-left">
+                        <div translate="no" className="flex flex-col leading-none text-left">
                             <span className="font-black text-4xl text-foreground tracking-tighter uppercase mb-0.5" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                BCA<span className="text-primary italic">CONNECT.</span>
+                                <span className="text-slate-950 dark:text-white">BCA</span><span className="text-primary uppercase tracking-tighter"> CONNECT</span>
                             </span>
                             <div className="flex items-center gap-3 opacity-40">
                                 <Activity className="size-3 text-primary animate-pulse" />
-                                <span className="text-[10px] font-black  text-foreground uppercase pt-0.5">FINTECH_ELEVATED_V4</span>
+                                <span className="text-[10px] font-black  text-foreground uppercase pt-0.5">{t('connectedEcosystem')}</span>
                             </div>
                         </div>
                     </Link>
@@ -96,7 +94,7 @@ export function Header() {
                                     : "text-muted-foreground hover:text-foreground"
                             )}>
                                 <Store className="size-6" />
-                                {t('marketplace') || "MARKET_ALPHA"}
+                                {t('marketplace')}
                                 <ChevronDown className={cn("size-4 transition-transform duration-1000 opacity-40", isShopDropdownOpen && "rotate-180 opacity-100 text-primary")} />
                             </button>
                             
@@ -148,7 +146,7 @@ export function Header() {
                                     : "text-muted-foreground hover:text-foreground"
                             )}>
                                 <HelpCircle className="size-6" />
-                                {t('help') || "CORE_SUPPORT"}
+                                {t('help')}
                                 <ChevronDown className={cn("size-4 transition-transform duration-1000 opacity-40", isSupportDropdownOpen && "rotate-180 opacity-100 text-primary")} />
                             </button>
                             
@@ -187,7 +185,7 @@ export function Header() {
                             </AnimatePresence>
                         </div>
 
-                        <Link to="/#features" className="px-8 py-4 text-[12px] font-black text-muted-foreground hover:text-foreground uppercase  decoration-primary transition-all duration-700 hover:underline underline-offset-[1.5rem] ">{t('features') || "PROTOCOLS"}</Link>
+                        <Link to="/#features" className="px-8 py-4 text-[12px] font-black text-muted-foreground hover:text-foreground uppercase  decoration-primary transition-all duration-700 hover:underline underline-offset-[1.5rem] ">{t('features')}</Link>
                     </nav>
                 </div>
 
@@ -248,7 +246,7 @@ export function Header() {
                         ) : (
                             <div className="flex items-center gap-8">
                                 <Link to="/login">
-                                    <button className="font-black text-muted-foreground hover:text-foreground text-[12px] uppercase  border-none bg-transparent px-6 transition-all ">{t('login') || "SYNC_CORE"}</button>
+                                    <button className="font-black text-muted-foreground hover:text-foreground text-[12px] uppercase  border-none bg-transparent px-6 transition-all ">{t('login')}</button>
                                 </Link>
                                 <Link to="/register">
                                     <motion.button 
@@ -257,7 +255,7 @@ export function Header() {
                                         className="h-18 px-14 rounded-[1.8rem] bg-white text-background font-medium text-sm text-muted-foreground shadow-sm transition-all duration-1000  group relative overflow-hidden"
                                     >
                                          <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                                         <span className="relative z-10 group-hover:text-foreground transition-colors">{t('register') || "JOIN_ALPHA"}</span>
+                                         <span className="relative z-10 group-hover:text-foreground transition-colors">{t('register')}</span>
                                     </motion.button>
                                 </Link>
                             </div>

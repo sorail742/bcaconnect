@@ -39,6 +39,7 @@
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.2",
     "@studio-freight/lenis": "^1.0.42",
+    "@tanstack/react-query": "^5.99.0",
     "axios": "^1.7.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -57,7 +58,8 @@
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.2",
     "vaul": "^0.9.1",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
@@ -71,6 +73,7 @@
     "globals": "^15.9.0",
     "postcss": "^8.4.41",
     "tailwindcss": "^3.4.10",
-    "vite": "^7.3.2"
+    "vite": "^7.3.2",
+    "vite-plugin-pwa": "^1.2.0"
   }
 }

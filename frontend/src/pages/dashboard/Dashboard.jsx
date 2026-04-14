@@ -4,13 +4,14 @@ import DashboardCard from '../../components/ui/DashboardCard';
 import DataTable from '../../components/ui/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
 import { Wallet, ShoppingBag, Star, Activity, ArrowRight, Shield, Package, Zap, ChevronRight, Sparkles } from 'lucide-react';
-import { CardSkeleton, TableRowSkeleton } from '../../components/ui/Loader';
+import { CardSkeleton, TableRowSkeleton, ProductSkeleton } from '../../components/ui/Loader';
 import { useAuth } from '../../hooks/useAuth';
 import orderService from '../../services/orderService';
 import productService from '../../services/productService';
 import { Link, useNavigate } from 'react-router-dom';
 import walletService from '../../services/walletService';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useOrders, useProducts, useWallet } from '../../hooks/useDomainData';
 
 const orderColumns = [
     { key: 'numero_commande', label: 'RÉFÉRENCE', render: (val) => <span className="font-black text-[9px] uppercase tracking-widest text-muted-foreground/80">{val || '—'}</span> },
@@ -35,42 +36,26 @@ const CustomTooltip = ({ active, payload, label }) => {
 const Dashboard = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [isLoading, setIsLoading] = useState(true);
-    const [hasError, setHasError] = useState(false);
-    const [orders, setOrders] = useState([]);
-    const [totalOrders, setTotalOrders] = useState(0);
-    const [quickProducts, setQuickProducts] = useState([]);
-    const [wallet, setWallet] = useState(null);
+    
+    // Utilisation des nouveaux hooks restructurés
+    const { data: ordersData, loading: ordersLoading, error: ordersError } = useOrders();
+    const { data: products, loading: productsLoading } = useProducts();
+    const { data: wallet, loading: walletLoading } = useWallet();
+
+    const orders = ordersData?.orders || [];
+    const totalOrders = ordersData?.total || 0;
+    const quickProducts = products?.slice(0, 4) || [];
+    
     const [chartData, setChartData] = useState([]);
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setIsLoading(true);
-                const [ordersData, productsData, walletData] = await Promise.all([
-                    orderService.getMyOrders(),
-                    productService.getAll(),
-                    walletService.getMyWallet()
-                ]);
+        if (orders.length > 0) {
+            processOrdersForChart(orders);
+        }
+    }, [orders]);
 
-                const fetchedOrders = ordersData.orders || [];
-                setOrders(fetchedOrders);
-                setTotalOrders(ordersData.total || 0);
-                setQuickProducts(productsData.slice(0, 4));
-                setWallet(walletData);
-
-                processOrdersForChart(fetchedOrders);
-                setHasError(false);
-            } catch (err) {
-                console.error("Erreur chargement dashboard:", err);
-                setHasError(true);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchData();
-    }, []);
+    const isLoading = ordersLoading || productsLoading || walletLoading;
+    const hasError = !!ordersError;
 
     const processOrdersForChart = (ordersList) => {
         const days = ['DIM', 'LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM'];
@@ -194,17 +179,19 @@ const Dashboard = () => {
                                 <div className="space-y-3">
                                     <p className="text-[9px] font-black text-muted-foreground/80 uppercase tracking-widest pt-1 leading-none">CONFIANCE RÉSEAU</p>
                                     <div className="flex items-center gap-3">
-                                        <span className="text-sm font-black text-slate-900 dark:text-foreground uppercase tracking-tight">ELITE A++</span>
+                                        <span className="text-sm font-black text-slate-900 dark:text-foreground uppercase tracking-tight">
+                                            {user?.score_confiance >= 90 ? 'ELITE A++' : user?.score_confiance >= 70 ? 'PREMIUM B+' : 'STANDARD C'}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
                             <div className="space-y-4 relative z-10">
                                 <div className="flex justify-between text-[8px] font-black uppercase tracking-widest">
                                     <span className="text-muted-foreground/80">INTÉGRITÉ NODALE</span>
-                                    <span className="text-[#FF6600]">92.8%</span>
+                                    <span className="text-[#FF6600]">{user?.score_confiance || 100}%</span>
                                 </div>
                                 <div className="h-2.5 bg-slate-50 dark:bg-foreground/5 rounded-full overflow-hidden border border-slate-100 dark:border-foreground/10 p-0.5">
-                                    <div className="bg-[#FF6600] h-full w-[92.8%] rounded-full shadow-[0_0_10px_rgba(255,102,0,0.4)]"></div>
+                                    <div className="bg-[#FF6600] h-full rounded-full shadow-[0_0_10px_rgba(255,102,0,0.4)]" style={{ width: `${user?.score_confiance || 100}%` }}></div>
                                 </div>
                                 <p className="text-[7px] font-black text-muted-foreground/80 uppercase tracking-widest text-center">SYSTÈME OPTIMAL — AUCUN RISQUE DÉTECTÉ</p>
                             </div>
@@ -238,7 +225,7 @@ const Dashboard = () => {
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        {isLoading ? [1, 2, 3, 4].map(i => <TableRowSkeleton key={i} />) : quickProducts.map((product, idx) => (
+                        {isLoading ? [1, 2, 3, 4].map(i => <ProductSkeleton key={i} />) : quickProducts.map((product, idx) => (
                             <Link to={`/product/${product.id}`} key={idx} className="bg-white dark:bg-[#0F1219] border border-slate-200 dark:border-foreground/5 p-4 rounded-2xl flex flex-col gap-3 hover:border-[#FF6600]/20 transition-all group shadow-sm">
                                 <div className="aspect-square rounded-xl bg-slate-50 dark:bg-white/[0.03] overflow-hidden flex-shrink-0 relative border border-slate-100 dark:border-foreground/5">
                                     <img src={product.images?.[0]?.url_image} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-all duration-[2s]" />
@@ -263,13 +250,19 @@ const Dashboard = () => {
 
                     <div className="bg-white dark:bg-[#0F1219] border border-slate-200 dark:border-foreground/5 rounded-2xl shadow-sm overflow-hidden mt-12">
                          <div className="p-4 border-b border-slate-100 dark:border-foreground/5 bg-slate-50/20 dark:bg-white/[0.01]">
-                             <DataTable
-                                title="REGISTRE TRANSACTIONNEL"
-                                columns={orderColumns}
-                                data={orders.slice(0, 5)}
-                                className="border-0 bg-transparent"
-                                actions={<Link className="text-[9px] font-black text-[#FF6600] uppercase tracking-widest flex items-center gap-2" to="/orders">HISTORIQUE COMPLET <ChevronRight className="size-4" /></Link>}
-                            />
+                             {isLoading ? (
+                                 <div className="space-y-4">
+                                     {[1, 2, 3].map(i => <TableRowSkeleton key={i} />)}
+                                 </div>
+                             ) : (
+                                 <DataTable
+                                    title="REGISTRE TRANSACTIONNEL"
+                                    columns={orderColumns}
+                                    data={orders.slice(0, 5)}
+                                    className="border-0 bg-transparent"
+                                    actions={<Link className="text-[9px] font-black text-[#FF6600] uppercase tracking-widest flex items-center gap-2" to="/orders">HISTORIQUE COMPLET <ChevronRight className="size-4" /></Link>}
+                                />
+                             )}
                          </div>
                     </div>
                 </div>

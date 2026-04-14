@@ -6,32 +6,20 @@ import { Store, Star, ShieldCheck, Package, ArrowRight, MapPin, Phone, Mail, Ale
 import storeService from '../services/storeService';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../context/LanguageContext';
+import { ProductSkeleton } from '../components/ui/Loader';
+import { useVendorBySlug } from '../hooks/useDomainData';
+import LazyImage from '../components/ui/LazyImage';
+
 const StorePage = () => {
     const { slug } = useParams();
     const { t } = useLanguage();
-    const [store, setStore] = useState(null);
-    const [products, setProducts] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [notFound, setNotFound] = useState(false);
-    const [activeTab, setActiveTab] = useState('produits');
-    const [currentSlide, setCurrentSlide] = useState(0);
+    const { data: store, loading: isLoading, error } = useVendorBySlug(slug);
+    const products = store?.produits || [];
+    const notFound = !!error || (!isLoading && !store);
 
-    useEffect(() => {
-        const loadStore = async () => {
-            setIsLoading(true);
-            try {
-                const data = await storeService.getBySlug(slug);
-                if (!data) { setNotFound(true); return; }
-                setStore(data);
-                setProducts(data.produits || []);
-            } catch {
-                setNotFound(true);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        loadStore();
-    }, [slug]);
+    // ✅ Fix: variables manquantes qui causaient le crash de runtime
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const [activeTab, setActiveTab] = useState('produits');
 
     useEffect(() => {
         if (store?.use_carousel && store?.banner_images?.length > 1) {
@@ -44,10 +32,14 @@ const StorePage = () => {
 
     if (isLoading) {
         return (
-            <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
-                    <div className="size-12 rounded-xl border-4 border-primary/20 border-t-primary animate-spin" />
-                    <p className="text-sm font-medium text-muted-foreground">{t('spLoading') || 'Chargement...'}</p>
+            <div className="bg-background min-h-screen pt-24 pb-16">
+                <div className="max-w-6xl mx-auto px-6 md:px-12 space-y-12">
+                     <div className="h-56 md:h-80 w-full bg-slate-100 dark:bg-slate-800 animate-pulse rounded-3xl" />
+                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map(i => <ProductSkeleton key={i} />)}
+                     </div>
                 </div>
+            </div>
         );
     }
 
@@ -87,7 +79,7 @@ const StorePage = () => {
                                         idx === currentSlide ? "opacity-100" : "opacity-0"
                                     )}
                                 >
-                                    <img src={img} alt="" className="w-full h-full object-cover" />
+                                    <LazyImage src={img} alt="" className="w-full h-full object-cover" />
                                     <div className="absolute inset-0 bg-background/40" />
                                 </div>
                             ))}
@@ -113,7 +105,7 @@ const StorePage = () => {
                     ) : (
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-muted">
                             {store.logo_url && (
-                                <img src={store.logo_url} alt="" className="absolute inset-0 w-full h-full object-cover opacity-5 blur-2xl scale-150" />
+                                <LazyImage src={store.logo_url} alt="" className="absolute inset-0 w-full h-full object-cover opacity-5 blur-2xl scale-150" />
                             )}
                         </div>
                     )}
@@ -126,7 +118,7 @@ const StorePage = () => {
                             {/* Logo */}
                             <div className="size-20 rounded-2xl border-4 border-background bg-card shadow-lg flex items-center justify-center overflow-hidden shrink-0">
                                 {store.logo_url
-                                    ? <img src={store.logo_url} alt={store.nom_boutique} className="w-full h-full object-contain p-2" />
+                                    ? <LazyImage src={store.logo_url} alt={store.nom_boutique} className="w-full h-full object-contain p-2" />
                                     : <Store className="size-8 text-muted-foreground" />
                                 }
                             </div>

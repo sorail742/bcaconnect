@@ -29,72 +29,82 @@ import { useNavigate, Link } from 'react-router-dom';
 import storeService from '../../services/storeService';
 import orderService from '../../services/orderService';
 import statService from '../../services/statService';
+import aiService from '../../services/aiService';
 import { cn } from '../../lib/utils';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMyStore, useVendorOrders, useVendorStats, useTrustScore } from '../../hooks/useDomainData';
+import socketService from '../../services/socketService';
+import { RefreshCcw } from 'lucide-react';
 
 const VendorDashboard = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [isLoading, setIsLoading] = useState(true);
-    const [hasError, setHasError] = useState(false);
-    const [store, setStore] = useState(null);
-    const [orders, setOrders] = useState([]);
-    const [totalOrders, setTotalOrders] = useState(0);
-    const [vendorStats, setVendorStats] = useState(null);
     const [isAuditing, setIsAuditing] = useState(false);
 
-    const fetchDashboardData = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const [storeData, orderData, statsData] = await Promise.all([
-                storeService.getMyStore(),
-                orderService.getVendorOrders(),
-                statService.getVendorStats()
-            ]);
-            setStore(storeData);
-            setOrders(orderData.orders || []);
-            setTotalOrders(orderData.total || 0);
-            setVendorStats(statsData);
-        } catch (error) {
-            console.error("ERREUR_SYSTÈME_TERMINAL:", error);
-            setHasError(true);
-            toast.error("ÉCHEC DE LA CONNEXION AU NOEUD VENDEUR.");
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+    const { data: store, loading: storeLoading } = useMyStore();
+    const { data: orderData, loading: ordersLoading, refetch: refetchOrders } = useVendorOrders();
+    const { data: statsData, loading: statsLoading, refetch: refetchStats } = useVendorStats();
+    const { data: trustData, loading: trustLoading } = useTrustScore();
 
     useEffect(() => {
-        fetchDashboardData();
-    }, [fetchDashboardData]);
+        socketService.connect();
+        const handleUpdate = () => {
+            refetchOrders();
+            refetchStats();
+            toast.info("Mise à jour des flux en cours...");
+        };
 
+        socketService.on('order_placed', handleUpdate);
+        socketService.on('new_order_vendor', handleUpdate); // Event spécifique vendeur
+
+        return () => {
+            socketService.off('order_placed', handleUpdate);
+            socketService.off('new_order_vendor', handleUpdate);
+        };
+    }, [refetchOrders, refetchStats]);
+
+    const orders = orderData?.orders || [];
+    const totalOrders = orderData?.total || 0;
+    const isLoading = storeLoading || ordersLoading || statsLoading || trustLoading;
+
+
+    // Calculs basés sur les données réelles
     const pendingOrders = orders.filter(o => o.statut === 'en_attente').length;
     const lowStockItems = store?.produits?.filter(p => p.stock_quantite < 10).length || 0;
-    const totalRevenue = orders.reduce((acc, order) => acc + (parseFloat(order.prix_unitaire_achat) * order.quantite), 0);
+    
+    // Utiliser les stats du backend en priorité pour le chiffre d'affaires
+    const totalRevenue = statsData?.totalRevenue || orders.reduce((acc, order) => acc + (parseFloat(order.prix_unitaire_achat || 0) * (order.quantite || 0)), 0);
     const productsCount = store?.produits?.length || 0;
 
     const kpis = [
-        { title: "FLUX_REVENUS", value: `${totalRevenue.toLocaleString('fr-GN')} GNF`, trend: 'up', trendValue: '+12.4%_SIG', icon: CreditCard, color: 'primary' },
+        { title: "FLUX_REVENUS", value: `${totalRevenue.toLocaleString('fr-GN')} GNF`, trend: 'up', trendValue: statsData?.growth || '--', icon: CreditCard, color: 'primary' },
         { title: 'UNITÉS_TRANSACTÉES', value: totalOrders.toString(), trend: 'up', trendValue: pendingOrders > 0 ? `${pendingOrders}_PENDING` : 'OPTIMAL_CORE', icon: ShoppingBasket, color: 'emerald-500' },
         { title: 'INVENTAIRE_ACTIF', value: productsCount.toString(), trend: 'up', trendValue: lowStockItems > 0 ? `${lowStockItems}_LOW_STOCK` : 'STOCK_NOMINAL', icon: Package, color: 'amber-500' },
         { title: 'TRUST_SCORE_ALPHA', value: user?.score_confiance ? `${user.score_confiance}%` : '100%', trend: 'up', trendValue: 'ELITE_VENDOR', icon: ShieldCheck, color: 'primary' },
     ];
 
     const recentOrders = orders.slice(0, 5).map(item => ({
-        id: `#ORD-${item.commande_id.slice(0, 8).toUpperCase()}`,
+        id: item.commande_id || item.id,
+        displayId: `#ORD-${(item.commande_id || item.id).slice(0, 8).toUpperCase()}`,
         time: new Date(item.createdAt).toLocaleDateString('fr-GN'),
-        amount: `${(item.prix_unitaire_achat * item.quantite).toLocaleString('fr-GN')} GNF`,
+        amount: `${(parseFloat(item.prix_unitaire_achat || 0) * (item.quantite || 0)).toLocaleString('fr-GN')} GNF`,
         status: item.statut === 'payé' ? 'Payé' : item.statut === 'en_attente' ? 'En attente' : 'Terminé'
     }));
 
-    const handleAudit = () => {
+    const handleAudit = async () => {
         setIsAuditing(true);
-        toast.info("INITIATION_AUDIT_ALPHA_IA...");
-        setTimeout(() => {
+        toast.info("INITIATION_AUDIT_ALPHA_IA...", { icon: <Satellite className="size-4 animate-spin" /> });
+        try {
+            const insights = await aiService.getVendorInsights();
+            // Optionnel : Mettre à jour manuellement si nécessaire, ou laisser le refetch automatique s'occuper du reste
+            toast.success("AUDIT_SCELLÉ_TERMINÉ.", { description: insights.recommendation || "Optimisation du catalogue suggérée." });
+            refetchStats();
+        } catch (error) {
+            toast.error("ERREUR_AUDIT_IA.");
+        } finally {
             setIsAuditing(false);
-            toast.success("AUDIT_SCELLÉ_TERMINÉ.");
-        }, 2000);
+        }
     };
 
     const orderColumns = [
@@ -103,7 +113,7 @@ const VendorDashboard = () => {
             render: (row) => (
                 <div className="flex items-center gap-4 py-3">
                     <div className="size-2 rounded-full bg-primary/40" />
-                    <span className="text-[10px] font-black uppercase text-muted-foreground ">{row.id}</span>
+                    <span className="text-[10px] font-black uppercase text-muted-foreground ">{row.displayId}</span>
                 </div>
             ) 
         },
@@ -245,7 +255,7 @@ const VendorDashboard = () => {
 
                             <div className="flex-1 relative z-10 w-full p-4 min-h-[240px]">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={vendorStats?.timeseries || []}>
+                                    <AreaChart data={statsData?.timeseries || []}>
                                         <defs>
                                             <linearGradient id="colorRevenues" x1="0" y1="0" x2="0" y2="1">
                                                 <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.4} />
@@ -268,7 +278,7 @@ const VendorDashboard = () => {
                                     </div>
                                     <div className="space-y-2 text-left">
                                         <p className="text-[10px] font-black text-muted-foreground uppercase  leading-none mb-1">AUDIT_TENDANCE_IA</p>
-                                        <p className="text-[13px] text-foreground font-black uppercase tracking-tight italic opacity-90 transition-all group-hover/chart:translate-x-2">"{vendorStats?.global_trend?.toUpperCase() || "FORCE_EXPANSIONNELLE_DÉTERMINÉE_SYNAPSE"}"</p>
+                                        <p className="text-[13px] text-foreground font-black uppercase tracking-tight italic opacity-90 transition-all group-hover/chart:translate-x-2">"{statsData?.global_trend?.toUpperCase() || "FORCE_EXPANSIONNELLE_DÉTERMINÉE_SYNAPSE"}"</p>
                                     </div>
                                 </div>
                                 <Link to="/vendor/products" className="h-12 px-10 rounded-2xl bg-white/[0.03] border border-foreground/5 text-[10px] font-black uppercase  text-muted-foreground/80 hover:text-foreground hover:bg-white/[0.05] transition-all flex items-center gap-4 ">
@@ -389,12 +399,12 @@ const VendorDashboard = () => {
                                <div className="space-y-6">
                                    <div className="flex items-center justify-between text-[12px] font-black uppercase ">
                                         <span className="text-slate-600">SCORE_INTÉGRITÉ_ALPHA</span>
-                                        <span className="text-primary  italic shadow-orange-500/20">98.2%_SCL</span>
+                                        <span className="text-primary  italic shadow-orange-500/20">{trustData?.percentage || user?.score_confiance || 98.2}%_SCL</span>
                                    </div>
                                    <div className="h-8 bg-background rounded-full overflow-hidden border border-white/[0.03] p-2 shadow-inner ring-8 ring-emerald-500/[0.02]">
                                        <motion.div 
                                             initial={{ width: 0 }}
-                                            animate={{ width: '98.2%' }}
+                                            animate={{ width: `${trustData?.percentage || user?.score_confiance || 98.2}%` }}
                                             transition={{ duration: 4, ease: [0.16, 1, 0.3, 1] }}
                                             className="h-full bg-gradient-to-r from-emerald-500 via-primary to-emerald-500 rounded-full shadow-[0_0_40px_rgba(16,185,129,0.4)] animate-pulse" 
                                         />

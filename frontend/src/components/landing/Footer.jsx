@@ -1,11 +1,35 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Send, Mail, MapPin, Phone, ShieldCheck, Zap, Star, Globe, Share2, Activity } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import { toast } from 'sonner';
 
 export function Footer() {
     const { t, lang } = useLanguage();
     const currentYear = new Date().getFullYear();
+    const [newsletterEmail, setNewsletterEmail] = useState('');
+
+    const handleNewsletterSubmit = (e) => {
+        e.preventDefault();
+        if (!newsletterEmail) {
+            toast.error(lang === 'FR' ? "Veuillez entrer une adresse email." : "Please enter an email address.");
+            return;
+        }
+        
+        // Simuler un appel API
+        toast.success(lang === 'FR' 
+            ? "Merci ! Vous êtes maintenant inscrit à notre newsletter." 
+            : "Thank you! You are now subscribed to our newsletter."
+        );
+        setNewsletterEmail('');
+    };
+
+    const handleSocialClick = (name) => {
+        toast.info(lang === 'FR' 
+            ? `${name} sera bientôt disponible !` 
+            : `${name} will be available soon!`
+        );
+    };
 
     const footerLinks = [
         {
@@ -35,15 +59,15 @@ export function Footer() {
         {
             title: "Réseaux",
             links: [
-                { to: "#", label: "LinkedIn" },
-                { to: "#", label: "Instagram" },
-                { to: "#", label: "Twitter" },
+                { to: "https://linkedin.com", label: "LinkedIn", external: true },
+                { to: "https://instagram.com", label: "Instagram", external: true },
+                { to: "https://twitter.com", label: "Twitter / X", external: true },
             ]
         }
     ];
 
     return (
-        <footer className="relative bg-background border-t border-border py-12 overflow-hidden">
+        <footer className="relative bg-background text-foreground py-12 overflow-hidden border-t border-border">
             <div className="absolute top-0 right-0 size-96 bg-primary/[0.03] blur-[120px] rounded-full pointer-events-none" />
 
             <div className="container mx-auto px-6 md:px-12 relative z-10">
@@ -55,8 +79,8 @@ export function Footer() {
                             <div className="size-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-sm group-hover:scale-105 transition-transform">
                                 <Zap className="size-5 fill-current" />
                             </div>
-                            <span className="font-bold text-xl text-foreground tracking-tight">
-                                BCA<span className="text-primary">Connect</span>
+                            <span translate="no" className="font-bold text-xl text-foreground tracking-tight">
+                                <span className="text-slate-950 dark:text-white">BCA</span><span className="text-primary italic">CONNECT</span>
                             </span>
                         </Link>
 
@@ -67,19 +91,29 @@ export function Footer() {
                         </p>
 
                         <div className="flex items-center gap-3">
-                            {[Share2, Globe, Mail].map((Icon, i) => (
-                                <a key={i} href="#"
-                                    className="size-9 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all">
-                                    <Icon className="size-4" />
-                                </a>
-                            ))}
+                            <button onClick={() => handleSocialClick("LinkedIn")} aria-label="LinkedIn"
+                                className="size-9 rounded-xl bg-muted border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all">
+                                <Share2 className="size-4" />
+                            </button>
+                            <a href="mailto:contact@bcaconnect.gn" aria-label="Email"
+                                className="size-9 rounded-xl bg-muted border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all">
+                                <Mail className="size-4" />
+                            </a>
+                            <button onClick={() => handleSocialClick("Website")} aria-label="Globe"
+                                className="size-9 rounded-xl bg-muted border border-border/50 flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all">
+                                <Globe className="size-4" />
+                            </button>
                         </div>
 
                         <div className="flex items-center gap-2">
-                            {[ShieldCheck, Zap, Star].map((Icon, i) => (
+                            {[
+                                lang === 'FR' ? 'Sécurisé' : 'Secure', 
+                                lang === 'FR' ? 'Rapide' : 'Fast', 
+                                '99%'
+                            ].map((text, i) => (
                                 <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted border border-border rounded-lg">
-                                    <Icon className="size-3.5 text-primary" />
-                                    <span className="text-xs text-muted-foreground">{['Sécurisé', 'Rapide', '99%'][i]}</span>
+                                    {[ShieldCheck, Zap, Star][i]({ className: "size-3.5 text-primary" })}
+                                    <span className="text-xs text-muted-foreground">{text}</span>
                                 </div>
                             ))}
                         </div>
@@ -95,11 +129,19 @@ export function Footer() {
                                 <ul className="space-y-2">
                                     {section.links.map((link, lIdx) => (
                                         <li key={lIdx}>
-                                            <Link to={link.to}
-                                                className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group">
-                                                <div className="size-1 bg-border rounded-full group-hover:bg-primary transition-colors" />
-                                                {link.label}
-                                            </Link>
+                                            {link.external ? (
+                                                <a href={link.to} target="_blank" rel="noopener noreferrer"
+                                                    className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group">
+                                                    <div className="size-1 bg-border rounded-full group-hover:bg-primary transition-colors" />
+                                                    {link.label}
+                                                </a>
+                                            ) : (
+                                                <Link to={link.to}
+                                                    className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group">
+                                                    <div className="size-1 bg-border rounded-full group-hover:bg-primary transition-colors" />
+                                                    {link.label}
+                                                </Link>
+                                            )}
                                         </li>
                                     ))}
                                 </ul>
@@ -109,21 +151,28 @@ export function Footer() {
 
                     {/* Newsletter + Contact */}
                     <div className="lg:col-span-3 space-y-5">
-                        <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+                        <div className="bg-muted/50 border border-border rounded-2xl p-5 space-y-4">
                             <div>
                                 <h5 className="text-xs font-bold text-primary uppercase tracking-wide">Newsletter</h5>
-                                <p className="text-xs text-muted-foreground mt-1">Restez informé des dernières actualités.</p>
+                                <p className="text-xs text-muted-foreground mt-1">{lang === 'FR' ? "Restez informé des dernières actualités." : "Stay informed with the latest news."}</p>
                             </div>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                                <input type="email" placeholder="votre@email.com"
-                                    className="w-full h-10 bg-background border border-border rounded-xl text-sm pl-9 pr-12 outline-none focus:border-primary/50 transition-all text-foreground placeholder:text-muted-foreground" />
-                                <button className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
+                            <form onSubmit={handleNewsletterSubmit} className="relative">
+                                <input
+                                    type="email"
+                                    placeholder={lang === 'FR' ? "votre@email.com" : "your@email.com"}
+                                    value={newsletterEmail}
+                                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                                    className="w-full bg-muted border border-border/50 rounded-xl text-sm px-4 py-3 outline-none focus:border-primary transition-all pr-12 text-foreground placeholder:text-foreground/30"
+                                />
+                                <button 
+                                    type="submit"
+                                    className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                                >
                                     <Send className="size-3.5" />
                                 </button>
-                            </div>
+                            </form>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <Activity className="size-3 text-emerald-500 animate-pulse" /> Système actif 100%
+                                <Activity className="size-3 text-emerald-500 animate-pulse" /> {lang === 'FR' ? "Système actif 100%" : "System 100% active"}
                             </div>
                         </div>
 
@@ -141,9 +190,9 @@ export function Footer() {
                 </div>
 
                 {/* Bottom bar */}
-                <div className="pt-6 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="py-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
                     <p className="text-xs text-muted-foreground">
-                        © {currentYear} BCA Connect. Tous droits réservés.
+                        © 2024 BCA Connect Ecosystem. Prototype.
                     </p>
                     <div className="flex items-center gap-4">
                         <Link to="/privacy" className="text-xs text-muted-foreground hover:text-primary transition-colors">{t('privacy') || 'Confidentialité'}</Link>
@@ -151,7 +200,7 @@ export function Footer() {
                     </div>
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
                         <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                        <span className="text-xs font-semibold text-emerald-400">
                             {lang === 'FR' ? 'Opérationnel' : 'Operational'}
                         </span>
                     </div>

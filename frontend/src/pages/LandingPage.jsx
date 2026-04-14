@@ -1,4 +1,4 @@
-import MainLayout from "../components/layout/MainLayout"
+
 import { Hero } from "../components/landing/Hero"
 import { CategorySection } from "../components/landing/CategorySection"
 import { ProblemSection } from "../components/landing/ProblemSection"
@@ -12,19 +12,17 @@ import { CTASection } from "../components/landing/CTASection"
 
 export default function LandingPage() {
     return (
-        <MainLayout>
-            <main className="min-h-screen bg-white dark:bg-background text-slate-900 dark:text-foreground selection:bg-[#FF6600]/30 selection:text-slate-900 dark:text-foreground">
-                <Hero />
-                <CategorySection />
-                <ProblemSection />
-                <SolutionSection />
-                <HowItWorks />
-                <RolesSection />
-                <CommunityGallery />
-                <AISection />
-                <DashboardPreview />
-                <CTASection />
-            </main>
-        </MainLayout>
+        <main className="min-h-screen bg-white dark:bg-background text-slate-900 dark:text-foreground selection:bg-[#FF6600]/30 selection:text-slate-900 dark:text-foreground">
+            <Hero />
+            <CategorySection />
+            <ProblemSection />
+            <SolutionSection />
+            <HowItWorks />
+            <RolesSection />
+            <CommunityGallery />
+            <AISection />
+            <DashboardPreview />
+            <CTASection />
+        </main>
     )
 }

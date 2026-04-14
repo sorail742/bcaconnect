@@ -5,31 +5,31 @@ import storeService from '../services/storeService';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { cn } from '../lib/utils';
+import { useVendors } from '../hooks/useDomainData';
+import LazyImage from '../components/ui/LazyImage';
+import { useQueryClient } from '@tanstack/react-query';
+import Skeleton from '../components/ui/Skeleton';
+import PrefetchLink from '../components/ui/PrefetchLink';
 const VendorsList = () => {
     const { t } = useLanguage();
+    const queryClient = useQueryClient();
     const [searchQuery, setSearchQuery] = useState('');
-    const [vendors, setVendors] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [hasError, setHasError] = useState(false);
-
-    useEffect(() => {
-        const fetchVendors = async () => {
-            try {
-                const data = await storeService.getAllStores();
-                setVendors(Array.isArray(data) ? data : []);
-            } catch {
-                setHasError(true);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchVendors();
-    }, []);
+    const { data: vendorsData, loading: isLoading, error: fetchError } = useVendors();
+    const vendors = Array.isArray(vendorsData) ? vendorsData : [];
 
     const filteredVendors = vendors.filter(v =>
         (v.nom_boutique?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
         (v.description?.toLowerCase() || '').includes(searchQuery.toLowerCase())
     );
+
+    const prefetchVendor = (slug) => {
+        if (!slug) return;
+        queryClient.prefetchQuery({
+            queryKey: ['vendor-slug', slug],
+            queryFn: () => storeService.getBySlug(slug),
+            staleTime: 2 * 60_000,
+        });
+    };
 
     return (
         <div className="bg-background min-h-screen text-foreground pb-16">
@@ -91,17 +91,18 @@ const VendorsList = () => {
                     {isLoading ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                             {[1,2,3,4,5,6].map(i => (
-                                <div key={i} className="h-64 rounded-2xl bg-muted animate-pulse border border-border" />
+                                <Skeleton key={i} className="h-64 rounded-2xl border border-border" />
                             ))}
                         </div>
-                    ) : hasError ? (
+                    ) : fetchError ? (
                         <div className="py-16 text-center bg-rose-500/5 rounded-2xl border border-rose-500/20">
-                            <h3 className="text-lg font-bold text-rose-500 mb-3">Erreur de chargement</h3>
+                            <h3 className="text-lg font-bold text-rose-500 mb-3">ERREUR_DE_SYNC_SYSTEME_V5</h3>
+                            <p className="text-xs text-muted-foreground mb-6 uppercase tracking-widest">{fetchError}</p>
                             <button
-                                className="h-10 px-6 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors"
+                                className="h-10 px-8 bg-primary text-primary-foreground rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
                                 onClick={() => window.location.reload()}
                             >
-                                Réessayer
+                                RÉINITIALISER_L_INTERFACE
                             </button>
                         </div>
                     ) : filteredVendors.length > 0 ? (
@@ -117,8 +118,10 @@ const VendorsList = () => {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: idx * 0.05 }}
                                 >
-                                    <Link
+                                    <PrefetchLink
                                         to={`/shop/${vendor.slug}`}
+                                        queryKey={['vendor-slug', vendor.slug]}
+                                        queryFn={() => storeService.getBySlug(vendor.slug)}
                                         className="group flex flex-col p-5 rounded-2xl bg-card border border-border hover:border-primary/40 hover:shadow-md transition-all duration-300 h-full overflow-hidden relative"
                                     >
                                         <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
@@ -127,7 +130,7 @@ const VendorsList = () => {
                                         <div className="flex items-start justify-between mb-4 relative z-10">
                                             <div className="size-14 rounded-xl bg-muted border border-border flex items-center justify-center overflow-hidden group-hover:border-primary/30 transition-colors">
                                                 {vendor.logo_url ? (
-                                                    <img src={vendor.logo_url} alt="" className="w-full h-full object-cover" />
+                                                    <LazyImage src={vendor.logo_url} alt="" className="w-full h-full object-cover" />
                                                 ) : (
                                                     <Store className="size-6 text-muted-foreground" />
                                                 )}
@@ -162,7 +165,7 @@ const VendorsList = () => {
                                                 <ArrowRight className="size-4" />
                                             </div>
                                         </div>
-                                    </Link>
+                                    </PrefetchLink>
                                 </motion.div>
                             ))}
                         </motion.div>

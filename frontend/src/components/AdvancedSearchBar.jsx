@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Mic, Camera, X, Loader2, Volume2 } from 'lucide-react';
+import { Search, Mic, Camera, X, Loader2, Volume2, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 
@@ -21,39 +21,45 @@ export const AdvancedSearchBar = ({ onSearch, placeholder = "Rechercher..." }) =
     const recognitionRef = useRef(null);
 
     useEffect(() => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            recognitionRef.current = new SpeechRecognition();
-            recognitionRef.current.continuous = false;
-            recognitionRef.current.interimResults = true;
-            recognitionRef.current.lang = 'fr-FR';
+        if (typeof window === 'undefined') return;
+        
+        try {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                recognitionRef.current = new SpeechRecognition();
+                recognitionRef.current.continuous = false;
+                recognitionRef.current.interimResults = true;
+                recognitionRef.current.lang = 'fr-FR';
 
-            recognitionRef.current.onstart = () => {
-                setIsListening(true);
-                setTranscript('');
-            };
+                recognitionRef.current.onstart = () => {
+                    setIsListening(true);
+                    setTranscript('');
+                };
 
-            recognitionRef.current.onresult = (event) => {
-                let interim = '';
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const trans = event.results[i][0].transcript;
-                    if (event.results[i].isFinal) {
-                        setSearchText(prev => prev + trans);
-                    } else {
-                        interim += trans;
+                recognitionRef.current.onresult = (event) => {
+                    let interim = '';
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const trans = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            setSearchText(prev => prev + trans);
+                        } else {
+                            interim += trans;
+                        }
                     }
-                }
-                setTranscript(interim);
-            };
+                    setTranscript(interim);
+                };
 
-            recognitionRef.current.onend = () => {
-                setIsListening(false);
-            };
+                recognitionRef.current.onend = () => {
+                    setIsListening(false);
+                };
 
-            recognitionRef.current.onerror = (event) => {
-                console.error('Erreur reconnaissance vocale:', event.error);
-                setIsListening(false);
-            };
+                recognitionRef.current.onerror = (event) => {
+                    console.error('Erreur reconnaissance vocale:', event.error);
+                    setIsListening(false);
+                };
+            }
+        } catch (e) {
+            console.error("SpeechRecognition initialization failed:", e);
         }
     }, []);
 
@@ -127,11 +133,15 @@ export const AdvancedSearchBar = ({ onSearch, placeholder = "Rechercher..." }) =
         <div className="w-full space-y-3">
             <div className="relative group">
                 <div className={cn(
-                    "flex items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all duration-300",
-                    "bg-background border-border hover:border-primary/30 focus-within:border-primary",
-                    isListening && "border-primary bg-primary/5"
+                    "flex items-center gap-0 rounded-xl overflow-hidden border-2 transition-all duration-300",
+                    "bg-background border-border hover:border-primary/50 focus-within:border-primary",
+                    isListening && "border-primary bg-primary/5 shadow-[0_0_20px_rgba(var(--primary),0.2)]"
                 )}>
-                    <Search className="size-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    {/* Marketplace Category Prefix (Amazon style) */}
+                    <div className="hidden md:flex items-center px-4 py-3 bg-muted border-r border-border hover:bg-muted/80 cursor-pointer text-xs font-black text-muted-foreground uppercase tracking-wider transition-colors">
+                        Toutes
+                        <ChevronDown className="size-3 ml-2" />
+                    </div>
 
                     <input
                         type="text"
@@ -139,7 +149,7 @@ export const AdvancedSearchBar = ({ onSearch, placeholder = "Rechercher..." }) =
                         onChange={(e) => setSearchText(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleTextSearch()}
                         placeholder={placeholder}
-                        className="flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-muted-foreground text-foreground"
+                        className="flex-1 bg-transparent text-sm font-semibold outline-none placeholder:text-muted-foreground/50 text-foreground px-4 py-3 h-12"
                     />
 
                     {transcript && (
@@ -179,7 +189,7 @@ export const AdvancedSearchBar = ({ onSearch, placeholder = "Rechercher..." }) =
                         {(searchText || previewImage) && (
                             <button
                                 onClick={clearSearch}
-                                className="p-2 rounded-lg bg-muted text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-300"
+                                className="p-2 mr-1 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-300"
                             >
                                 <X className="size-4" />
                             </button>
@@ -188,14 +198,13 @@ export const AdvancedSearchBar = ({ onSearch, placeholder = "Rechercher..." }) =
                         <button
                             onClick={searchMode === 'voice' ? handleVoiceSearch : handleTextSearch}
                             disabled={isLoading || (!searchText && !previewImage)}
-                            className="px-4 py-1.5 bg-primary text-primary-foreground rounded-lg font-semibold text-sm hover:bg-primary/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            className="h-12 w-14 bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group/btn"
                         >
                             {isLoading ? (
-                                <Loader2 className="size-4 animate-spin" />
+                                <Loader2 className="size-5 animate-spin" />
                             ) : (
-                                <Search className="size-4" />
+                                <Search className="size-5 group-hover/btn:scale-125 transition-transform" />
                             )}
-                            <span className="hidden sm:inline">Chercher</span>
                         </button>
                     </div>
                 </div>

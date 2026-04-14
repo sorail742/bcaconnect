@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useNotifications } from '../hooks/useDomainData';
+import { useNotificationsList } from '../hooks/useDomainData';
 import { LoadingState, ErrorState, EmptyState } from '../components/ui/DataStates';
 import { Bell, Trash2, CheckCircle, AlertCircle, Info, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Notifications = () => {
-    const { data: notifications = [], loading, error } = useNotifications();
+    const { data: notifications = [], loading, error } = useNotificationsList();
     const [filterType, setFilterType] = useState('all');
 
     const notificationTypes = {

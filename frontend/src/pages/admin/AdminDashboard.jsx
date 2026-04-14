@@ -47,14 +47,48 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         fetchGlobalStats();
+        
+        socketService.connect();
+        const handleUpdate = () => {
+            fetchGlobalStats();
+            toast.info("Données du dashboard mises à jour en direct.");
+        };
+
+        socketService.on('order_placed', handleUpdate);
+        socketService.on('transaction_updated', handleUpdate);
+
+        return () => {
+            socketService.off('order_placed', handleUpdate);
+            socketService.off('transaction_updated', handleUpdate);
+        };
     }, [fetchGlobalStats]);
 
-    const stats = [
-        { title: "Membres du Réseau", value: dashboardData?.overview?.usersCount?.toString() || '0', icon: Users, change: '+12.5%', isPositive: true },
-        { title: 'Volume d\'Affaires', value: `${(dashboardData?.overview?.totalRevenue || 0).toLocaleString('fr-GN')} GNF`, icon: TrendingUp, change: '+8.2%', isPositive: true },
-        { title: 'Boutiques Actives', value: dashboardData?.overview?.storesCount?.toString() || '0', icon: Store, change: '+3.1%', isPositive: true },
-        { title: 'Litiges en Cours', value: dashboardData?.overview?.disputesCount?.toString() || '0', icon: Gavel, change: '-2.4%', isPositive: false },
+    const apiStats = dashboardData?.stats || [];
+    const stats = apiStats.length > 0 ? apiStats.map(s => ({
+        title: s.title,
+        value: s.value,
+        icon: s.icon === 'Users' ? Users : s.icon === 'CreditCard' ? TrendingUp : Store,
+        change: s.trendValue || 'stable',
+        isPositive: s.trend === 'up',
+    })) : [
+        { title: "Membres du Réseau", value: '0', icon: Users, change: '--', isPositive: true },
+        { title: "Volume d'Affaires", value: '0 GNF', icon: TrendingUp, change: '--', isPositive: true },
+        { title: "Boutiques Actives", value: '0', icon: Store, change: '--', isPositive: true },
     ];
+
+    // Add the stores count from overview if not in stats
+    if (apiStats.length > 0 && dashboardData?.overview?.storesCount !== undefined) {
+        const hasStores = stats.some(s => s.title.toLowerCase().includes('boutique'));
+        if (!hasStores) {
+            stats.push({
+                title: 'Boutiques Actives',
+                value: dashboardData.overview.storesCount.toString(),
+                icon: Store,
+                change: `${dashboardData.overview.growth_rate}%`,
+                isPositive: parseFloat(dashboardData.overview.growth_rate) >= 0,
+            });
+        }
+    }
 
     const transactions = dashboardData?.recentTransactions || [];
 
@@ -69,10 +103,37 @@ const AdminDashboard = () => {
 
                 {/* Sub-navigation */}
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 mb-6">
-                    <button className="px-5 py-2 bg-foreground text-background text-xs font-bold rounded-xl whitespace-nowrap">Vue d'ensemble</button>
-                    <button className="px-5 py-2 bg-foreground/[0.03] text-muted-foreground text-xs font-bold rounded-xl hover:bg-foreground/5 whitespace-nowrap">Transactions</button>
-                    <button className="px-5 py-2 bg-foreground/[0.03] text-muted-foreground text-xs font-bold rounded-xl hover:bg-foreground/5 whitespace-nowrap">Litiges</button>
-                    <button className="px-5 py-2 bg-foreground/[0.03] text-muted-foreground text-xs font-bold rounded-xl hover:bg-foreground/5 whitespace-nowrap">Archives</button>
+                    <button 
+                        onClick={() => navigate('/admin/dashboard')}
+                        className="px-5 py-2 bg-foreground text-background text-xs font-bold rounded-xl whitespace-nowrap"
+                    >
+                        Vue d'ensemble
+                    </button>
+                    <button 
+                        onClick={() => navigate('/admin/transactions')}
+                        className="px-5 py-2 bg-foreground/[0.03] text-muted-foreground text-xs font-bold rounded-xl hover:bg-foreground/5 whitespace-nowrap"
+                    >
+                        Transactions
+                    </button>
+                    <button 
+                        onClick={() => navigate('/admin/trends')}
+                        className="px-5 py-2 bg-foreground/[0.03] text-muted-foreground text-xs font-bold rounded-xl hover:bg-foreground/5 whitespace-nowrap flex items-center gap-2"
+                    >
+                        <Zap className="size-3 text-primary" />
+                        IA Trends
+                    </button>
+                    <button 
+                        onClick={() => navigate('/admin/financial')}
+                        className="px-5 py-2 bg-foreground/[0.03] text-muted-foreground text-xs font-bold rounded-xl hover:bg-foreground/5 whitespace-nowrap"
+                    >
+                        Finances
+                    </button>
+                    <button 
+                        onClick={() => navigate('/admin/disputes')}
+                        className="px-5 py-2 bg-foreground/[0.03] text-muted-foreground text-xs font-bold rounded-xl hover:bg-foreground/5 whitespace-nowrap"
+                    >
+                        Litiges
+                    </button>
                 </div>
 
                 <div>
@@ -166,24 +227,24 @@ const AdminDashboard = () => {
                     </div>
                     
                     <div className="space-y-4">
-                        {transactions.slice(0, 5).map((row, idx) => (
-                            <div key={idx} className="flex items-center justify-between">
+                        {transactions.slice(0, 5).map((row) => (
+                            <div key={row.id || row.order_id || Math.random()} className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="size-[38px] rounded-full bg-foreground/[0.03] flex items-center justify-center shrink-0 overflow-hidden border border-foreground/[0.05]">
-                                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${row.name || 'BCA'}`} alt="" className="w-full h-full object-cover" />
+                                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${row.name || row.userName || 'BCA'}`} alt="" className="w-full h-full object-cover" />
                                     </div>
                                     <div>
-                                        <p className="text-[13px] font-medium text-foreground">{row.name || "System Node"}</p>
+                                        <p className="text-[13px] font-medium text-foreground">{row.name || row.userName || "System Node"}</p>
                                         <p className="text-[11px] text-muted-foreground">{row.status || 'INDEXED'}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-[14px] font-medium text-foreground">{row.amount?.toLocaleString('fr-GN')} GNF</p>
+                                    <p className="text-[14px] font-medium text-foreground">{row.amount?.toLocaleString('fr-GN') || (row.total_prix || 0).toLocaleString('fr-GN')} GNF</p>
                                     <p className={cn(
                                         "text-[11px] font-medium",
-                                        row.status === 'SUCCESS' ? "text-emerald-500" : "text-amber-500"
+                                        (row.status === 'SUCCESS' || row.statut === 'payé') ? "text-emerald-500" : "text-amber-500"
                                     )}>
-                                        {row.status === 'SUCCESS' ? 'Completed' : 'Pending'}
+                                        {(row.status === 'SUCCESS' || row.statut === 'payé') ? 'Completed' : 'Pending'}
                                     </p>
                                 </div>
                             </div>

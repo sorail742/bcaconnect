@@ -1,34 +1,35 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { AlertTriangle, ChevronLeft, ShieldCheck, Clock, ChevronDown, Activity, Sparkles, Scale, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import { API_BASE_URL } from '../constants/api';
+
+import useApiMutation from '../hooks/useApiMutation';
 
 const DisputeReport = () => {
     const { orderId } = useParams();
     const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
     const [disputeData, setDisputeData] = useState({ type: 'qualite', description: '' });
     const [mediationResult, setMediationResult] = useState(null);
 
-    const handleSubmit = async (e) => {
+    const { mutate: createDispute, isPending: loading } = useApiMutation(
+        (data) => api.post('/disputes', { commande_id: orderId, ...data }),
+        {
+            onSuccess: (res) => {
+                setMediationResult(res);
+            },
+            successMessage: "Litige ouvert avec succès.",
+            errorMessage: "Échec de l'ouverture du dossier."
+        }
+    );
+
+    const handleSubmit = (e) => {
         e.preventDefault();
         if (!disputeData.description.trim()) { toast.warning('Description requise.'); return; }
-        setLoading(true);
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.post(`${API_URL}/disputes`, { commande_id: orderId, ...disputeData },
-                { headers: { Authorization: `Bearer ${token}` } });
-            setMediationResult(response.data);
-            toast.success('Litige ouvert avec succès.');
-        } catch {
-            toast.error("Échec de l'ouverture du dossier.");
-        } finally {
-            setLoading(false);
-        }
+        createDispute(disputeData);
     };
 
     return (
