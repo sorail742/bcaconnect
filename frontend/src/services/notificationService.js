@@ -7,7 +7,6 @@ const notificationService = {
             const response = await api.get('/notifications');
             return response.data;
         } catch (error) {
-            console.error("Erreur chargement notifications:", error);
             return [];
         }
     },
@@ -18,7 +17,6 @@ const notificationService = {
             const response = await api.patch(`/notifications/${id}/read`);
             return response.data;
         } catch (error) {
-            console.error("Erreur marquage notification:", error);
             throw error;
         }
     },
@@ -29,7 +27,6 @@ const notificationService = {
             const response = await api.post('/notifications/mark-all-read');
             return response.data;
         } catch (error) {
-            console.error("Erreur marquage global:", error);
             throw error;
         }
     },
@@ -40,7 +37,6 @@ const notificationService = {
             const response = await api.delete(`/notifications/${id}`);
             return response.data;
         } catch (error) {
-            console.error("Erreur suppression notification:", error);
             throw error;
         }
     }

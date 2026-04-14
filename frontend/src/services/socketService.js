@@ -7,28 +7,33 @@ class SocketService {
         this.socket = null;
     }
 
-    connect() {
-        if (this.socket) return;
+    connect(userId = null) {
+        if (this.socket?.connected) {
+            if (userId) this.socket.emit('join', userId);
+            return this.socket;
+        }
 
         this.socket = io(SOCKET_URL, {
-            transports: ["websocket", "polling"],
-            reconnectionAttempts: 5
+            transports: ["websocket"], // Prioriser websocket pour la performance
+            reconnectionAttempts: 10,
+            reconnectionDelay: 2000
         });
 
         this.socket.on("connect", () => {
-            console.log("⚡ Connecté au serveur temps réel");
-            const token = localStorage.getItem('token');
-            if (token) {
-                // On peut émettre un event pour s'identifier si besoin
-                // this.socket.emit('authenticate', token);
+            if (userId) {
+                this.socket.emit('join', userId);
             }
         });
 
         this.socket.on("connect_error", (err) => {
-            console.warn("⚠️ Erreur connexion Socket.io:", err.message);
+            // Silencieux en production
         });
 
         return this.socket;
+    }
+
+    isConnected() {
+        return this.socket?.connected || false;
     }
 
     disconnect() {
@@ -40,7 +45,10 @@ class SocketService {
 
     // S'abonner à un événement
     on(event, callback) {
-        if (!this.socket) this.connect();
+        if (!this.socket) {
+            console.warn("⚠️ Tentative d'écoute sans socket connectée.");
+            return;
+        }
         this.socket.on(event, callback);
     }
 
@@ -48,6 +56,12 @@ class SocketService {
     off(event, callback) {
         if (this.socket) {
             this.socket.off(event, callback);
+        }
+    }
+
+    emit(event, data) {
+        if (this.socket) {
+            this.socket.emit(event, data);
         }
     }
 }

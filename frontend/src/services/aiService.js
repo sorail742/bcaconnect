@@ -61,12 +61,36 @@ export const aiService = {
      */
     chat: async (message) => {
         try {
-            const response = await api.post('/ai/chat', {
-                message
-            });
+            const response = await api.post('/ai/chat', { message });
             return response.data;
         } catch (error) {
             console.error('Erreur chat IA:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Analyse de confiance détaillée via l'IA
+     */
+    getTrustAnalysis: async () => {
+        try {
+            const response = await api.get('/ai/trust-score');
+            return response.data;
+        } catch (error) {
+            console.error('Erreur analyse confiance IA:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Insights et audit de vente pour les fournisseurs
+     */
+    getVendorInsights: async () => {
+        try {
+            const response = await api.get('/ai/insights');
+            return response.data;
+        } catch (error) {
+            console.error('Erreur insights IA:', error);
             throw error;
         }
     }

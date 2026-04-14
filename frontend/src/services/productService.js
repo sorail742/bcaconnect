@@ -2,32 +2,34 @@ import api from './api';
 import { offlineStorage } from '../lib/db';
 
 const productService = {
-    getAll: async () => {
-        if (!navigator.onLine) {
-            console.log("📦 Récupération des produits depuis le cache local...");
+    getAll: async (params = {}) => {
+        if (!navigator.onLine && Object.keys(params).length === 0) {
             return await offlineStorage.getProducts();
         }
         try {
-            const response = await api.get('/products');
+            const response = await api.get('/products', { params });
             const data = response.data;
             
-            // L'API renvoie { total, pages, products: [] } ou directement []
-            const products = Array.isArray(data) ? data : (data.products || []);
-            
-            // Mise à jour silencieuse du cache (bulkPut attend un tableau)
-            if (products.length > 0) {
-                offlineStorage.saveProducts(products).catch(err => console.error("Erreur cache products:", err));
-            }
-            return products;
+            // On retourne soit le tableau de produits, soit l'objet paginé complet
+            return data;
         } catch (error) {
-            console.error("Erreur réseau products, tentative cache...");
-            return await offlineStorage.getProducts();
+            if (Object.keys(params).length === 0) {
+                return await offlineStorage.getProducts();
+            }
+            throw error;
         }
     },
 
     getById: async (id) => {
-        const response = await api.get(`/products/${id}`);
-        return response.data;
+        try {
+            const response = await api.get(`/products/${id}`);
+            return response.data;
+        } catch (error) {
+            throw new Error(
+                error.response?.data?.message ||
+                (error.response?.status === 404 ? 'Produit introuvable.' : 'Erreur lors du chargement du produit.')
+            );
+        }
     },
 
     // Produits de MON magasin (vendeur connecté)

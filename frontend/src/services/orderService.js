@@ -1,7 +1,7 @@
 import api from './api';
 
 const orderService = {
-    getMyOrders: async () => {
+    getAll: async () => {
         const response = await api.get('/orders/me');
         return response.data;
     },
@@ -11,12 +11,17 @@ const orderService = {
         return response.data;
     },
 
-    createOrder: async (orderData) => {
+    getAllAdmin: async () => {
+        const response = await api.get('/orders');
+        return response.data;
+    },
+
+    create: async (orderData) => {
         const response = await api.post('/orders', orderData);
         return response.data;
     },
 
-    updateOrderStatus: async (orderId, statut) => {
+    updateStatus: async (orderId, statut) => {
         const response = await api.patch(`/orders/${orderId}/status`, { statut });
         return response.data;
     },

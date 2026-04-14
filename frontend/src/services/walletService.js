@@ -1,8 +1,8 @@
 import api from './api';
 
 const walletService = {
-    getMyWallet: async () => {
-        const response = await api.get('/wallet/me');
+    getWallet: async () => {
+        const response = await api.get('/wallet');
         return response.data;
     },
 
@@ -18,6 +18,11 @@ const walletService = {
 
     getAllTransactions: async () => {
         const response = await api.get('/wallet/all');
+        return response.data;
+    },
+
+    transfer: async (transferData) => {
+        const response = await api.post('/wallet/transfer', transferData);
         return response.data;
     }
 };

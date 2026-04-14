@@ -14,8 +14,6 @@ export const syncService = {
         const pendingOrders = await offlineStorage.getQueuedOrders();
         if (pendingOrders.length === 0) return;
 
-        console.log(`🔄 Synchronisation de ${pendingOrders.length} commandes...`);
-
         for (const order of pendingOrders) {
             try {
                 const response = await axios.post(`${API_BASE_URL}/orders`, {
@@ -27,7 +25,6 @@ export const syncService = {
 
                 if (response.status === 201) {
                     await offlineStorage.markOrderSynced(order.id);
-                    console.log(`✅ Commande ${order.id} synchronisée.`);
                     toast.success("Votre commande hors-ligne a été synchronisée avec succès !");
                 }
             } catch (error) {
@@ -39,7 +36,6 @@ export const syncService = {
                     
                     // On modifie l'état local pour empêcher la boucle infinie. 
                     await offlineStorage.markOrderFailed(order.id, messageErreur);
-                    console.warn(`⚠️ Commande ${order.id} marquée comme échouée : ${messageErreur}`);
                     
                     // Notification UX claire pour l'utilisateur
                     toast.error("Produit indisponible. Votre commande n'a pas pu être finalisée.", { 

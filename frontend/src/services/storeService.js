@@ -6,12 +6,12 @@ const storeService = {
         return response.data;
     },
 
-    createStore: async (storeData) => {
+    create: async (storeData) => {
         const response = await api.post('/stores', storeData);
         return response.data;
     },
 
-    getAllStores: async () => {
+    getAll: async () => {
         const response = await api.get('/stores');
         return response.data;
     },

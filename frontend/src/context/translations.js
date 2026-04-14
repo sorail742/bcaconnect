@@ -34,6 +34,15 @@ export const translations = {
         join: "REJOINDRE",
         lang: "Langue",
         
+        // Banner & Clean labels
+        promoTitle: "Découvrez l'application BCA Connect",
+        promoDesc: "Votre écosystème commercial désormais dans votre poche.",
+        promoAction: "Télécharger",
+        connectedEcosystem: "Écosystème Connecté",
+        catalogueLabel: "Catalogue",
+        assistanceLabel: "Assistance",
+        featuresLabel: "Fonctionnalités",
+        
         // Hero
         badgeText: "Élevez votre écosystème commercial",
         heroTitle1: "Le portail moderne",
@@ -433,6 +442,15 @@ export const translations = {
         myDashboard: "MY DASHBOARD",
         join: "JOIN",
         lang: "Language",
+
+        // Banner & Clean labels
+        promoTitle: "Discover the BCA Connect App",
+        promoDesc: "Your business ecosystem now in your pocket.",
+        promoAction: "Download",
+        connectedEcosystem: "Connected Ecosystem",
+        catalogueLabel: "Catalog",
+        assistanceLabel: "Support",
+        featuresLabel: "Features",
         
         // Hero
         badgeText: "Elevate your business ecosystem",
