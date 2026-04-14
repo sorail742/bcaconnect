@@ -49,6 +49,7 @@ Bienvenue dans la documentation officielle de l'API **BCA Connect**. Cette API R
 | `POST` | `/assign` | Transpo* | **Prise en charge** : S'assigne un colis. Génère un **Code OTP**. |
 | `POST` | `/tracking` | Transpo* | **GPS Localisation** : Enregistre les coordonnées actuelles. |
 | `POST` | `/verify` | Transpo* | **Finalisation** : Le transporteur saisit l'OTP client. Libération des fonds. |
+| `GET` | `/mine` | Transpo* | **Mes Missions** : Liste les livraisons actives assignées au transporteur. |
 
 ---
 

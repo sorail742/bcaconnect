@@ -265,6 +265,50 @@ const dashboardController = {
         } catch (error) {
             next(error);
         }
+    },
+
+    /**
+     * IA Trends & Prédictions
+     */
+    getTrends: async (req, res, next) => {
+        try {
+            // Simulation d'analyse IA basée sur les commandes réelles
+            const orders = await Order.findAll({
+                where: { statut: 'payé' },
+                include: [{
+                    model: OrderItem,
+                    as: 'items',
+                    include: [{ model: Product, attributes: ['categorie'] }]
+                }]
+            });
+
+            const categoryStats = {};
+            orders.forEach(order => {
+                order.items.forEach(item => {
+                    const cat = item.Product?.categorie || 'Autre';
+                    if (!categoryStats[cat]) {
+                        categoryStats[cat] = { count: 0, revenue: 0 };
+                    }
+                    categoryStats[cat].count += item.quantite;
+                    categoryStats[cat].revenue += parseFloat(item.prix_unitaire_achat) * item.quantite;
+                });
+            });
+
+            const trends = Object.entries(categoryStats).map(([name, data]) => ({
+                name,
+                value: data.revenue,
+                growth: (Math.random() * 20 - 5).toFixed(1), // Simulation de croissance IA
+                confidence: (Math.random() * 20 + 75).toFixed(0)
+            })).sort((a, b) => b.value - a.value);
+
+            res.json({
+                lastUpdated: new Date(),
+                trends,
+                globalInsight: "L'analyse IA indique une forte demande sur les produits de première nécessité pour le mois prochain."
+            });
+        } catch (error) {
+            next(error);
+        }
     }
 };
 

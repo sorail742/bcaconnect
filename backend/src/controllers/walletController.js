@@ -1,4 +1,6 @@
 const { Wallet, Transaction, User, sequelize } = require('../models');
+const crypto = require('crypto');
+const logger = require('../utils/logger'); // Utiliser le logger centralisé du projet
 
 const walletController = {
     getMyWallet: async (req, res, next) => {
@@ -83,10 +85,10 @@ const walletController = {
         try {
             const { montant, mode_paiement, reference_externe } = req.body;
             
-            // Validation Métier Stricte : Montant valide et > 0
-            if (!montant || isNaN(montant) || Number(montant) <= 0) {
+            // Validation Métier Stricte & Sécurité (Anti-Overflow DB - Max 10 Milliards GNF)
+            if (!montant || isNaN(montant) || Number(montant) <= 0 || Number(montant) > 10000000000) {
                 await t.rollback();
-                return res.status(400).json({ message: "Montant invalide. Le montant doit être supérieur à 0." });
+                return res.status(400).json({ message: "Montant invalide. Le montant doit être compris entre 1 et 10,000,000,000 GNF." });
             }
 
             // Vérification de l'idempotence
@@ -123,7 +125,7 @@ const walletController = {
                 type_transaction: 'depot',
                 montant: numericMontant,
                 statut: 'complete',
-                reference_externe: reference_externe || `RECH-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                reference_externe: reference_externe || `RECH-${crypto.randomUUID()}`,
                 metadata: { mode_paiement, source: 'user_recharge' }
             }, { transaction: t });
 
@@ -142,10 +144,10 @@ const walletController = {
         try {
             const { destinataireId, montant, motif, reference_externe } = req.body;
             
-            // Validation Métier
-            if (!montant || isNaN(montant) || Number(montant) <= 0) {
+            // Validation Métier & Limite Overflow
+            if (!montant || isNaN(montant) || Number(montant) <= 0 || Number(montant) > 10000000000) {
                 await t.rollback();
-                return res.status(400).json({ message: "Montant invalide. Le montant spécifié doit être supérieur à 0." });
+                return res.status(400).json({ message: "Montant invalide. Le montant spécifié doit être compris entre 1 et 10,000,000,000 GNF." });
             }
             if (String(req.user.id) === String(destinataireId)) {
                 await t.rollback();
@@ -198,8 +200,8 @@ const walletController = {
             destWallet.solde_virtuel = Math.round((Number(destWallet.solde_virtuel) + numericMontant) * 100) / 100;
             await destWallet.save({ transaction: t });
 
-            // Ledger (Traçabilité stricte)
-            const refBase = reference_externe || `TRF-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            // Ledger (Traçabilité stricte) — UUID v4 garanti unique (pas de collision possible)
+            const refBase = reference_externe || `TRF-${crypto.randomUUID()}`;
 
             const txDebit = await Transaction.create({
                 portefeuille_id: sourceWallet.id,
@@ -222,12 +224,102 @@ const walletController = {
             // 3. Validation Finale (Aucun crash n'a eu lieu)
             await t.commit();
             res.json({ message: "Transfert sécurisé effectué avec succès.", transaction: txDebit });
+
+            // 4. Notification Temps Réel via Socket.io
+            const io = req.app.get('socketio');
+            if (io) {
+                // Notifier le destinataire du crédit
+                io.to(String(destinataireId)).emit('notification_received', {
+                    type: 'wallet',
+                    subtype: 'credit',
+                    message: `Vous avez reçu un transfert de ${numericMontant.toLocaleString()} GNF`,
+                    amount: numericMontant,
+                    transactionId: txCredit.id
+                });
+                
+                // Optionnel : Forcer une actualisation du solde pour le destinataire
+                io.to(String(destinataireId)).emit('wallet_updated', { type: 'credit', amount: numericMontant });
+            }
             
         } catch (error) {
             // Rollback d'urgence pour assurer l'intégrité du Ledger
             await t.rollback();
-            console.error('Erreur Critique Transfert Wallet:', error);
+            logger.error('Erreur Critique Transfert Wallet:', error);
             next(error); 
+        }
+    },
+
+    // 🛡️ SÉCURITÉ FINTECH : Traitement d'injection d'argent via Webhook
+    rechargeWebhook: async (req, res, next) => {
+        const t = await sequelize.transaction();
+        try {
+            // 1. Détection Anti-Spoofing (Signature HMAC)
+            const signature = req.headers['x-bca-signature'];
+            const webhookSecret = process.env.WEBHOOK_SECRET || 'bca-webhook-secret-dev';
+            
+            if (!signature) {
+                await t.rollback();
+                return res.status(401).json({ message: 'Signature Webhook manquante.' });
+            }
+
+            const expectedSignature = crypto.createHmac('sha256', webhookSecret)
+                .update(JSON.stringify(req.body))
+                .digest('hex');
+
+            if (signature !== expectedSignature) {
+                await t.rollback();
+                logger.warn('Tentative de falsification de Webhook bloquée.', { ip: req.ip });
+                return res.status(403).json({ message: 'Signature invalide.' });
+            }
+
+            // 2. Traitement des datas certifiées du Payload
+            const { user_id, montant, transaction_id, statut } = req.body;
+            
+            // Ne traiter que les Succès
+            if (statut !== 'SUCCESS') {
+                await t.rollback();
+                return res.status(200).send('Ignoré: Statut non complété.');
+            }
+
+            // 3. Idempotence Absolue
+            const existingTx = await Transaction.findOne({ where: { reference_externe: transaction_id }, transaction: t });
+            if (existingTx) {
+                await t.rollback();
+                return res.status(200).send('Webhook déjà traité.');
+            }
+
+            // 4. Verrouillage DB
+            const wallet = await Wallet.findOne({ 
+                where: { user_id: user_id },
+                transaction: t,
+                lock: t.LOCK.UPDATE
+            });
+
+            if (!wallet) {
+                await t.rollback();
+                return res.status(404).send('Portefeuille Introuvable.');
+            }
+
+            const numericMontant = Math.round(Number(montant) * 100) / 100;
+            wallet.solde_virtuel = Math.round((Number(wallet.solde_virtuel) + numericMontant) * 100) / 100;
+            await wallet.save({ transaction: t });
+
+            await Transaction.create({
+                portefeuille_id: wallet.id,
+                type_transaction: 'depot',
+                montant: numericMontant,
+                statut: 'complete',
+                reference_externe: transaction_id,
+                metadata: { source: 'webhook_gateway' }
+            }, { transaction: t });
+
+            await t.commit();
+            res.status(200).send('Webhook processé et solde actualisé.');
+
+        } catch (error) {
+            await t.rollback();
+            logger.error('Erreur Critique Webhook:', error);
+            res.status(500).send('Internal Error');
         }
     }
 };

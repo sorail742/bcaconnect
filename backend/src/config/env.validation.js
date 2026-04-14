@@ -22,7 +22,7 @@ const envSchema = Joi.object({
   ENCRYPTION_KEY: Joi.string().length(64).required(),
   
   // Cache & Session (Redis)
-  REDIS_URL: Joi.string().uri().required(),
+  REDIS_URL: Joi.string().uri().optional().allow(''),
   
   // Services Externes
   AWS_REGION: Joi.string().default('eu-west-3'),

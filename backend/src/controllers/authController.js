@@ -1,38 +1,123 @@
-const { User, Wallet, sequelize } = require('../models');
+const { User, Wallet, Store, sequelize } = require('../models');
 const bcrypt = require('bcryptjs');
 const tokenService = require('../services/tokenService');
 const twoFactorService = require('../services/twoFactorService');
 
 const authController = {
-    // 1. Inscription d'un nouvel utilisateur
+    // 1. Inscription d'un nouvel utilisateur (Différenciée par rôle — Standard BCA v2.6)
     register: async (req, res, next) => {
+        const t = await sequelize.transaction();
         try {
-            const { nom_complet, email, telephone, mot_de_passe, role } = req.body;
+            const {
+                nom_complet, email, telephone, mot_de_passe, role,
+                // Champs spécifiques vendeur (fournisseur)
+                nom_boutique, description_boutique, adresse_boutique, categorie_activite, registre_commerce,
+                // Champs spécifiques transporteur
+                type_vehicule, numero_permis, zone_couverture, disponibilite,
+                // Champs optionnels client
+                adresse
+            } = req.body;
 
+            // ── Vérification unicité ──
             const existingEmail = await User.findOne({ where: { email } });
-            if (existingEmail) return res.status(400).json({ message: "Cet email est déjà utilisé." });
+            if (existingEmail) {
+                await t.rollback();
+                return res.status(400).json({ message: "Cet email est déjà utilisé." });
+            }
 
             const existingPhone = await User.findOne({ where: { telephone } });
-            if (existingPhone) return res.status(400).json({ message: "Ce numéro de téléphone est déjà utilisé." });
+            if (existingPhone) {
+                await t.rollback();
+                return res.status(400).json({ message: "Ce numéro de téléphone est déjà utilisé." });
+            }
 
+            // ── Validation spécifique par rôle ──
+            if (role === 'fournisseur' && !nom_boutique) {
+                await t.rollback();
+                return res.status(400).json({ message: "Le nom de la boutique est requis pour les vendeurs." });
+            }
+            if (role === 'transporteur') {
+                if (!type_vehicule || !numero_permis || !zone_couverture) {
+                    await t.rollback();
+                    return res.status(400).json({ message: "Type de véhicule, numéro de permis et zone de couverture sont requis pour les livreurs." });
+                }
+            }
+
+            // ── Hachage du mot de passe ──
             const salt = await bcrypt.genSalt(10);
-            const hashedContext = await bcrypt.hash(mot_de_passe, salt);
+            const hashedPassword = await bcrypt.hash(mot_de_passe, salt);
 
-            const newUser = await User.create({
+            // ── Construction dynamique des données utilisateur ──
+            const userData = {
                 nom_complet,
                 email,
                 telephone,
-                mot_de_passe: hashedContext,
-                role
-            });
+                mot_de_passe: hashedPassword,
+                role,
+                // Clients : accès immédiat. Vendeurs/Transporteurs : validation admin requise (cf. docs projet)
+                est_approuve: role === 'client',
+                statut: role === 'client' ? 'actif' : 'en_attente',
+            };
 
-            await Wallet.create({ user_id: newUser.id });
+            // Champs spécifiques vendeur
+            if (role === 'fournisseur') {
+                userData.adresse = adresse_boutique || null;
+                userData.categorie_activite = categorie_activite || null;
+                userData.registre_commerce = registre_commerce || null;
+            }
+
+            // Champs spécifiques client
+            if (role === 'client') {
+                userData.adresse = adresse || null;
+            }
+
+            // Champs spécifiques transporteur
+            if (role === 'transporteur') {
+                userData.metadata_transporteur = {
+                    type_vehicule,
+                    numero_permis,
+                    zone_couverture,
+                    disponibilite: disponibilite || 'temps_plein'
+                };
+            }
+
+            // ── Création User (Transaction atomique) ──
+            const newUser = await User.create(userData, { transaction: t });
+
+            // ── Création Wallet ──
+            await Wallet.create({ user_id: newUser.id }, { transaction: t });
+
+            // ── Auto-création Boutique pour les vendeurs ──
+            if (role === 'fournisseur') {
+                const slug = nom_boutique
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '')
+                    + '-' + newUser.id.slice(0, 8);
+
+                await Store.create({
+                    proprietaire_id: newUser.id,
+                    nom_boutique,
+                    description: description_boutique || null,
+                    slug,
+                    statut: 'en_attente',
+                }, { transaction: t });
+            }
+
+            // ── Commit de la transaction ──
+            await t.commit();
+
+            // ── Réponse adaptée par rôle ──
+            const responseMessage = role === 'client'
+                ? "Compte créé avec succès"
+                : "Compte créé avec succès. Votre compte sera activé après vérification par notre équipe (24-48h).";
 
             res.status(201).json({
-                message: "Utilisateur créé avec succès",
-                user: { id: newUser.id, nom_complet: newUser.nom_complet, role: newUser.role }
+                message: responseMessage,
+                user: { id: newUser.id, nom_complet: newUser.nom_complet, role: newUser.role, est_approuve: newUser.est_approuve }
             });
         } catch (error) {
+            await t.rollback();
             next(error);
         }
     },
@@ -59,9 +144,17 @@ const authController = {
 
             const tokens = await tokenService.getTokens(user);
 
+            // 🛑 SÉCURITÉ FINTECH : Stockage strict du Refresh Token en Cookie (Anti-XSS)
+            res.cookie('bca_refresh_token', tokens.refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'Strict',
+                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 jours
+            });
+
             res.json({
                 message: "Connexion réussie",
-                ...tokens,
+                accessToken: tokens.accessToken, // Seul l'access token est retourné au front JS
                 user: { id: user.id, nom_complet: user.nom_complet, role: user.role }
             });
         } catch (error) {
@@ -94,9 +187,17 @@ const authController = {
             }
 
             const tokens = await tokenService.getTokens(user);
+            
+            res.cookie('bca_refresh_token', tokens.refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'Strict',
+                maxAge: 7 * 24 * 60 * 60 * 1000
+            });
+
             res.json({
                 message: "Vérification 2FA réussie",
-                ...tokens,
+                accessToken: tokens.accessToken,
                 user: { id: user.id, nom_complet: user.nom_complet, role: user.role }
             });
         } catch (error) {
@@ -153,15 +254,31 @@ const authController = {
 
     refreshToken: async (req, res, next) => {
         try {
-            const { refreshToken, userId } = req.body;
-            if (!refreshToken) return res.status(400).json({ message: "Refresh token requis." });
+            const { userId } = req.body;
+            // Extraction asynchrone du HttpOnly cookie
+            const refreshToken = req.cookies?.bca_refresh_token; 
+            
+            if (!refreshToken) return res.status(401).json({ message: "Session expirée ou cookie introuvable." });
 
             const user = await User.findByPk(userId);
-            if (!user) return res.status(401).json({ message: "Utilisateur non reconnu." });
+            if (!user) {
+                res.clearCookie('bca_refresh_token');
+                return res.status(401).json({ message: "Utilisateur non reconnu." });
+            }
 
             const newTokens = await tokenService.refresh(refreshToken, user);
-            res.json(newTokens);
+            
+            // Rotation du Cookie (Renouvellement)
+            res.cookie('bca_refresh_token', newTokens.refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'Strict',
+                maxAge: 7 * 24 * 60 * 60 * 1000
+            });
+
+            res.json({ accessToken: newTokens.accessToken });
         } catch (error) {
+            res.clearCookie('bca_refresh_token');
             res.status(401).json({ message: error.message });
         }
     },

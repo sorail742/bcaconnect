@@ -7,5 +7,6 @@ router.get('/admin', protect, authorize('admin'), dashboardController.getAdminSt
 router.get('/admin/public', dashboardController.getAdminStats); // Route publique pour landing
 router.get('/financial', protect, authorize('admin', 'banque'), dashboardController.getFinancialReports);
 router.get('/vendor', protect, authorize('fournisseur', 'admin'), dashboardController.getVendorStats);
+router.get('/trends', dashboardController.getTrends);
 
 module.exports = router;

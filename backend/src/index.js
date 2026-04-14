@@ -34,6 +34,27 @@ async function runSafeMigrations(sequelize) {
             table: 'boutiques',
             column: 'banner_images',
             definition: { type: require('sequelize').DataTypes.TEXT, allowNull: true }
+        },
+        // Table utilisateurs — colonnes v2.6
+        {
+            table: 'utilisateurs',
+            column: 'adresse',
+            definition: { type: require('sequelize').DataTypes.STRING(255), allowNull: true }
+        },
+        {
+            table: 'utilisateurs',
+            column: 'categorie_activite',
+            definition: { type: require('sequelize').DataTypes.STRING(100), allowNull: true }
+        },
+        {
+            table: 'utilisateurs',
+            column: 'registre_commerce',
+            definition: { type: require('sequelize').DataTypes.STRING(100), allowNull: true }
+        },
+        {
+            table: 'utilisateurs',
+            column: 'metadata_transporteur',
+            definition: { type: require('sequelize').DataTypes.JSON, allowNull: true }
         }
     ];
 
@@ -56,8 +77,8 @@ async function runSafeMigrations(sequelize) {
 
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
-const ALLOWED_ORIGINS = process.env.NODE_ENV === 'production'
-    ? ['https://bcaconnect-backend.onrender.com', 'https://bcaconnect.onrender.com', 'https://bcaconnect.vercel.app']
+const ALLOWED_ORIGINS = process.env.CORS_ORIGINS 
+    ? process.env.CORS_ORIGINS.split(',') 
     : ['http://localhost:5173', 'http://localhost:3000'];
 
 const io = new Server(server, {

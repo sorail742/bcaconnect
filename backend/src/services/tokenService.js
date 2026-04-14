@@ -1,6 +1,9 @@
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const redis = require('redis');
+const NodeCache = require('node-cache');
+const crypto = require('crypto');
+const logger = require('../utils/logger'); // Utiliser le logger du projet
 
 class TokenService {
     constructor() {
@@ -9,12 +12,43 @@ class TokenService {
         this.accessTokenExp = '15m'; // Access token court (Standard BCA v2.5)
         this.refreshTokenExp = '7d';  // Refresh token long
         
+        // Initialisation du fallback en mémoire (7 jours de TTL)
+        this.localCache = new NodeCache({ stdTTL: 604800, checkperiod: 3600 });
+        
         // Initialisation Redis (P0 #2)
         this.redisClient = null;
+        this.isRedisReady = false;
+
         if (process.env.REDIS_URL) {
-            this.redisClient = redis.createClient({ url: process.env.REDIS_URL });
-            this.redisClient.on('error', (err) => console.error('Redis Client Error', err));
-            this.redisClient.connect().catch(console.error);
+            this.redisClient = redis.createClient({ 
+                url: process.env.REDIS_URL,
+                socket: {
+                    reconnectStrategy: (retries) => {
+                        if (retries > 3) { // Stop retrying after 3 attempts to avoid log spam
+                            return false; 
+                        }
+                        return Math.min(retries * 100, 3000);
+                    }
+                }
+            });
+
+            this.redisClient.on('error', (err) => {
+                // Silencer l'erreur initiale si c'est un refus de connexion en développement
+                if (!this.isRedisReady) return;
+                console.error('Redis Client Error', err);
+            });
+
+            this.redisClient.on('connect', () => {
+                this.isRedisReady = true;
+                logger.info('✅ Store Redis connecté pour les tokens.');
+            });
+
+            this.redisClient.connect().catch(() => {
+                logger.warn('⚠️  Redis non disponible. Utilisation du cache local (RAM) pour les tokens.');
+                this.isRedisReady = false;
+            });
+        } else {
+            logger.info('ℹ️  Redis non configuré. Utilisation du cache local (RAM) pour les tokens.');
         }
     }
 
@@ -23,7 +57,7 @@ class TokenService {
      */
     generateAccessToken(user) {
         const isRS256 = typeof this.privateKey === 'string' && 
-                        this.privateKey.includes('BEGIN RSA PRIVATE KEY') && 
+                        this.privateKey.includes('BEGIN PRIVATE KEY') && 
                         !this.privateKey.includes('...'); // Éviter les placeholders
         
         return jwt.sign(
@@ -39,17 +73,30 @@ class TokenService {
     }
 
     /**
-     * Génère un Refresh Token avec rotation (P0 #2)
+     * Génère un Refresh Token avec rotation (P0 #2) et Multi-Device Support
      */
     async generateRefreshToken(userId) {
-        const refreshToken = uuidv4();
+        // Le token brut que l'utilisateur recevra dans son Cookie
+        const rawToken = crypto.randomBytes(40).toString('hex');
         
-        if (this.redisClient) {
-            // Stockage dans Redis avec expiration (7 jours)
-            await this.redisClient.setEx(`rt:${userId}`, 604800, refreshToken);
+        // On stocke UNIQUEMENT le hash en cache. (Atténue l'impact du dump Redis)
+        const hash = crypto.createHash('sha256').update(rawToken).digest('hex');
+        
+        const KEY = `rt:${userId}:${hash}`;
+        
+        if (this.isRedisReady && this.redisClient) {
+            try {
+                // Stocke "1" avec une expiration de 7 jours. 
+                // Autorise N multi-devices simultanés !
+                await this.redisClient.setEx(KEY, 604800, '1');
+            } catch (err) {
+                this.localCache.set(KEY, '1', 604800);
+            }
+        } else {
+            this.localCache.set(KEY, '1', 604800);
         }
         
-        return refreshToken;
+        return rawToken; // Seul le client possède ce secret !
     }
 
     /**
@@ -78,32 +125,71 @@ class TokenService {
     }
 
     /**
-     * Rafraîchit le token via Refresh Token Rotation (P0 #2)
+     * Rafraîchit le token via Refresh Token Rotation Multi-Device.
+     * Le cookie HttpOnly amène l'ancien token.
      */
-    async refresh(oldRefreshToken, user) {
-        if (!this.redisClient) {
-            throw new Error('Rotation des tokens impossible (Redis non configuré).');
-        }
+    async refresh(oldRawToken, user) {
+        if (!oldRawToken) throw new Error("Aucun refresh token n'a été fourni");
 
-        const storedToken = await this.redisClient.get(`rt:${user.id}`);
+        const hash = crypto.createHash('sha256').update(oldRawToken).digest('hex');
+        const KEY = `rt:${user.id}:${hash}`;
+
+        let isValid = false;
+
+        if (this.isRedisReady && this.redisClient) {
+            try {
+                const storedVal = await this.redisClient.get(KEY);
+                isValid = storedVal === '1';
+            } catch (err) {
+                isValid = this.localCache.get(KEY) === '1';
+            }
+        } else {
+            isValid = this.localCache.get(KEY) === '1';
+        }
         
-        if (!storedToken || storedToken !== oldRefreshToken) {
-            // Suspicion de vol : on invalide tout
-            await this.redisClient.del(`rt:${user.id}`);
-            throw new Error('Token compromis ou expiré. Reconnexion requise.');
+        if (!isValid) {
+            // Suspicion de vol de token (Replay Attack) : On invalide TOUTES les sessions du user
+            await this.revokeAllUserTokens(user.id);
+            throw new Error('Token falsifié, expiré ou volé. Mesure anti-effraction : Toutes les sessions ont été clôturées. Veuillez vous reconnecter.');
         }
 
-        // Succès : Génération d'une nouvelle paire (Rotation)
+        // --- Rotation de token (One-Time Use) ---
+        
+        // 1. Invalide spécifiquement l'ancien terminal utilisé pour cette requête (ne touche pas l'iPhone si on est sur PC)
+        if (this.isRedisReady && this.redisClient) {
+            this.redisClient.del(KEY).catch(()=>{});
+        }
+        this.localCache.del(KEY);
+
+        // 2. Succès : Génération d'une nouvelle paire (Rotation indépendante device)
         return this.getTokens(user);
     }
 
     /**
-     * Invalide le refresh token (Logout)
+     * Invalide un refresh token spécifique (ex: déconnexion locale)
      */
-    async revokeRefreshToken(userId) {
-        if (this.redisClient) {
-            await this.redisClient.del(`rt:${userId}`);
+    async revokeSpecificToken(userId, rawToken) {
+        if (!rawToken) return;
+        const hash = crypto.createHash('sha256').update(rawToken).digest('hex');
+        const KEY = `rt:${userId}:${hash}`;
+        
+        if (this.isRedisReady && this.redisClient) {
+            try { await this.redisClient.del(KEY); } catch (err) { /* ignore */ }
         }
+        this.localCache.del(KEY);
+    }
+
+    /**
+     * Invalide TOUS les tokens (Logout global ou Breach Detection)
+     */
+    async revokeAllUserTokens(userId) {
+        if (this.isRedisReady && this.redisClient) {
+            try {
+                const keys = await this.redisClient.keys(`rt:${userId}:*`);
+                if (keys.length > 0) await this.redisClient.del(keys);
+            } catch (err) { /* ignore */ }
+        }
+        // Il n'y a pas de clean universel sur NodeCache par pattern facilement, l'expiration le fera
     }
 }
 

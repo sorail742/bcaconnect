@@ -1,4 +1,4 @@
-const { Order, OrderItem, Wallet, Transaction, User, DeliveryLog, sequelize } = require('../models');
+const { Order, OrderItem, Product, Wallet, Transaction, User, DeliveryLog, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 const deliveryController = {
@@ -137,7 +137,35 @@ const deliveryController = {
         }
     },
 
-    // 5. Récupérer l'historique de tracking (Client)
+    // 5. Récupérer les livraisons assignées au transporteur connecté
+    getMyDeliveries: async (req, res, next) => {
+        try {
+            const transporteur_id = req.user.id;
+            const history = await Order.findAll({
+                where: {
+                    transporteur_id,
+                    statut_livraison: { [Op.ne]: 'livre' }
+                },
+                include: [
+                    {
+                        model: OrderItem,
+                        as: 'details',
+                        include: [{ model: Product, as: 'produit' }]
+                    },
+                    {
+                        model: User,
+                        attributes: ['nom_complet', 'telephone', 'email']
+                    }
+                ],
+                order: [['updatedAt', 'DESC']]
+            });
+            res.json(history);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // 6. Récupérer l'historique de tracking (Client)
     getTrackingHistory: async (req, res, next) => {
         try {
             const { orderId } = req.params;

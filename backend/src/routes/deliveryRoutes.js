@@ -7,6 +7,7 @@ router.get('/available', protect, authorize('transporteur'), deliveryController.
 router.post('/assign', protect, authorize('transporteur'), deliveryController.assignOrder);
 router.post('/tracking', protect, authorize('transporteur'), deliveryController.updateTracking);
 router.post('/verify', protect, authorize('transporteur'), deliveryController.verifyDelivery);
+router.get('/mine', protect, authorize('transporteur'), deliveryController.getMyDeliveries);
 router.get('/history/:orderId', protect, deliveryController.getTrackingHistory);
 
 module.exports = router;

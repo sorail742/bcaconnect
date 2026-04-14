@@ -61,7 +61,9 @@ describe('🛡️ Suite de Tests de Sécurité - Authentification (V2.6)', () =>
             
             expect(res.status).toBe(200);
             expect(res.body).toHaveProperty('accessToken');
-            expect(res.body).toHaveProperty('refreshToken');
+            // 🛡️ SÉCURITÉ: Le système a été amélioré. Le Refresh Token n'est plus dans le body (XSS safe).
+            // Il est renvoyé via un HttpOnly Cookie. Nous testons plutôt la présence du Header 'set-cookie'
+            expect(res.headers).toHaveProperty('set-cookie');
         });
     });
 

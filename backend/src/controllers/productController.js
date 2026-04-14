@@ -81,21 +81,52 @@ const productController = {
 
     getAll: async (req, res, next) => {
         try {
-            const { page = 1, limit = 20, search = '', categorie_id = '' } = req.query;
+            const { 
+                page = 1, 
+                limit = 20, 
+                search = '', 
+                categorie_id = '', 
+                min_price = 0, 
+                max_price = 100000000, 
+                sort = 'newest' 
+            } = req.query;
+            
             const offset = (parseInt(page) - 1) * parseInt(limit);
             const { Op } = require('sequelize');
 
             const where = {};
-            if (search) where.nom_produit = { [Op.like]: `%${search}%` };
-            if (categorie_id) where.categorie_id = categorie_id;
+            
+            // Filtres textuels
+            if (search) {
+                where[Op.or] = [
+                    { nom_produit: { [Op.like]: `%${search}%` } },
+                    { description: { [Op.like]: `%${search}%` } }
+                ];
+            }
+            
+            // Filtre par catégorie
+            if (categorie_id && categorie_id !== 'Tous') {
+                where.categorie_id = categorie_id;
+            }
+
+            // Filtre par prix
+            where.prix_unitaire = {
+                [Op.between]: [parseFloat(min_price), parseFloat(max_price)]
+            };
+
+            // Logique de tri
+            let order = [['createdAt', 'DESC']];
+            if (sort === 'price_asc') order = [['prix_unitaire', 'ASC']];
+            if (sort === 'price_desc') order = [['prix_unitaire', 'DESC']];
+            if (sort === 'popular') order = [['stock_quantite', 'ASC']]; // Proxy pour le test
 
             const { count, rows: products } = await Product.findAndCountAll({
                 where,
                 include: [
-                    { model: Store, attributes: ['nom_boutique', 'slug', 'id'] },
+                    { model: Store, attributes: ['nom_boutique', 'slug', 'id', 'logo_url'] },
                     { model: Category, as: 'categorie', attributes: ['nom_categorie'] }
                 ],
-                order: [['createdAt', 'DESC']],
+                order,
                 limit: parseInt(limit),
                 offset
             });

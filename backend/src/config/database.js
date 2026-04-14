@@ -24,21 +24,36 @@ if (useLocalDB || isTest) {
         dialect: 'postgres',
         logging: false,
         dialectOptions: {
-            ssl: process.env.DATABASE_URL.includes('localhost') ? false : {
+            ssl: {
                 require: true,
                 rejectUnauthorized: false
-            }
+            },
+            connectTimeout: 60000 // Timeout de connexion socket
         },
         pool: {
-            max: 5,
-            min: 0,
-            acquire: 30000,
-            idle: 10000
+            max: 20, // Augmenté pour gérer les bouffées de requêtes
+            min: 1,
+            acquire: 60000,
+            idle: 10000,
+            evict: 1000,
         },
         define: {
             timestamps: true,
             underscored: true,
         },
+        // Ajout d'une stratégie de retry pour Sequelize
+        retry: {
+            match: [
+                /SequelizeConnectionError/,
+                /SequelizeConnectionRefusedError/,
+                /SequelizeHostNotFoundError/,
+                /SequelizeHostNotReachableError/,
+                /SequelizeInvalidConnectionError/,
+                /SequelizeConnectionTimedOutError/,
+                /TimeoutError/
+            ],
+            max: 3
+        }
     });
 }
 

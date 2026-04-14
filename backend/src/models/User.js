@@ -68,6 +68,28 @@ const User = sequelize.define('User', {
         type: DataTypes.JSON,
         allowNull: true,
         defaultValue: {}
+    },
+    // ── Champs spécifiques par rôle (Standard BCA v2.6) ──────────
+    adresse: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        comment: 'Adresse de livraison (client) ou adresse commerciale (fournisseur)',
+    },
+    categorie_activite: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+        comment: 'Secteur d\'activité du fournisseur (Agriculture, Mode, Technologie...)',
+    },
+    registre_commerce: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+        comment: 'Numéro de registre de commerce du fournisseur (validation admin)',
+    },
+    metadata_transporteur: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        defaultValue: null,
+        comment: 'Données transporteur: { type_vehicule, numero_permis, zone_couverture, disponibilite }',
     }
 }, {
     tableName: 'utilisateurs',
@@ -95,6 +117,22 @@ const User = sequelize.define('User', {
                 users.forEach(decryptUser);
             } else {
                 decryptUser(users);
+            }
+        },
+        afterCreate: (user) => {
+            if (typeof user.telephone === 'string' && user.telephone.includes(':')) {
+                user.telephone = encryptionService.decrypt(user.telephone);
+            }
+            if (typeof user.two_factor_secret === 'string' && user.two_factor_secret.includes(':')) {
+                user.two_factor_secret = encryptionService.decrypt(user.two_factor_secret);
+            }
+        },
+        afterUpdate: (user) => {
+            if (typeof user.telephone === 'string' && user.telephone.includes(':')) {
+                user.telephone = encryptionService.decrypt(user.telephone);
+            }
+            if (typeof user.two_factor_secret === 'string' && user.two_factor_secret.includes(':')) {
+                user.two_factor_secret = encryptionService.decrypt(user.two_factor_secret);
             }
         }
     }
