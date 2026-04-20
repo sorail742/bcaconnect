@@ -1,5 +1,6 @@
 const { User } = require('../models');
 const { Op } = require('sequelize');
+const sequelize = require('../config/database');
 const bcrypt = require('bcryptjs');
 
 const userController = {
@@ -10,10 +11,11 @@ const userController = {
             const offset = (page - 1) * limit;
 
             const where = {};
+            const likeOp = sequelize.getDialect() === 'postgres' ? Op.iLike : Op.like;
             if (search) {
                 where[Op.or] = [
-                    { nom_complet: { [Op.like]: `%${search}%` } },
-                    { email: { [Op.like]: `%${search}%` } }
+                    { nom_complet: { [likeOp]: `%${search}%` } },
+                    { email: { [likeOp]: `%${search}%` } }
                 ];
             }
             if (role) {
@@ -34,6 +36,33 @@ const userController = {
                 currentPage: parseInt(page),
                 users
             });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // Recherche publique (id, nom, rôle) pour la messagerie - Ouvert à tous les membres
+    getPublicUsers: async (req, res, next) => {
+        try {
+            const { search = '' } = req.query;
+            const where = {
+                statut: 'actif',
+                id: { [Op.ne]: req.user.id } // Ne pas se voir soi-même
+            };
+
+            const likeOp = sequelize.getDialect() === 'postgres' ? Op.iLike : Op.like;
+            if (search) {
+                where.nom_complet = { [likeOp]: `%${search}%` };
+            }
+
+            const users = await User.findAll({
+                where,
+                limit: 20,
+                attributes: ['id', 'nom_complet', 'role', 'statut', 'email'],
+                order: [['nom_complet', 'ASC']]
+            });
+
+            res.json(users);
         } catch (error) {
             next(error);
         }

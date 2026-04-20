@@ -19,7 +19,7 @@ const Transaction = sequelize.define('Transaction', {
         unique: true,
     },
     cle_idempotence: {
-        type: DataTypes.UUID,
+        type: DataTypes.STRING(255),
         defaultValue: DataTypes.UUIDV4,
         unique: true,
     },

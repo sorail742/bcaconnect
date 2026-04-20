@@ -33,6 +33,10 @@ const creditService = {
     /**
      * Récupère les crédits de l'utilisateur connecté
      */
+    getScore: async () => {
+        const response = await api.get('/credits/score');
+        return response.data;
+    },
     getMyCredits: async () => {
         try {
             const response = await api.get('/credits/my');

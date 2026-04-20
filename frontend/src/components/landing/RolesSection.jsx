@@ -46,9 +46,9 @@ export function RolesSection() {
     ];
 
     return (
-        <section className="relative py-32 bg-white font-sans overflow-hidden border-t border-slate-100">
+        <section className="relative py-32 bg-background font-sans overflow-hidden border-t border-border">
             <GeometricBackground />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-50 via-white to-white pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-muted/50 via-background to-background pointer-events-none" />
             
             <div className="container mx-auto px-6 md:px-12 relative z-10 w-full max-w-[90%] lg:max-w-[1200px]">
                 
@@ -57,7 +57,7 @@ export function RolesSection() {
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
-                        className="inline-block px-4 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-xs font-black text-slate-500 uppercase tracking-widest shadow-sm"
+                        className="inline-block px-4 py-1.5 rounded-full bg-muted border border-border text-xs font-black text-muted-foreground uppercase tracking-widest shadow-sm"
                     >
                         Création de Compte
                     </motion.div>
@@ -66,16 +66,16 @@ export function RolesSection() {
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.1]"
+                        className="text-4xl md:text-5xl lg:text-6xl font-black text-foreground tracking-tight leading-[1.1]"
                     >
-                        Rejoignez l'écosystème <span className="text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-500">BCA</span>
+                        Rejoignez l'écosystème <span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground to-muted-foreground">BCA</span>
                     </motion.h2>
                     
                     <motion.p 
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="text-lg md:text-xl text-slate-500 font-medium max-w-2xl mx-auto"
+                        className="text-lg md:text-xl text-muted-foreground font-medium max-w-2xl mx-auto"
                     >
                         {t('aboutDescHero') || "Une seule plateforme unifiée pour vos achats sécurisés et l'accélération de votre croissance commerciale en Afrique."}
                     </motion.p>
@@ -94,7 +94,7 @@ export function RolesSection() {
                                 <Link 
                                     to={role.to}
                                     className={cn(
-                                        "group flex flex-col p-10 rounded-[2.5rem] bg-white border-2 border-slate-100 transition-all duration-500 relative overflow-hidden h-full",
+                                        "group flex flex-col p-10 rounded-[2.5rem] bg-card border-2 border-border transition-all duration-500 relative overflow-hidden h-full",
                                         role.hoverBorder,
                                         "hover:shadow-[0_40px_100px_-25px_rgba(0,0,0,0.1)]"
                                     )}
@@ -107,13 +107,13 @@ export function RolesSection() {
 
                                 <div className="relative z-10 flex flex-col h-full">
                                     <div className="flex items-center gap-6 mb-8">
-                                        <div className={cn("size-16 rounded-[1.2rem] flex items-center justify-center transition-transform duration-500 group-hover:scale-110 shadow-sm border border-slate-100", role.bg)}>
+                                        <div className={cn("size-16 rounded-[1.2rem] flex items-center justify-center transition-transform duration-500 group-hover:scale-110 shadow-sm border border-border", role.bg)}>
                                             <role.icon className={cn("size-8", role.color)} />
                                         </div>
-                                        <h3 className="text-2xl font-black text-slate-900">{role.title}</h3>
+                                        <h3 className="text-2xl font-black text-foreground">{role.title}</h3>
                                     </div>
                                     
-                                    <p className="text-base text-slate-600 leading-relaxed mb-10 min-h-[4rem]">
+                                    <p className="text-base text-muted-foreground leading-relaxed mb-10 min-h-[4rem]">
                                         {role.description}
                                     </p>
 
@@ -121,14 +121,14 @@ export function RolesSection() {
                                         {role.features.map((feat, i) => (
                                             <div key={i} className="flex items-start gap-4">
                                                 <CheckCircle2 className={cn("size-5 shrink-0 mt-0.5", role.color)} />
-                                                <span className="text-base font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">{feat}</span>
+                                                <span className="text-base font-semibold text-muted-foreground group-hover:text-foreground transition-colors">{feat}</span>
                                             </div>
                                         ))}
                                     </div>
 
                                     {/* Premium Button */}
                                     <div className={cn(
-                                        "h-14 w-full rounded-2xl bg-slate-900 text-white font-bold text-base transition-all duration-500 overflow-hidden relative"
+                                        "h-14 w-full rounded-2xl bg-foreground text-background font-bold text-base transition-all duration-500 overflow-hidden relative"
                                     )}>
                                         <div className={cn(
                                             "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500",
@@ -160,10 +160,10 @@ export function RolesSection() {
                         { icon: LayoutDashboard, label: "Interface Intuitive" }
                     ].map((item, i) => (
                         <div key={i} className="flex flex-col items-center gap-4 group">
-                            <div className="size-12 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 transition-transform group-hover:-translate-y-1">
-                                <item.icon className="size-5 text-slate-400 group-hover:text-slate-900 transition-colors" />
+                            <div className="size-12 rounded-xl bg-muted flex items-center justify-center border border-border transition-transform group-hover:-translate-y-1">
+                                <item.icon className="size-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                             </div>
-                            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">{item.label}</p>
+                            <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{item.label}</p>
                         </div>
                     ))}
                 </motion.div>

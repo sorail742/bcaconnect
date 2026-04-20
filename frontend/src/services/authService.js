@@ -10,6 +10,11 @@ const authService = {
         return response.data;
     },
 
+    googleLogin: async (credential) => {
+        const response = await api.post('/auth/google-login', { credential });
+        return response.data;
+    },
+
     /**
      * Inscrit un nouvel utilisateur (nom_complet, email, telephone, mot_de_passe, role).
      * Endpoint: POST /auth/register

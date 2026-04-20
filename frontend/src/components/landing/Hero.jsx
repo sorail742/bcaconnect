@@ -85,19 +85,19 @@ export function Hero() {
                     {/* Master Narrative - Outfit Black */}
                     <motion.h1 
                         variants={itemVariants}
-                        className="text-5xl md:text-8xl lg:text-[9rem] font-black tracking-[-0.05em] leading-[1.05] text-white max-w-7xl uppercase mb-10 text-center drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+                        className="text-5xl md:text-8xl lg:text-[9rem] font-black tracking-[-0.05em] leading-[1.05] text-foreground dark:text-white max-w-7xl uppercase mb-10 text-center drop-shadow-[0_10px_30px_rgba(0,0,0,0.2)] dark:drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
                         style={{ fontFamily: "'Outfit', sans-serif" }}
                     >
                         {t('heroTitle1')} <br />
                         <span className="text-primary italic drop-shadow-[0_0_20px_rgba(255,102,0,0.3)]">
                             {t('heroTitle2')}
                         </span> <br />
-                        <span className="text-white">{t('heroTitle3')}</span>
+                        <span className="text-foreground dark:text-white">{t('heroTitle3')}</span>
                     </motion.h1>
 
                     {/* Description Architecture */}
                     <motion.div variants={itemVariants} className="max-w-3xl mx-auto space-y-8 mb-16">
-                        <p className="text-xl md:text-2xl text-white/90 font-medium leading-[1.4] tracking-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
+                        <p className="text-xl md:text-2xl text-foreground/80 dark:text-white/90 font-medium leading-[1.4] tracking-tight">
                             {t('heroDesc') || "L'infrastructure technologique ultime fusionnant logistique prédictive, finance inclusive et commerce global."}
                         </p>
                         
@@ -109,7 +109,7 @@ export function Hero() {
                             ].map((tag, i) => (
                                 <div key={i} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 shadow-lg">
                                     <tag.icon className="size-3.5 text-primary" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-white">{tag.label}</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-foreground dark:text-white">{tag.label}</span>
                                 </div>
                             ))}
                         </div>
@@ -118,13 +118,13 @@ export function Hero() {
                     {/* Action Hub */}
                     <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-24 w-full">
                         <Link to="/marketplace" className="w-full sm:w-auto">
-                            <button className="w-full sm:w-auto h-20 px-12 bg-primary text-white font-black text-sm uppercase tracking-[0.3em] rounded-[1.5rem] shadow-[0_30px_60px_-15px_rgba(255,102,0,0.4)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 border border-white/20">
+                            <button className="w-full sm:w-auto h-20 px-12 bg-primary text-primary-foreground font-black text-sm uppercase tracking-[0.3em] rounded-[1.5rem] shadow-[0_30px_60px_-15px_rgba(255,102,0,0.4)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 border border-white/20">
                                 EXPLORER LE MARCHÉ
                                 <ArrowRight className="size-5" />
                             </button>
                         </Link>
                         <Link to="/register" className="w-full sm:w-auto">
-                            <button className="w-full sm:w-auto h-20 px-12 bg-white/5 border-2 border-white/10 backdrop-blur-3xl text-foreground font-black text-sm uppercase tracking-[0.3em] rounded-[1.5rem] hover:bg-white/10 hover:border-primary/20 transition-all flex items-center justify-center gap-3">
+                            <button className="w-full sm:w-auto h-20 px-12 bg-foreground/5 border-2 border-border/50 backdrop-blur-3xl text-foreground font-black text-sm uppercase tracking-[0.3em] rounded-[1.5rem] hover:bg-foreground/10 hover:border-primary/20 transition-all flex items-center justify-center gap-3">
                                 <Rocket className="size-5 text-primary" />
                                 CRÉER UN COMPTE
                             </button>
@@ -148,11 +148,11 @@ export function Hero() {
                                     "relative p-8 rounded-[2.5rem] border transition-all duration-700 hover:-translate-y-4 group overflow-hidden",
                                     stat.highlight 
                                         ? "bg-primary border-primary shadow-2xl shadow-primary/20" 
-                                        : "bg-card/40 backdrop-blur-3xl border-border hover:border-primary/30"
+                                        : "bg-card backdrop-blur-3xl border-border hover:border-primary/30"
                                 )}
                             >
                                 {/* Static Ambient glow */}
-                                <div className="absolute -right-4 -top-4 size-24 bg-white/5 blur-3xl rounded-full" />
+                                <div className="absolute -right-4 -top-4 size-24 bg-foreground/5 blur-3xl rounded-full" />
                                 
                                 <div className={cn(
                                     "size-14 rounded-2xl flex items-center justify-center mb-6 transition-all duration-500",
@@ -165,7 +165,7 @@ export function Hero() {
                                     <h3 className={cn("text-3xl md:text-4xl font-black tracking-tighter tabular-nums", stat.highlight ? "text-white" : "text-foreground")}>
                                         {stat.val}
                                     </h3>
-                                    <p className={cn("text-[11px] font-black uppercase tracking-widest", stat.highlight ? "text-white/80" : "text-foreground")}>
+                                    <p className={cn("text-[11px] font-black uppercase tracking-widest", stat.highlight ? "text-white/80" : "text-foreground/70")}>
                                         {stat.label}
                                     </p>
                                     <div className={cn("flex items-center gap-2 pt-2 opacity-50", stat.highlight ? "text-white" : "text-muted-foreground")}>

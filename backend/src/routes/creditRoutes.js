@@ -7,6 +7,7 @@ const { validateCreditRequest } = require('../middlewares/inputValidator');
 router.post('/simulate', creditController.simulateCredit);
 router.post('/request', protect, validateCreditRequest, creditController.requestCredit);
 router.get('/my', protect, creditController.getMyCredits);
+router.get('/score', protect, creditController.getUserScore);
 router.post('/pay/:id', protect, creditController.payInstallment);
 router.put('/:id/approve', protect, authorize('admin'), creditController.approveCredit);
 

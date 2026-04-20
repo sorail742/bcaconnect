@@ -30,8 +30,19 @@ function App() {
       }
 
       try {
-        const userData = await authService.getCurrentUser();
-        setAuth(userData, null);
+        // Fallback de sécurité : Si l'API est bloquée plus de 5s, on libère l'interface
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout lors de la restauration de session')), 5000)
+        );
+        
+        const userData = await Promise.race([
+          authService.getCurrentUser(),
+          timeoutPromise
+        ]);
+        
+        // Préserver le token s'il a été mis à jour par l'intercepteur de refresh
+        const currentToken = useAuthStore.getState().token;
+        setAuth(userData, currentToken);
       } catch (error) {
         console.error('Échec de la restauration de session (Cookie Expired):', error);
         clearAuth();

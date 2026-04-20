@@ -115,13 +115,8 @@ const aiController = {
                 };
             }
 
-            // --- APPEL À GROQ VIA AXIOS (IPv4 FORCÉ) ---
-            const response = await axios.post(GROQ_API_URL, {
-                model: MODEL,
-                messages: [
-                    {
-                        role: 'system',
-                        content: `Tu es BCA Assistant, l'assistant intelligent et collaborateur technique de BCA Connect.
+            // --- APPEL À GROQ VIA SERVICE (SÉCURISÉ) ---
+            const systemPrompt = `Tu es BCA Assistant, l'assistant intelligent et collaborateur technique de BCA Connect.
 TES DROITS DE COLLABORATEUR :
 1. ANALYSE TECHNIQUE : Tu as accès aux données de l'utilisateur pour l'aider. 
 2. DÉBOGAGE : Si l'utilisateur signale un problème sur une commande, vérifie les données réelles fournies dans le contexte ci-dessous.
@@ -129,37 +124,24 @@ TES DROITS DE COLLABORATEUR :
    - Conakry (Kaloum, Dixinn, Ratoma, Matam, Matoto) : 20 000 GNF base + 2 000 GNF par article.
    - Province : 50 000 GNF base minimum + 5 000 GNF par article.
 
-CONTEXTE RÉEL DE L'UTILISATEUR (A ne pas divulguer tel quel, utilise-le pour tes analyses) :
+CONTEXTE RÉEL DE L'UTILISATEUR :
 - Nom : ${contextData.user_name || 'Inconnu'}
 - Solde Portefeuille : ${contextData.wallet_balance || 0} GNF
 - Score de confiance : ${contextData.trust_score || 100}%
 - Commandes récentes : ${JSON.stringify(contextData.last_orders || [])}
 
-Réponds toujours en français, de manière concise et très professionnelle.`
-                    },
-                    { role: 'user', content: message }
-                ],
-                max_tokens: 500,
-                temperature: 0.7
-            }, {
-                headers: {
-                    'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                timeout: 60000
-            });
+Réponds toujours en français, de manière concise et très professionnelle.`;
 
-            const text = response.data.choices[0]?.message?.content;
+            const aiResponse = await aiService.callGroq(systemPrompt, message, 500, false);
+
             res.json({
-                response: text || "Je n'ai pas pu générer une réponse.",
-                usage: response.data.usage
+                response: aiResponse || "Je n'ai pas pu générer une réponse."
             });
         } catch (error) {
             console.error('[AI Chat Error]', error.message);
-            const errorMsg = error.response?.data?.error?.message || error.message || "Erreur inconnue";
             res.status(500).json({
                 message: "Désolé, je suis momentanément indisponible.",
-                error: errorMsg
+                error: error.message
             });
         }
     },
@@ -167,48 +149,15 @@ Réponds toujours en français, de manière concise et très professionnelle.`
     // 7. Interpréter une requête de recherche
     interpretSearch: async (req, res, next) => {
         try {
-            const { query, language = 'fr' } = req.body;
+            const { query } = req.body;
             if (!query) {
                 return res.status(400).json({ message: "Requête requise." });
             }
 
-            const response = await axios.post(GROQ_API_URL, {
-                model: MODEL,
-                messages: [
-                    {
-                        role: 'system',
-                        content: `Tu es un expert en interprétation de requêtes de recherche pour une plateforme e-commerce africaine.
-Analyse la requête et retourne un JSON avec:
-- interpretation: explication claire de ce que l'utilisateur cherche
-- keywords: array de mots-clés pertinents
-- category: catégorie principale (ex: "Électronique", "Vêtements", "Alimentation", etc.)
-
-Réponds UNIQUEMENT avec le JSON, sans texte supplémentaire.`
-                    },
-                    { role: 'user', content: `Interprète cette recherche: "${query}"` }
-                ],
-                max_tokens: 300,
-                temperature: 0.5
-            }, {
-                headers: {
-                    'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                timeout: 30000
-            });
-
-            const content = response.data.choices[0]?.message?.content;
-            const parsed = JSON.parse(content);
-            
-            res.json({
-                data: parsed
-            });
+            const interpretation = await aiService.interpretSearch(query);
+            res.json({ data: interpretation });
         } catch (error) {
-            console.error('[Search Interpret Error]', error.message);
-            res.status(500).json({
-                message: "Erreur lors de l'interprétation de la recherche",
-                error: error.message
-            });
+            next(error);
         }
     },
 
@@ -220,44 +169,10 @@ Réponds UNIQUEMENT avec le JSON, sans texte supplémentaire.`
                 return res.status(400).json({ message: "Description requise." });
             }
 
-            const response = await axios.post(GROQ_API_URL, {
-                model: MODEL,
-                messages: [
-                    {
-                        role: 'system',
-                        content: `Tu es un expert en recommandation de produits.
-Basé sur la description, suggère des mots-clés et catégories de produits similaires.
-Réponds avec un JSON contenant:
-- keywords: array de mots-clés
-- categories: array de catégories
-- suggestions: array de suggestions de produits
-
-Réponds UNIQUEMENT avec le JSON.`
-                    },
-                    { role: 'user', content: `Trouve des produits similaires à: "${description}"` }
-                ],
-                max_tokens: 300,
-                temperature: 0.5
-            }, {
-                headers: {
-                    'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                timeout: 30000
-            });
-
-            const content = response.data.choices[0]?.message?.content;
-            const parsed = JSON.parse(content);
-            
-            res.json({
-                data: parsed
-            });
+            const results = await aiService.findSimilarProducts(description);
+            res.json({ data: results });
         } catch (error) {
-            console.error('[Similar Products Error]', error.message);
-            res.status(500).json({
-                message: "Erreur lors de la recherche de produits similaires",
-                error: error.message
-            });
+            next(error);
         }
     },
 
@@ -321,6 +236,71 @@ Réponds UNIQUEMENT avec le JSON.`
             console.error('[Image Analysis Error]', error.message);
             res.status(500).json({
                 message: "Erreur lors de l'analyse de l'image",
+                error: error.message
+            });
+        }
+    },
+    // 10. Analyse de code pour le débogage de la plateforme
+    analyzeCode: async (req, res, next) => {
+        try {
+            const { code, context, language = 'javascript' } = req.body;
+            if (!code) {
+                return res.status(400).json({ message: "Code requis." });
+            }
+
+            const systemPrompt = `Tu es un expert senior en débogage et revue de code pour la plateforme BCA Connect.
+
+STACK TECHNIQUE BCA CONNECT :
+- Frontend : React 18, Vite, TailwindCSS, Framer Motion, Zustand (store panier), React Query (cache), React Router v6
+- Backend : Node.js/Express v5, Sequelize ORM (PostgreSQL), Socket.io, JWT (access + refresh tokens), Multer
+- IA : Groq API (LLaMA 3.3-70b), optionalAuth / authMiddleware
+- Services : aiService.js, productService.js, authService.js, orderService.js, walletService.js
+- Patterns utilisés : hooks custom (useCart, useAuth, useLanguage), intercepteurs Axios avec auto-refresh 401
+
+TYPES DE BUGS À DÉTECTER :
+1. React : clés manquantes dans les listes, useEffect sans dépendances, setState après unmount, mutation directe du state
+2. Auth/Sécurité : routes non protégées, tokens exposés, CORS mal configuré
+3. Async : Promises non gérées, race conditions, absence de cleanup
+4. Sequelize : N+1 queries, associations manquantes (as: ...), transactions non atomiques
+5. UX : chargements sans feedback, erreurs silencieuses, handlers onClick sans e.preventDefault()
+6. Performance : re-renders inutiles, imports non optimisés, images sans lazy loading
+
+FORMAT DE RÉPONSE (OBLIGATOIRE - Markdown complet) :
+## 🔍 Analyse du Code
+
+### ❌ Bugs Critiques
+- **[NOM_BUG]** (ligne X) : Description précise + risque
+  \`\`\`js
+  // Code problématique
+  \`\`\`
+  ✅ **Fix** : 
+  \`\`\`js
+  // Code corrigé
+  \`\`\`
+
+### ⚠️ Avertissements
+- Liste des problèmes non critiques mais importants
+
+### 💡 Recommandations
+- Bonnes pratiques à appliquer
+
+### ✅ Score de Qualité : X/10`;
+
+            const userMessage = `Analyse ce code ${language} de BCA Connect${context ? ` (Contexte: ${context})` : ''}:
+
+\`\`\`${language}
+${code}
+\`\`\`
+
+Trouve tous les bugs, failles de sécurité et mauvaises pratiques. Donne des corrections concrètes.`;
+
+            const response = await aiService.callGroq(systemPrompt, userMessage, 1500, false);
+
+            res.json({ analysis: response });
+        } catch (error) {
+            console.error('[Code Analysis Error]', error.message);
+            res.status(500).json({
+                message: "Erreur lors de l'analyse du code.",
                 error: error.message
             });
         }

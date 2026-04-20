@@ -43,11 +43,11 @@ export function HeroCarousel() {
                         }}
                     />
                     
-                    {/* Overlay de contraste minimal pour le texte */}
-                    <div className="absolute inset-0 bg-black/30" />
+                    {/* Overlay de contraste minimal pour le texte (uniquement en Dark) */}
+                    <div className="absolute inset-0 bg-transparent dark:bg-black/30" />
                     
-                    {/* Dégradé directionnel unique pour la lisibilité en bas/gauche */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-black/60 via-transparent to-transparent opacity-80" />
+                    {/* Dégradé directionnel unique pour la lisibilité en bas/gauche (uniquement en Dark) */}
+                    <div className="absolute inset-0 bg-transparent dark:bg-gradient-to-tr dark:from-black/60 dark:via-transparent dark:to-transparent opacity-80" />
                 </motion.div>
             </AnimatePresence>
         </div>

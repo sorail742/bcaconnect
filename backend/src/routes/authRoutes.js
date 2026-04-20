@@ -7,7 +7,9 @@ const { validateRegister, validateLogin } = require('../middlewares/inputValidat
 // Routes publiques
 router.post('/register', validateRegister, authController.register);
 router.post('/login', validateLogin, authController.login);
-router.post('/refresh', authController.refreshToken);
+router.post('/google-login', authController.googleLogin);
+router.post('/refresh-token', authController.refreshToken);
+router.post('/logout', authController.logout);
 router.post('/verify-2fa', authController.verify2FA);
 
 // Routes protégées

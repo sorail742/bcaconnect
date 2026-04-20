@@ -20,28 +20,32 @@ if (useLocalDB || isTest) {
         }
     });
 } else {
+    const sslOptions = process.env.DATABASE_URL.includes('sslmode=require') || process.env.DB_SSL === 'true'
+        ? {
+            ssl: {
+                require: true,
+                rejectUnauthorized: false
+            }
+        }
+        : {};
+
     sequelize = new Sequelize(process.env.DATABASE_URL, {
         dialect: 'postgres',
         logging: false,
         dialectOptions: {
-            ssl: {
-                require: true,
-                rejectUnauthorized: false
-            },
-            connectTimeout: 60000 // Timeout de connexion socket
+            ...sslOptions,
+            connectTimeout: 60000
         },
         pool: {
-            max: 20, // Augmenté pour gérer les bouffées de requêtes
-            min: 1,
+            max: 20,
+            min: 2, // Garder des connexions chaudes pour éviter ECONNRESET
             acquire: 60000,
-            idle: 10000,
-            evict: 1000,
+            idle: 30000, // Augmenté à 30s pour Neon
         },
         define: {
             timestamps: true,
             underscored: true,
         },
-        // Ajout d'une stratégie de retry pour Sequelize
         retry: {
             match: [
                 /SequelizeConnectionError/,
@@ -50,9 +54,11 @@ if (useLocalDB || isTest) {
                 /SequelizeHostNotReachableError/,
                 /SequelizeInvalidConnectionError/,
                 /SequelizeConnectionTimedOutError/,
-                /TimeoutError/
+                /TimeoutError/,
+                /ECONNRESET/, // Ajouté pour la résilience réseau
+                /EPIPE/       // Ajouté pour la résilience réseau
             ],
-            max: 3
+            max: 5 // Augmenté pour plus de robustesse
         }
     });
 }

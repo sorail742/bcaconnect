@@ -8,20 +8,19 @@ const paymentController = {
         today.setHours(0, 0, 0, 0);
 
         try {
-            // Compter les transactions du JOUR pour CET utilisateur spécifique
             const wallet = await Wallet.findOne({ where: { user_id } });
             if (!wallet) return false;
 
             const recentTransactions = await Transaction.count({
                 where: {
                     portefeuille_id: wallet.id,
-                    created_at: { [require('sequelize').Op.gte]: today },
+                    createdAt: { [require('sequelize').Op.gte]: today },
                     statut: 'complete'
                 }
             });
 
             // Seuil : montant > 5 000 000 GNF OU plus de 10 transactions dans la journée
-            if (montant > 5000000 || recentTransactions > 10) {
+            if (parseFloat(montant || 0) > 5000000 || recentTransactions > 10) {
                 return true;
             }
             return false;
@@ -34,8 +33,13 @@ const paymentController = {
     // 1. Initier un dépôt (Simulation Orange Money / Wave)
     initiateDeposit: async (req, res, next) => {
         try {
-            const { montant, moyen_paiement } = req.body;
+            const montant = req.body.montant || req.body.amount;
+            const moyen_paiement = req.body.moyen_paiement || req.body.method || 'unknown';
             const user_id = req.user.id;
+
+            if (!montant) {
+                return res.status(400).json({ message: "Le montant est requis." });
+            }
 
             // Vérifier la fraude via IA
             const isSuspect = await paymentController.checkFraudIA(user_id, montant);
@@ -49,7 +53,7 @@ const paymentController = {
             // Créer une transaction en attente
             const transaction = await Transaction.create({
                 portefeuille_id: wallet.id,
-                montant,
+                montant: parseFloat(montant),
                 type_transaction: 'depot',
                 statut: 'en_attente',
                 reference_externe: `PAY-${uuidv4().slice(0, 8)}`,
@@ -64,6 +68,7 @@ const paymentController = {
                 is_suspect: isSuspect
             });
         } catch (error) {
+            console.error('🔴 [PAYMENT ERROR] detail:', error);
             next(error);
         }
     },
@@ -98,7 +103,7 @@ const paymentController = {
                     const paymentNotif = await Notification.create({
                         utilisateur_id: wallet.user_id,
                         titre: "Recharge réussie !",
-                        message: `Votre portefeuille BCA a été crédité de <span class="font-black text-emerald-600">${transaction.montant.toLocaleString('fr-FR')} GNF</span>.`,
+                        message: `Votre portefeuille BCA a été crédité de <span class="font-black text-emerald-600">${parseFloat(transaction.montant).toLocaleString('fr-FR')} GNF</span>.`,
                         type: 'payment'
                     });
                     io.to(wallet.user_id).emit('notification_received', paymentNotif);
@@ -144,7 +149,7 @@ const paymentController = {
                 const simNotif = await Notification.create({
                     utilisateur_id: wallet.user_id,
                     titre: "Compte crédité (Sim)",
-                    message: `Simulation réussie : <span class="font-black text-emerald-600">${transaction.montant.toLocaleString('fr-FR')} GNF</span> ajoutés.`,
+                    message: `Simulation réussie : <span class="font-black text-emerald-600">${parseFloat(transaction.montant).toLocaleString('fr-FR')} GNF</span> ajoutés.`,
                     type: 'payment'
                 });
                 io.to(wallet.user_id).emit('notification_received', simNotif);

@@ -7,13 +7,12 @@ import { toast } from 'sonner';
  * Centralizes global socket listeners for notifications and real-time updates.
  */
 const SocketHandler = () => {
-    const { on } = useSocket();
+    const { on, off } = useSocket();
 
     useEffect(() => {
-        if (!on) return;
+        if (!on || !off) return;
 
-        // Global notification listener
-        on('notification_received', (notif) => {
+        const handleNotification = (notif) => {
             toast.success(notif.titre || "Nouvelle notification", {
                 description: notif.message?.replace(/<[^>]*>?/gm, '') || '',
                 duration: 5000,
@@ -24,23 +23,31 @@ const SocketHandler = () => {
                     }
                 }
             });
-        });
+        };
 
-        // Inbox messenger listener
-        on('new_message', (data) => {
+        const handleNewMessage = (data) => {
             toast.info("Nouveau message", {
                 description: `Vous avez reçu un message de ${data.message?.expediteur?.nom_complet || 'un utilisateur'}.`,
             });
-        });
+        };
 
-        // Product update listener
-        on('product_added', (newProduct) => {
+        const handleProductAdded = (newProduct) => {
             toast.info(`🎉 Nouveau produit : ${newProduct.nom_produit}`, {
                 duration: 4000
             });
-        });
+        };
 
-    }, [on]);
+        on('notification_received', handleNotification);
+        on('new_message', handleNewMessage);
+        on('product_added', handleProductAdded);
+
+        return () => {
+            off('notification_received', handleNotification);
+            off('new_message', handleNewMessage);
+            off('product_added', handleProductAdded);
+        };
+
+    }, [on, off]);
 
     return null; // This component doesn't render anything visually
 };

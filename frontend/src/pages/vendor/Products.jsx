@@ -18,21 +18,21 @@ import DashboardCard from '../../components/ui/DashboardCard';
 // ── Stock Badge ─────────────────────────────────────────
 const StockBadge = ({ qty }) => {
     if (qty === 0) return (
-        <span className="inline-flex items-center gap-3 px-4 py-2 bg-rose-500/10 text-rose-500 text-[9px] font-black uppercase  rounded-[1rem] border-none shadow-inner">
-            <div className="size-2 rounded-full bg-rose-500 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.5)]" />
-            RUPTURE_FLUX
+        <span className="inline-flex items-center gap-2 px-3 py-1 bg-rose-50 text-rose-500 text-[10px] font-black uppercase tracking-widest rounded-lg border border-rose-100">
+            <div className="size-1.5 rounded-full bg-rose-500 animate-pulse" />
+            Rupture
         </span>
     );
     if (qty <= 5) return (
-        <span className="inline-flex items-center gap-3 px-4 py-2 bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase  rounded-[1rem] border-none shadow-inner">
-            <div className="size-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
-            CRITIQUE_NODE
+        <span className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 text-amber-500 text-[10px] font-black uppercase tracking-widest rounded-lg border border-amber-100">
+            <div className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+            Critique
         </span>
     );
     return (
-        <span className="inline-flex items-center gap-3 px-4 py-2 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase  rounded-[1rem] border-none shadow-inner">
-            <div className="size-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-            OPTIMAL_SIG
+        <span className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-500 text-[10px] font-black uppercase tracking-widest rounded-lg border border-emerald-100">
+            <div className="size-1.5 rounded-full bg-emerald-500" />
+            Stock
         </span>
     );
 };
@@ -49,30 +49,30 @@ const StockEditor = ({ productId, initialStock, onUpdated }) => {
         try {
             await productService.patchStock(productId, parseInt(value));
             onUpdated(productId, parseInt(value));
-            toast.success("INDEX_STOCK_MIS_À_JOUR_ALPHA.");
+            toast.success("Stock mis à jour.");
         } catch (e) {
             setValue(initialStock);
-            toast.error("ÉCHEC_MODIFICATION_INDEX.");
+            toast.error("Impossible de modifier le stock.");
         }
         finally { setIsSaving(false); setIsEditing(false); }
     };
 
     if (isEditing) {
         return (
-            <div className="flex items-center gap-3 bg-white/[0.03] p-2 rounded-2xl border border-[#FFB703]/40 shadow-4xl animate-in zoom-in-95 duration-500">
+            <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-sm animate-in zoom-in-95 duration-200">
                 <input
                     type="number" min={0}
                     value={value}
                     onChange={e => setValue(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && save()}
-                    className="w-16 h-10 px-2 text-[12px] font-black text-center text-foreground bg-transparent outline-none border-b border-foreground/10"
+                    className="w-14 h-8 px-2 text-xs font-black text-center text-slate-900 bg-transparent outline-none"
                     autoFocus
                 />
-                <button id={`save-stock-${productId}`} onClick={save} disabled={isSaving} className="size-6 flex items-center justify-center rounded-xl bg-[#FFB703] text-background hover:bg-white transition-all shadow-xl  border-none">
-                    <CheckCircle2 className="size-5" />
+                <button id={`save-stock-${productId}`} onClick={save} disabled={isSaving} className="size-8 flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary/90 transition-all border-none">
+                    <CheckCircle2 className="size-4" />
                 </button>
-                <button id={`cancel-stock-${productId}`} onClick={() => { setValue(initialStock); setIsEditing(false); }} className="size-6 flex items-center justify-center rounded-xl bg-foreground/5 text-muted-foreground hover:text-foreground transition-all border-none">
-                    <XCircle className="size-5" />
+                <button id={`cancel-stock-${productId}`} onClick={() => { setValue(initialStock); setIsEditing(false); }} className="size-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-400 hover:text-slate-600 transition-all border-none">
+                    <XCircle className="size-4" />
                 </button>
             </div>
         );
@@ -82,10 +82,10 @@ const StockEditor = ({ productId, initialStock, onUpdated }) => {
         <button
             id={`edit-stock-${productId}`}
             onClick={() => setIsEditing(true)}
-            className="flex items-center gap-3 group bg-white/[0.02] hover:bg-[#FFB703]/10 px-6 py-3 rounded-2xl border-none transition-all duration-700 shadow-inner group/stock"
+            className="flex items-center gap-3 group bg-slate-50 hover:bg-slate-100 px-4 py-2 rounded-xl border border-slate-100 transition-all duration-300"
         >
-            <span className="text-[13px] font-black text-foreground uppercase tracking-tighter tabular-nums">{value}</span>
-            <Edit3 className="size-4 text-muted-foreground group-hover:text-[#FFB703] transition-colors" />
+            <span className="text-xs font-black text-slate-900 tabular-nums">{value}</span>
+            <Edit3 className="size-3 text-slate-300 group-hover:text-primary transition-colors" />
         </button>
     );
 };
@@ -106,7 +106,7 @@ const Products = () => {
             const data = await productService.getMyProducts();
             setProducts(data || []);
         } catch (err) {
-            toast.error("ÉCHEC_CHARGEMENT_INVENTAIRE_RÉSEAU.");
+            toast.error("Erreur de chargement de l'inventaire.");
         } finally {
             setIsLoading(false);
         }
@@ -124,19 +124,19 @@ const Products = () => {
             await productService.delete(product.id);
             setProducts(prev => prev.filter(p => p.id !== product.id));
             setDeleteConfirm(null);
-            toast.success("OBJET_RÉVOQUÉ_INVENTAIRE_SCELLÉ.");
+            toast.success("Article supprimé de l'inventaire.");
         } catch {
-            toast.error("IMPOSSIBLE_RÉVOCATION_ARTICLE.");
+            toast.error("Impossible de supprimer l'article.");
         } finally {
             setIsDeleting(false);
         }
     };
 
     const FILTERS = [
-        { key: 'tous', label: 'GLOBAL' },
-        { key: 'en_stock', label: 'INDEXÉ' },
-        { key: 'faible', label: 'CRITIQUE' },
-        { key: 'rupture', label: 'RUPTURE' },
+        { key: 'tous', label: 'Tous' },
+        { key: 'en_stock', label: 'En stock' },
+        { key: 'faible', label: 'Stock faible' },
+        { key: 'rupture', label: 'Rupture' },
     ];
 
     const filtered = products.filter(p => {
@@ -152,85 +152,89 @@ const Products = () => {
     const totalStockValue = products.reduce((acc, p) => acc + parseFloat(p.prix_unitaire) * p.stock_quantite, 0);
 
     return (
-        <DashboardLayout title="TERMINAL_INVENTAIRE_ALPHA">
-            <div className="space-y-6 animate-in fade-in duration-1000 pb-40 font-jakarta">
+        <DashboardLayout title="Gestion Inventaire" noPadding>
+            <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8 space-y-8 custom-scrollbar">
 
                 {/* Executive Command Bar — Inventory Node */}
-                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 executive-card !py-8 bg-card border-[#FFB703]/20 relative overflow-hidden group/header shadow-4xl">
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#FFB703]/5 via-transparent to-transparent opacity-0 group-hover/header:opacity-100 transition-opacity duration-1000" />
-                    <div className="flex items-center gap-3 relative z-10">
-                        <div className="size-6 rounded-2xl bg-[#FFB703]/10 flex items-center justify-center text-[#FFB703] border-2 border-[#FFB703]/20 transition-all duration-700 group-hover/header:rotate-12 group-hover/header:scale-110 shadow-2xl shadow-[#FFB703]/20">
-                            <Package className="size-6" />
+                <div className="premium-card p-6 relative overflow-hidden group/header">
+                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 relative z-10">
+                        <div className="flex items-center gap-3">
+                            <div className="size-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500 border border-amber-100 transition-all duration-700 group-hover:rotate-12 shadow-sm">
+                                <Package className="size-6" />
+                            </div>
+                            <div className="space-y-1">
+                                <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                    Inventaire <span className="text-primary">Boutique</span>
+                                </h2>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                                    {products.length} référence{products.length > 1 ? 's' : ''} • Synchronisation en temps réel
+                                </p>
+                            </div>
                         </div>
-                        <div className="space-y-3">
-                            <h2 className="text-sm font-black text-foreground uppercase tracking-tighter leading-none">
-                                INVENTAIRE_<span className="text-[#FFB703]">RÉSEAU</span>
-                            </h2>
-                            <p className="text-[10px] font-black text-muted-foreground uppercase  opacity-80 decoration-[#FFB703]/30 underline underline-offset-8 decoration-2">
-                                {products.length} RÉFÉRENCES_INDEXÉES — SYNC_TERMINAL_{new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}_SIG
-                            </p>
+                        <div className="flex items-center gap-3">
+                            <button id="btn-refresh-inventory" onClick={load} className="size-11 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 hover:text-primary transition-all group/refresh shadow-sm">
+                                <RefreshCw className={cn("size-5 group-hover/refresh:rotate-180 transition-transform duration-1000", isLoading && "animate-spin")} />
+                            </button>
+                            <button
+                                id="btn-add-article"
+                                onClick={() => navigate('/vendor/products/add')}
+                                className="h-11 px-8 bg-slate-900 text-white hover:bg-slate-800 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-slate-200 flex items-center gap-3 group/btn border-none"
+                            >
+                                <Plus className="size-4" />
+                                <span>Ajouter Article</span>
+                            </button>
                         </div>
-                    </div>
-                    <div className="flex items-center gap-3 relative z-10">
-                        <button id="btn-refresh-inventory" onClick={load} className="size-6 bg-white/[0.03] border-2 border-foreground/5 rounded-2xl flex items-center justify-center text-muted-foreground hover:text-[#FFB703] hover:border-[#FFB703]/20 transition-all group/refresh shadow-inner ">
-                            <RefreshCw className={cn("size-5 group-hover/refresh:rotate-180 transition-transform duration-1000", isLoading && "animate-spin")} />
-                        </button>
-                        <button
-                            id="btn-add-article"
-                            onClick={() => navigate('/vendor/products/add')}
-                            className="h-12 px-10 bg-[#FFB703] text-background hover:bg-white rounded-2xl font-black text-[10px] uppercase  transition-all shadow-[0_20px_50px_rgba(255,183,3,0.3)]  flex items-center gap-3 group/btn relative overflow-hidden border-none"
-                        >
-                            <Plus className="size-6 relative z-10" />
-                            <span className="relative z-10 pt-1">INDEXER_NOUVEL_ARTICLE</span>
-                        </button>
                     </div>
                 </div>
 
                 {/* KPI Area — High Density Monitor */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="executive-card h-44 flex flex-col justify-between group/kpi border-foreground/5 hover:border-[#FFB703]/30 transition-all duration-700">
-                        <div className="p-4 rounded-xl bg-white/[0.03] border border-foreground/5 text-[#FFB703] w-fit group-hover/kpi:rotate-12 group-hover/kpi:scale-110 transition-all duration-700 shadow-inner">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="premium-card p-6 flex flex-col justify-between group/kpi h-36">
+                        <div className="size-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover/kpi:scale-110 transition-transform duration-500">
                             <Package className="size-5" />
                         </div>
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase  opacity-60 leading-none">ARTICLES_ACTIFS_CORE</p>
-                            <p className="text-sm font-black text-foreground tracking-tighter uppercase leading-none truncate group-hover/kpi:translate-x-3 transition-transform duration-700">{products.length.toString()}</p>
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Articles Actifs</p>
+                            <p className="text-2xl font-black text-slate-900 tracking-tighter tabular-nums" style={{ fontFamily: "'Outfit', sans-serif" }}>{products.length}</p>
                         </div>
                     </div>
-                    <div className="executive-card h-44 flex flex-col justify-between group/kpi border-foreground/5 hover:border-[#FFB703]/30 transition-all duration-700">
-                        <div className="p-4 rounded-xl bg-white/[0.03] border border-foreground/5 text-[#FFB703] w-fit group-hover/kpi:rotate-12 group-hover/kpi:scale-110 transition-all duration-700 shadow-inner">
+                    <div className="premium-card p-6 flex flex-col justify-between group/kpi h-36">
+                        <div className="size-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 group-hover/kpi:scale-110 transition-transform duration-500">
                             <TrendingUp className="size-5" />
                         </div>
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase  opacity-60 leading-none">VALORISATION_STOCK_ALPHA</p>
-                            <p className="text-sm font-black text-foreground tracking-tighter uppercase leading-none truncate group-hover/kpi:translate-x-3 transition-transform duration-700">{totalStockValue.toLocaleString('fr-GN')} <small className="text-sm">GNF</small></p>
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Valeur Stock</p>
+                            <p className="text-2xl font-black text-emerald-500 tracking-tighter tabular-nums" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                {totalStockValue.toLocaleString('fr-GN')}
+                                <span className="text-xs ml-1 opacity-50">GNF</span>
+                            </p>
                         </div>
                     </div>
-                    <div className="executive-card h-44 flex flex-col justify-between group/kpi border-foreground/5 hover:border-rose-500/30 transition-all duration-700">
-                        <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 w-fit group-hover/kpi:rotate-12 group-hover/kpi:scale-110 transition-all duration-700 shadow-inner scale-110">
+                    <div className="premium-card p-6 flex flex-col justify-between group/kpi h-36">
+                        <div className="size-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500 group-hover/kpi:scale-110 transition-transform duration-500">
                             <AlertCircle className="size-5 animate-pulse" />
                         </div>
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase  opacity-60 leading-none">ALERTES_CRITIQUES_NODE</p>
-                            <p className="text-sm font-black text-rose-500 tracking-tighter uppercase leading-none truncate group-hover/kpi:translate-x-3 transition-transform duration-700">{products.filter(p => p.stock_quantite <= 5).length.toString()}</p>
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Alertes</p>
+                            <p className="text-2xl font-black text-rose-500 tracking-tighter tabular-nums" style={{ fontFamily: "'Outfit', sans-serif" }}>{products.filter(p => p.stock_quantite <= 5).length}</p>
                         </div>
                     </div>
                 </div>
 
                 {/* Registry Management — Alpha Flux Registry */}
-                <div className="executive-card !p-0 overflow-hidden shadow-4xl group/registry border-foreground/5 hover:border-[#FFB703]/20 transition-all duration-1000">
-                    <div className="p-4 border-b border-foreground/5 bg-white/[0.01] flex flex-col xl:flex-row xl:items-center justify-between gap-3">
-                        <div className="flex items-center gap-4 overflow-x-auto pb-4 xl:pb-0 scrollbar-hide">
+                <div className="premium-card !p-0 overflow-hidden">
+                    <div className="p-6 border-b border-slate-50 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+                        <div className="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 custom-scrollbar">
                             {FILTERS.map(f => (
                                 <button
                                     id={`filter-${f.key}`}
                                     key={f.key}
                                     onClick={() => setActiveFilter(f.key)}
                                     className={cn(
-                                        "px-8 h-12 rounded-2xl text-[10px] font-black uppercase  transition-all duration-500 border-2  font-jakarta",
+                                        "px-6 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap",
                                         activeFilter === f.key
-                                            ? "bg-[#FFB703] text-background border-[#FFB703] shadow-2xl scale-105"
-                                            : "bg-foreground/5 border-foreground/5 text-muted-foreground hover:text-foreground hover:bg-white/[0.08]"
+                                            ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105"
+                                            : "bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100"
                                     )}
                                 >
                                     {f.label}
@@ -238,28 +242,28 @@ const Products = () => {
                             ))}
                         </div>
 
-                        <div className="relative group w-full xl:w-[35rem] font-jakarta">
-                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground size-6 group-focus-within:text-[#FFB703] transition-all relative z-10" />
+                        <div className="relative group w-full xl:w-96">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 size-4 group-focus-within:text-primary transition-all" />
                             <input
                                 id="inventory-search"
-                                className="w-full pl-16 pr-8 h-11 bg-white/[0.03] border-2 border-foreground/5 group-focus-within:border-[#FFB703]/40 rounded-2xl text-[12px] font-black  placeholder:text-slate-600 outline-none relative z-10 transition-all text-foreground uppercase"
-                                placeholder="RECHERCHER_RÉFÉRENCE_INDEX..."
+                                className="w-full pl-12 pr-6 h-11 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold uppercase tracking-tight focus:ring-2 focus:ring-primary/20 outline-none transition-all text-slate-900"
+                                placeholder="RECHERCHER UN ARTICLE..."
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
                             />
                         </div>
                     </div>
 
-                    <div className="p-4">
+                    <div className="p-2">
                         <DataTable
                             selectable
                             selectedIds={selectedIds}
                             onSelectionChange={setSelectedIds}
                             isLoading={isLoading}
-                            className="bg-transparent border-0 text-foreground"
+                            className="bg-transparent border-0"
                             columns={[
                                 {
-                                    label: 'DÉSIGNATION_TECHNIQUE',
+                                    label: 'Produit',
                                     render: (p) => (
                                         <div className="flex items-center gap-3 py-4 group/item">
                                             <div className="size-6 rounded-2xl bg-foreground/5 border-2 border-foreground/10 flex items-center justify-center overflow-hidden shrink-0 group-hover/item:scale-110 group-hover/item:rotate-6 transition-all shadow-2xl relative">
@@ -268,29 +272,29 @@ const Products = () => {
                                             </div>
                                             <div className="space-y-1">
                                                 <p className="text-[14px] font-black text-foreground uppercase tracking-tighter group-hover/item:text-[#FFB703] transition-colors truncate max-w-[250px] leading-none">{p.nom_produit}</p>
-                                                <p className="text-[9px] font-black text-slate-600 uppercase  leading-none">NODE_ID: {p.id.slice(0,8)}</p>
+                                                <p className="text-[9px] font-black text-slate-600 uppercase  leading-none">Réf: {p.id.slice(0,8)}</p>
                                             </div>
                                         </div>
                                     )
                                 },
                                 {
-                                    label: 'NOMENCLATURE',
-                                    render: (p) => <span className="text-[10px] font-black text-muted-foreground uppercase  font-jakarta">{p.categorie?.nom_categorie?.toUpperCase() || 'ALPHA_CLASSIFIED'}</span>
+                                    label: 'Catégorie',
+                                    render: (p) => <span className="text-[10px] font-black text-muted-foreground uppercase  font-jakarta">{p.categorie?.nom_categorie || 'Non classifié'}</span>
                                 },
                                 {
-                                    label: 'VALEUR_UNITÉ',
+                                    label: 'Prix Unitaire',
                                     render: (p) => <span className="text-[14px] font-black text-foreground tracking-tighter tabular-nums uppercase font-jakarta">{parseFloat(p.prix_unitaire).toLocaleString('fr-GN')} <small className="text-[10px] font-black text-[#FFB703] tracking-widest ml-1">GNF</small></span>
                                 },
                                 {
-                                    label: 'STOCK_RÉEL_INDEX',
+                                    label: 'Stock',
                                     render: (p) => <StockEditor productId={p.id} initialStock={p.stock_quantite} onUpdated={handleStockUpdated} />
                                 },
                                 {
-                                    label: 'STATUT_SYNC',
+                                    label: 'Statut',
                                     render: (p) => <StockBadge qty={p.stock_quantite} />
                                 },
                                 {
-                                    label: 'GOUVERNANCE_TERMINAL',
+                                    label: 'Actions',
                                     render: (p) => (
                                         <div className="flex items-center justify-end gap-3 pr-8">
                                             <button id={`edit-p-${p.id}`} onClick={() => navigate(`/vendor/products/edit/${p.id}`)} className="size-6 flex items-center justify-center text-muted-foreground hover:text-foreground bg-foreground/5 border-2 border-foreground/5 rounded-2xl transition-all group/edit hover:border-[#FFB703]/30 ">
@@ -312,8 +316,8 @@ const Products = () => {
                                     <ShoppingBag className="size-6 text-slate-800 animate-pulse" />
                                     <Satellite className="absolute -top-4 -right-4 size-6 text-[#FFB703] animate-bounce" />
                                 </div>
-                                <p className="text-[12px] font-black uppercase  text-foreground">AUCUNE_RÉFÉRENCE_IDENTIFIÉE_ALPHA</p>
-                                <button onClick={load} className="text-[#FFB703] text-[10px] font-black uppercase  border-b-2 border-[#FFB703]/20 pb-2 hover:border-[#FFB703] transition-all">RESCANNER_TERMINAL</button>
+                                <p className="text-[12px] font-black uppercase  text-foreground">Aucun article trouvé</p>
+                                <button onClick={load} className="text-[#FFB703] text-[10px] font-black uppercase  border-b-2 border-[#FFB703]/20 pb-2 hover:border-[#FFB703] transition-all">Actualiser</button>
                             </div>
                         )}
                     </div>
@@ -329,17 +333,17 @@ const Products = () => {
                         <div className="size-6 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 border-2 border-rose-500/20 shadow-2xl mb-12 relative z-10 group-hover:rotate-12 transition-all duration-700">
                             <Trash2 className="size-6" />
                         </div>
-                        <h3 className="text-sm font-black text-foreground uppercase tracking-tighter mb-6 underline decoration-rose-500/30 decoration-8 underline-offset-8 relative z-10">VÉRIFICATION_ALPHA_SÉCURITÉ</h3>
+                        <h3 className="text-sm font-black text-foreground uppercase tracking-tighter mb-6 underline decoration-rose-500/30 decoration-8 underline-offset-8 relative z-10">Confirmer la suppression</h3>
                         <p className="text-[13px] text-muted-foreground font-black mb-16 leading-loose uppercase  border-l-4 border-rose-500/40 pl-10 relative z-10">
-                            CONFIRMER LA RÉVOCATION DÉFINITIVE DE <span className="text-rose-500">"{deleteConfirm.nom_produit?.toUpperCase()}"</span> ? <br /> 
-                            L'OPÉRATION EST IRRÉVERSIBLE DANS L'ARCHIVE RÉSEAU_BCA.
+                            Confirmer la suppression définitive de <span className="text-rose-500">"{deleteConfirm.nom_produit}"</span> ? <br /> 
+                            Cette action est irréversible.
                         </p>
 
                         <div className="flex gap-3 relative z-10">
-                            <button id="modal-cancel" onClick={() => setDeleteConfirm(null)} className="flex-1 h-12 rounded-2xl bg-foreground/5 border-2 border-foreground/5 text-muted-foreground text-[10px] font-black uppercase  hover:bg-foreground/10 hover:text-foreground transition-all ">ANNULER_PROCÉDURE</button>
+                            <button id="modal-cancel" onClick={() => setDeleteConfirm(null)} className="flex-1 h-12 rounded-2xl bg-foreground/5 border-2 border-foreground/5 text-muted-foreground text-[10px] font-black uppercase  hover:bg-foreground/10 hover:text-foreground transition-all ">Annuler</button>
                             <button id="modal-confirm" onClick={() => handleDelete(deleteConfirm)} className="flex-1 h-12 rounded-2xl bg-rose-500 text-foreground text-[10px] font-black uppercase  shadow-2xl shadow-rose-500/40 hover:bg-rose-600  transition-all flex items-center justify-center gap-3 group/confirm border-none">
                                 <Trash2 className="size-6" />
-                                VALIDATION_RÉVOCATION_ALPHA
+                                Confirmer la suppression
                             </button>
                         </div>
                     </div>

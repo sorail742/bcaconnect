@@ -2,6 +2,13 @@ const express = require('express');
 const router = express.Router();
 const aiController = require('../controllers/aiController');
 const { authMiddleware, authorize, optionalAuth } = require('../middlewares/authMiddleware');
+const multer = require('multer');
+
+// Configuration Multer pour les images (Stockage en mémoire)
+const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 } // Limite 5MB
+});
 
 // ── Routes IA — BCA Connect Intelligence ─────────────────────────────────────
 
@@ -33,8 +40,8 @@ router.get('/insights', authMiddleware, authorize(['fournisseur']), aiController
 // 2. Analyse de confiance (Tout utilisateur connecté)
 router.get('/trust-score', authMiddleware, aiController.getTrustAnalysis);
 
-// 3. Tendances du marché guinéen (Toute personne connectée)
-router.get('/market-trends', authMiddleware, aiController.getMarketTrends);
+// 3. Tendances du marché guinéen (Mode public activé pour la Landing Page)
+router.get('/market-trends', optionalAuth, aiController.getMarketTrends);
 
 // 4. Suggestion de prix pour un produit (Fournisseurs)
 router.post('/suggest-price', authMiddleware, authorize(['fournisseur', 'admin']), aiController.suggestPrice);
@@ -52,6 +59,9 @@ router.post('/search/interpret', aiController.interpretSearch);
 router.post('/search/similar', aiController.findSimilarProducts);
 
 // 9. Analyser une image pour la recherche
-router.post('/search/image', aiController.analyzeImage);
+router.post('/search/image', upload.single('image'), aiController.analyzeImage);
+
+// 10. Analyser du code pour détecter les bugs (mode développeur)
+router.post('/code-analyze', optionalAuth, aiController.analyzeCode);
 
 module.exports = router;

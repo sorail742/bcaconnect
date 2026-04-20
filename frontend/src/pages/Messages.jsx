@@ -268,9 +268,14 @@ const Messages = () => {
     const loadUsers = useCallback(async (search = '') => {
         setIsLoadingUsers(true);
         try {
-            const data = await userService.getAll(1, 20, search);
+            // Utiliser le nouveau endpoint de recherche publique (évite le 403 Forbidden pour les clients)
+            const data = await userService.getPublicSearch(search);
+            // Le nouvel endpoint renvoie directement un tableau
             const list = Array.isArray(data) ? data : (data?.users || []);
             setUsers(list.filter(u => u.id !== user?.id));
+        } catch (err) {
+            console.error("Erreur lors de la recherche d'utilisateurs:", err);
+            setUsers([]);
         } finally {
             setIsLoadingUsers(false);
         }

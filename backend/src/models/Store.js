@@ -53,6 +53,8 @@ const Store = sequelize.define('Store', {
     },
 }, {
     tableName: 'boutiques',
+    underscored: true,
+    timestamps: true,
 });
 
 module.exports = Store;

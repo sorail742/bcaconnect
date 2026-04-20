@@ -37,7 +37,7 @@ export function ProblemSection() {
     ];
 
     return (
-        <section className="relative py-16 bg-white text-slate-900 overflow-hidden font-sans">
+        <section className="relative py-16 bg-background text-foreground overflow-hidden font-sans border-y border-border">
             <GeometricBackground />
             {/* Immersive Local Background */}
             <div 
@@ -60,7 +60,7 @@ export function ProblemSection() {
                         <motion.h2 
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
-                            className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.1]"
+                            className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight text-foreground leading-[1.1]"
                         >
                              {t('probTitle')?.split(' ').slice(0, -1).join(' ') || "NOUS RESOLVONS LES"}<br />
                              <span className="text-primary italic">{t('probTitle')?.split(' ').slice(-1) || "OBSTACLES"}</span>
@@ -68,7 +68,7 @@ export function ProblemSection() {
                         <motion.p 
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
-                            className="text-lg md:text-xl text-slate-600 leading-relaxed max-w-3xl border-l-4 border-primary/40 pl-6 font-medium"
+                            className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl border-l-4 border-primary/40 pl-6 font-medium"
                         >
                             {t('probDesc') || "Le commerce en Afrique fait face à d'énormes défis logistiques et de confiance. Voici comment la plateforme BCA Connect déploie des solutions innovantes pour garantir un écosystème sûr, rapide et fiable."}
                         </motion.p>
@@ -82,12 +82,12 @@ export function ProblemSection() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.15, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                             >
-                                <TiltWrapper className="group relative p-8 rounded-[2rem] bg-white border border-slate-200 transition-all duration-300 hover:border-primary/40 hover:shadow-[0_40px_80px_-20px_rgba(255,102,0,0.12)] flex flex-col justify-between h-full">
+                                <TiltWrapper className="group relative p-8 rounded-[2rem] bg-card border border-border transition-all duration-300 hover:border-primary/40 hover:shadow-[0_40px_80px_-20px_rgba(255,102,0,0.12)] flex flex-col justify-between h-full">
                                     <div>
-                                    <div className={`size-16 rounded-2xl ${item.bg} flex items-center justify-center mb-6 border border-slate-200 transition-all duration-300 group-hover:scale-110 shadow-sm`}>
+                                    <div className={`size-16 rounded-2xl ${item.bg} flex items-center justify-center mb-6 border border-border transition-all duration-300 group-hover:scale-110 shadow-sm`}>
                                         <item.icon className={`size-8 ${item.color}`} />
                                     </div>
-                                    <h3 className="text-xl font-bold text-slate-900 mb-4">{item.label}</h3>
+                                    <h3 className="text-xl font-bold text-foreground mb-4">{item.label}</h3>
                                 </div>
                                 
                                 <div className="space-y-5 text-left mt-6">
@@ -123,13 +123,13 @@ export function ProblemSection() {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         whileInView={{ opacity: 1, scale: 1 }}
-                        className="mt-12 p-8 rounded-[2rem] bg-slate-50 text-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-200 hover:shadow-lg hover:border-primary/20 transition-all duration-300"
+                        className="mt-12 p-8 rounded-[2rem] bg-muted text-foreground flex flex-col md:flex-row md:items-center justify-between gap-6 border border-border hover:shadow-lg hover:border-primary/20 transition-all duration-300"
                     >
                         <div className="space-y-3 text-left">
-                            <h3 className="text-2xl font-black leading-tight text-slate-800">{t('probOptim') || "L'Avenir de l'Économie Guinéenne"}</h3>
-                            <p className="text-base text-slate-500 font-medium tracking-wide text-primary">Sécurité Infaillible • Livraison Garantie • Prix Transparents</p>
+                            <h3 className="text-2xl font-black leading-tight text-foreground">{t('probOptim') || "L'Avenir de l'Économie Guinéenne"}</h3>
+                            <p className="text-base text-muted-foreground font-medium tracking-wide text-primary">Sécurité Infaillible • Livraison Garantie • Prix Transparents</p>
                         </div>
-                        <div className="size-20 rounded-[1.5rem] bg-white flex items-center justify-center text-primary shadow-sm shrink-0 border border-slate-100">
+                        <div className="size-20 rounded-[1.5rem] bg-background flex items-center justify-center text-primary shadow-sm shrink-0 border border-border">
                             <Zap className="size-10 fill-current drop-shadow-md" />
                         </div>
                     </motion.div>

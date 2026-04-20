@@ -245,13 +245,17 @@ const UserProfile = () => {
                                         <p className="text-xs text-muted-foreground">Points</p>
                                     </div>
                                     <div className="bg-muted rounded-xl p-3 text-center border border-border">
-                                        <p className="text-lg font-bold text-foreground">{new Date(user?.createdAt).getFullYear()}</p>
+                                        <p className="text-lg font-bold text-foreground">
+                                            {user?.createdAt ? new Date(user.createdAt).getFullYear() : '2024'}
+                                        </p>
                                         <p className="text-xs text-muted-foreground">Membre depuis</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
                                     <CalendarDays className="size-3.5 text-primary/60" />
-                                    <span>Inscrit le {new Date(user?.createdAt).toLocaleDateString('fr-GN')}</span>
+                                    <span>
+                                        Inscrit le : {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('fr-GN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Compte récent'}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -451,7 +455,7 @@ const UserProfile = () => {
                                     </div>
                                     <div>
                                         <h3 className="text-sm font-bold text-foreground uppercase tracking-tight">Configuration 2FA</h3>
-                                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">Niveau de sécurité : ALPHA_MAX</p>
+                                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">Niveau de sécurité : Maximum</p>
                                     </div>
                                 </div>
                                 <button onClick={() => setShow2FASetup(false)} className="size-8 rounded-lg bg-muted hover:bg-rose-500/10 hover:text-rose-500 flex items-center justify-center transition-colors">

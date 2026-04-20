@@ -359,6 +359,17 @@ export const translations = {
         catServices: "Services",
         catProperties: "Propriétés",
 
+        // Featured Products
+        featuredBadge: "Direct-to-Consumer",
+        featuredTitle1: "Arrivages",
+        featuredTitle2: "Explosifs",
+        featuredDesc: "Sélection exclusive des produits les plus performants du marché guinéen, vérifiés par nos experts.",
+        viewFullCatalog: "VOIR TOUT LE CATALOGUE",
+        flashDeal: "OFFRE FLASH",
+        featuredVerified: "VÉRIFIÉ",
+        featuredStock: "STOCK",
+        featuredUnitPrice: "Prix unitaire",
+
         // Problem Section
         probBadge: "LES OBSTACLES ACTUELS",
         probTitle: "Le commerce fait face à des défis structurels.",
@@ -767,6 +778,17 @@ export const translations = {
         catProducts: "Products",
         catServices: "Services",
         catProperties: "Properties",
+
+        // Featured Products
+        featuredBadge: "Direct-to-Consumer",
+        featuredTitle1: "Hot",
+        featuredTitle2: "Arrivals",
+        featuredDesc: "Exclusive selection of the top-performing products on the Guinean market, verified by our experts.",
+        viewFullCatalog: "VIEW FULL CATALOG",
+        flashDeal: "FLASH DEAL",
+        featuredVerified: "VERIFIED",
+        featuredStock: "STOCK",
+        featuredUnitPrice: "Unit price",
 
         // Problem Section
         probBadge: "CURRENT OBSTACLES",

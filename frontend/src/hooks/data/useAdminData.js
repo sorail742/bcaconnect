@@ -30,13 +30,13 @@ export const useAdminDisputes = () => {
     return { data, loading, error: error?.message || null, refetch, isFetching };
 };
 
-export const useTrends = () => {
-    const { data, isLoading: loading, error, isFetching } = useQuery({
-        queryKey: ['trends'],
-        queryFn: () => statService.getTrends(),
+export const useTrends = (params = {}) => {
+    const { data, isLoading: loading, error, refetch, isFetching } = useQuery({
+        queryKey: ['trends', params],
+        queryFn: () => statService.getTrends(params),
         staleTime: 60_000,
     });
-    return { data, loading, error: error?.message || null, isFetching };
+    return { data, loading, error: error?.message || null, refetch, isFetching };
 };
 
 export const useFinancialStats = () => {

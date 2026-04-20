@@ -1,5 +1,6 @@
 const { Credit, Echeancier, Order, Wallet, sequelize } = require('../models');
 const { Op } = require('sequelize');
+const aiScoringService = require('../services/aiScoringService');
 
 /**
  * Calculer les mensualités pour une simulation
@@ -30,41 +31,49 @@ exports.simulateCredit = async (req, res, next) => {
 };
 
 /**
- * Demander un crédit (avec calcul de solvabilité IA simulé)
+ * Demander un crédit (avec calcul de solvabilité IA réel Alpha-BCA)
  */
 exports.requestCredit = async (req, res, next) => {
     try {
-        const { montant_principal, taux_interet, duree_mois, commande_id } = req.body;
+        const { montant_principal, taux_interet, duree_mois, commande_id, motif, garanties } = req.body;
         const utilisateur_id = req.user.id;
 
-        // Score de solvabilité basé sur l'historique réel de l'utilisateur
-        const completedOrders = await Order.count({
-            where: { utilisateur_id, statut: 'payé' }
-        });
-        const cancelledOrders = await Order.count({
-            where: { utilisateur_id, statut: 'annulé' }
-        });
-        const totalOrders = completedOrders + cancelledOrders;
-
-        // Score entre 0.3 et 0.95 basé sur le ratio de commandes complétées
-        let scoreIA = 0.5;
-        if (totalOrders > 0) {
-            scoreIA = 0.3 + (completedOrders / totalOrders) * 0.65;
-        }
-        if (montant_principal > 10000000) scoreIA = Math.max(0.3, scoreIA - 0.15);
-        scoreIA = Math.min(0.95, Math.round(scoreIA * 100) / 100);
-
+        // Calcul du score IA via le nouveau moteur prédictif
+        const scoring = await aiScoringService.calculateGlobalScore(utilisateur_id);
+        
         const credit = await Credit.create({
             utilisateur_id,
             commande_id,
             montant_principal,
             taux_interet: taux_interet || 0,
             duree_mois,
-            ia_score_solvabilite: scoreIA,
+            ia_score_solvabilite: scoring.score,
+            motif,
+            garanties,
+            metadata: {
+                scoring_breakdown: scoring.breakdown,
+                scoring_version: scoring.metadata.version
+            },
             statut: 'en_attente'
         });
 
-        res.status(201).json(credit);
+        res.status(201).json({
+            message: "Demande de crédit soumise avec succès",
+            credit,
+            ia_analysis: scoring.metadata.status
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Récupérer le score IA détaillé de l'utilisateur
+ */
+exports.getUserScore = async (req, res, next) => {
+    try {
+        const scoring = await aiScoringService.calculateGlobalScore(req.user.id);
+        res.json(scoring);
     } catch (error) {
         next(error);
     }

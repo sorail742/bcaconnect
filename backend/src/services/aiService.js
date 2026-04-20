@@ -122,7 +122,21 @@ Réponds TOUJOURS en JSON valide avec la structure suivante:
 - Ratio d'annulation: ${completedOrders > 0 ? Math.round((cancelledOrders / (completedOrders + cancelledOrders)) * 100) : 0}%
 Donne un score équitable et des conseils pour améliorer son profil.`;
 
-        return await callGroq(systemPrompt, userMessage, 400);
+        try {
+            return await callGroq(systemPrompt, userMessage, 400);
+        } catch (error) {
+            console.error('[AI Fallback] Groq failed, using fallback trust score.');
+            const score = completedOrders > 0 ? Math.min(150, 50 + (completedOrders * 5) - (cancelledOrders * 10)) : 50;
+            return {
+                score: Math.max(0, score),
+                level: score > 100 ? "Premium" : (score > 50 ? "Standard" : "Débutant"),
+                reliability: "Score généré localement (IA indisponible).",
+                conseils: [
+                    "Continuez à compléter vos commandes.",
+                    "Minimisez les annulations pour améliorer votre score."
+                ]
+            };
+        }
     },
 
     /**
@@ -198,7 +212,46 @@ Catégorie: ${productData.categorie}
 Description: ${productData.description || 'Non fournie'}`;
 
         return await callGroq(systemPrompt, userMessage, 400);
-    }
+    },
+
+    /**
+     * 7. Interprète une requête de recherche utilisateur
+     */
+    interpretSearch: async (query) => {
+        const systemPrompt = `Tu es un expert en interprétation de requêtes de recherche pour une plateforme e-commerce africaine (BCA Connect).
+Analyse la requête et retourne un JSON avec:
+{
+  "interpretation": "explication claire de ce que l'utilisateur cherche",
+  "keywords": ["array", "de", "mots-clés", "pertinents"],
+  "category": "catégorie principale"
+}
+Réponds UNIQUEMENT avec le JSON.`;
+
+        const userMessage = `Interprète cette recherche: "${query}"`;
+        return await callGroq(systemPrompt, userMessage, 300);
+    },
+
+    /**
+     * 8. Trouve des produits similaires basés sur une description
+     */
+    findSimilarProducts: async (description) => {
+        const systemPrompt = `Tu es un expert en recommandation de produits pour le marché guinéen.
+Basé sur la description, suggère des mots-clés et catégories de produits similaires.
+Réponds TOUJOURS en JSON valide:
+{
+  "keywords": ["array", "de", "mots-clés"],
+  "categories": ["array", "de", "catégories"],
+  "suggestions": ["array", "de", "produits", "suggérés"]
+}`;
+
+        const userMessage = `Trouve des produits similaires à: "${description}"`;
+        return await callGroq(systemPrompt, userMessage, 400);
+    },
+
+    /**
+     * Utilitaire exposé : Appel direct Groq (utilisé par aiController.chat)
+     */
+    callGroq
 };
 
 module.exports = aiService;

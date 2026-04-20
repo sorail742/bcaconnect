@@ -4,7 +4,7 @@ import socketService from '../services/socketService';
 import { useAuth } from './useAuth';
 
 export const useNotifications = () => {
-    const { user } = useAuth();
+    const { user, token } = useAuth();
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -23,7 +23,9 @@ export const useNotifications = () => {
     }, []);
 
     useEffect(() => {
-        fetchNotifications();
+        if (token) {
+            fetchNotifications();
+        }
 
         if (user?.id) {
             socketService.connect(user.id);

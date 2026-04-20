@@ -96,8 +96,10 @@ exports.getAllDisputes = async (req, res, next) => {
         const litiges = await Litige.findAll({
             include: [
                 { model: User, as: 'demandeur', attributes: ['nom_complet', 'role'] },
-                { model: User, as: 'defenseur', attributes: ['nom_complet', 'role'] }
-            ]
+                { model: User, as: 'defenseur', attributes: ['nom_complet', 'role'] },
+                { model: Order, attributes: ['id', 'total_ttc', 'statut'] }
+            ],
+            order: [['created_at', 'DESC']]
         });
         res.json(litiges);
     } catch (error) {

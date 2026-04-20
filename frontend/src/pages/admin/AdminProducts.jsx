@@ -1,44 +1,55 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import DataTable from '../../components/ui/DataTable';
 import Modal from '../../components/ui/Modal';
+import { motion } from 'framer-motion';
 import {
-    Search,
-    Plus,
-    Package,
-    CheckCircle2,
-    Edit3,
-    Trash2,
-    AlertTriangle,
-    RefreshCcw,
-    Zap,
-    Box,
-    ShoppingBag,
-    PlusCircle,
-    Activity,
-    ChevronRight,
-    TrendingUp,
-    Globe,
-    Satellite,
-    Briefcase
+    Search, Plus, Package, CheckCircle2, Edit3, Trash2,
+    AlertTriangle, RefreshCcw, Zap, Box, ShoppingBag,
+    Activity, Filter, Image as ImageIcon,
+    Tag, Briefcase, ChevronDown, PlusCircle, ShieldCheck
 } from 'lucide-react';
 import productService from '../../services/productService';
 import { useProducts, useCategories } from '../../hooks/useDomainData';
 import useApiMutation from '../../hooks/useApiMutation';
-import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
-import DashboardCard from '../../components/ui/DashboardCard';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useQueryClient } from '@tanstack/react-query';
+
+const StatCard = ({ title, value, icon: Icon, color, status }) => (
+    <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group"
+    >
+        <div className={cn("absolute top-0 right-0 p-5 opacity-5 group-hover:scale-125 transition-transform duration-700", color)}>
+            <Icon className="size-10" />
+        </div>
+        <div className="relative z-10 space-y-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                {title}
+            </p>
+            <div className="flex items-end justify-between">
+                <h3 className="text-3xl font-black text-slate-900 leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                    {value}
+                </h3>
+                {status && (
+                    <div className={cn("text-[9px] font-bold px-2 py-1 rounded-lg", 
+                        status === 'Optimal' ? "text-emerald-500 bg-emerald-50" : "text-rose-500 bg-rose-50"
+                    )}>
+                        {status}
+                    </div>
+                )}
+            </div>
+        </div>
+    </motion.div>
+);
 
 const AdminProducts = () => {
-    const queryClient = useQueryClient();
     const [search, setSearch] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('TOUS');
     const [showModal, setShowModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
 
-    // React Query Hooks
-    const { data: productsRaw, loading: isLoading } = useProducts();
+    const { data: productsRaw, loading: isLoading, refetch } = useProducts();
     const { data: categories = [] } = useCategories();
 
     const products = Array.isArray(productsRaw) ? productsRaw : (productsRaw?.products || []);
@@ -54,34 +65,36 @@ const AdminProducts = () => {
         statut: 'Publié'
     });
 
-    // Stats calculées dynamiquement à partir des données
-    const stats = {
-        total: products.length,
-        active: products.filter(p => !p.est_supprime).length,
-        lowStock: products.filter(p => p.stock_quantite <= 10).length
-    };
+    const stats = [
+        { title: 'Total Produits', value: products.length, icon: Package, color: 'text-primary' },
+        { title: 'Inventaire Actif', value: products.filter(p => !p.est_supprime).length, icon: Activity, color: 'text-emerald-500', status: 'Optimal' },
+        { title: 'Stock Critique', value: products.filter(p => p.stock_quantite <= 10).length, icon: AlertTriangle, color: 'text-rose-500', status: 'Alerte' }
+    ];
 
-    // Mutation: Suppression
     const { mutate: deleteProduct } = useApiMutation(
         (id) => productService.delete(id),
         {
-            successMessage: "PRODUIT RÉVOQUÉ.",
-            invalidateKeys: ['products', 'stats-global']
+            successMessage: "PRODUIT RÉVOQUÉ DU CATALOGUE.",
+            invalidateKeys: ['products']
         }
     );
 
-    // Mutation: Création / Mise à jour
     const { mutate: saveProduct, isPending: isSaving } = useApiMutation(
         (data) => editingProduct ? productService.update(editingProduct.id, data) : productService.create(data),
         {
-            successMessage: editingProduct ? "CATALOGUE ACTUALISÉ." : "RÉFÉRENCE AJOUTÉE.",
-            invalidateKeys: ['products', 'stats-global'],
+            successMessage: editingProduct ? "CATALOGUE ACTUALISÉ." : "ACQUISITION RÉUSSIE.",
+            invalidateKeys: ['products'],
             onSuccess: () => setShowModal(false)
         }
     );
 
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        saveProduct(formData);
+    };
+
     const handleDelete = (id) => {
-        if (!window.confirm("RÉVOQUER DÉFINITIVEMENT CET ACTIF ?")) return;
+        if (!window.confirm("CONFIRMER LA RÉVOCATION DE CET ACTIF ?")) return;
         deleteProduct(id);
     };
 
@@ -114,86 +127,79 @@ const AdminProducts = () => {
         setShowModal(true);
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        saveProduct(formData);
-    };
-
-    const fetchData = () => {
-        queryClient.invalidateQueries({ queryKey: ['products'] });
-    };
-
     const filtered = products.filter(
-        (p) =>
-            p.nom_produit.toLowerCase().includes(search.toLowerCase()) ||
-            p.Store?.nom_boutique?.toLowerCase().includes(search.toLowerCase())
+        (p) => {
+            const name = p.nom_produit || '';
+            const store = p.Store?.nom_boutique || '';
+            const matchesSearch = name.toLowerCase().includes(search.toLowerCase()) ||
+                                store.toLowerCase().includes(search.toLowerCase());
+            
+            const categoryMatch = selectedCategory === 'TOUS' || (p.categorie_id === selectedCategory);
+                                 
+            return matchesSearch && categoryMatch;
+        }
     );
 
     const columns = [
         {
-            label: 'UNITÉ ACTIF',
+            label: 'Identité Produit',
             render: (row) => (
-                <div className="flex items-center gap-3 py-3 group/item">
-                    <div className="size-6 rounded-xl bg-white/[0.02] border border-foreground/5 flex items-center justify-center overflow-hidden shrink-0 shadow-2xl relative">
+                <div className="flex items-center gap-4 py-3">
+                    <div className="size-11 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
                         {row.image_url || (row.images && row.images[0]?.url_image) ? (
-                            <img src={row.image_url || row.images[0]?.url_image} alt="" className="w-full h-full object-cover group-hover/item:scale-125 transition-transform duration-1000" />
+                            <img src={row.image_url || row.images[0]?.url_image} alt="" className="size-full object-cover" />
                         ) : (
-                            <Box className="size-6 text-slate-700" />
+                            <Package className="size-5 text-slate-300" />
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity" />
                     </div>
-                    <div className="min-w-0 space-y-1.5">
-                        <p className="text-[12px] font-black text-foreground uppercase tracking-tight truncate max-w-[220px] pt-0.5 group-hover/item:text-primary transition-colors">
+                    <div className="min-w-0">
+                        <p className="text-xs font-black text-slate-800 uppercase tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
                             {row.nom_produit}
                         </p>
-                        <div className="flex items-center gap-2">
-                            <Satellite className="size-2.5 text-slate-600" />
-                            <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none">
-                                {row.Category?.nom_categorie || 'UNCLASSIFIED_NODE'}
-                            </p>
-                        </div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">
+                            {row.Category?.nom_categorie || 'SANS CLASSE'}
+                        </p>
                     </div>
                 </div>
             )
         },
         {
-            label: 'VENDEUR RÉSEAU',
+            label: 'Vendeur',
             render: (row) => (
-                <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-black text-foreground uppercase tracking-widest flex items-center gap-2">
-                        <Briefcase className="size-3 text-primary" />
-                        {row.Store?.nom_boutique || 'ADMIN_CORE'}
-                    </span>
-                    <span className="text-[9px] text-slate-600 font-bold uppercase  border-l-2 border-primary/20 pl-3">
-                        SID: {(row.store_id || 'LOCAL-01').slice(0, 8).toUpperCase()}
+                <div className="flex items-center gap-2">
+                    <Briefcase className="size-3 text-primary" />
+                    <span className="text-[10px] font-bold text-slate-600 uppercase truncate max-w-[120px]">
+                        {row.Store?.nom_boutique || 'BCA ADMIN'}
                     </span>
                 </div>
             )
         },
         {
-            label: 'COTATION GNF',
+            label: 'Cotation (GNF)',
             render: (row) => (
-                <div className="flex items-baseline gap-2">
-                    <span className="text-[13px] font-black text-foreground tracking-tighter tabular-nums uppercase">
-                        {parseFloat(row.prix_unitaire).toLocaleString('fr-GN')}
+                <div className="flex flex-col">
+                    <span className="text-xs font-black text-slate-900 tabular-nums">
+                        {parseFloat(row.prix_unitaire || 0).toLocaleString('fr-GN')}
                     </span>
-                    <span className="text-[9px] font-black text-primary uppercase tracking-widest">GNF</span>
+                    {row.prix_ancien > 0 && (
+                        <span className="text-[8px] text-slate-300 line-through tabular-nums">
+                            {parseFloat(row.prix_ancien).toLocaleString()}
+                        </span>
+                    )}
                 </div>
             )
         },
         {
-            label: 'INVENTAIRE',
+            label: 'Inventaire',
             render: (row) => (
-                <div className="flex items-center gap-4 p-2.5 rounded-xl bg-white/[0.01] border border-white/[0.03]">
-                    <div className={cn(
-                        "size-2 rounded-full",
-                        row.stock_quantite === 0 ? "bg-rose-500 animate-pulse shadow-[0_0_12px_#f43f5e]" :
-                            row.stock_quantite <= 10 ? "bg-amber-500 animate-pulse" : "bg-emerald-500 shadow-[0_0_12px_#10b981]"
+                <div className="flex items-center gap-2">
+                    <div className={cn("size-1.5 rounded-full", 
+                        row.stock_quantite === 0 ? "bg-rose-500" :
+                        row.stock_quantite <= 10 ? "bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.3)]" : "bg-emerald-500"
                     )} />
-                    <span className={cn(
-                        "text-[10px] font-black uppercase tracking-widest",
+                    <span className={cn("text-[9px] font-black uppercase tracking-widest",
                         row.stock_quantite === 0 ? "text-rose-500" :
-                            row.stock_quantite <= 10 ? "text-amber-500" : "text-emerald-500"
+                        row.stock_quantite <= 10 ? "text-amber-500" : "text-emerald-500"
                     )}>
                         {row.stock_quantite} UNITÉS
                     </span>
@@ -201,16 +207,14 @@ const AdminProducts = () => {
             )
         },
         {
-            label: 'GOUVERNANCE',
+            label: 'Actions',
             render: (row) => (
-                <div className="flex items-center justify-end gap-3 pr-4">
-                    <button onClick={() => handleOpenModal(row)} className="size-6 rounded-xl bg-white/[0.02] border border-foreground/5 text-muted-foreground/80 hover:text-primary hover:bg-primary/5 transition-all flex items-center justify-center hover:border-primary/20 shadow-xl  overflow-hidden relative group/btn">
-                         <div className="absolute inset-x-0 bottom-0 h-[2px] bg-primary scale-x-0 group-hover/btn:scale-x-100 transition-transform origin-left" />
-                         <Edit3 className="size-5" />
+                <div className="flex items-center justify-end gap-2 pr-2">
+                    <button onClick={() => handleOpenModal(row)} className="size-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-primary transition-all duration-300">
+                        <Edit3 className="size-3.5" />
                     </button>
-                    <button onClick={() => handleDelete(row.id)} className="size-6 rounded-xl bg-white/[0.02] border border-foreground/5 text-muted-foreground/80 hover:text-rose-500 hover:bg-rose-500/5 transition-all flex items-center justify-center hover:border-rose-500/20 shadow-xl  overflow-hidden relative group/btn">
-                         <div className="absolute inset-x-0 bottom-0 h-[2px] bg-rose-500 scale-x-0 group-hover/btn:scale-x-100 transition-transform origin-left" />
-                         <Trash2 className="size-5" />
+                    <button onClick={() => handleDelete(row.id)} className="size-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all duration-300">
+                        <Trash2 className="size-3.5" />
                     </button>
                 </div>
             )
@@ -218,245 +222,193 @@ const AdminProducts = () => {
     ];
 
     return (
-        <DashboardLayout title="ALPHA_INDEX_CATALOGUE">
-            <div className="space-y-4 animate-in pb-16">
-
-                {/* Catalogue Infrastructure — Executive Control v5 */}
-                <motion.div 
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="executive-card !p-4 group overflow-visible relative"
-                >
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.03] to-transparent pointer-events-none" />
-                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 relative z-10">
-                        <div className="flex items-center gap-3">
-                            <div className="size-6 rounded-[2.2rem] bg-primary/10 border border-primary/20 flex items-center justify-center shadow-inner group-hover:rotate-6 transition-transform duration-700">
-                                <Box className="size-6 text-primary drop-shadow-xl" />
-                            </div>
-                            <div className="space-y-2.5">
-                                <h2 className="text-sm font-black text-foreground uppercase tracking-tighter leading-none pt-0.5" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                    AUDIT_<span className="text-primary italic">INDEX</span>_RÉSEAU.
-                                </h2>
-                                <div className="flex items-center gap-3">
-                                    <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                                    <p className="text-[10px] font-black text-muted-foreground uppercase  opacity-80 pt-0.5">
-                                        PROTOCOLE_V5.1 — CATALOGUE_LIVE_SYNC
-                                    </p>
-                                </div>
-                            </div>
+        <DashboardLayout title="GESTION CATALOGUE PRODUITS" noPadding>
+            <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8 space-y-8 custom-scrollbar">
+                
+                {/* Header HUD */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex items-start gap-4">
+                        <div className="size-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/5">
+                            <ShoppingBag className="size-7 text-primary" />
                         </div>
-                        <div className="flex items-center gap-3">
-                            <button 
-                                id="btn-products-refresh-signal"
-                                onClick={fetchData} 
-                                className="size-6 rounded-[2.2rem] bg-white/[0.03] border border-foreground/10 flex items-center justify-center text-muted-foreground/80 hover:text-primary hover:border-primary/20 transition-all "
-                            >
-                                <RefreshCcw className={cn("size-6 transition-all duration-700", isLoading && "animate-spin")} />
-                            </button>
-                            <button
-                                id="btn-products-add-node"
-                                onClick={() => handleOpenModal()} 
-                                className="h-11 px-6 bg-white text-background hover:bg-primary hover:text-foreground rounded-2xl font-medium text-sm text-muted-foreground transition-all shadow-2xl  flex items-center gap-3 group/btn border-0"
-                            >
-                                <PlusCircle className="size-5 transition-transform group-hover/btn:rotate-90 group-hover/btn:scale-125" />
-                                <span>INDEXER_NOUVEL_ACTIF</span>
-                            </button>
+                        <div className="space-y-1">
+                            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                Catalogue <span className="text-primary">E-Commerce</span>
+                            </h1>
+                            <div className="flex items-center gap-2">
+                                <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                                    {products.length} RÉFÉRENCES ACTIVES • SYNC_OK
+                                </p>
+                            </div>
                         </div>
                     </div>
-                </motion.div>
 
-                {/* Macro Asset Indicators — HUD Node 02 */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {[
-                        { label: 'UNITÉS_RÉFÉRENCÉES', value: stats.total, icon: Package, color: 'primary' },
-                        { label: 'ACTIFS_OPÉRATIONNELS', value: stats.active, icon: TrendingUp, color: 'emerald-500', status: 'LIVE_SYNC' },
-                        { label: 'ALERTES_CRITIQUES', value: stats.lowStock, icon: Activity, color: 'rose-500', status: stats.lowStock > 0 ? 'ACTION_REQUIS' : 'STATUS_STABLE' }
-                    ].map((kpi, i) => (
-                        <motion.div 
-                            key={i}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.1 }}
-                            className={cn(
-                                "executive-card group  hover-shine relative overflow-hidden",
-                                kpi.color === 'rose-500' && stats.lowStock > 0 ? "border-l-4 border-l-rose-500/50" : 
-                                kpi.color === 'emerald-500' ? "border-l-4 border-l-emerald-500/50" : "border-l-4 border-l-primary/50"
-                            )}
-                        >
-                            <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
-                                <kpi.icon className="size-6" />
-                            </div>
-                            <div className="relative z-10 space-y-6">
-                                <p className="text-[10px] font-black uppercase  text-muted-foreground group-hover:text-foreground transition-colors">{kpi.label}</p>
-                                <div className="flex items-end justify-between">
-                                    <h3 className="text-sm font-black tracking-tighter text-foreground uppercase tabular-nums leading-none">
-                                        {kpi.value}
-                                    </h3>
-                                    {kpi.status && (
-                                        <div className={cn(
-                                            "text-[10px] font-black tracking-widest px-5 py-2 rounded-xl border backdrop-blur-xl",
-                                            kpi.color === 'rose-500' && stats.lowStock > 0 ? "bg-rose-500/10 text-rose-500 border-rose-500/20 animate-pulse" : 
-                                            kpi.color === 'emerald-500' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-foreground/5 text-muted-foreground border-foreground/5"
-                                        )}>
-                                            {kpi.status}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </motion.div>
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => refetch()} className="h-12 px-5 bg-white border border-slate-100 rounded-2xl flex items-center gap-2 text-slate-600 hover:bg-slate-50 transition-all">
+                            <RefreshCcw className={cn("size-4", isLoading && "animate-spin")} />
+                        </button>
+                        <button onClick={() => handleOpenModal()} className="h-12 px-8 bg-primary text-foreground rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center gap-3">
+                            <PlusCircle className="size-4" />
+                            Nouvel Article
+                        </button>
+                    </div>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {stats.map((s, i) => (
+                        <StatCard key={i} {...s} />
                     ))}
                 </div>
 
-                {/* Unified Asset Surface — HUD Ledger */}
-                <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="executive-card !p-0 overflow-hidden border-t-8 border-t-primary shadow-2xl relative"
-                >
-                    <div className="absolute inset-0 opacity-[0.01] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
-                    
-                    <div className="p-4 border-b border-white/[0.03] bg-white/[0.01] flex flex-col xl:flex-row xl:items-center justify-between gap-3 relative z-10">
-                        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar">
-                            <button id="filter-all-nodes" className="px-6 h-12 rounded-2xl text-[10px] font-black uppercase  bg-white text-background shadow-2xl  transition-all hover:bg-primary hover:text-foreground">INDEX_GLOBAL</button>
-                            <button id="filter-node-alerts" className="px-6 h-12 rounded-2xl text-[10px] font-black uppercase  bg-white/[0.03] border border-foreground/5 text-muted-foreground hover:text-foreground transition-all ">SIGNALS_ALERTE</button>
+                {/* Main Content Area */}
+                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                    {/* Filter HUD */}
+                    <div className="p-6 border-b border-slate-50 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 xl:pb-0">
+                            <div className="size-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 mr-1">
+                                <Filter className="size-4 text-slate-400" />
+                            </div>
+                            <button
+                                onClick={() => setSelectedCategory('TOUS')}
+                                className={cn(
+                                    "px-6 h-10 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
+                                    selectedCategory === 'TOUS' ? "bg-slate-900 text-white shadow-lg" : "bg-slate-50 text-slate-400 hover:bg-slate-100"
+                                )}
+                            >
+                                TOUTES CATÉGORIES
+                            </button>
+                            {categories.map(cat => (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => setSelectedCategory(cat.id)}
+                                    className={cn(
+                                        "px-6 h-10 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
+                                        selectedCategory === cat.id ? "bg-slate-900 text-white shadow-lg" : "bg-slate-50 text-slate-400 hover:bg-slate-100"
+                                    )}
+                                >
+                                    {cat.nom_categorie?.toUpperCase()}
+                                </button>
+                            ))}
                         </div>
 
-                        <div className="relative group w-full xl:w-[45rem]">
-                            <Search className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-600 size-6 group-focus-within:text-primary transition-colors z-10" />
-                            <div className="absolute inset-y-2 left-2 w-1.5 bg-primary/20 rounded-full" />
+                        <div className="relative w-full xl:w-96">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 size-4" />
                             <input
-                                id="input-search-catalogue"
-                                className="w-full pl-20 pr-10 h-11 bg-white/[0.02] border border-foreground/10 rounded-2xl text-[13px] font-black tracking-widest placeholder:text-slate-800 outline-none focus:border-primary/40 transition-all text-foreground uppercase"
-                                placeholder="IDENTIFIER_UNITÉ_ACTIF..."
+                                className="w-full pl-12 pr-4 h-11 bg-slate-50 border-none rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-slate-300"
+                                placeholder="RECHERCHER UN PRODUIT..."
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
                             />
                         </div>
                     </div>
 
-                    <div className="p-4 relative z-10">
-                        <DataTable
-                            columns={columns}
-                            data={filtered}
-                            isLoading={isLoading}
-                            className="bg-transparent border-0"
-                        />
+                    <DataTable
+                        columns={columns}
+                        data={filtered}
+                        isLoading={isLoading}
+                    />
 
-                        {!isLoading && filtered.length === 0 && (
-                            <div className="py-60 text-center opacity-20 flex flex-col items-center gap-3">
-                                <ShoppingBag className="size-6 text-slate-600" />
-                                <div className="space-y-6">
-                                    <p className="text-sm font-black uppercase  text-muted-foreground">CATALOGUE_EMPTY</p>
-                                    <p className="text-[12px] font-black uppercase  text-primary">SYSTEM_PENDING_ASSETS_V5</p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </motion.div>
+                    {!isLoading && filtered.length === 0 && (
+                        <div className="py-32 flex flex-col items-center gap-4 opacity-40 text-slate-400">
+                            <Box className="size-16" />
+                            <p className="text-sm font-bold uppercase tracking-widest">Aucun produit trouvé</p>
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* Indexation Desk — Alpha Console Modal */}
+            {/* Asset Indexing Modal */}
             <Modal
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
-                title={editingProduct ? "RÉVISION_ASSET_ALPHA" : "PROTOCOLE_INDEXATION_ACTIF"}
-                className="max-w-4xl"
+                title={editingProduct ? "ÉDITION ARTICLE" : "NOUVELLE ACQUISITION"}
+                glass
             >
-                <form onSubmit={handleSubmit} className="p-4 space-y-20 bg-background">
-                    <div className="space-y-14">
-                        <div className="space-y-6">
-                            <label className="text-[10px] font-black uppercase  text-muted-foreground ml-4">DÉSIGNATION_STRUCTURELLE</label>
-                            <div className="relative group/field focus-within:ring-2 ring-primary/10 rounded-2xl overflow-hidden">
-                                <Box className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within/field:text-primary size-6 z-20 transition-colors" />
-                                <input
-                                    id="modal-asset-nom"
-                                    required
-                                    value={formData.nom_produit}
-                                    onChange={(e) => setFormData({ ...formData, nom_produit: e.target.value })}
-                                    placeholder="DESIGNATION_ALPHA_REF..."
-                                    className="w-full h-12 pl-20 pr-10 bg-white/[0.01] border border-foreground/10 text-[20px] font-black uppercase tracking-tight focus:border-primary/40 outline-none transition-all text-foreground placeholder:text-slate-900"
-                                />
-                            </div>
+                <form onSubmit={handleSubmit} className="space-y-8">
+                    <div className="space-y-2 group">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Désignation de l'Article</label>
+                        <div className="relative">
+                            <input 
+                                required 
+                                value={formData.nom_produit} 
+                                onChange={(e) => setFormData({...formData, nom_produit: e.target.value})} 
+                                className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-primary/20 transition-all uppercase" 
+                                placeholder="NOM DU PRODUIT..."
+                            />
                         </div>
+                    </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div className="space-y-6">
-                                <label className="text-[10px] font-black uppercase  text-muted-foreground ml-4">COTATION_UNITAIRE (GNF)</label>
-                                <div className="relative group/field focus-within:ring-2 ring-primary/10 rounded-2xl overflow-hidden">
-                                    <Zap className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within/field:text-primary size-5 z-20 transition-colors" />
-                                    <input
-                                        id="modal-asset-prix"
-                                        type="number"
-                                        required
-                                        value={formData.prix_unitaire}
-                                        onChange={(e) => setFormData({ ...formData, prix_unitaire: e.target.value })}
-                                        className="w-full h-12 pl-20 pr-10 bg-white/[0.01] border border-foreground/10 text-[24px] font-black outline-none focus:border-primary/40 transition-all text-foreground tabular-nums"
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-6">
-                                <label className="text-[10px] font-black uppercase  text-muted-foreground ml-4">UNITÉS_STOCK_RÉSEAU</label>
-                                <div className="relative group/field focus-within:ring-2 ring-primary/10 rounded-2xl overflow-hidden">
-                                    <Activity className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within/field:text-primary size-5 z-20 transition-colors" />
-                                    <input
-                                        id="modal-asset-stock"
-                                        type="number"
-                                        required
-                                        value={formData.stock_quantite}
-                                        onChange={(e) => setFormData({ ...formData, stock_quantite: e.target.value })}
-                                        className="w-full h-12 pl-20 pr-10 bg-white/[0.01] border border-foreground/10 text-[24px] font-black outline-none focus:border-primary/40 transition-all text-foreground tabular-nums"
-                                    />
-                                </div>
-                            </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Prix Unitaire (GNF)</label>
+                            <input 
+                                required 
+                                type="number"
+                                value={formData.prix_unitaire} 
+                                onChange={(e) => setFormData({...formData, prix_unitaire: e.target.value})} 
+                                className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-emerald-600 outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all tabular-nums" 
+                                placeholder="0"
+                            />
                         </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Stock Initial</label>
+                            <input 
+                                required 
+                                type="number"
+                                value={formData.stock_quantite} 
+                                onChange={(e) => setFormData({...formData, stock_quantite: e.target.value})} 
+                                className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-blue-600 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all tabular-nums" 
+                                placeholder="0"
+                            />
+                        </div>
+                    </div>
 
-                        <div className="space-y-6">
-                            <label className="text-[10px] font-black uppercase  text-muted-foreground ml-4">NODALE_CATÉGORIE_SYNC</label>
-                            <div className="relative group/field h-12">
-                                <Package className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within/field:text-primary size-5 z-20 pointer-events-none transition-colors" />
-                                <select
-                                    id="modal-asset-cat"
-                                    className="w-full h-full pl-20 pr-16 bg-white/[0.01] border border-foreground/10 rounded-2xl text-[14px] font-black uppercase  focus:border-primary/40 outline-none transition-all text-foreground appearance-none"
-                                    value={formData.categorie_id}
-                                    onChange={(e) => setFormData({ ...formData, categorie_id: e.target.value })}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Classification</label>
+                            <div className="relative">
+                                <select 
+                                    value={formData.categorie_id} 
+                                    onChange={(e) => setFormData({...formData, categorie_id: e.target.value})} 
+                                    className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
                                 >
-                                    {categories.map(c => <option key={c.id} value={c.id} className="bg-background">{c.nom_categorie?.toUpperCase() || c.nom?.toUpperCase()}</option>)}
+                                    <option value="">CHOISIR UNE CATÉGORIE</option>
+                                    {categories.map(c => <option key={c.id} value={c.id}>{c.nom_categorie?.toUpperCase() || c.nom?.toUpperCase()}</option>)}
                                 </select>
-                                <ChevronRight className="absolute right-10 top-1/2 -translate-y-1/2 size-6 text-slate-700 pointer-events-none group-focus-within/field:rotate-90 transition-transform duration-[0.8s] group-focus-within/field:text-primary" />
+                                <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
                             </div>
                         </div>
-
-                        <div className="space-y-6">
-                            <label className="text-[10px] font-black uppercase  text-muted-foreground ml-4">SOURCE_IMAGE_ACTIF (URL_HTTPS)</label>
-                            <div className="relative group/field focus-within:ring-2 ring-primary/10 rounded-2xl overflow-hidden">
-                                <PlusCircle className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within/field:text-primary size-5 z-20 transition-colors" />
-                                <input
-                                    id="modal-asset-img"
-                                    value={formData.image_url}
-                                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                                    placeholder="HTTPS://STORAGE.BCACONNECT.GN/ASSETS/ALPHA.WEBP"
-                                    className="w-full h-12 pl-20 pr-10 bg-white/[0.01] border border-foreground/10 text-[14px] font-black tracking-widest outline-none focus:border-primary/40 transition-all text-primary placeholder:text-slate-900"
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Image URL</label>
+                            <div className="relative">
+                                <ImageIcon className="absolute left-5 top-1/2 -translate-y-1/2 size-4 text-slate-300" />
+                                <input 
+                                    value={formData.image_url} 
+                                    onChange={(e) => setFormData({...formData, image_url: e.target.value})} 
+                                    className="w-full h-14 pl-12 pr-6 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-medium text-slate-500 outline-none focus:ring-2 focus:ring-primary/20 transition-all" 
+                                    placeholder="https://images.unsplash.com/..."
                                 />
                             </div>
                         </div>
                     </div>
 
-                    <div className="pt-12 flex gap-3">
-                        <button
-                            type="button"
-                            onClick={() => setShowModal(false)}
-                            className="flex-1 h-12 rounded-2xl bg-white/[0.03] border border-foreground/10 text-muted-foreground font-bold uppercase  text-[10px] hover:bg-foreground/5  transition-all"
-                        >
-                            AVORTIR_SYNC
-                        </button>
-                        <button
-                            id="btn-modal-asset-execute"
-                            type="submit"
-                            disabled={isSaving}
-                            className="flex-[2] h-12 rounded-2xl bg-white text-background font-black text-[14px] uppercase  flex items-center justify-center gap-3 shadow-2xl hover:bg-primary hover:text-foreground transition-all  border-0 group/submit"
-                        >
-                            {isSaving ? <RefreshCcw className="size-6 animate-spin" /> : <CheckCircle2 className="size-6 transition-all group-hover/submit:scale-110" />}
-                            <span>{editingProduct ? "TERMINER_LA_RÉVISION" : "EXÉCUTER_L'INDEXATION"}</span>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Description Technique</label>
+                        <textarea 
+                            rows={4}
+                            value={formData.description} 
+                            onChange={(e) => setFormData({...formData, description: e.target.value})} 
+                            className="w-full p-6 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-semibold text-slate-600 outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none shadow-inner italic" 
+                            placeholder="SPÉCIFICATIONS DÉTAILLÉES..."
+                        />
+                    </div>
+
+                    <div className="flex gap-4 pt-6">
+                        <button type="submit" disabled={isSaving} className="flex-1 h-14 bg-primary text-foreground rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-3">
+                            {isSaving ? <RefreshCcw className="size-5 animate-spin" /> : <ShieldCheck className="size-5" />}
+                            {editingProduct ? "Mettre à jour le catalogue" : "Valider l'Acquisition"}
                         </button>
                     </div>
                 </form>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DashboardLayout from '../components/layout/DashboardLayout';
 import { Link } from 'react-router-dom';
 import { useOrders } from '../hooks/useDomainData';
 import useSocket from '../hooks/useSocket';
@@ -13,6 +14,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import Skeleton from '../components/ui/Skeleton';
+import PrefetchLink from '../components/ui/PrefetchLink';
+import productService from '../services/productService';
 
 const STATUS_CONFIG = {
     en_attente_paiement: { label: 'En attente', icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20', dot: 'bg-amber-500' },
@@ -64,7 +67,7 @@ const OrderCard = ({ order, index }) => {
                             </div>
                         </div>
                         <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                            {new Date(order.created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                            {new Date(order.createdAt || order.created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
                         </p>
                         {order.adresse_livraison && (
                             <div className="flex items-center gap-2 text-muted-foreground">
@@ -99,10 +102,19 @@ const OrderCard = ({ order, index }) => {
                         <Eye className="size-4" />
                         Suivre
                     </Link>
-                    <button className="h-12 px-6 bg-muted border border-border rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:border-primary/30 hover:bg-primary/5 transition-all text-foreground">
+                    <button className="h-10 px-6 bg-muted border border-border rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:border-primary/30 hover:bg-primary/5 transition-all text-foreground">
                         <MessageSquare className="size-4" />
                         Contact
                     </button>
+                    {order.statut !== 'annulé' && (
+                        <Link
+                            to={`/dispute/${order.id}`}
+                            className="h-10 px-6 border border-rose-500/20 bg-rose-500/5 text-rose-500 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-rose-500 hover:text-white transition-all"
+                        >
+                            <AlertCircle className="size-4" />
+                            Litige
+                        </Link>
+                    )}
                 </div>
             </div>
         </motion.div>
@@ -110,7 +122,8 @@ const OrderCard = ({ order, index }) => {
 };
 
 const OrdersClient = () => {
-    const { data: orders = [], loading, error, refetch } = useOrders();
+    const { data, loading, error, refetch } = useOrders();
+    const orders = data?.orders || []; // 🛡️ Extraction sécurisée du tableau
     const [filterStatus, setFilterStatus] = useState('all');
     const { on, off } = useSocket();
 
@@ -127,11 +140,12 @@ const OrdersClient = () => {
     );
 
     return (
-        <div className="min-h-screen bg-background font-jakarta">
-            
-            {/* ── Sticky Header ─────────────────────────────────── */}
-            <div className="sticky top-16 z-20 bg-background/80 backdrop-blur-xl border-b border-border">
-                <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
+        <DashboardLayout title="COMMANDES & LOGISTIQUE" noPadding>
+            <div className="min-h-screen font-jakarta">
+                
+                {/* ── Header Intégré ─────────────────────────────────── */}
+                <div className="bg-white/50 dark:bg-[#0F1219]/50 backdrop-blur-xl border-b border-border">
+                    <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
                     
                     <div className="flex items-center justify-between">
                         <div className="flex items-start gap-4">
@@ -236,6 +250,7 @@ const OrdersClient = () => {
                 )}
             </div>
         </div>
+    </DashboardLayout>
     );
 };
 

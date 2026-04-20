@@ -33,9 +33,9 @@ const statService = {
             throw error;
         }
     },
-    getTrends: async () => {
+    getTrends: async (params = {}) => {
         try {
-            const response = await api.get('/stats/trends');
+            const response = await api.get('/stats/trends', { params });
             return response.data;
         } catch (error) {
             throw error;

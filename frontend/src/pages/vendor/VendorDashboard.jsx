@@ -20,7 +20,8 @@ import {
     Activity,
     LineChart,
     ChevronRight,
-    Globe
+    Globe,
+    RefreshCcw
 } from 'lucide-react';
 import { CardSkeleton, TableRowSkeleton } from '../../components/ui/Loader';
 import { useAuth } from '../../hooks/useAuth';
@@ -35,8 +36,6 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMyStore, useVendorOrders, useVendorStats, useTrustScore } from '../../hooks/useDomainData';
 import socketService from '../../services/socketService';
-import { RefreshCcw } from 'lucide-react';
-
 const VendorDashboard = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -78,10 +77,10 @@ const VendorDashboard = () => {
     const productsCount = store?.produits?.length || 0;
 
     const kpis = [
-        { title: "FLUX_REVENUS", value: `${totalRevenue.toLocaleString('fr-GN')} GNF`, trend: 'up', trendValue: statsData?.growth || '--', icon: CreditCard, color: 'primary' },
-        { title: 'UNITÉS_TRANSACTÉES', value: totalOrders.toString(), trend: 'up', trendValue: pendingOrders > 0 ? `${pendingOrders}_PENDING` : 'OPTIMAL_CORE', icon: ShoppingBasket, color: 'emerald-500' },
-        { title: 'INVENTAIRE_ACTIF', value: productsCount.toString(), trend: 'up', trendValue: lowStockItems > 0 ? `${lowStockItems}_LOW_STOCK` : 'STOCK_NOMINAL', icon: Package, color: 'amber-500' },
-        { title: 'TRUST_SCORE_ALPHA', value: user?.score_confiance ? `${user.score_confiance}%` : '100%', trend: 'up', trendValue: 'ELITE_VENDOR', icon: ShieldCheck, color: 'primary' },
+        { title: "Chiffre d'Affaires", value: `${totalRevenue.toLocaleString('fr-GN')} GNF`, trend: 'up', trendValue: statsData?.growth || '--', icon: CreditCard, color: 'primary' },
+        { title: 'Commandes Reçues', value: totalOrders.toString(), trend: 'up', trendValue: pendingOrders > 0 ? `${pendingOrders} en attente` : 'Optimal', icon: ShoppingBasket, color: 'emerald-500' },
+        { title: 'Produits en Stock', value: productsCount.toString(), trend: 'up', trendValue: lowStockItems > 0 ? `${lowStockItems} stock bas` : 'Stock nominal', icon: Package, color: 'amber-500' },
+        { title: 'Score de Confiance', value: user?.score_confiance ? `${user.score_confiance}%` : '100%', trend: 'up', trendValue: 'Vendeur élite', icon: ShieldCheck, color: 'primary' },
     ];
 
     const recentOrders = orders.slice(0, 5).map(item => ({
@@ -109,7 +108,7 @@ const VendorDashboard = () => {
 
     const orderColumns = [
         { 
-            label: 'ID_RÉFÉRENCE', 
+            label: 'Référence', 
             render: (row) => (
                 <div className="flex items-center gap-4 py-3">
                     <div className="size-2 rounded-full bg-primary/40" />
@@ -118,7 +117,7 @@ const VendorDashboard = () => {
             ) 
         },
         { 
-            label: 'VOLUME_VALEUR', 
+            label: 'Montant', 
             render: (row) => (
                 <div className="flex items-baseline gap-2">
                     <span className="font-black text-[13px] text-foreground tabular-nums tracking-tighter uppercase">{row.amount.split(' ')[0]}</span>
@@ -127,7 +126,7 @@ const VendorDashboard = () => {
             ) 
         },
         { 
-            label: 'STATUT_FLUX', 
+            label: 'Statut', 
             render: (row) => (
                 <div className="flex items-center justify-end pr-6">
                     <StatusBadge status={row.status} className="text-[9px] font-black uppercase  border shadow-2xl py-2 px-5 rounded-xl bg-white/[0.02]" />
@@ -153,78 +152,69 @@ const VendorDashboard = () => {
     };
 
     return (
-        <DashboardLayout title="TERMINAL_OPÉRATIONNEL_VEND">
-            <div className="space-y-4 pb-40 animate-in pb-16">
+        <DashboardLayout title="Tableau de Bord Vendeur" noPadding>
+            <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8 space-y-8 custom-scrollbar">
 
                 {/* Executive Welcome Station — Signal Header */}
-                <motion.div 
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="executive-card !p-4 group overflow-visible relative"
-                >
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.05] to-transparent pointer-events-none" />
-                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 relative z-10">
+                <div className="premium-card p-6 relative overflow-hidden group/header">
+                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 relative z-10">
                         <div className="flex items-center gap-3">
-                            <div className="size-6 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-2xl transition-all duration-1000 group-hover:rotate-6 group-hover:scale-105  overflow-hidden relative">
-                                <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-5 transition-opacity" />
-                                <Store className="size-6 drop-shadow-xl" />
+                            <div className="size-12 rounded-2xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10 transition-all duration-700 group-hover:rotate-12 shadow-sm">
+                                <Store className="size-6" />
                             </div>
-                            <div className="space-y-3.5 text-left">
-                                <h2 className="text-sm font-black text-foreground uppercase tracking-tighter leading-none pt-0.5" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                    BONJOUR, <span className="text-primary italic">{user?.nom_complet?.split(' ')[0] || 'PARTENAIRE'}.</span>
+                            <div className="space-y-1">
+                                <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                    Bonjour, <span className="text-primary">{user?.nom_complet?.split(' ')[0] || 'Partenaire'}</span>
                                 </h2>
-                                <div className="flex items-center gap-4">
-                                     <div className="size-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_12px_#10b981]" />
-                                     <p className="text-[10px] font-black text-muted-foreground uppercase  opacity-80 pt-0.5" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                        NODE: {store?.nom_boutique?.toUpperCase() || "BCA_ALPHA_HUB"} — SID: {(store?.id || 'LOCAL').slice(0, 8).toUpperCase()} — V6.1.4
-                                     </p>
+                                <div className="flex items-center gap-2">
+                                    <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                                        Terminal: {store?.nom_boutique?.toUpperCase() || "MA BOUTIQUE"}
+                                    </p>
                                 </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 relative z-10">
+                        <div className="flex items-center gap-3">
                              {store ? (
                                 <button
                                     id="btn-add-product"
                                     onClick={() => navigate('/vendor/products/add')}
-                                    className="h-11 px-6 bg-white text-background hover:bg-primary hover:text-foreground rounded-[1.8rem] font-medium text-sm text-muted-foreground transition-all shadow-2xl  flex items-center gap-3 group/btn border-0"
+                                    className="h-11 px-8 bg-slate-900 text-white hover:bg-slate-800 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-slate-200 flex items-center gap-3 group/btn border-none"
                                 >
-                                    <Plus className="size-5 transition-transform group-hover/btn:rotate-90 group-hover/btn:scale-125" />
-                                    <span>INDEXER_NOUVEL_ACTIF</span>
+                                    <Plus className="size-4 transition-transform group-hover/btn:rotate-90" />
+                                    <span>Ajouter Article</span>
                                 </button>
                             ) : (
                                 <button
                                     id="btn-config-store"
                                     onClick={() => navigate('/vendor/store')}
-                                    className="h-11 px-6 bg-primary text-foreground hover:bg-white hover:text-background rounded-[1.8rem] font-medium text-sm text-muted-foreground transition-all shadow-2xl  flex items-center gap-3 border-0 group/btn"
+                                    className="h-11 px-8 bg-primary text-white hover:bg-primary/90 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-primary/20 flex items-center gap-3 border-none"
                                 >
-                                    <Store className="size-5 transition-transform group-hover/btn:scale-110" />
-                                    <span>DÉPLOIEMENT_TERMINAL</span>
+                                    <Store className="size-4" />
+                                    <span>Configurer Boutique</span>
                                 </button>
                             )}
                         </div>
                     </div>
-                </motion.div>
+                </div>
 
-                {/* KPI Matrix — High Density Hub */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {isLoading ? (
-                        [1, 2, 3, 4].map(i => <div key={i} className="h-44 executive-card animate-pulse" />)
+                        [1, 2, 3, 4].map(i => <div key={i} className="h-32 premium-card animate-pulse" />)
                     ) : (
                         kpis.map((kpi, idx) => (
-                            <motion.div
-                                key={idx}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: idx * 0.1 }}
-                            >
-                                <DashboardCard
-                                    title={kpi.title}
-                                    value={kpi.value}
-                                    icon={kpi.icon}
-                                    trend={kpi.trend}
-                                    trendValue={kpi.trendValue}
-                                />
-                            </motion.div>
+                            <div key={idx} className="premium-card p-6 flex flex-col justify-between group/kpi h-32">
+                                <div className="flex items-center justify-between">
+                                    <div className="size-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover/kpi:scale-110 transition-transform duration-500">
+                                        <kpi.icon className="size-5" />
+                                    </div>
+                                    <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-lg">↑ {kpi.trendValue}</span>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">{kpi.title}</p>
+                                    <p className="text-xl font-black text-slate-900 tracking-tighter tabular-nums" style={{ fontFamily: "'Outfit', sans-serif" }}>{kpi.value.split(' ')[0]} <small className="text-xs opacity-50">{kpi.value.split(' ')[1] || ''}</small></p>
+                                </div>
+                            </div>
                         ))
                     )}
                 </div>
@@ -232,25 +222,22 @@ const VendorDashboard = () => {
                 {/* Analytics Central — Multi-Node Interface */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
 
-                    <div className="lg:col-span-8 flex flex-col gap-3">
+                    <div className="lg:col-span-8 space-y-6">
                         {/* Transaction Trend — Alpha Signal Deck */}
-                        <motion.div 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="executive-card !p-0 flex flex-col relative overflow-hidden group/chart border-l-4 border-l-primary"
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.01] to-transparent pointer-events-none" />
-                            <div className="p-4 border-b border-white/[0.03] bg-white/[0.01] flex flex-col xl:flex-row xl:items-center justify-between gap-3 relative z-10">
+                        <div className="premium-card h-fit overflow-hidden group/chart">
+                            <div className="p-6 border-b border-slate-50 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="size-6 rounded-[1.8rem] bg-white/[0.03] flex items-center justify-center text-primary border border-foreground/10 group-hover/chart:rotate-12 transition-all duration-1000 shadow-inner group-hover:scale-110 ">
-                                        <TrendingUp className="size-6" />
+                                    <div className="size-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary group-hover/chart:rotate-12 transition-all duration-500">
+                                        <TrendingUp className="size-5" />
                                     </div>
-                                    <div className="space-y-3 text-left">
-                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">MONITEUR FLUX</p>
-                                        <p className="text-[10px] text-muted-foreground">Algorithme prédictif — 30 derniers jours</p>
+                                    <div className="space-y-1">
+                                        <h3 className="text-xs font-black uppercase tracking-tight text-slate-900" style={{ fontFamily: "'Outfit', sans-serif" }}>Moniteur de Flux</h3>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">30 Derniers Jours</p>
                                     </div>
                                 </div>
-                                <div className="px-8 py-3 bg-primary/10 text-primary border border-primary/20 rounded-2xl text-[10px] font-black uppercase  shadow-inner backdrop-blur-3xl">SIGNAL_STATUS : OPTIMAL_CORE</div>
+                                <div className="px-4 py-2 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100">
+                                    Status: Optimal
+                                </div>
                             </div>
 
                             <div className="flex-1 relative z-10 w-full p-4 min-h-[240px]">
@@ -271,87 +258,72 @@ const VendorDashboard = () => {
                                 </ResponsiveContainer>
                             </div>
 
-                            <div className="p-4 bg-white/[0.01] border-t border-white/[0.03] relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <div className="p-6 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-6">
                                 <div className="flex items-center gap-3">
-                                    <div className="size-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 animate-pulse transition-all duration-700">
-                                        <Activity className="size-6" />
+                                    <div className="size-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white shadow-sm transition-all duration-700">
+                                        <Activity className="size-5" />
                                     </div>
-                                    <div className="space-y-2 text-left">
-                                        <p className="text-[10px] font-black text-muted-foreground uppercase  leading-none mb-1">AUDIT_TENDANCE_IA</p>
-                                        <p className="text-[13px] text-foreground font-black uppercase tracking-tight italic opacity-90 transition-all group-hover/chart:translate-x-2">"{statsData?.global_trend?.toUpperCase() || "FORCE_EXPANSIONNELLE_DÉTERMINÉE_SYNAPSE"}"</p>
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Tendance IA</p>
+                                        <p className="text-xs font-black text-slate-900 uppercase">"{statsData?.global_trend?.toUpperCase() || "Tendance Stable"}"</p>
                                     </div>
                                 </div>
-                                <Link to="/vendor/products" className="h-12 px-10 rounded-2xl bg-white/[0.03] border border-foreground/5 text-[10px] font-black uppercase  text-muted-foreground/80 hover:text-foreground hover:bg-white/[0.05] transition-all flex items-center gap-4 ">
-                                     EXPAND_DATA <ArrowRight className="size-5" />
+                                <Link to="/vendor/products" className="h-10 px-6 rounded-xl bg-white border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 hover:border-slate-300 transition-all flex items-center gap-3 group/link shadow-sm">
+                                     Voir Produits
+                                     <ArrowRight className="size-4 group-hover/link:translate-x-1 transition-transform" />
                                 </Link>
                             </div>
-                        </motion.div>
+                        </div>
 
                         {/* Recent Order Ledger — Signal Registry */}
-                        <motion.div 
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="executive-card !p-0 overflow-hidden shadow-4xl group/ledger border-t-8 border-t-white relative group "
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-b from-white/[0.01] to-transparent pointer-events-none" />
+                        <div className="premium-card overflow-hidden group/ledger">
                             <DataTable
-                                title="REGISTRE_FLUX_DÉLIVRANCE"
+                                title="Commandes Récentes"
                                 columns={orderColumns}
                                 data={recentOrders}
-                                className="border-0 bg-transparent text-foreground"
-                                actions={<Link className="text-[10px] font-black text-primary uppercase  hover:text-foreground transition-all underline underline-offset-[12px] decoration-4 decoration-primary/20 hover:decoration-primary/60 pb-4 pr-10" to="/vendor/orders">HUB_HISTORIQUE_FLUX_ALPHA</Link>}
+                                className="border-0 bg-transparent"
+                                actions={<Link className="text-[10px] font-black text-primary uppercase tracking-widest hover:text-slate-900 transition-all px-6 py-4 flex items-center gap-2" to="/vendor/orders">Tout Voir <ChevronRight className="size-3" /></Link>}
                             />
-                        </motion.div>
+                        </div>
                     </div>
 
                     <div className="lg:col-span-4 flex flex-col gap-3">
                         {/* Supply Resilience — Alpha Node Watch */}
-                        <motion.div 
-                             initial={{ opacity: 0, x: 20 }}
-                             animate={{ opacity: 1, x: 0 }}
-                             className="executive-card !p-4 flex flex-col h-auto relative overflow-hidden group/supply"
-                        >
-                            <div className="absolute top-0 right-0 size-60 bg-primary/10 rounded-full blur-[120px] -mr-40 -mt-40 transition-transform duration-[6s] group-hover/supply:scale-150 pointer-events-none" />
-
-                            <div className="flex items-start justify-between mb-16 relative z-10">
-                                <div className="flex items-center gap-3">
-                                    <div className="size-4 rounded-full bg-blue-500 animate-pulse shadow-[0_0_20px_#3b82f6]" />
-                                    <div className="space-y-2 text-left">
-                                        <h3 className="text-sm font-black text-foreground uppercase tracking-tighter leading-none pt-1" style={{ fontFamily: "'Outfit', sans-serif" }}>RÉSILIENCE_SOLVABILITÉ</h3>
-                                        <p className="text-[10px] font-black text-muted-foreground uppercase ">RATIO_STABILITÉ_STOCK_ALPHA</p>
-                                    </div>
+                        <div className="premium-card p-6 flex flex-col h-fit group/supply relative overflow-hidden">
+                            <div className="flex items-start justify-between mb-8">
+                                <div className="space-y-1">
+                                    <h3 className="text-xs font-black uppercase tracking-tight text-slate-900" style={{ fontFamily: "'Outfit', sans-serif" }}>Résilience Stock</h3>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Analyse de Disponibilité</p>
                                 </div>
-                                <button id="navigate-inventory" onClick={() => navigate('/vendor/products')} className="size-6 rounded-2xl bg-white/[0.03] border border-foreground/5 flex items-center justify-center text-muted-foreground hover:text-primary transition-all ">
-                                     <LineChart className="size-5" />
-                                </button>
+                                <div className="size-2 rounded-full bg-blue-500 animate-pulse shadow-glow shadow-blue-500/50" />
                             </div>
 
-                            <div className="space-y-4 relative z-10 px-4">
-                                <div className="space-y-6">
-                                    <div className="flex justify-between text-[10px] font-black uppercase ">
-                                        <span className="text-muted-foreground">INDICE_DISPONIBILITÉ</span>
-                                        <span className="text-primary font-black">{productsCount > 0 ? Math.round(((productsCount - lowStockItems) / productsCount) * 100) : 0}%_SIG</span>
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
+                                        <span className="text-slate-400">Disponibilité</span>
+                                        <span className="text-slate-900">{productsCount > 0 ? Math.round(((productsCount - lowStockItems) / productsCount) * 100) : 0}%</span>
                                     </div>
-                                    <div className="h-5 bg-background rounded-full overflow-hidden border border-white/[0.03] p-1.5 shadow-inner ring-4 ring-white/[0.01]">
+                                    <div className="h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
                                         <motion.div 
                                             initial={{ width: 0 }}
                                             animate={{ width: `${productsCount > 0 ? ((productsCount - lowStockItems) / productsCount) * 100 : 0}%` }}
-                                            transition={{ duration: 3, ease: "easeOut" }}
-                                            className="h-full bg-emerald-500 rounded-full shadow-[0_0_20px_#10b981]" 
+                                            transition={{ duration: 2, ease: "easeOut" }}
+                                            className="h-full bg-emerald-500 rounded-full" 
                                         />
                                     </div>
                                 </div>
-                                <div className="space-y-6">
-                                    <div className="flex justify-between text-[10px] font-black uppercase ">
-                                        <span className="text-muted-foreground">ALERTE_STOCK_BRÈCHE</span>
-                                        <span className="text-amber-500 font-black">{productsCount > 0 ? Math.round((lowStockItems / productsCount) * 100) : 0}%_NODE</span>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
+                                        <span className="text-slate-400">Alerte Stock</span>
+                                        <span className="text-amber-500">{productsCount > 0 ? Math.round((lowStockItems / productsCount) * 100) : 0}%</span>
                                     </div>
-                                    <div className="h-5 bg-background rounded-full overflow-hidden border border-white/[0.03] p-1.5 shadow-inner ring-4 ring-white/[0.01]">
+                                    <div className="h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
                                         <motion.div 
                                             initial={{ width: 0 }}
                                             animate={{ width: `${productsCount > 0 ? (lowStockItems / productsCount) * 100 : 0}%` }}
-                                            transition={{ duration: 3, delay: 0.5, ease: "easeOut" }}
-                                            className="h-full bg-amber-500 rounded-full shadow-[0_0_20px_#f59e0b]" 
+                                            transition={{ duration: 2, delay: 0.2, ease: "easeOut" }}
+                                            className="h-full bg-amber-500 rounded-full" 
                                         />
                                     </div>
                                 </div>
@@ -362,60 +334,54 @@ const VendorDashboard = () => {
                                 onClick={handleAudit}
                                 disabled={isAuditing}
                                 className={cn(
-                                    "w-full h-12 mt-16 rounded-2xl text-[12px] font-black uppercase  transition-all duration-1000 border-0 relative z-10 flex items-center justify-center gap-3 shadow-4xl  group/btn",
-                                    isAuditing ? "bg-white/[0.02] text-slate-700 cursor-not-allowed" : "bg-white text-background hover:bg-primary hover:text-foreground shadow-2xl"
+                                    "w-full h-11 mt-8 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 shadow-sm group/btn",
+                                    isAuditing ? "bg-slate-50 text-slate-300 cursor-not-allowed" : "bg-slate-900 text-white hover:bg-slate-800 shadow-xl shadow-slate-200"
                                 )}
                             >
                                 {isAuditing ? (
-                                    <> <RefreshCcw className="size-6 animate-spin" /> </>
+                                    <RefreshCcw className="size-4 animate-spin" />
                                 ) : (
-                                    <> <Satellite className="size-6 group-hover/btn:rotate-180 transition-transform duration-[3s]" /> <span>INITIER_AUDIT_ALPHA</span></>
+                                    <>
+                                        <Satellite className="size-4 group-hover/btn:rotate-180 transition-transform duration-1000" />
+                                        <span>Lancer Audit IA</span>
+                                    </>
                                 )}
                             </button>
-                        </motion.div>
+                        </div>
 
-                         {/* Trust Node Monitor — Elite Clearance */}
-                        <motion.div 
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="executive-card !p-4 flex flex-col justify-between flex-1 shadow-4xl relative overflow-hidden group/trust border-t-8 border-t-emerald-500/20 "
-                        >
-                           <div className="absolute bottom-0 left-0 size-66 bg-emerald-500/5 rounded-full blur-[140px] -ml-48 -mb-24 group-hover/trust:bg-primary/5 transition-all duration-[5s] pointer-events-none" />
-
-                           <div className="space-y-4 relative z-10">
-                               <div className="flex items-center gap-3 text-left">
-                                    <div className="size-6 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-inner border border-emerald-500/20 group-hover/trust:rotate-12 transition-all duration-1000 group-hover:scale-110">
-                                        <ShieldCheck className="size-11" />
+                        {/* Trust Node Monitor — Elite Clearance */}
+                        <div className="premium-card p-6 flex flex-col justify-between flex-1 group/trust relative overflow-hidden">
+                            <div className="space-y-6 relative z-10">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 border border-emerald-100 group-hover/trust:rotate-12 transition-all duration-700">
+                                        <ShieldCheck className="size-5" />
                                     </div>
-                                    <div className="space-y-3">
-                                        <h4 className="text-sm font-black tracking-tighter uppercase leading-none text-foreground" style={{ fontFamily: "'Outfit', sans-serif" }}>CONFIANCE_ÉLITE</h4>
-                                        <div className="flex items-center gap-3">
-                                             <Globe className="size-3 text-slate-700" />
-                                             <p className="text-[10px] font-black text-muted-foreground uppercase  leading-none">ALPHA_NETWORK_ACCR_LVL_5</p>
-                                        </div>
+                                    <div className="space-y-1">
+                                        <h4 className="text-xs font-black uppercase tracking-tight text-slate-900" style={{ fontFamily: "'Outfit', sans-serif" }}>Score Confiance</h4>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Certification Vendeur</p>
                                     </div>
-                               </div>
+                                </div>
 
-                               <div className="space-y-6">
-                                   <div className="flex items-center justify-between text-[12px] font-black uppercase ">
-                                        <span className="text-slate-600">SCORE_INTÉGRITÉ_ALPHA</span>
-                                        <span className="text-primary  italic shadow-orange-500/20">{trustData?.percentage || user?.score_confiance || 98.2}%_SCL</span>
-                                   </div>
-                                   <div className="h-8 bg-background rounded-full overflow-hidden border border-white/[0.03] p-2 shadow-inner ring-8 ring-emerald-500/[0.02]">
-                                       <motion.div 
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest">
+                                        <span className="text-slate-400">Intégrité</span>
+                                        <span className="text-primary font-black italic">{trustData?.percentage || user?.score_confiance || 98.2}%</span>
+                                    </div>
+                                    <div className="h-3 bg-slate-50 rounded-full overflow-hidden border border-slate-100 p-0.5">
+                                        <motion.div 
                                             initial={{ width: 0 }}
                                             animate={{ width: `${trustData?.percentage || user?.score_confiance || 98.2}%` }}
-                                            transition={{ duration: 4, ease: [0.16, 1, 0.3, 1] }}
-                                            className="h-full bg-gradient-to-r from-emerald-500 via-primary to-emerald-500 rounded-full shadow-[0_0_40px_rgba(16,185,129,0.4)] animate-pulse" 
+                                            transition={{ duration: 2, ease: "easeOut" }}
+                                            className="h-full bg-primary rounded-full shadow-glow shadow-primary/20" 
                                         />
-                                   </div>
-                               </div>
-                           </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                           <div className="mt-20 text-[12px] font-black text-emerald-500 uppercase  bg-emerald-500/5 p-4 rounded-2xl text-center border border-emerald-500/20 relative z-10 shadow-2xl group-hover/trust:border-emerald-500/40 transition-all duration-700 ">
-                               TERMINAL_ALPHA_SÉCURISÉ — COMPTE_EN_RÈGLE_V6
-                           </div>
-                        </motion.div>
+                            <div className="mt-8 py-3 px-4 bg-emerald-50 text-[10px] font-black text-emerald-600 uppercase tracking-widest rounded-xl text-center border border-emerald-100">
+                                Terminal Sécurisé
+                            </div>
+                        </div>
                     </div>
 
                 </div>

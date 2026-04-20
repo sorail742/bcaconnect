@@ -1,20 +1,20 @@
 #!/usr/bin/env node
-require('./instrument.js');
 /**
- * BCA Connect — Script de démarrage.
- * Vérifie les variables d'environnement essentielles avant de lancer le serveur.
+ * BCA Connect — Script de démarrage sécurisé.
+ * Valide les variables d'environnement et initialise les services de sécurité.
  */
 require('dotenv').config();
-const validateEnv = require('./config/env.validation');
 
-// Validation critique des secrets et configurations (Standard BCA v2.5)
-validateEnv(process.env);
+// 🔐 Validation des variables d'environnement (P0 - Sécurité)
+const { validateEnv } = require('./config/envValidation');
+validateEnv();
 
 const app = require('./app');
 const { sequelize } = require('./models');
 const http = require('http');
 const { Server } = require('socket.io');
 const { QueryTypes } = require('sequelize');
+const refreshTokenService = require('./services/refreshTokenService');
 
 /**
  * Migration douce : ajoute les colonnes manquantes sans DROP/RECREATE.
@@ -34,35 +34,17 @@ async function runSafeMigrations(sequelize) {
             table: 'boutiques',
             column: 'banner_images',
             definition: { type: require('sequelize').DataTypes.TEXT, allowNull: true }
-        },
-        // Table utilisateurs — colonnes v2.6
-        {
-            table: 'utilisateurs',
-            column: 'adresse',
-            definition: { type: require('sequelize').DataTypes.STRING(255), allowNull: true }
-        },
-        {
-            table: 'utilisateurs',
-            column: 'categorie_activite',
-            definition: { type: require('sequelize').DataTypes.STRING(100), allowNull: true }
-        },
-        {
-            table: 'utilisateurs',
-            column: 'registre_commerce',
-            definition: { type: require('sequelize').DataTypes.STRING(100), allowNull: true }
-        },
-        {
-            table: 'utilisateurs',
-            column: 'metadata_transporteur',
-            definition: { type: require('sequelize').DataTypes.JSON, allowNull: true }
         }
     ];
 
     for (const m of migrations) {
         try {
-            // Vérifier si la colonne existe déjà (Compatible Postgres & SQLite)
-            const tableDesc = await qi.describeTable(m.table);
-            const exists = Object.keys(tableDesc).includes(m.column);
+            // Vérifier si la colonne existe déjà
+            const tableDesc = await sequelize.query(
+                `PRAGMA table_info(${m.table})`,
+                { type: QueryTypes.SELECT }
+            );
+            const exists = tableDesc.some(col => col.name === m.column);
 
             if (!exists) {
                 await qi.addColumn(m.table, m.column, m.definition);
@@ -74,11 +56,10 @@ async function runSafeMigrations(sequelize) {
     }
 }
 
-
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
-const ALLOWED_ORIGINS = process.env.CORS_ORIGINS 
-    ? process.env.CORS_ORIGINS.split(',') 
+const ALLOWED_ORIGINS = process.env.NODE_ENV === 'production'
+    ? ['https://bcaconnect-backend.onrender.com', 'https://bcaconnect.onrender.com', 'https://bcaconnect.vercel.app']
     : ['http://localhost:5173', 'http://localhost:3000'];
 
 const io = new Server(server, {
@@ -122,6 +103,11 @@ io.on('connection', (socket) => {
 
 const start = async () => {
     try {
+        // 🔐 Initialiser Redis pour la rotation des refresh tokens
+        console.log('🔄 Initialisation de Redis...');
+        await refreshTokenService.connect();
+
+        // Connexion à la base de données
         await sequelize.authenticate();
         console.log('✅ Connexion PostgreSQL établie.');
 
@@ -132,9 +118,26 @@ const start = async () => {
         // Migration douce : ajout des colonnes manquantes sans toucher aux FK
         await runSafeMigrations(sequelize);
 
+        // Démarrer le serveur
         server.listen(PORT, () => {
-            console.log(`\n🚀 BCA Connect Real-Time API v2.5 — Port ${PORT}`);
+            console.log(`\n🚀 BCA Connect Real-Time API v2.6 — Port ${PORT}`);
+            console.log(`🔐 Sécurité: RS256 JWT + Refresh Token Rotation + Redis`);
+            console.log(`📊 Environnement: ${process.env.NODE_ENV}\n`);
         });
+
+        // Gestion de l'arrêt gracieux
+        process.on('SIGTERM', async () => {
+            console.log('\n⏹️  Signal SIGTERM reçu. Arrêt gracieux...');
+            await refreshTokenService.disconnect();
+            process.exit(0);
+        });
+
+        process.on('SIGINT', async () => {
+            console.log('\n⏹️  Signal SIGINT reçu. Arrêt gracieux...');
+            await refreshTokenService.disconnect();
+            process.exit(0);
+        });
+
     } catch (error) {
         console.error('❌ Échec du démarrage du serveur :', error);
         process.exit(1);

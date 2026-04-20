@@ -19,6 +19,7 @@ export default function CreditSimulator() {
     const [simulation, setSimulation] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [aiScore, setAiScore] = useState(null);
 
     const performSimulation = useCallback(async () => {
         setIsLoading(true);
@@ -37,6 +38,19 @@ export default function CreditSimulator() {
             setIsLoading(false);
         }
     }, [amount, duration]);
+
+    // Charger le score IA réel de l'utilisateur au montage
+    useEffect(() => {
+        const fetchScore = async () => {
+            try {
+                const data = await creditService.getScore();
+                setAiScore(data);
+            } catch (err) {
+                console.error("Impossible de charger le score IA", err);
+            }
+        };
+        fetchScore();
+    }, []);
 
     // Débouncing de la simulation
     useEffect(() => {
@@ -236,20 +250,39 @@ export default function CreditSimulator() {
                                                 </div>
                                             </div>
 
-                                            <div className="p-4 bg-slate-900 rounded-2xl border border-white/5 space-y-3">
-                                                <div className="flex items-center gap-2">
-                                                    <Sparkles className="size-4 text-amber-500" />
-                                                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Analysis IA Score</span>
+                                            <div className="p-4 bg-slate-900 rounded-2xl border border-white/5 space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <Sparkles className="size-4 text-amber-500" />
+                                                        <span className="text-[10px] font-black text-white uppercase tracking-widest">ANALYSE ALPHA-BCA</span>
+                                                    </div>
+                                                    <span className="text-[10px] font-black text-amber-500">{aiScore?.score || '65'}/100</span>
                                                 </div>
-                                                <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                                                    <motion.div 
-                                                        initial={{ width: 0 }}
-                                                        animate={{ width: '85%' }}
-                                                        className="h-full bg-amber-500"
-                                                    />
+                                                
+                                                <div className="space-y-2">
+                                                    <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                                                        <motion.div 
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${aiScore?.score || 65}%` }}
+                                                            className="h-full bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]"
+                                                        />
+                                                    </div>
+                                                    
+                                                    {/* Breakdown compact */}
+                                                    <div className="grid grid-cols-4 gap-1.5 pt-1">
+                                                        {aiScore?.breakdown && Object.entries(aiScore.breakdown).map(([key, val]) => (
+                                                            <div key={key} className="space-y-1">
+                                                                <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                                                                    <div className="h-full bg-white/40" style={{ width: `${val}%` }} />
+                                                                </div>
+                                                                <p className="text-[6px] font-black text-white/40 uppercase tracking-tighter truncate text-center">{key}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                                <p className="text-[9px] text-white/60 font-medium">
-                                                    Confiance estimée : <span className="text-amber-500 font-black">HÉROÏQUE (85/100)</span>
+
+                                                <p className="text-[9px] text-white/60 font-medium pt-1">
+                                                    Statut prédictif : <span className="text-amber-500 font-black uppercase">{aiScore?.metadata?.status || 'ANALYSE EN COURS'}</span>
                                                 </p>
                                             </div>
                                         </motion.div>
@@ -258,9 +291,11 @@ export default function CreditSimulator() {
 
                                 <Button 
                                     onClick={() => setShowConfirm(true)}
-                                    className="w-full h-14 bg-primary text-primary-foreground font-black text-xs uppercase tracking-widest border-none shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all"
+                                    disabled={!aiScore || aiScore?.score < 50}
+                                    className="w-full h-14 bg-primary text-primary-foreground font-black text-xs uppercase tracking-widest border-none shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 >
-                                    DEMANDER CE FINANCEMENT <ArrowRight className="size-5 ml-2" />
+                                    {!aiScore ? 'ANALYSE EN COURS...' : aiScore.score < 50 ? 'SCORE INSUFFISANT POUR LE CRÉDIT' : 'DEMANDER CE FINANCEMENT'} 
+                                    {aiScore?.score >= 50 && <ArrowRight className="size-5 ml-2" />}
                                 </Button>
                             </div>
                         </Card>

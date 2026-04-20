@@ -107,12 +107,12 @@ export function CategorySection() {
     });
 
     return (
-        <section className="bg-[#f5f5f5] py-12 text-slate-900 font-sans w-full">
+        <section className="bg-background py-12 text-foreground font-sans w-full border-t border-border/50">
             <div className="w-full px-4 md:px-8 lg:px-12 2xl:px-16">
                 
                 {/* Header Section */}
                 <div className="flex items-center gap-4 mb-6">
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Marché BCA Connect</h2>
+                    <h2 className="text-2xl font-black text-foreground tracking-tight">Marché BCA Connect</h2>
                     <Link to="/marketplace" className="text-sm font-semibold text-[#FF6600] hover:underline">
                         Tout Parcourir
                     </Link>
@@ -123,10 +123,10 @@ export function CategorySection() {
                     {displayProducts.map((product) => (
                         <div 
                             key={product.id} 
-                            className="bg-white rounded-[16px] overflow-hidden hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-shadow duration-300 group cursor-pointer border border-[#f0f0f0] hover:border-transparent flex flex-col relative"
+                            className="bg-card rounded-[16px] overflow-hidden hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-shadow duration-300 group cursor-pointer border border-border hover:border-primary/30 flex flex-col relative"
                         >
                             {/* Product Image Box */}
-                            <div className="aspect-square relative overflow-hidden bg-gray-100">
+                            <div className="aspect-square relative overflow-hidden bg-muted">
                                 <img 
                                     src={product.image} 
                                     alt={product.title} 
@@ -141,7 +141,7 @@ export function CategorySection() {
                                         e.stopPropagation();
                                         addToCart(product);
                                     }}
-                                    className="absolute bottom-2 right-2 size-8 bg-white/90 backdrop-blur-sm shadow-md rounded-full flex items-center justify-center opacity-90 group-hover:opacity-100 hover:bg-[#FF6600] hover:text-white text-slate-700 transition-all z-10"
+                                    className="absolute bottom-2 right-2 size-8 bg-background/90 backdrop-blur-sm shadow-md rounded-full flex items-center justify-center opacity-90 group-hover:opacity-100 hover:bg-[#FF6600] hover:text-white text-foreground transition-all z-10"
                                 >
                                     <ShoppingCart className="size-4" />
                                 </button>
@@ -159,31 +159,31 @@ export function CategorySection() {
                                         </div>
                                     )}
                                     {product.deal && (
-                                        <div className="bg-orange-100 text-[#FF6600] text-[9px] font-bold px-1.5 py-[1px] rounded-sm border border-orange-200">
+                                        <div className="bg-orange-100 dark:bg-orange-950/30 text-[#FF6600] text-[9px] font-bold px-1.5 py-[1px] rounded-sm border border-orange-200 dark:border-orange-900/50">
                                             Offre Flash
                                         </div>
                                     )}
                                 </div>
 
                                 {/* Title */}
-                                <h3 className="text-xs text-slate-800 leading-[1.3] line-clamp-2 mb-2 group-hover:underline font-medium">
+                                <h3 className="text-xs text-foreground/80 leading-[1.3] line-clamp-2 mb-2 group-hover:underline font-medium">
                                     {product.title}
                                 </h3>
 
                                 <div className="mt-auto">
                                     {/* Price Line */}
                                     <div className="flex items-baseline gap-1.5 mb-0.5">
-                                        <span className="text-[12px] font-bold text-slate-900 leading-none">GNF</span>
-                                        <span className="text-lg font-black text-slate-900 leading-none">{product.price}</span>
+                                        <span className="text-[12px] font-bold text-foreground leading-none">GNF</span>
+                                        <span className="text-lg font-black text-foreground leading-none">{product.price}</span>
                                     </div>
                                     {product.oldPrice && (
-                                        <div className="text-[10px] text-slate-400 line-through mb-1">GNF {product.oldPrice}</div>
+                                        <div className="text-[10px] text-muted-foreground line-through mb-1">GNF {product.oldPrice}</div>
                                     )}
 
                                     {/* Rating & Sold Text */}
-                                    <div className="flex items-center gap-1 text-[10px] text-slate-500 mb-1.5">
-                                        <div className="flex items-center text-slate-800">
-                                            <Star className="size-2.5 fill-black text-black" />
+                                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1.5">
+                                        <div className="flex items-center text-foreground">
+                                            <Star className="size-2.5 fill-current text-primary" />
                                             <span className="font-bold ml-0.5">{product.rating}</span>
                                         </div>
                                         <span>|</span>
@@ -191,7 +191,7 @@ export function CategorySection() {
                                     </div>
 
                                     {/* Footer Promo Text */}
-                                    <div className="flex items-center gap-1 text-[9px] text-[#FF6600] font-semibold border-t border-gray-100 pt-1.5 mt-1.5">
+                                    <div className="flex items-center gap-1 text-[9px] text-[#FF6600] font-semibold border-t border-border pt-1.5 mt-1.5">
                                         <Trophy className="size-2.5 stroke-[3]" />
                                         <span className="truncate">{product.tagText}</span>
                                     </div>
@@ -202,7 +202,7 @@ export function CategorySection() {
                 </div>
 
                 <div className="mt-8 flex justify-center">
-                    <Link to="/marketplace" className="bg-white border border-gray-300 text-slate-800 font-bold px-8 py-3 rounded-full hover:border-[#FF6600] hover:text-[#FF6600] transition-colors text-sm shadow-sm flex items-center gap-2">
+                    <Link to="/marketplace" className="bg-card border border-border text-foreground font-bold px-8 py-3 rounded-full hover:border-[#FF6600] hover:text-[#FF6600] transition-colors text-sm shadow-sm flex items-center gap-2">
                         Explorer le marché complet
                     </Link>
                 </div>

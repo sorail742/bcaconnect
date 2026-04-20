@@ -13,23 +13,23 @@ class SocketService {
             return this.socket;
         }
 
-        this.socket = io(SOCKET_URL, {
-            transports: ["websocket"], // Prioriser websocket pour la performance
+        const socket = io(SOCKET_URL, {
             reconnectionAttempts: 10,
             reconnectionDelay: 2000
         });
 
-        this.socket.on("connect", () => {
+        socket.on("connect", () => {
             if (userId) {
-                this.socket.emit('join', userId);
+                socket.emit('join', userId);
             }
         });
 
-        this.socket.on("connect_error", (err) => {
-            // Silencieux en production
+        socket.on("connect_error", (err) => {
+            // Silencieux
         });
 
-        return this.socket;
+        this.socket = socket;
+        return socket;
     }
 
     isConnected() {

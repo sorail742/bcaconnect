@@ -93,6 +93,32 @@ export const aiService = {
             console.error('Erreur insights IA:', error);
             throw error;
         }
+    },
+
+    /**
+     * Obtenir les tendances du marché analysées par l'IA
+     */
+    getMarketTrends: async () => {
+        try {
+            const response = await api.get('/ai/market-trends');
+            return response.data;
+        } catch (error) {
+            console.error('Erreur tendances IA:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Analyser un extrait de code pour détecter les bugs
+     */
+    analyzeCode: async (code, context = '', language = 'javascript') => {
+        try {
+            const response = await api.post('/ai/code-analyze', { code, context, language });
+            return response.data;
+        } catch (error) {
+            console.error('Erreur analyse code IA:', error);
+            throw error;
+        }
     }
 };
 

@@ -82,7 +82,7 @@ const StoreSettings = () => {
         if (!files.length) return;
 
         if (type === 'banner' && shopData.use_carousel && (shopData.banner_images.length + files.length > 5)) {
-            return toast.error("LIMITE_DE_5_IMAGES_ATTEINTE.");
+            return toast.error("Limite de 5 images atteinte.");
         }
 
         const validFiles = files.filter(file => {
@@ -92,7 +92,7 @@ const StoreSettings = () => {
         });
 
         if (validFiles.length < files.length) {
-            toast.warning("ASSETS_REJETÉS_RÉSEAU.");
+            toast.warning("Images rejetées.");
         }
 
         if (!validFiles.length) return;
@@ -113,21 +113,21 @@ const StoreSettings = () => {
 
             if (type === 'logo') {
                 setShopData(prev => ({ ...prev, logo_url: uploadedUrls[0] }));
-                toast.success("LOGO_SCELLÉ.");
+                toast.success("Logo enregistré.");
             } else {
                 if (shopData.use_carousel) {
                     setShopData(prev => ({ 
                         ...prev, 
                         banner_images: [...prev.banner_images, ...uploadedUrls].slice(0, 5) 
                     }));
-                    toast.success("ASSETS_CAROUSEL_ACTUALISÉS.");
+                    toast.success("Carousel mis à jour.");
                 } else {
                     setShopData(prev => ({ ...prev, banner_images: [uploadedUrls[0]] }));
-                    toast.success("BANNER_STATIQUE_FIXÉE.");
+                    toast.success("Bannière enregistrée.");
                 }
             }
         } catch (error) {
-            toast.error("ÉCHEC_EXPÉDITION_ASSET.");
+            toast.error("Échec du téléchargement de l'image.");
         } finally {
             setIsUploading(false);
             setIsUploadingBanner(false);
@@ -145,8 +145,8 @@ const StoreSettings = () => {
         (payload) => isNew ? storeService.createStore(payload) : storeService.updateStore(payload),
         {
             invalidateKeys: [['my-store']],
-            successMessage: isNew ? "TERMINAL_CRÉÉ_RÉSEAU." : "PARAMÈTRES_ENREGISTRÉS.",
-            errorMessage: "ÉCHEC_ENREGISTREMENT_CORE.",
+            successMessage: isNew ? "Boutique créée." : "Paramètres enregistrés.",
+            errorMessage: "Échec de l'enregistrement.",
             onSuccess: (data) => {
                 if (data?.slug) setShopData(prev => ({ ...prev, url: data.slug }));
             }
@@ -159,7 +159,7 @@ const StoreSettings = () => {
     };
 
     const handleSave = () => {
-        if (!shopData.name.trim()) return toast.error("IDENTIFIANT_LÉGAL_REQUIS.");
+        if (!shopData.name.trim()) return toast.error("Nom de boutique requis.");
         
         const payload = {
             nom_boutique: shopData.name.trim(),
@@ -176,35 +176,34 @@ const StoreSettings = () => {
 
     if (isLoading) {
         return (
-            <DashboardLayout title="CONFIGURATION_ALPHA">
+            <DashboardLayout title="Configuration de la Boutique">
                 <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
                     <div className="size-6 rounded-2xl border-4 border-[#FFB703]/10 border-t-[#FFB703] animate-spin shadow-2xl shadow-[#FFB703]/20" />
-                    <p className="text-[10px] font-black text-muted-foreground uppercase  animate-pulse">SYNC_TERMINAL...</p>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase  animate-pulse">Chargement...</p>
                 </div>
             </DashboardLayout>
         );
     }
 
     return (
-        <DashboardLayout title="PARAMÈTRES_BOUTIQUE_EXECUTIVE">
-            <div className="space-y-6 animate-in pb-16">
+        <DashboardLayout title="Boutique & Vitrine" noPadding>
+            <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8 space-y-8 custom-scrollbar">
 
                 {/* Executive Command Bar — Master Directive */}
-                <div className="executive-card !p-4 group overflow-visible">
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#FFB703]/[0.02] to-transparent pointer-events-none" />
-                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 relative z-10">
+                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group/header">
+                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 relative z-10">
                         <div className="flex items-center gap-3">
-                            <div className="size-6 rounded-[2.2rem] bg-[#FFB703]/10 flex items-center justify-center text-[#FFB703] border border-[#FFB703]/20 shadow-inner group-hover:rotate-6 transition-transform">
-                                <Store className="size-6 shadow-sm" />
+                            <div className="size-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500 border border-amber-100 transition-all duration-700 group-hover:rotate-12 shadow-sm">
+                                <Store className="size-6" />
                             </div>
-                            <div className="space-y-2.5">
-                                <h2 className="text-sm font-black text-foreground uppercase tracking-tighter leading-none pt-0.5">
-                                    MON_<span className="text-[#FFB703]">TERMINAL</span>.
+                            <div className="space-y-1">
+                                <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                    Configuration <span className="text-primary">Boutique</span>.
                                 </h2>
-                                <div className="flex items-center gap-3">
-                                    <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                                    <p className="text-[10px] font-black text-muted-foreground/80 uppercase  opacity-80 pt-0.5 underline decoration-[#FFB703]/40 underline-offset-8">
-                                        NODE_SYNC — CONFIG_LIVE_{new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
+                                <div className="flex items-center gap-2">
+                                    <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                                        Instance Active — {new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
                                     </p>
                                 </div>
                             </div>
@@ -212,19 +211,19 @@ const StoreSettings = () => {
                         <div className="flex items-center gap-3">
                             <Link 
                                 to={`/shop/${shopData.url || 'preview'}`} 
-                                className="hidden sm:flex h-11 px-10 bg-white/[0.03] border border-foreground/10 rounded-2xl items-center gap-3 text-muted-foreground/80 hover:text-foreground hover:border-foreground/20 transition-all font-black text-[10px] uppercase  shadow-sm "
+                                className="hidden sm:flex h-11 px-6 bg-slate-50 border border-slate-100 rounded-2xl items-center gap-3 text-slate-500 hover:text-primary transition-all font-black text-[10px] uppercase tracking-widest shadow-sm"
                             >
-                                <Globe className="size-6" />
-                                <span>VOIR_VITRINE</span>
+                                <Globe className="size-4" />
+                                <span>Ma Vitrine</span>
                             </Link>
                             <button
                                 id="btn-save-store-settings"
                                 onClick={handleSave}
                                 disabled={isSaving}
-                                className="h-11 px-6 bg-white text-background hover:bg-[#FFB703] rounded-2xl font-medium text-sm text-muted-foreground transition-all shadow-[0_30px_90px_rgba(0,0,0,0.5)]  flex items-center gap-3 group/save border-0"
+                                className="h-11 px-8 bg-slate-900 text-white hover:bg-slate-800 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-slate-200 flex items-center gap-3 group/save border-0"
                             >
-                                {isSaving ? <Loader2 className="size-5 animate-spin" /> : <CheckCircle2 className="size-5 transition-transform group-hover/save:scale-125" />}
-                                <span className="pt-0.5">{isSaving ? 'SÉCURISATION...' : 'SCELLER_COMMANDES'}</span>
+                                {isSaving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4 transition-transform group-hover/save:scale-125" />}
+                                <span>{isSaving ? 'SYNC...' : 'SAUVEGARDER'}</span>
                             </button>
                         </div>
                     </div>
@@ -233,49 +232,50 @@ const StoreSettings = () => {
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
                     <div className="xl:col-span-8 space-y-6">
                         {/* Branding Station — High Density HUD */}
-                        <div className="executive-card !p-4 space-y-6 group/branding overflow-hidden">
-                             <div className="flex items-center gap-3 text-foreground mb-2">
-                                <Zap className="size-5 text-[#FFB703] animate-pulse" />
-                                <h3 className="text-[13px] font-black uppercase  pt-1 leading-none">IDENTITÉ_VISUELLE_&_BRANDING_UNIT</h3>
+                        <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-8 group/branding">
+                             <div className="flex items-center gap-3 text-slate-900">
+                                <Zap className="size-5 text-amber-500 animate-pulse" />
+                                <h3 className="text-sm font-black uppercase tracking-tight leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>Identité Visuelle</h3>
                              </div>
 
-                             <div className="grid grid-cols-1 gap-3">
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-black uppercase  text-muted-foreground ml-2">NOM_COMMERCIAL_ENSEIGNE</label>
+                             <div className="grid grid-cols-1 gap-6">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Nom Commercial</label>
                                     <input
                                         name="name"
                                         value={shopData.name}
                                         onChange={handleChange}
-                                        placeholder="NOM_DE_VOTRE_BOUTIQUE..."
-                                        className="h-11 w-full px-8 bg-white/[0.02] border border-foreground/10 focus:border-[#FFB703]/30 rounded-2xl text-[18px] font-black tracking-tight outline-none transition-all text-foreground shadow-inner uppercase"
+                                        placeholder="EX: BCA CONNECT OFFICE..."
+                                        className="h-12 w-full px-6 bg-slate-50 border border-slate-100 focus:ring-2 focus:ring-primary/20 rounded-2xl text-base font-black tracking-tight outline-none transition-all text-slate-900 uppercase"
                                     />
                                 </div>
 
-                                <div className="space-y-4 opacity-70 group-hover/branding:opacity-100 transition-opacity duration-700">
-                                    <label className="text-[10px] font-black uppercase  text-muted-foreground ml-2">INDEX_RÉSEAU_SYS (URL_SLUG)</label>
-                                    <div className="flex items-center h-11 rounded-2xl bg-background/40 border border-foreground/10 overflow-hidden shadow-inner">
-                                        <div className="h-full px-8 border-r border-foreground/10 flex items-center bg-white/[0.03]">
-                                            <span className="text-[10px] font-black uppercase  text-[#FFB703]">/STORE/</span>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Lien Permanent (URL)</label>
+                                    <div className="flex items-center h-12 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden">
+                                        <div className="h-full px-6 border-r border-slate-100 flex items-center bg-slate-100/50">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">/STORE/</span>
                                         </div>
                                         <input
                                             readOnly
-                                            value={shopData.url || 'GÉNERATION_AUTO_PRÉAMBULE'}
-                                            className="flex-1 bg-transparent px-8 text-[14px] font-black text-muted-foreground/80 outline-none cursor-not-allowed uppercase tracking-wider"
+                                            value={shopData.url || 'AUTOMATIQUE'}
+                                            className="flex-1 bg-transparent px-6 text-sm font-bold text-slate-400 outline-none cursor-not-allowed uppercase"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="space-y-6">
-                                    <label className="text-[10px] font-black uppercase  text-muted-foreground ml-2">ASSET_LOGO_SÉCURISÉ (SVG/PNG/WEBP)</label>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <div className="relative group h-56 rounded-2xl bg-white/[0.01] border border-dashed border-foreground/10 hover:border-[#FFB703]/40 transition-all duration-700 flex flex-col items-center justify-center gap-4 overflow-hidden shadow-2xl group/upload">
-                                            <div className="absolute inset-0 bg-gradient-to-tr from-[#FFB703]/5 to-transparent opacity-0 group-hover/upload:opacity-100 transition-opacity" />
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Logo Officiel (PNG, WEBP)</label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="relative group/upload h-48 rounded-2xl bg-slate-50 border border-dashed border-slate-200 hover:border-primary/40 transition-all duration-500 flex flex-col items-center justify-center gap-4 overflow-hidden">
                                             {isUploading ? (
-                                                <Loader2 className="size-6 text-[#FFB703] animate-spin" />
+                                                <Loader2 className="size-6 text-primary animate-spin" />
                                             ) : (
                                                 <>
-                                                    <Upload className="size-6 text-slate-700 group-hover/upload:text-[#FFB703] transition-all group-hover/upload:rotate-12" />
-                                                    <p className="text-[10px] font-black uppercase  text-muted-foreground group-hover/upload:text-foreground transition-colors">INITIER_TRANSFERT</p>
+                                                    <div className="size-12 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover/upload:text-primary group-hover/upload:rotate-12 transition-all">
+                                                        <Upload className="size-5" />
+                                                    </div>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">TELEVERSER LOGO</p>
                                                     <input
                                                         type="file"
                                                         ref={fileInputRef}
@@ -286,18 +286,18 @@ const StoreSettings = () => {
                                                 </>
                                             )}
                                         </div>
-                                        <div className="h-56 rounded-2xl bg-background/60 border border-foreground/10 p-4 flex items-center justify-center relative overflow-hidden group shadow-[inset_0_20px_60px_rgba(0,0,0,0.4)]">
+                                        <div className="h-48 rounded-2xl bg-slate-50 border border-slate-100 p-4 flex items-center justify-center relative overflow-hidden group shadow-inner">
                                             {shopData.logo_url ? (
-                                                <img src={shopData.logo_url} className="w-full h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-transform duration-1000 group-hover:scale-125" alt="Logo Preview" />
+                                                <img src={shopData.logo_url} className="w-full h-full object-contain drop-shadow-sm transition-transform duration-700 group-hover:scale-110" alt="Logo Preview" />
                                             ) : (
-                                                <Store className="size-6 text-foreground/5" />
+                                                <Store className="size-8 text-slate-200" />
                                             )}
                                             {shopData.logo_url && (
                                                 <button
                                                     onClick={() => setShopData(prev => ({ ...prev, logo_url: '' }))}
-                                                    className="absolute top-4 right-4 size-6 bg-white text-background border border-foreground/10 rounded-xl flex items-center justify-center hover:bg-rose-500 hover:text-foreground transition-all shadow-2xl "
+                                                    className="absolute top-3 right-3 size-8 bg-white text-slate-400 border border-slate-100 rounded-xl flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 transition-all shadow-sm"
                                                 >
-                                                    <X className="size-5" />
+                                                    <X className="size-4" />
                                                 </button>
                                             )}
                                         </div>
@@ -307,22 +307,22 @@ const StoreSettings = () => {
                         </div>
 
                         {/* Banner & Carousel Architecture — High Density Multi-Node */}
-                        <div className="executive-card !p-4 space-y-6 group/layout overflow-hidden">
-                             <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-3 text-foreground">
-                                    <Layout className="size-5 text-[#FFB703]" />
-                                    <h3 className="text-[13px] font-black uppercase  pt-1 leading-none">ARCHITECTURE_VITRINE_PANORAMIQUE</h3>
+                        <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-8 group/layout">
+                             <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3 text-slate-900 border-none">
+                                    <Layout className="size-5 text-amber-500" />
+                                    <h3 className="text-sm font-black uppercase tracking-tight leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>Visuels Publicitaires</h3>
                                 </div>
-                                <div className="flex items-center gap-4 px-5 py-2 bg-[#FFB703]/10 border border-[#FFB703]/20 rounded-xl">
-                                     <Monitor className="size-4 text-[#FFB703]" />
-                                     <span className="text-[9px] font-black text-[#FFB703] uppercase  pt-0.5">RÉSEAU_GLOBAL_VIEW</span>
+                                <div className="flex items-center gap-3 px-4 py-2 bg-slate-100 border border-slate-100 rounded-xl">
+                                     <Monitor className="size-4 text-slate-400" />
+                                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pt-0.5">Format Desktop & Mobile</span>
                                 </div>
                              </div>
 
                              <div className="space-y-6">
                                 <Toggle 
-                                    label="ACTIVER_CAROUSEL_DYNAMIQUE_RÉSEAU" 
-                                    sublabel="SÉQUENCEUR_D'INDEXATION : JUSQU'À 5 ASSETS HD" 
+                                    label="Activer les images défilantes (Carrousel)" 
+                                    sublabel="Jusqu'à 5 images d'en-tête" 
                                     enabled={shopData.use_carousel}
                                     onChange={(val) => setShopData(prev => ({ ...prev, use_carousel: val }))}
                                 />
@@ -330,7 +330,7 @@ const StoreSettings = () => {
                                 <div className="space-y-4">
                                      <div className="flex items-center justify-between border-b border-foreground/5 pb-8">
                                          <label className="text-[10px] font-black uppercase  text-muted-foreground ml-2">
-                                             {shopData.use_carousel ? `ASSETS_MODULAIRES (NODE : ${shopData.banner_images.length}/5)` : 'ASSET_BANNER_STATIQUE_FIXE'}
+                                             {shopData.use_carousel ? `Images ( ${shopData.banner_images.length}/5 )` : 'Image de Bannière'}
                                          </label>
                                          <button 
                                             onClick={() => bannerInputRef.current?.click()}
@@ -338,7 +338,7 @@ const StoreSettings = () => {
                                             className="h-11 px-8 bg-white/[0.03] border border-foreground/10 rounded-2xl text-[10px] font-black text-[#FFB703] uppercase  flex items-center gap-4 hover:bg-[#FFB703] hover:text-background transition-all group disabled:opacity-20 "
                                          >
                                             <ImagePlus className="size-5" />
-                                            <span>AJOUTER_NODES</span>
+                                            <span>Ajouter</span>
                                          </button>
                                          <input 
                                             type="file" 
@@ -363,7 +363,7 @@ const StoreSettings = () => {
                                                           <Trash2 className="size-6" />
                                                       </button>
                                                  </div>
-                                                 <div className="absolute top-4 left-4 px-4 py-1.5 bg-background/80 backdrop-blur-xl border border-foreground/10 rounded-xl text-[8px] font-black text-[#FFB703] uppercase  shadow-lg">NODE_#{idx + 1}</div>
+                                                 <div className="absolute top-4 left-4 px-4 py-1.5 bg-background/80 backdrop-blur-xl border border-foreground/10 rounded-xl text-[8px] font-black text-[#FFB703] uppercase  shadow-lg">Image {idx + 1}</div>
                                              </div>
                                          ))}
 
@@ -378,7 +378,7 @@ const StoreSettings = () => {
                                                  ) : (
                                                      <>
                                                         <Images className="size-6 text-slate-800 group-hover:text-[#FFB703] transition-all group-hover:scale-110" />
-                                                        <p className="text-[10px] font-black text-slate-600 uppercase  group-hover:text-foreground transition-colors">IMPORT_NOEUD_ASSET</p>
+                                                        <p className="text-[10px] font-black text-slate-600 uppercase  group-hover:text-foreground transition-colors">Ajouter une image</p>
                                                      </>
                                                  )}
                                              </button>
@@ -389,52 +389,52 @@ const StoreSettings = () => {
                         </div>
 
                         {/* Communications Hub — Secure Signals */}
-                        <div className="executive-card !p-4 space-y-6 group/comm overflow-hidden">
-                            <div className="flex items-center gap-3 text-foreground mb-2">
-                                <Phone className="size-5 text-[#FFB703] group-hover/comm:rotate-12 transition-transform duration-700" />
-                                <h3 className="text-[13px] font-black uppercase  pt-1 leading-none">TERMINAUX_DE_COMMUNICATION_SÉCURISÉS</h3>
+                        <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-8 group/comm">
+                            <div className="flex items-center gap-3 text-slate-900 border-none">
+                                <Phone className="size-5 text-emerald-500 group-hover/comm:rotate-12 transition-transform duration-700" />
+                                <h3 className="text-sm font-black uppercase tracking-tight leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>Canaux de Contact</h3>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4">
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-black uppercase  text-muted-foreground ml-2">SUPPORT_CLIENT_CORE (EMAIL)</label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">E-mail Professionnel</label>
                                     <div className="relative group/input">
-                                        <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700 size-6 group-focus-within/input:text-[#FFB703] transition-colors" />
+                                        <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 size-4 group-focus-within/input:text-primary transition-colors" />
                                         <input
                                             name="email"
                                             type="email"
                                             value={shopData.email}
                                             onChange={handleChange}
-                                            placeholder="CONTACT@DOMAIN.SIGNAL"
-                                            className="h-11 w-full pl-16 pr-8 bg-white/[0.02] border border-foreground/10 focus:border-[#FFB703]/30 rounded-2xl text-[14px] font-black tracking-widest outline-none transition-all text-foreground shadow-inner uppercase"
+                                            placeholder="HELLO@BOUTIQUE.COM"
+                                            className="h-12 w-full pl-12 pr-6 bg-slate-50 border border-slate-100 focus:ring-2 focus:ring-primary/20 rounded-2xl text-xs font-bold tracking-widest outline-none transition-all text-slate-900 uppercase"
                                         />
                                     </div>
                                 </div>
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-black uppercase  text-muted-foreground ml-2">LIGNE_DIRECTE_TERMINAL (GSM)</label>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Ligne Directe</label>
                                     <div className="relative group/input">
-                                        <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700 size-6 group-focus-within/input:text-[#FFB703] transition-colors" />
+                                        <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 size-4 group-focus-within/input:text-primary transition-colors" />
                                         <input
                                             name="phone"
                                             type="tel"
                                             value={shopData.phone}
                                             onChange={handleChange}
-                                            placeholder="+224_555_SIGNAL"
-                                            className="h-11 w-full pl-16 pr-8 bg-white/[0.02] border border-foreground/10 focus:border-[#FFB703]/30 rounded-2xl text-[14px] font-black tracking-widest outline-none transition-all text-foreground shadow-inner tabular-nums"
+                                            placeholder="+224 XXX XX XX XX"
+                                            className="h-12 w-full pl-12 pr-6 bg-slate-50 border border-slate-100 focus:ring-2 focus:ring-primary/20 rounded-2xl text-xs font-bold tracking-widest outline-none transition-all text-slate-900 tabular-nums"
                                         />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="space-y-4 pt-6">
-                                <label className="text-[10px] font-black uppercase  text-muted-foreground ml-2">VISION_STRATÉGIQUE_&_MISSION (PROFIL)</label>
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Manifeste de la Boutique</label>
                                 <textarea
                                     name="description"
                                     value={shopData.description}
                                     onChange={handleChange}
                                     rows={5}
-                                    placeholder="DÉFINISSEZ_VOTRE_IDENTITÉ_D'ENSEIGNE_SUR_L'INDEX_GLOBAL..."
-                                    className="w-full px-10 py-8 rounded-2xl border border-foreground/10 bg-background/40 text-[14px] font-black tracking-tight focus:border-[#FFB703]/40 outline-none transition-all resize-none text-foreground shadow-inner leading-relaxed uppercase"
+                                    placeholder="DECRIRE VOTRE HISTOIRE ET VOS PRODUITS..."
+                                    className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold tracking-tight focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none text-slate-900 leading-relaxed uppercase shadow-inner"
                                 />
                             </div>
                         </div>
@@ -442,74 +442,71 @@ const StoreSettings = () => {
 
                     <div className="xl:col-span-4 space-y-6">
                         {/* Live Preview Display — High Intensity HUD Preview */}
-                        <div className="sticky top-40 space-y-6 animate-in slide-in-from-right-12 duration-1000">
-                             <p className="text-[10px] font-black uppercase  text-slate-600 text-center mb-[-2rem] relative z-10">RENDU_RÉSEAU_TEMPS_RÉEL_PRÉVISUALISATION</p>
+                        <div className="sticky top-40 space-y-4">
+                             <div className="flex items-center justify-center gap-2 mb-2">
+                                <div className="h-1 w-8 bg-slate-200 rounded-full" />
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Mobile Preview</p>
+                                <div className="h-1 w-8 bg-slate-200 rounded-full" />
+                             </div>
                             
-                            <div className="executive-card !p-0 overflow-hidden border-[#FFB703]/20 bg-background/60 shadow-[0_50px_120px_rgba(0,0,0,0.9)] group border-[8px] border-black/40">
-                                <div className="h-64 bg-card relative overflow-hidden flex items-center justify-center border-b border-foreground/10">
-                                    {shopData.banner_images.length > 0 ? (
-                                        <div className="size-full">
-                                            <img src={shopData.banner_images[0]} className="size-full object-cover opacity-50 group-hover:scale-110 transition-transform duration-[2s]" />
-                                            {shopData.use_carousel && shopData.banner_images.length > 1 && (
-                                                <div className="absolute inset-x-0 bottom-6 flex items-center justify-center gap-3 relative z-20">
-                                                     {shopData.banner_images.map((_, i) => (
-                                                         <div key={i} className={cn("h-1.5 rounded-full transition-all duration-700", i === 0 ? "w-10 bg-[#FFB703]" : "w-2 bg-foreground/20")} />
-                                                     ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <div className="absolute inset-0 bg-gradient-to-br from-[#FFB703]/10 to-transparent" />
-                                            <ShieldCheck className="size-6 text-foreground/5" />
-                                        </>
-                                    )}
-                                    
-                                    <div className="absolute -bottom-14 left-12 p-3 bg-black border border-[#FFB703]/40 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] group-hover:scale-110 transition-all duration-700 z-30">
-                                        <div className="size-6 rounded-2xl bg-white/[0.03] flex items-center justify-center overflow-hidden border border-foreground/10 p-2 shadow-inner">
-                                            {shopData.logo_url ? <img src={shopData.logo_url} className="w-full h-full object-contain" /> : <ShoppingBag className="size-6 text-foreground/5" />}
+                            <div className="mx-auto w-[280px] bg-slate-900 rounded-[3rem] p-3 shadow-2xl border-[6px] border-slate-800 relative overflow-hidden group">
+                                <div className="bg-white rounded-[2.2rem] h-[500px] overflow-hidden relative flex flex-col">
+                                    <div className="h-[120px] bg-slate-50 relative overflow-hidden flex items-center justify-center border-b border-slate-100">
+                                        {shopData.banner_images.length > 0 ? (
+                                            <div className="size-full">
+                                                <img src={shopData.banner_images[0]} className="size-full object-cover transition-transform duration-[2s] group-hover:scale-110" />
+                                            </div>
+                                        ) : (
+                                            <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-white" />
+                                        )}
+                                        
+                                        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 p-1.5 bg-white rounded-2xl shadow-xl z-20">
+                                            <div className="size-12 rounded-xl bg-slate-50 flex items-center justify-center overflow-hidden border border-slate-100 p-1">
+                                                {shopData.logo_url ? <img src={shopData.logo_url} className="w-full h-full object-contain" /> : <Store className="size-6 text-slate-200" />}
+                                            </div>
                                         </div>
                                     </div>
                                     
-                                    {shopData.use_carousel && shopData.banner_images.length > 1 && (
-                                        <div className="absolute inset-y-0 inset-x-6 flex items-center justify-between pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-                                             <div className="size-6 rounded-xl bg-background/60 backdrop-blur-xl border border-foreground/10 flex items-center justify-center text-foreground"><ChevronLeft className="size-5" /></div>
-                                             <div className="size-6 rounded-xl bg-background/60 backdrop-blur-xl border border-foreground/10 flex items-center justify-center text-foreground"><ChevronRight className="size-5" /></div>
+                                    <div className="mt-8 px-5 py-4 space-y-4 flex-1 overflow-y-auto custom-scrollbar">
+                                        <div className="text-center space-y-2">
+                                            <h4 className="text-xs font-black text-slate-900 uppercase truncate tracking-tight">{shopData.name || 'MA BOUTIQUE'}</h4>
+                                            <p className="text-[9px] text-primary font-bold uppercase tracking-widest">{shopData.url || 'INSTANCE'}.BCA</p>
                                         </div>
-                                    )}
-                                </div>
-                                
-                                <div className="pt-24 pb-12 px-6 space-y-6 group-hover:bg-white/[0.01] transition-colors">
-                                    <div className="space-y-4">
-                                        <h4 className="text-sm font-black text-foreground uppercase truncate tracking-tighter leading-none">{shopData.name || 'NOM_TERMINAL_VIDE'}</h4>
-                                        <div className="flex items-center gap-4">
-                                             <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                                             <p className="text-[10px] text-[#FFB703] font-black uppercase  opacity-80">{shopData.url || 'ALPHA-INDEX'}.SIGNAL</p>
+
+                                        <div className="h-px bg-slate-100 w-full" />
+
+                                        <p className="text-[10px] text-slate-500 font-bold leading-relaxed uppercase opacity-70">
+                                            {shopData.description || 'AUCUNE DESCRIPTION DISPONIBLE.'}
+                                        </p>
+
+                                        <div className="flex flex-col gap-2 pt-2">
+                                            <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-widest py-2 border-y border-slate-50">
+                                                <span className="text-slate-400">Statut</span>
+                                                <span className="text-emerald-500">En ligne</span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-widest py-2 border-b border-slate-50">
+                                                <span className="text-slate-400">Localisation</span>
+                                                <span className="text-slate-600">Guinée</span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <p className="text-[12px] text-muted-foreground font-black leading-relaxed uppercase  line-clamp-4 opacity-60 group-hover:opacity-100 transition-opacity">
-                                        {shopData.description || 'DEFINIR_VOTRE_MISSION_POUR_INDEXATION_CORE_DÉCLENCHÉE.'}
-                                    </p>
-                                    <div className="h-px bg-foreground/5 w-full shadow-inner" />
-                                    <div className="flex items-center justify-between pt-2">
-                                         <div className="space-y-2">
-                                             <p className="text-[9px] font-black text-slate-600 uppercase  leading-none">STATUS_NODE</p>
-                                             <p className="text-[10px] font-black text-emerald-500 uppercase  leading-none">ACTIF_OPÉRATIONNEL</p>
-                                         </div>
-                                         <Link 
+
+                                    <div className="p-4 bg-slate-50 border-t border-slate-100">
+                                        <Link 
                                             to={`/shop/${shopData.url || 'preview'}`} 
-                                            className="size-6 rounded-[2.2rem] bg-[#FFB703] text-background flex items-center justify-center shadow-[0_20px_50px_rgba(255,183,3,0.3)] hover:bg-white hover:rotate-45 transition-all duration-700 "
-                                         >
-                                             <ArrowUpRight className="size-6" />
-                                         </Link>
+                                            className="w-full h-10 bg-primary text-white rounded-xl flex items-center justify-center font-black text-[9px] uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
+                                        >
+                                            Visiter la Vitrine
+                                        </Link>
                                     </div>
                                 </div>
+                                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-4 bg-slate-900 rounded-b-xl z-30" />
                             </div>
 
-                            <div className="executive-card !py-10 flex gap-3 items-start bg-[#FFB703]/5 border-[#FFB703]/20 shadow-inner group/info">
-                                <Info className="text-[#FFB703] size-6 shrink-0 mt-1 transition-transform group-hover/info:scale-125" />
-                                <p className="text-[12px] font-black text-[#FFB703] uppercase  leading-relaxed opacity-80">
-                                    LES_MODIFICATIONS_SCELLÉES_SUR_CE_TERMINAL_SONT_PROJETÉES_SUR_L'INDEX_GLOBAL_DU_MARKETPLACE_BCA_CONNECT_INSTANCE_ALPHA.
+                            <div className="bg-amber-50 p-6 rounded-3xl border border-amber-100 flex gap-4 items-start group/info shadow-sm">
+                                <Info className="text-amber-500 size-5 shrink-0 mt-0.5 transition-transform group-hover/info:scale-110" />
+                                <p className="text-[10px] font-bold text-amber-900/60 uppercase tracking-widest leading-relaxed">
+                                    Les modifications seront propagées en temps réel sur le réseau BCA Connect.
                                 </p>
                             </div>
                         </div>

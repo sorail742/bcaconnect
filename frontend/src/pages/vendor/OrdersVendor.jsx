@@ -87,7 +87,7 @@ const OrdersVendor = () => {
 
     const columns = [
         {
-            label: 'DÉSIGNATION_FLUX_TECH',
+            label: 'Produit',
             render: (row) => (
                 <div className="flex items-center gap-3 py-4 group/item">
                     <div className="size-6 rounded-2xl bg-foreground/5 border-2 border-foreground/10 flex items-center justify-center overflow-hidden shrink-0 group-hover/item:scale-110 group-hover/item:rotate-6 transition-all shadow-2xl relative">
@@ -110,7 +110,7 @@ const OrdersVendor = () => {
             )
         },
         {
-            label: 'OPÉRATEUR_RÉSEAU_ALPHA',
+            label: 'Client',
             render: (row) => (
                 <div className="flex flex-col gap-2 py-1">
                     <span className="text-[12px] font-black text-foreground uppercase tracking-wider">
@@ -124,7 +124,7 @@ const OrdersVendor = () => {
             )
         },
         {
-            label: 'UNITÉS_TRANSACTÉES',
+            label: 'Quantité',
             render: (row) => (
                 <div className="flex items-center gap-3">
                     <span className="text-[14px] font-black text-foreground tracking-tighter uppercase tabular-nums">X{row.quantite}</span>
@@ -132,7 +132,7 @@ const OrdersVendor = () => {
             )
         },
         {
-            label: 'VALEUR_TOTALE_GNF',
+            label: 'Total (GNF)',
             render: (row) => (
                 <span className="text-[15px] font-black text-foreground tracking-tighter tabular-nums uppercase">
                     {(row.prix_unitaire_achat * row.quantite).toLocaleString('fr-GN')} <small className="text-[10px] font-black text-[#FFB703] tracking-widest ml-1">GNF</small>
@@ -140,13 +140,13 @@ const OrdersVendor = () => {
             )
         },
         {
-            label: 'CANAL_STATUT_ALPHA',
+            label: 'Statut',
             render: (row) => (
                 <StatusBadge status={row.statut} variant={getStatusVariant(row.statut)} className="text-[9px] font-black uppercase  border-none py-2 px-4 shadow-inner" />
             )
         },
         {
-            label: 'GOUVERNANCE_FLUX',
+            label: 'Actions',
             render: (row) => (
                 <div className="flex items-center justify-end gap-3 pr-8">
                     {row.statut === 'en_attente' && (
@@ -176,81 +176,85 @@ const OrdersVendor = () => {
     ];
 
     return (
-        <DashboardLayout title="TERMINAL_OPÉRATEUR_LOGISTIQUE">
-            <div className="space-y-6 animate-in fade-in duration-1000 pb-40 font-jakarta">
+        <DashboardLayout title="Gestion des Commandes" noPadding>
+            <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8 space-y-8 custom-scrollbar">
 
                 {/* Executive Command Bar — Logistics Node */}
-                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 executive-card !py-8 bg-card border-[#FFB703]/20 relative overflow-hidden group/header shadow-4xl">
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#FFB703]/5 via-transparent to-transparent opacity-0 group-hover/header:opacity-100 transition-opacity duration-1000" />
-                    <div className="flex items-center gap-3 relative z-10">
-                        <div className="size-6 rounded-2xl bg-[#FFB703]/10 flex items-center justify-center text-[#FFB703] border-2 border-[#FFB703]/20 transition-all duration-700 group-hover/header:rotate-12 group-hover/header:scale-110 shadow-2xl shadow-[#FFB703]/20">
-                            <ListOrdered className="size-6" />
+                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group/header">
+                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 relative z-10">
+                        <div className="flex items-center gap-3">
+                            <div className="size-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500 border border-amber-100 transition-all duration-700 group-hover/header:rotate-12 shadow-sm">
+                                <ListOrdered className="size-6" />
+                            </div>
+                            <div className="space-y-1">
+                                <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                    Commandes <span className="text-primary">Reçues</span>
+                                </h2>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                                    Flux logistique en temps réel
+                                </p>
+                            </div>
                         </div>
-                        <div className="space-y-3">
-                            <h2 className="text-sm font-black text-foreground uppercase tracking-tighter leading-none">
-                                COMMANDES_<span className="text-[#FFB703]">REÇUES</span>
-                            </h2>
-                            <p className="text-[10px] font-black text-muted-foreground uppercase  opacity-80 decoration-[#FFB703]/30 underline underline-offset-8 decoration-2">
-                                GESTION_FLUX_SORTANTS_TERMINAL — SYNC_ALPHA_{new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}_SIG
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3 relative z-10">
-                        <button id="btn-refresh-orders" onClick={fetchOrders} className="size-6 bg-white/[0.03] border-2 border-foreground/5 rounded-2xl flex items-center justify-center text-muted-foreground hover:text-[#FFB703] hover:border-[#FFB703]/20 transition-all group/refresh shadow-inner ">
-                            <RefreshCw className={cn("size-5 group-hover/refresh:rotate-180 transition-transform duration-1000", isLoading && "animate-spin")} />
-                        </button>
-                        <div className="h-12 px-10 bg-white text-background rounded-2xl flex items-center gap-3 border-none shadow-[0_20px_50px_rgba(255,255,255,0.05)]">
-                             <ShieldCheck className="size-6 text-[#FFB703]" />
-                             <span className="text-[10px] font-black uppercase  pt-1">RÉSEAU_SÉCURISÉ_ALPHA</span>
+                        <div className="flex items-center gap-3">
+                            <button id="btn-refresh-orders" onClick={fetchOrders} className="size-11 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 hover:text-primary transition-all group/refresh shadow-sm">
+                                <RefreshCw className={cn("size-5 group-hover/refresh:rotate-180 transition-transform duration-1000", isLoading && "animate-spin")} />
+                            </button>
+                            <div className="h-11 px-6 bg-slate-900 text-white rounded-2xl flex items-center gap-3 shadow-xl shadow-slate-200">
+                                 <ShieldCheck className="size-5 text-amber-400" />
+                                 <span className="text-[10px] font-black uppercase tracking-widest pt-0.5">Proxy Sécurisé</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {/* KPI Area — High Density Monitoring */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="executive-card h-44 flex flex-col justify-between group/kpi border-foreground/5 hover:border-[#FFB703]/30 transition-all duration-700">
-                        <div className="p-4 rounded-xl bg-white/[0.03] border border-foreground/5 text-[#FFB703] w-fit group-hover/kpi:rotate-12 transition-all duration-700 shadow-inner">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between group/kpi transition-all duration-500 hover:shadow-md h-36">
+                        <div className="size-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover/kpi:scale-110 transition-transform duration-500">
                             <ListOrdered className="size-5" />
                         </div>
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase  opacity-60 leading-none">DEMANDES_TOTALES_CORE</p>
-                            <p className="text-sm font-black text-foreground tracking-tighter uppercase leading-none truncate group-hover/kpi:translate-x-3 transition-transform duration-700">{orders.length.toString()}</p>
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Total Commandes</p>
+                            <p className="text-2xl font-black text-slate-900 tracking-tighter tabular-nums" style={{ fontFamily: "'Outfit', sans-serif" }}>{orders.length}</p>
                         </div>
                     </div>
-                    <div className="executive-card h-44 flex flex-col justify-between group/kpi border-foreground/5 hover:border-[#FFB703]/30 transition-all duration-700">
-                        <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/10 text-amber-500 w-fit group-hover/kpi:scale-110 animate-pulse transition-all duration-700 shadow-inner">
+                    <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between group/kpi transition-all duration-500 hover:shadow-md h-36">
+                        <div className="size-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 group-hover/kpi:scale-110 transition-transform duration-500">
                             <Clock className="size-5" />
                         </div>
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase  opacity-60 leading-none">FLUX_EN_ATTENTE_PRIORITÉ</p>
-                            <p className="text-sm font-black text-amber-500 tracking-tighter uppercase leading-none truncate group-hover/kpi:translate-x-3 transition-transform duration-700">{orders.filter(o => o.statut === 'en_attente').length.toString()}</p>
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">En Attente</p>
+                            <p className="text-2xl font-black text-amber-500 tracking-tighter tabular-nums" style={{ fontFamily: "'Outfit', sans-serif" }}>{orders.filter(o => o.statut === 'en_attente').length}</p>
                         </div>
                     </div>
-                    <div className="executive-card h-44 flex flex-col justify-between group/kpi border-foreground/5 hover:border-emerald-500/30 transition-all duration-700">
-                        <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 text-emerald-500 w-fit group-hover/kpi:rotate-12 transition-all duration-700 shadow-inner">
+                    <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between group/kpi transition-all duration-500 hover:shadow-md h-36">
+                        <div className="size-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 group-hover/kpi:scale-110 transition-transform duration-500">
                             <Wallet className="size-5" />
                         </div>
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase  opacity-60 leading-none">FLUX_LIVRÉ_VALORISÉ_ALPHA</p>
-                            <p className="text-sm font-black text-emerald-500 tracking-tighter uppercase leading-none truncate group-hover/kpi:translate-x-3 transition-transform duration-700">{orders.filter(o => o.statut === 'livre').reduce((acc, o) => acc + (o.prix_unitaire_achat * o.quantite), 0).toLocaleString('fr-GN')} <small className="text-sm">GNF</small></p>
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">C.A. Filtré</p>
+                            <p className="text-2xl font-black text-emerald-500 tracking-tighter tabular-nums" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                {orders.filter(o => o.statut === 'livre').reduce((acc, o) => acc + (o.prix_unitaire_achat * o.quantite), 0).toLocaleString('fr-GN')}
+                                <span className="text-xs ml-1 opacity-50">GNF</span>
+                            </p>
                         </div>
                     </div>
                 </div>
 
                 {/* Registry Registry — Alpha Ledger Interface */}
-                <div className="executive-card !p-0 overflow-hidden shadow-4xl group/registry border-foreground/5 hover:border-[#FFB703]/20 transition-all duration-1000">
-                    <div className="p-4 border-b border-foreground/5 bg-white/[0.01] flex flex-col xl:flex-row xl:items-center justify-between gap-3">
-                        <div className="flex items-center gap-4 overflow-x-auto pb-4 xl:pb-0 scrollbar-hide">
+                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div className="p-6 border-b border-slate-50 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+                        <div className="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 custom-scrollbar">
                             {STATUS_FILTERS.map((f) => (
                                 <button
                                     id={`filter-${f.key}`}
                                     key={f.key}
                                     onClick={() => setActiveFilter(f.key)}
                                     className={cn(
-                                        "px-8 h-12 rounded-2xl text-[10px] font-black uppercase  transition-all duration-500 border-2 whitespace-nowrap  font-jakarta",
+                                        "px-6 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap",
                                         activeFilter === f.key
-                                            ? "bg-[#FFB703] text-background border-[#FFB703] shadow-2xl scale-105"
-                                            : "bg-foreground/5 border-foreground/5 text-muted-foreground hover:text-foreground hover:bg-white/[0.08]"
+                                            ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105"
+                                            : "bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100"
                                     )}
                                 >
                                     {f.label}
@@ -258,19 +262,19 @@ const OrdersVendor = () => {
                             ))}
                         </div>
 
-                        <div className="relative group w-full xl:w-[35rem] font-jakarta">
-                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground size-6 group-focus-within:text-[#FFB703] transition-all relative z-10" />
+                        <div className="relative group w-full xl:w-96">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 size-4 group-focus-within:text-primary transition-all" />
                             <input
                                 id="orders-search"
-                                className="w-full pl-16 pr-8 h-11 bg-white/[0.03] border-2 border-foreground/5 group-focus-within:border-[#FFB703]/40 rounded-2xl text-[12px] font-black  placeholder:text-slate-600 outline-none relative z-10 transition-all text-foreground uppercase"
-                                placeholder="CLIENT, PRODUIT, RÉFÉRENCE_SIG..."
+                                className="w-full pl-12 pr-6 h-11 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold uppercase tracking-tight focus:ring-2 focus:ring-primary/20 outline-none transition-all text-slate-900"
+                                placeholder="CLIENT, PRODUIT, RÉFÉRENCE..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                             />
                         </div>
                     </div>
 
-                    <div className="p-4">
+                    <div className="p-2">
                         <DataTable
                             selectable
                             selectedIds={selectedIds}
@@ -278,7 +282,7 @@ const OrdersVendor = () => {
                             columns={columns}
                             data={filtered}
                             isLoading={isLoading}
-                            className="bg-transparent border-0 text-foreground"
+                            className="bg-transparent border-0"
                         />
 
                         {!isLoading && filtered.length === 0 && (
@@ -287,8 +291,8 @@ const OrdersVendor = () => {
                                     <ShoppingBag className="size-6 text-slate-800 animate-pulse" />
                                     <Activity className="absolute -top-4 -right-4 size-6 text-[#FFB703] animate-ping" />
                                 </div>
-                                <p className="text-[12px] font-black uppercase  text-foreground">AUCUN_FLUX_TRANSACTIONNEL_IDENTIFIÉ_ALPHA</p>
-                                <button onClick={fetchOrders} className="text-[#FFB703] text-[10px] font-black uppercase  border-b-2 border-[#FFB703]/20 pb-2 hover:border-[#FFB703] transition-all">RESCANNER_TERMINAL</button>
+                                <p className="text-[12px] font-black uppercase  text-foreground">Aucune commande trouvée</p>
+                                <button onClick={fetchOrders} className="text-[#FFB703] text-[10px] font-black uppercase  border-b-2 border-[#FFB703]/20 pb-2 hover:border-[#FFB703] transition-all">Actualiser</button>
                             </div>
                         )}
                     </div>
@@ -299,8 +303,8 @@ const OrdersVendor = () => {
                     <div className="fixed bottom-16 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-20 duration-1000 font-jakarta">
                         <div className="bg-background/95 backdrop-blur-3xl border-2 border-[#FFB703]/40 rounded-2xl p-4 shadow-[0_50px_100px_rgba(0,0,0,0.9)] flex items-center gap-3 group/bulk">
                              <div className="flex flex-col gap-1">
-                                <span className="text-[12px] font-black text-[#FFB703] uppercase  leading-none">ACTION_BULK_DÉPLOYÉE</span>
-                                <span className="text-[10px] font-black text-muted-foreground uppercase  leading-none">{selectedIds.length} FLUX_SÉLECTIONNÉS</span>
+                                <span className="text-[12px] font-black text-[#FFB703] uppercase  leading-none">Action groupée</span>
+                                <span className="text-[10px] font-black text-muted-foreground uppercase  leading-none">{selectedIds.length} commande{selectedIds.length > 1 ? 's' : ''} sélectionnée{selectedIds.length > 1 ? 's' : ''}</span>
                              </div>
                              <div className="w-[1px] h-10 bg-foreground/10" />
                              <button
@@ -314,7 +318,7 @@ const OrdersVendor = () => {
                                 className="h-12 px-6 gap-3 rounded-2xl bg-[#FFB703] text-background shadow-2xl font-black text-[10px] uppercase  flex items-center hover:bg-white transition-all  border-none"
                             >
                                 <CheckCircle2 className="size-6" />
-                                <span>VALIDER_PROCÉDURE_ALPHA</span>
+                                <span>Tout confirmer</span>
                             </button>
                             <button
                                 id="bulk-cancel-selection"

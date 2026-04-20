@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DashboardLayout from '../components/layout/DashboardLayout';
 import { useWallet } from '../hooks/useDomainData';
 import { WalletSkeleton } from '../components/ui/Loader';
 import { ErrorState } from '../components/ui/DataStates';
@@ -8,9 +9,10 @@ import walletService from '../services/walletService';
 import userService from '../services/userService';
 import { toast } from 'sonner';
 import { useSocket } from '../hooks/useSocket';
-import { Search, Info, CheckCircle2 } from 'lucide-react';
+import { Search, Info, CheckCircle2, Shield } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { cn } from '../lib/utils';
+import { useAIScore } from '../hooks/useAIScore';
 
 const Wallet = () => {
     const { data: wallet, loading, error, mutate } = useWallet();
@@ -21,8 +23,9 @@ const Wallet = () => {
     const [searchResults, setSearchResults] = useState([]);
     const [selectedUser, setSelectedUser] = useState(null);
     const [amount, setAmount] = useState('');
-    const [isTransferring, setIsTransferring] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
+
+    const { scoreData, loading: scoreLoading } = useAIScore();
 
     const { on, off } = useSocket();
 
@@ -31,9 +34,8 @@ const Wallet = () => {
             toast.success(`Portefeuille mis à jour : +${payload.amount.toLocaleString()} GNF`, {
                 icon: <CheckCircle2 className="size-5 text-emerald-500" />
             });
-            mutate(); // Refresh the wallet data
+            mutate();
         };
-
         on('wallet_updated', handleWalletUpdate);
         return () => off('wallet_updated', handleWalletUpdate);
     }, [on, off, mutate]);
@@ -43,84 +45,43 @@ const Wallet = () => {
     const pending = wallet?.solde_en_attente || 0;
 
     const handleDeposit = async () => {
-        const amount = window.prompt("Entrez le montant à déposer (GNF):", "100000");
-        if (!amount || isNaN(amount) || parseFloat(amount) <= 0) return;
-
+        const amountPrompt = window.prompt("Entrez le montant à déposer (GNF):", "100000");
+        if (!amountPrompt || isNaN(amountPrompt) || parseFloat(amountPrompt) <= 0) return;
         try {
             setIsDepositing(true);
             toast.loading("Initialisation du dépôt...");
-            
             const response = await walletService.initiateDeposit({
-                amount: parseFloat(amount),
+                amount: parseFloat(amountPrompt),
                 currency: 'GNF',
                 method: 'wallet_topup'
             });
-
-            if (response.payment_url) {
-                toast.success("Redirection vers la passerelle de paiement...");
-                window.location.href = response.payment_url;
-            } else {
-                toast.success("Dépôt simulé réussi ! (Mode test)");
-                mutate(); // Recharger les données
-            }
-        } catch (err) {
-            toast.error("Erreur d'initialisation du dépôt.");
-        } finally {
-            setIsDepositing(false);
-            toast.dismiss();
-        }
+            if (response.payment_url) { window.location.href = response.payment_url; }
+            else { toast.success("Dépôt simulé réussi !"); mutate(); }
+        } catch (err) { toast.error("Erreur d'initialisation du dépôt."); }
+        finally { setIsDepositing(false); toast.dismiss(); }
     };
 
     const handleSearchUsers = async (query) => {
         setSearchQuery(query);
-        if (query.length < 2) {
-            setSearchResults([]);
-            return;
-        }
+        if (query.length < 2) { setSearchResults([]); return; }
         setIsSearching(true);
         try {
-            const data = await userService.getAll(1, 10, query);
-            setSearchResults(data.users || []);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setIsSearching(false);
-        }
+            const data = await userService.getPublicSearch(query);
+            setSearchResults(data || []);
+        } catch (error) { console.error(error); }
+        finally { setIsSearching(false); }
     };
 
     const handleTransfer = async () => {
-        if (!selectedUser || !amount || isNaN(amount) || parseFloat(amount) <= 0) {
-            toast.error("Veuillez remplir correctement les champs.");
-            return;
-        }
-
-        if (parseFloat(amount) > balance) {
-            toast.error("Solde insuffisant.");
-            return;
-        }
-
+        if (!selectedUser || !amount || parseFloat(amount) <= 0) { toast.error("Champs invalides."); return; }
+        if (parseFloat(amount) > balance) { toast.error("Solde insuffisant."); return; }
         try {
             setIsTransferring(true);
-            toast.loading("Transfert en cours...", { id: 'transfer-toast' });
-            
-            await walletService.transfer({
-                recipientId: selectedUser.id,
-                amount: parseFloat(amount),
-                description: `Transfert P2P vers ${selectedUser.nom_complet}`
-            });
-
-            toast.success("Transfert réussi !", { id: 'transfer-toast' });
-            setIsTransferModalOpen(false);
-            setSelectedUser(null);
-            setAmount('');
-            setSearchQuery('');
-            setSearchResults([]);
-            mutate();
-        } catch (err) {
-            toast.error(err.response?.data?.message || "Erreur lors du transfert.", { id: 'transfer-toast' });
-        } finally {
-            setIsTransferring(false);
-        }
+            await walletService.transfer({ recipientId: selectedUser.id, amount: parseFloat(amount), description: `Transfert P2P vers ${selectedUser.nom_complet}` });
+            toast.success("Transfert réussi !");
+            setIsTransferModalOpen(false); setSelectedUser(null); setAmount(''); mutate();
+        } catch (err) { toast.error(err.response?.data?.message || "Erreur lors du transfert."); }
+        finally { setIsTransferring(false); }
     };
 
     const handleSend = () => {
@@ -128,8 +89,9 @@ const Wallet = () => {
     };
 
     return (
-        <div className="min-h-screen bg-background pt-32 pb-16">
-            <div className="container mx-auto px-4 md:px-8">
+        <DashboardLayout title="Portefeuille & Capital" noPadding>
+            <div className="min-h-screen pb-16">
+                <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
                     <div>
@@ -142,11 +104,11 @@ const Wallet = () => {
                             </h1>
                         </div>
                         <p className="text-lg text-muted-foreground uppercase tracking-widest text-[10px] font-black opacity-60">
-                            GESTION DES FLUX FINANCIERS ALPHA
+                            Gestion des flux financiers
                         </p>
                     </div>
                     <button onClick={() => mutate()} className="h-10 px-4 bg-muted border border-border rounded-xl text-xs font-bold hover:bg-muted/80 transition-all flex items-center gap-2">
-                        <RefreshCcw className="size-3" /> ACTUALISER LE NOEUD
+                        <RefreshCcw className="size-3" /> Actualiser
                     </button>
                 </div>
 
@@ -156,8 +118,8 @@ const Wallet = () => {
                     <ErrorState error={error} />
                 ) : (
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        {/* Balance Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Balance Cards & IA Score */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             {/* Main Balance */}
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
@@ -166,7 +128,7 @@ const Wallet = () => {
                             >
                                 <div className="absolute top-0 right-0 size-40 bg-primary/20 rounded-full blur-[80px] -mr-20 -mt-20 group-hover:scale-110 transition-transform duration-700" />
                                 <div className="flex items-center justify-between mb-12 relative z-10">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest opacity-60">ACTIVE_BALANCE_ALPHA</h3>
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest opacity-60">Solde Actif</h3>
                                     <Lock className="size-5 opacity-40" />
                                 </div>
                                 <p className="text-5xl font-black mb-4 tabular-nums tracking-tighter relative z-10">
@@ -175,37 +137,59 @@ const Wallet = () => {
                                 </p>
                                 <div className="flex items-center gap-2 relative z-10">
                                     <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                                    <p className="text-[9px] font-black uppercase opacity-60">SÉCURITÉ INFRASTRUCTURE ACTVE</p>
+                                    <p className="text-[9px] font-black uppercase opacity-60">Sécurité de l'infrastructure active</p>
                                 </div>
                             </motion.div>
 
                             {/* Pending Balance */}
                             <div className="bg-card border border-border rounded-3xl p-8 relative overflow-hidden flex flex-col justify-between">
                                 <div className="flex items-center justify-between mb-12">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">FLUX_EN_SUSPENS</h3>
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Flux en attente</h3>
                                     <TrendingUp className="size-5 text-amber-500" />
                                 </div>
                                 <div>
                                     <p className="text-3xl font-black text-foreground mb-2 tabular-nums tracking-tight">
                                         {pending.toLocaleString('fr-GN')} <span className="text-xs font-black text-muted-foreground uppercase">GNF</span>
                                     </p>
-                                    <p className="text-[9px] font-black text-muted-foreground uppercase opacity-60">CRÉDITÉ SOUS 24H APRÈS VÉRIFICATION</p>
+                                    <p className="text-[9px] font-black text-muted-foreground uppercase opacity-60">Crédité sous 24h après vérification</p>
                                 </div>
                             </div>
 
                             {/* Global Total */}
                             <div className="bg-card border border-border rounded-3xl p-8 relative overflow-hidden flex flex-col justify-between">
                                 <div className="flex items-center justify-between mb-12">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">VALEUR_TOTALE_DES_ACTIFS</h3>
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Valeur totale des actifs</h3>
                                     <Activity className="size-5 text-primary" />
                                 </div>
                                 <div>
                                     <p className="text-3xl font-black text-foreground mb-2 tabular-nums tracking-tight">
                                         {(balance + pending).toLocaleString('fr-GN')} <span className="text-xs font-black text-muted-foreground uppercase">GNF</span>
                                     </p>
-                                    <p className="text-[9px] font-black text-muted-foreground uppercase opacity-60">FLUX CONSOLIDÉS DÉTECTÉS</p>
+                                    <p className="text-[9px] font-black text-muted-foreground uppercase opacity-60">Flux consolidés détectés</p>
+                                </div>
+                        </div>
+
+                        {/* AI Solvability Widget (New 4th Card) */}
+                        {!scoreLoading && scoreData && (
+                            <div className="bg-slate-900 dark:bg-white rounded-3xl p-8 text-white dark:text-slate-900 shadow-xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 size-40 bg-[#FF6600]/20 rounded-full blur-[80px] -mr-20 -mt-20 group-hover:scale-110 transition-transform duration-700" />
+                                <div className="flex items-center justify-between mb-8 relative z-10">
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest opacity-60">SCORE Alpha-BCA</h3>
+                                    <Shield className="size-5 opacity-40 text-[#FF6600]" />
+                                </div>
+                                <div className="space-y-4 relative z-10 mb-2">
+                                    <p className="text-4xl font-black tabular-nums tracking-tighter">
+                                        {scoreData.score || 0}<span className="text-sm font-black text-[#FF6600] uppercase ml-1">%</span>
+                                    </p>
+                                    <div className="h-2 bg-white/10 dark:bg-slate-900/10 rounded-full overflow-hidden">
+                                        <div className="bg-[#FF6600] h-full rounded-full shadow-[0_0_10px_rgba(255,102,0,0.5)] transition-all duration-1000" style={{ width: `${scoreData.score || 0}%` }}></div>
+                                    </div>
+                                    <p className="text-[9px] font-black uppercase tracking-widest opacity-60 text-center">
+                                       INTÉGRITÉ: {scoreData.metadata?.status || 'STANDARD'}
+                                    </p>
                                 </div>
                             </div>
+                        )}
                         </div>
 
                         {/* Actions Control Panel */}
@@ -215,13 +199,13 @@ const Wallet = () => {
                                 disabled={isDepositing}
                                 className="h-14 px-8 bg-primary text-primary-foreground rounded-2xl font-black text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all flex items-center gap-3 shadow-lg shadow-primary/20 disabled:opacity-50"
                             >
-                                <Plus className="size-5" /> ALIMENTER LE COMPTE
+                                <Plus className="size-5" /> Alimenter le compte
                             </button>
                             <button 
                                 onClick={handleSend}
                                 className="h-14 px-8 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all flex items-center gap-3 shadow-xl"
                             >
-                                <Send className="size-5" /> TRANSFÉRER
+                                <Send className="size-5" /> Transférer
                             </button>
                             <div className="h-14 w-px bg-border mx-2 hidden md:block" />
                             <button
@@ -231,7 +215,7 @@ const Wallet = () => {
                                     showTransactions ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/50"
                                 )}
                             >
-                                <History className="size-5" /> {showTransactions ? "MASQUER L'HISTORIQUE" : "VOIR L'HISTORIQUE"}
+                                <History className="size-5" /> {showTransactions ? "Masquer l'historique" : "Voir l'historique"}
                             </button>
                         </div>
 
@@ -246,10 +230,10 @@ const Wallet = () => {
                                 >
                                     <div className="bg-card border border-border rounded-3xl p-8 space-y-6">
                                         <div className="flex items-center justify-between mb-4">
-                                            <h3 className="text-[10px] font-black text-foreground uppercase tracking-widest">REGISTRE_DES_TRANSACTIONS_RÉCENTES</h3>
+                                            <h3 className="text-[10px] font-black text-foreground uppercase tracking-widest">Registre des transactions récentes</h3>
                                             <div className="flex items-center gap-2">
                                                 <div className="size-2 rounded-full bg-emerald-500" />
-                                                <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">SCELLÉ_SUR_BCA_SYNC</span>
+                                                <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Synchronisé</span>
                                             </div>
                                         </div>
                                         
@@ -265,7 +249,7 @@ const Wallet = () => {
                                                                 {tx.type === 'credit' ? <Plus className="size-5" /> : <Minus className="size-5" />}
                                                             </div>
                                                             <div>
-                                                                <p className="text-xs font-black text-foreground uppercase tracking-tight">{tx.description || 'TRANSFERT_BCA'}</p>
+                                                                <p className="text-xs font-black text-foreground uppercase tracking-tight">{tx.description || 'Transfert'}</p>
                                                                 <p className="text-[9px] font-black text-muted-foreground uppercase opacity-60">
                                                                     {new Date(tx.createdAt || tx.date).toLocaleDateString('fr-GN')} • ID: {(tx.id || 'N/A').slice(0, 8)}
                                                                 </p>
@@ -286,7 +270,7 @@ const Wallet = () => {
                                         ) : (
                                             <div className="py-20 text-center opacity-30 flex flex-col items-center gap-4">
                                                 <XCircle className="size-10" />
-                                                <p className="text-[10px] font-black uppercase tracking-widest">AUCUN_FLUX_DÉTECTÉ_DANS_CE_NOEUD</p>
+                                                <p className="text-[10px] font-black uppercase tracking-widest">Aucun flux détecté</p>
                                             </div>
                                         )}
                                     </div>
@@ -406,6 +390,7 @@ const Wallet = () => {
                 )}
             </AnimatePresence>
         </div>
+    </DashboardLayout>
     );
 };
 

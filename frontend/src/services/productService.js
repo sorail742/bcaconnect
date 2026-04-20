@@ -57,6 +57,16 @@ const productService = {
     delete: async (id) => {
         const response = await api.delete(`/products/${id}`);
         return response.data;
+    },
+
+    // 🔍 Recherche globale
+    searchProducts: async (query) => {
+        return await productService.getAll({ search: query });
+    },
+
+    // ✨ Produits à la une (Landing Page)
+    getFeatured: async (limit = 8) => {
+        return await productService.getAll({ featured: true, limit });
     }
 };
 

@@ -1,224 +1,241 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import {
     Search, Wallet, CheckCircle2, Download, RefreshCcw,
-    ArrowUpRight, ArrowDownLeft, Activity, Landmark, History, Shield
+    ArrowUpRight, ArrowDownLeft, Activity, Filter,
+    Clock, CreditCard, ShieldCheck, History
 } from 'lucide-react';
-import walletService from '../../services/walletService';
+import { useAllTransactions } from '../../hooks/useDomainData';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
+import * as XLSX from 'xlsx';
 
-import { useAllTransactions } from '../../hooks/useDomainData';
+const StatCard = ({ title, value, icon: Icon, color, subtitle }) => (
+    <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group"
+    >
+        <div className={cn("absolute top-0 right-0 p-5 opacity-5 group-hover:scale-125 transition-transform duration-700", color)}>
+            <Icon className="size-10" />
+        </div>
+        <div className="relative z-10 space-y-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-600 transition-colors">
+                {title}
+            </p>
+            <div className="space-y-1">
+                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter tabular-nums leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                    {value}
+                </h3>
+                <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest leading-tight">{subtitle}</p>
+            </div>
+        </div>
+    </motion.div>
+);
 
 const AdminTransactions = () => {
     const [search, setSearch] = useState('');
-    const { data: transactions = [], loading: isLoading, refetch: fetchTransactions } = useAllTransactions();
+    const [filterStatus, setFilterStatus] = useState('ALL');
+    const { data, loading: isLoading, refetch: fetchTransactions } = useAllTransactions();
+    const transactions = data?.transactions || [];
 
     const filtered = transactions.filter(t => {
         const user = t.Wallet?.User?.nom_complet || '';
         const id = t.id || '';
-        return id.toLowerCase().includes(search.toLowerCase()) ||
-            user.toLowerCase().includes(search.toLowerCase());
+        const matchesSearch = id.toLowerCase().includes(search.toLowerCase()) || user.toLowerCase().includes(search.toLowerCase());
+        const matchesStatus = filterStatus === 'ALL' || (filterStatus === 'SUCCESS' && t.statut === 'terminé') || (filterStatus === 'PENDING' && t.statut === 'en_attente');
+        return matchesSearch && matchesStatus;
     });
 
     const totalVolume = transactions.reduce((acc, t) => acc + parseFloat(t.montant || 0), 0);
     const successfulCount = transactions.filter(t => t.statut === 'terminé').length;
+    const pendingCount = transactions.filter(t => t.statut === 'en_attente').length;
 
-    const handleDownload = () => {
-        toast.info("Génération de l'export financier...");
-        setTimeout(() => toast.success("Export généré."), 2000);
+    const handleExportExcel = () => {
+        const worksheet = XLSX.utils.json_to_sheet(filtered.map(t => ({
+            ID: t.id,
+            USER: t.Wallet?.User?.nom_complet,
+            ROLE: t.Wallet?.User?.role,
+            TYPE: t.type,
+            MONTANT: t.montant,
+            STATUT: t.statut,
+            DATE: new Date(t.createdAt).toLocaleString()
+        })));
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Ledger");
+        XLSX.writeFile(workbook, `BCA_Ledger_${Date.now()}.xlsx`);
+        toast.success("EXPORT EXCEL RÉUSSI.");
     };
 
     return (
-        <DashboardLayout title="Transactions">
-            <div className="space-y-5 pb-10">
-
-                {/* Header */}
-                <div className="bg-card border border-border rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-                            <Landmark className="size-5" />
+        <DashboardLayout title="TRANSACTIONAL AUDIT" noPadding>
+            <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8 space-y-8 custom-scrollbar">
+                
+                {/* HUD Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex items-start gap-4">
+                        <div className="size-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/5">
+                            <Activity className="size-7 text-primary shadow-glow" />
                         </div>
-                        <div>
-                            <h2 className="text-base font-bold text-foreground">Audit financier</h2>
-                            <div className="flex items-center gap-2 mt-0.5">
+                        <div className="space-y-1">
+                            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                Audit <span className="text-primary">Flux</span>
+                            </h1>
+                            <div className="flex items-center gap-2">
                                 <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                <p className="text-xs text-muted-foreground">
-                                    Surveillance flux — {new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                                    {transactions.length} ENTRÉES INDEXÉES • SYNC_MASTER
                                 </p>
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={fetchTransactions}
-                            className="size-9 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/40 transition-all"
-                        >
-                            <RefreshCcw className={cn("size-4", isLoading && "animate-spin")} />
-                        </button>
-                        <button
-                            onClick={handleDownload}
-                            className="h-9 px-4 bg-foreground text-background hover:bg-primary hover:text-primary-foreground rounded-xl font-semibold text-sm transition-all flex items-center gap-2"
-                        >
-                            <Download className="size-4" />
-                            Exporter
-                        </button>
-                    </div>
-                </div>
 
-                {/* KPIs */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {[
-                        { label: 'Volume total', value: `${totalVolume.toLocaleString('fr-GN')} GNF`, icon: Wallet, color: 'text-primary', bg: 'bg-primary/10' },
-                        { label: 'Opérations validées', value: successfulCount.toString(), icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-                        { label: 'Intégrité réseau', value: '99.9%', icon: Activity, color: 'text-primary', bg: 'bg-primary/10' },
-                    ].map((stat, idx) => (
-                        <motion.div
-                            key={idx}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.1 }}
-                            className="bg-card border border-border rounded-xl p-4 shadow-sm flex items-center gap-4"
-                        >
-                            <div className={cn("size-10 rounded-xl flex items-center justify-center shrink-0 border border-border", stat.bg)}>
-                                <stat.icon className={cn("size-5", stat.color)} />
-                            </div>
-                            <div>
-                                <p className="text-xs text-muted-foreground font-medium">{stat.label}</p>
-                                <p className="text-lg font-bold text-foreground tabular-nums">{stat.value}</p>
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-
-                {/* Table */}
-                <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-                    {/* Table header */}
-                    <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                            <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-                                <History className="size-4 text-primary" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-bold text-foreground">Historique des flux</h3>
-                                <p className="text-xs text-muted-foreground">Système de surveillance v4.0</p>
-                            </div>
-                        </div>
-                        <div className="relative w-full sm:w-72">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                            <input
-                                className="w-full h-9 pl-9 pr-3 bg-background border border-border rounded-xl text-sm outline-none focus:border-primary/50 transition-all text-foreground placeholder:text-muted-foreground"
-                                placeholder="Rechercher par ID ou utilisateur..."
+                    <div className="flex items-center gap-3">
+                        <div className="relative group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-300 group-focus-within:text-primary transition-colors" />
+                            <input 
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
+                                placeholder="IDENTIFIER USER / ID..."
+                                className="h-12 w-64 bg-white border border-slate-100 rounded-2xl pl-12 pr-4 text-[10px] font-black uppercase tracking-widest outline-none transition-all placeholder:text-slate-200"
                             />
                         </div>
+                        <button onClick={handleExportExcel} className="h-12 px-8 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 shadow-xl shadow-slate-200 hover:opacity-90 active:scale-95 transition-all">
+                            <Download className="size-4" />
+                            Export Ledger
+                        </button>
+                        <button onClick={fetchTransactions} className="size-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center hover:bg-slate-50 transition-all shadow-sm">
+                            <RefreshCcw className={cn("size-5", isLoading && "animate-spin")} />
+                        </button>
                     </div>
+                </div>
 
-                    {/* Table content */}
-                    <div className="overflow-x-auto">
-                        {isLoading ? (
-                            <div className="p-8 space-y-3">
-                                {[1,2,3,4,5].map(i => (
-                                    <div key={i} className="h-14 bg-muted rounded-xl animate-pulse" />
+                {/* Summary HUD */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <StatCard title="Volume Global" value={`${totalVolume.toLocaleString()} GNF`} icon={Wallet} color="text-primary" subtitle="Liquidity Flow" />
+                    <StatCard title="Succès Réseau" value={successfulCount.toString()} icon={ShieldCheck} color="text-emerald-500" subtitle="Validated TX" />
+                    <StatCard title="En Attente" value={pendingCount.toString()} icon={Clock} color="text-amber-500" subtitle="Pending Reconciliation" />
+                    <StatCard title="Santé Satellite" value="100%" icon={History} color="text-blue-500" subtitle="Uptime Integrity" />
+                </div>
+
+                {/* Main Content Area */}
+                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                    {/* Filter HUD */}
+                    <div className="p-6 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="flex items-center gap-3">
+                            <Filter className="size-4 text-slate-300" />
+                            <div className="flex items-center gap-2">
+                                {['ALL', 'SUCCESS', 'PENDING'].map(s => (
+                                    <button
+                                        key={s}
+                                        onClick={() => setFilterStatus(s)}
+                                        className={cn(
+                                            "text-[9px] font-black uppercase tracking-widest px-6 h-9 rounded-xl transition-all",
+                                            filterStatus === s ? "bg-slate-900 text-white shadow-lg" : "bg-slate-50 text-slate-400 hover:bg-slate-100"
+                                        )}
+                                    >
+                                        {s === 'ALL' ? 'TOUS' : s === 'SUCCESS' ? 'VALIDÉS' : 'EN ATTENTE'}
+                                    </button>
                                 ))}
                             </div>
-                        ) : filtered.length > 0 ? (
-                            <table className="w-full text-sm min-w-[700px]">
-                                <thead>
-                                    <tr className="bg-muted/50 text-xs font-semibold text-muted-foreground uppercase tracking-wide border-b border-border">
-                                        <th className="px-4 py-3 text-left">ID</th>
-                                        <th className="px-4 py-3 text-left">Utilisateur</th>
-                                        <th className="px-4 py-3 text-left">Direction</th>
-                                        <th className="px-4 py-3 text-left">Montant</th>
-                                        <th className="px-4 py-3 text-left">Statut</th>
-                                        <th className="px-4 py-3 text-right">Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-border">
-                                    {filtered.map((t, idx) => {
-                                        const user = t.Wallet?.User;
-                                        const isDeposit = t.type === 'depot';
-                                        return (
-                                            <tr key={t.id || idx} className="hover:bg-muted/30 transition-colors">
-                                                <td className="px-4 py-3">
-                                                    <span className="text-xs font-mono font-semibold text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-lg">
-                                                        #{(t.id || 'N/A').slice(0, 8).toUpperCase()}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="size-8 rounded-lg overflow-hidden bg-muted border border-border shrink-0">
-                                                            <img
-                                                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id || t.id}`}
-                                                                alt=""
-                                                                className="w-full h-full object-cover"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-sm font-semibold text-foreground">{user?.nom_complet || 'Système'}</p>
-                                                            <p className="text-xs text-muted-foreground">{user?.role || 'N/A'}</p>
-                                                        </div>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em] italic">Master Ledger V4.0.2</span>
+                    </div>
+
+                    <div className="overflow-x-auto no-scrollbar">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="bg-slate-50/50 border-b border-slate-50">
+                                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Identité / Node</th>
+                                    <th className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Type / Rôle</th>
+                                    <th className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Flux</th>
+                                    <th className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Quantum (GNF)</th>
+                                    <th className="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Statut</th>
+                                    <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Horodatage</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {isLoading ? (
+                                    Array(5).fill(0).map((_, i) => (
+                                        <tr key={i} className="animate-pulse">
+                                            <td colSpan={6} className="px-8 py-10" />
+                                        </tr>
+                                    ))
+                                ) : filtered.map((tx, idx) => {
+                                    const user = tx.Wallet?.User;
+                                    const isDeposit = tx.type === 'depot';
+                                    return (
+                                        <motion.tr 
+                                            key={tx.id || idx}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: idx * 0.02 }}
+                                            className="hover:bg-slate-50/50 transition-colors group"
+                                        >
+                                            <td className="px-8 py-5">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="size-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
+                                                        <img src={`https://api.dicebear.com/7.x/identicon/svg?seed=${user?.id || idx}`} alt="" className="size-full opacity-60" />
                                                     </div>
-                                                </td>
-                                                <td className="px-4 py-3">
+                                                    <div className="min-w-0">
+                                                        <p className="text-[11px] font-black text-slate-800 uppercase tracking-tight truncate">{user?.nom_complet || 'System Root'}</p>
+                                                        <p className="text-[9px] font-bold text-slate-300 uppercase truncate">ID: {tx.id?.slice(0, 10).toUpperCase()}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                                <div className="flex flex-col gap-1">
                                                     <span className={cn(
-                                                        "flex items-center gap-1.5 w-fit px-3 py-1 rounded-full text-xs font-semibold border",
-                                                        isDeposit
-                                                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                                                            : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                                                        "px-2 py-0.5 w-fit rounded-lg text-[8px] font-black uppercase tracking-widest",
+                                                        user?.role === 'banque' ? "bg-amber-50 text-amber-500 border border-amber-100" : "bg-slate-50 text-slate-400 border border-slate-100"
                                                     )}>
-                                                        {isDeposit ? <ArrowDownLeft className="size-3" /> : <ArrowUpRight className="size-3" />}
-                                                        {isDeposit ? 'Entrant' : 'Sortant'}
+                                                        {user?.role || 'CLIENT'}
                                                     </span>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <span className="text-sm font-bold text-foreground tabular-nums">
-                                                        {parseFloat(t.montant || 0).toLocaleString('fr-GN')}
-                                                        <span className="text-xs text-primary ml-1">GNF</span>
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className={cn(
-                                                            "size-2 rounded-full",
-                                                            t.statut === 'terminé' ? "bg-emerald-500" :
-                                                            t.statut === 'en_attente' ? "bg-amber-500 animate-pulse" : "bg-rose-500"
-                                                        )} />
-                                                        <span className={cn(
-                                                            "text-xs font-semibold",
-                                                            t.statut === 'terminé' ? "text-emerald-600 dark:text-emerald-400" :
-                                                            t.statut === 'en_attente' ? "text-amber-600 dark:text-amber-400" : "text-rose-500"
-                                                        )}>
-                                                            {t.statut === 'terminé' ? 'Validé' : t.statut === 'en_attente' ? 'En attente' : 'Rejeté'}
-                                                        </span>
+                                                    <div className="flex items-center gap-1 text-[8px] font-bold text-slate-300 uppercase">
+                                                        <CreditCard className="size-2.5" /> {tx.type?.toUpperCase() || 'TX'}
                                                     </div>
-                                                </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    <p className="text-xs font-medium text-foreground">
-                                                        {new Date(t.createdAt).toLocaleDateString('fr-GN')}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {new Date(t.createdAt).toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        ) : (
-                            <div className="py-16 flex flex-col items-center gap-4 text-center">
-                                <Shield className="size-10 text-muted-foreground/30" />
-                                <div>
-                                    <p className="text-sm font-bold text-foreground">Aucune transaction</p>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        {search ? 'Aucun résultat pour cette recherche.' : 'Aucune transaction enregistrée.'}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                                <span className={cn(
+                                                    "inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest",
+                                                    isDeposit ? "bg-emerald-50 text-emerald-500 border border-emerald-100" : "bg-rose-50 text-rose-500 border border-rose-100"
+                                                )}>
+                                                    {isDeposit ? <ArrowDownLeft className="size-3" /> : <ArrowUpRight className="size-3" />}
+                                                    {isDeposit ? 'Crédit' : 'Débit'}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                                <p className="text-sm font-black text-slate-900 tabular-nums">
+                                                    {parseFloat(tx.montant || 0).toLocaleString()}
+                                                </p>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                                <div className="flex items-center gap-2">
+                                                    <div className={cn(
+                                                        "size-1.5 rounded-full",
+                                                        tx.statut === 'terminé' ? "bg-emerald-500" : tx.statut === 'en_attente' ? "bg-amber-500 animate-pulse" : "bg-rose-500"
+                                                    )} />
+                                                    <span className={cn(
+                                                        "text-[9px] font-black uppercase tracking-widest",
+                                                        tx.statut === 'terminé' ? "text-emerald-500" : tx.statut === 'en_attente' ? "text-amber-500" : "text-rose-500"
+                                                    )}>
+                                                        {tx.statut === 'terminé' ? 'Validé' : tx.statut === 'en_attente' ? 'Revue' : 'Échoué'}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-5 text-right">
+                                                <p className="text-[10px] font-black text-slate-800 uppercase tracking-tight">{new Date(tx.createdAt).toLocaleDateString()}</p>
+                                                <p className="text-[9px] font-bold text-slate-300 uppercase italic opacity-60">
+                                                    {new Date(tx.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                </p>
+                                            </td>
+                                        </motion.tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

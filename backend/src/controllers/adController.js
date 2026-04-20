@@ -2,6 +2,28 @@ const { Publicite, PubliciteCiblage, PubliciteStat, PaiementPublicite, User } = 
 const { Op, literal } = require('sequelize');
 
 const adController = {
+    // Liste toutes les publicités (pour admin ou pour le feed public avec filtres)
+    getAll: async (req, res, next) => {
+        try {
+            const { position, status } = req.query;
+            const where = {};
+            
+            if (position) where.format = position; // On utilise le champ 'format' pour la position (Standard BCA)
+            if (status) where.statut = status;
+            else if (!req.user || req.user.role !== 'admin') where.statut = 'active';
+
+            const ads = await Publicite.findAll({
+                where,
+                include: [{ model: PubliciteCiblage, as: 'ciblages' }],
+                order: [['createdAt', 'DESC']]
+            });
+            
+            res.json(ads || []);
+        } catch (error) {
+            next(error);
+        }
+    },
+
     create: async (req, res, next) => {
         try {
             const { titre, contenu, url_image, url_destination, format, date_debut, date_fin, budget_total, ciblage } = req.body;

@@ -54,10 +54,12 @@ const validateLogin = [
  * Validation d'une demande de crédit (Finance)
  */
 const validateCreditRequest = [
-    body('montant')
+    body('montant_principal')
         .isFloat({ min: 10000 }).withMessage('Montant minimum : 10 000 GNF.'),
     body('duree_mois')
         .isInt({ min: 1, max: 60 }).withMessage('Durée : entre 1 et 60 mois.'),
+    body('motif')
+        .notEmpty().withMessage('Le motif du financement est obligatoire pour l\'analyse IA.'),
     validateRequest
 ];
 

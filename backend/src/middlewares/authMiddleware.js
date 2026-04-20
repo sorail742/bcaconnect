@@ -1,4 +1,5 @@
-const tokenService = require('../services/tokenService');
+const jwtService = require('../services/jwtService');
+const refreshTokenService = require('../services/refreshTokenService');
 const { hasPermission } = require('../config/permissions');
 
 const authMiddleware = (req, res, next) => {
@@ -9,10 +10,15 @@ const authMiddleware = (req, res, next) => {
     }
 
     try {
-        const decoded = tokenService.verifyAccessToken(token);
+        // Vérifier l'algorithme (protection contre alg:none)
+        jwtService.validateAlgorithm(token);
+        
+        // Vérifier et décoder le token avec RS256
+        const decoded = jwtService.verifyToken(token);
         req.user = decoded;
         next();
     } catch (error) {
+        console.warn(`⚠️ Tentative d'accès avec token invalide: ${error.message}`);
         res.status(401).json({ message: "Jeton invalide ou expiré." });
     }
 };
@@ -61,12 +67,13 @@ const optionalAuth = (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     if (token) {
         try {
-            req.user = tokenService.verifyAccessToken(token);
+            jwtService.validateAlgorithm(token);
+            req.user = jwtService.verifyToken(token);
         } catch (_) {
             // Token invalide ignoré
         }
     }
-    next();
+    next()
 };
 
 module.exports = { authMiddleware, protect, authorize, optionalAuth, grantAccess };

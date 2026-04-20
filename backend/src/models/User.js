@@ -19,7 +19,7 @@ const User = sequelize.define('User', {
         validate: { isEmail: true },
     },
     telephone: {
-        type: DataTypes.STRING(100),
+        type: DataTypes.STRING(255), // Augmenté pour le chiffrement (IV:Tag:Encrypted)
         allowNull: false,
         unique: true,
     },

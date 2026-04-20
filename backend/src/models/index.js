@@ -34,7 +34,7 @@ Store.belongsTo(User, { foreignKey: 'proprietaire_id' });
 
 // 3. Relations Boutique - Produit
 Store.hasMany(Product, { foreignKey: 'boutique_id', as: 'produits' });
-Product.belongsTo(Store, { foreignKey: 'boutique_id' });
+Product.belongsTo(Store, { foreignKey: 'boutique_id', as: 'boutique' });
 
 // 4. Relations Catégorie - Produit
 Category.hasMany(Product, { foreignKey: 'categorie_id', as: 'produits' });

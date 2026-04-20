@@ -13,6 +13,7 @@ import BcaLogo from '../../components/ui/BcaLogo';
 import marketImg from '../../assets/auth/market.png';
 import logisticsImg from '../../assets/auth/logistics.png';
 import entrepreneurImg from '../../assets/auth/entrepreneur.png';
+import authService from '../../services/authService';
 
 const SHOWCASE_IMAGES = [marketImg, logisticsImg, entrepreneurImg];
 
@@ -23,15 +24,59 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [localError, setLocalError] = useState('');
     const [fieldErrors, setFieldErrors] = useState({});
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     
     const [step, setStep] = useState('LOGIN'); // 'LOGIN' | '2FA'
     const [verificationCode, setVerificationCode] = useState('');
     const [twoFactorUserId, setTwoFactorUserId] = useState(null);
     
-    const { login, verify2FA, isAuthenticated, user, loading: authLoading, error: authError } = useAuth();
+    const { login, verify2FA, isAuthenticated, user, loading: authLoading, error: authError, setIsSubmitting, setAuth } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    // 🌐 GOOGLE OAUTH CONFIG
+    useEffect(() => {
+        const handleGoogleResponse = async (response) => {
+            try {
+                setIsSubmitting(true);
+                const data = await authService.googleLogin(response.credential);
+                setAuth(data.user, data.accessToken);
+                toast.success('Connexion Google réussie !');
+                const dashboardRoute = getDashboardRoute(data.user.role);
+                navigate(dashboardRoute);
+            } catch (error) {
+                console.error(error);
+                toast.error("Échec de la connexion Google. Vérifiez vos identifiants.");
+            } finally {
+                setIsSubmitting(false);
+            }
+        };
+
+        const script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
+            if (window.google) {
+                window.google.accounts.id.initialize({
+                    client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '1047805179043-4o6u66j8m5l9b6g8q3e6k2p9f7j2l8m.apps.googleusercontent.com',
+                    callback: handleGoogleResponse
+                });
+            }
+        };
+        document.body.appendChild(script);
+        
+        return () => { document.body.removeChild(script); };
+    }, [navigate, setAuth, setIsSubmitting]);
+
+    const handleGoogleClick = () => {
+        if (window.google) {
+            window.google.accounts.id.prompt();
+        } else {
+            toast.error("Le service Google n'est pas encore chargé.");
+        }
+    };
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -254,7 +299,11 @@ const Login = () => {
 
                     {/* Social Buttons */}
                     <div className="grid grid-cols-1 gap-3">
-                        <button className="h-12 rounded-xl border border-border bg-background hover:bg-accent transition-all font-bold text-sm flex items-center justify-center gap-3 active:scale-95 shadow-sm">
+                        <button 
+                            type="button"
+                            onClick={handleGoogleClick}
+                            className="h-12 rounded-xl border border-border bg-background hover:bg-accent transition-all font-bold text-sm flex items-center justify-center gap-3 active:scale-95 shadow-sm"
+                        >
                             <svg className="size-5" viewBox="0 0 24 24">
                                 <path
                                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"

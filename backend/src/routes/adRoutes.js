@@ -3,7 +3,8 @@ const router = express.Router();
 const adController = require('../controllers/adController');
 const { authMiddleware, optionalAuth } = require('../middlewares/authMiddleware');
 
-// Route publique ou semi-publique (service de pubs)
+// Routes d'affichage
+router.get('/', adController.getAll);
 router.get('/serve', optionalAuth, adController.getForUser);
 router.post('/:id/click', adController.recordClick);
 

@@ -61,6 +61,14 @@ const useAuthStore = create(
              */
             setLoading: (loading) => {
                 set({ loading });
+            },
+
+            /**
+             * Déconnecte l'utilisateur
+             */
+            logout: () => {
+                get().clearAuth();
+                window.location.href = '/';
             }
         }),
         {

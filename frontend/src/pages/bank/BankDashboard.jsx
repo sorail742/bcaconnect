@@ -31,10 +31,10 @@ const BankDashboard = () => {
     }, [fetchStats]);
 
     const stats = [
-        { title: 'DÉPÔTS CUMULÉS', value: dashboardData?.stats?.[0]?.value || '0 GNF', icon: Landmark, trend: 'up', trendValue: 'OPTIMAL' },
-        { title: 'OPÉ. EN ATTENTE', value: dashboardData?.stats?.[1]?.value || '0', icon: Hourglass, trend: 'up', trendValue: 'SYNC' },
-        { title: 'RETRAITS ACTIFS', value: dashboardData?.stats?.[2]?.value || '0', icon: CreditCard, trend: 'down', trendValue: 'SECURE' },
-        { title: 'VOLUME TRAITÉ', value: dashboardData?.stats?.[3]?.value || '0', icon: CheckCircle2, trend: 'up', trendValue: 'TOTAL' },
+        { title: 'Dépôts Cumulés', value: dashboardData?.stats?.[0]?.value || '0 GNF', icon: Landmark, trend: 'up', trendValue: 'Optimal' },
+        { title: 'Opérations en Attente', value: dashboardData?.stats?.[1]?.value || '0', icon: Hourglass, trend: 'up', trendValue: 'Sync' },
+        { title: 'Retraits Actifs', value: dashboardData?.stats?.[2]?.value || '0', icon: CreditCard, trend: 'down', trendValue: 'Sécurisé' },
+        { title: 'Volume Traité', value: dashboardData?.stats?.[3]?.value || '0', icon: CheckCircle2, trend: 'up', trendValue: 'Total' },
     ];
 
     const transactions = dashboardData?.transactions || [];
@@ -180,7 +180,7 @@ const BankDashboard = () => {
                              </div>
                              <div className="space-y-1">
                                  <h3 className="text-sm font-black text-slate-800 dark:text-foreground uppercase tracking-tight">FLUX TRANSACTIONNEL RÉSEAU</h3>
-                                 <p className="text-[8px] font-black text-muted-foreground/80 uppercase tracking-widest opacity-60">SYNCHRONISATION NOEUD_BANQUE — 7D INDEX</p>
+                                 <p className="text-[8px] font-black text-muted-foreground/80 uppercase tracking-widest opacity-60">Synchronisation bancaire — Historique 7 jours</p>
                              </div>
                         </div>
                         <div className="flex items-center gap-3 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-foreground/10 px-8 py-4 rounded-xl shadow-inner group/val">
@@ -225,7 +225,7 @@ const BankDashboard = () => {
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/80 size-4 group-focus-within:text-[#FF6600] transition-colors z-10" />
                             <input
                                 className="w-full pl-11 pr-4 h-9 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-foreground/10 rounded-xl text-[9px] font-black tracking-widest placeholder:text-muted-foreground/80 outline-none transition-all focus:border-[#FF6600]/30"
-                                placeholder="IDENTIFIER ALPHA_TX..."
+                                placeholder="Rechercher une transaction..."
                             />
                          </div>
                     </div>
@@ -240,7 +240,7 @@ const BankDashboard = () => {
                         {!isLoading && transactions.length === 0 && (
                             <div className="py-24 text-center opacity-20 flex flex-col items-center gap-3">
                                 <CreditCard className="size-6 animate-pulse text-muted-foreground/80" />
-                                <p className="text-[10px] font-black uppercase ">AUCUN FLUX FINANCIER DÉTECTÉ</p>
+                                <p className="text-[10px] font-black uppercase ">Aucun flux financier détecté</p>
                             </div>
                         )}
                     </div>

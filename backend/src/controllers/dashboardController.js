@@ -1,10 +1,33 @@
-const { Order, OrderItem, User, Store, Transaction, Product, Wallet, sequelize } = require('../models');
+const { Order, OrderItem, User, Store, Transaction, Product, Wallet, Category, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 // Helper pour générer une timeserie des X derniers jours basée sur un champ de date et de valeur
+// Helper pour générer une timeserie
 const generateTimeseries = (records, dateField, valueField, numDays = 7) => {
     const timeseries = [];
     const now = new Date();
+    
+    // Si numDays <= 1, on passe en mode horaire (24h)
+    if (numDays <= 1) {
+        for (let i = 23; i >= 0; i--) {
+            const d = new Date(now.getTime() - (i * 60 * 60 * 1000));
+            const hourStr = d.getHours() + 'H';
+            const dateHourStr = d.toISOString().slice(0, 13); // YYYY-MM-DDTHH
+
+            const hourTotal = records
+                .filter(r => {
+                    const recDate = new Date(r[dateField] || r.createdAt || r.created_at);
+                    if(isNaN(recDate)) return false;
+                    return recDate.toISOString().slice(0, 13) === dateHourStr;
+                })
+                .reduce((sum, r) => sum + parseFloat(r[valueField] || 0), 0);
+
+            timeseries.push({ day: hourStr, val: hourTotal, date: dateHourStr });
+        }
+        return timeseries;
+    }
+
+    // Mode journalier classique
     for (let i = numDays - 1; i >= 0; i--) {
         const d = new Date(now.getTime() - (i * 24 * 60 * 60 * 1000));
         const dateStr = d.toISOString().split('T')[0];
@@ -14,12 +37,13 @@ const generateTimeseries = (records, dateField, valueField, numDays = 7) => {
 
         const dayTotal = records
             .filter(r => {
-                const recDate = new Date(r[dateField]);
+                const recDate = new Date(r[dateField] || r.createdAt || r.created_at);
+                if(isNaN(recDate)) return false;
                 return recDate.toISOString().split('T')[0] === dateStr;
             })
             .reduce((sum, r) => sum + parseFloat(r[valueField] || 0), 0);
 
-        timeseries.push({ day: dayName, val: dayTotal, date: dateStr });
+        timeseries.push({ day: `${dayName} ${d.getDate()}/${d.getMonth()+1}`, val: dayTotal, date: dateStr });
     }
     return timeseries;
 };
@@ -80,7 +104,7 @@ const dashboardController = {
                 stats: [
                     {
                         title: "Utilisateurs totaux",
-                        value: totalUsers.toLocaleString(),
+                        value: totalUsers,
                         icon: 'Users',
                         trend: 'up',
                         trendValue: `+${totalUsers}`,
@@ -88,7 +112,7 @@ const dashboardController = {
                     },
                     {
                         title: 'Transactions (Globales)',
-                        value: `${gmv.toLocaleString()} GNF`,
+                        value: gmv,
                         icon: 'CreditCard',
                         trend: growth >= 0 ? 'up' : 'down',
                         trendValue: `${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%`,
@@ -96,7 +120,7 @@ const dashboardController = {
                     },
                     {
                         title: 'Produits actifs',
-                        value: activeProducts.toString(),
+                        value: activeProducts,
                         icon: 'Package',
                         trend: 'up',
                         trendValue: 'stable',
@@ -173,24 +197,27 @@ const dashboardController = {
                 }]
             });
 
-            const formattedTransactions = recentTransactions.map(tx => ({
-                id: `#TRX-${tx.id.substring(0, 4).toUpperCase()}`,
-                user: tx.Wallet?.User?.nom_complet || 'Utilisateur inconnu',
-                type: tx.type_transaction === 'depot' ? 'Dépôt' : tx.type_transaction === 'retrait' ? 'Retrait' : 'Paiement',
-                typeVariant: tx.type_transaction === 'depot' ? 'info' : tx.type_transaction === 'retrait' ? 'secondary' : 'warning',
-                amount: `${tx.montant.toLocaleString()} GNF`,
-                method: tx.metadata?.methode || 'Système',
-                status: tx.statut === 'complete' ? 'Approuvé' : tx.statut === 'en_attente' ? 'En attente' : 'Rejeté',
-                statusVariant: tx.statut === 'complete' ? 'success' : tx.statut === 'en_attente' ? 'warning' : 'danger',
-                date: new Date(tx.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
-            }));
+            const formattedTransactions = recentTransactions.map(tx => {
+                const rawDate = tx.createdAt || tx.created_at || new Date();
+                return {
+                    id: `#TRX-${tx.id.substring(0, 4).toUpperCase()}`,
+                    user: tx.Wallet?.User?.nom_complet || 'Utilisateur inconnu',
+                    type: tx.type_transaction === 'depot' ? 'Dépôt' : tx.type_transaction === 'retrait' ? 'Retrait' : 'Paiement',
+                    typeVariant: tx.type_transaction === 'depot' ? 'info' : tx.type_transaction === 'retrait' ? 'secondary' : 'warning',
+                    amount: parseFloat(tx.montant),
+                    method: tx.metadata?.methode || 'Système',
+                    status: tx.statut === 'complete' ? 'Approuvé' : tx.statut === 'en_attente' ? 'En attente' : 'Rejeté',
+                    statusVariant: tx.statut === 'complete' ? 'success' : tx.statut === 'en_attente' ? 'warning' : 'danger',
+                    date: new Date(rawDate).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+                };
+            });
 
             res.json({
                 stats: [
-                    { title: 'Dépôts totaux', value: `${totalDeposits.toLocaleString()} GNF`, trendValue: `${growth > 0 ? '+' : ''}${growth.toFixed(1)}%`, trend: growth >= 0 ? 'up' : 'down' },
-                    { title: 'Dépôts en attente', value: pendingDeposits.toString(), trendValue: 'Stable', trend: 'up' },
-                    { title: 'Retraits en attente', value: pendingWithdrawals.toString(), trendValue: 'Stable', trend: 'down' },
-                    { title: 'Transactions traitées', value: processedCount.toLocaleString(), trendValue: `${processedCount}`, trend: 'up' },
+                    { title: 'Dépôts totaux', value: totalDeposits, trendValue: `${growth > 0 ? '+' : ''}${growth.toFixed(1)}%`, trend: growth >= 0 ? 'up' : 'down' },
+                    { title: 'Dépôts en attente', value: pendingDeposits, trendValue: 'Stable', trend: 'up' },
+                    { title: 'Retraits en attente', value: pendingWithdrawals, trendValue: 'Stable', trend: 'down' },
+                    { title: 'Transactions traitées', value: processedCount, trendValue: `${processedCount}`, trend: 'up' },
                 ],
                 transactions: formattedTransactions,
                 chartData: {
@@ -272,39 +299,140 @@ const dashboardController = {
      */
     getTrends: async (req, res, next) => {
         try {
-            // Simulation d'analyse IA basée sur les commandes réelles
-            const orders = await Order.findAll({
-                where: { statut: 'payé' },
-                include: [{
-                    model: OrderItem,
-                    as: 'items',
-                    include: [{ model: Product, attributes: ['categorie'] }]
-                }]
-            });
+            const { period = '30D', region = 'CONAKRY' } = req.query;
+            
+            // 1. Définition des périodes (actuelle vs précédente)
+            const now = new Date();
+            let days = 30;
+            if (period === '24H') days = 1;
+            else if (period === '7D') days = 7;
+            else if (period === '90D') days = 90;
 
-            const categoryStats = {};
-            orders.forEach(order => {
-                order.items.forEach(item => {
-                    const cat = item.Product?.categorie || 'Autre';
-                    if (!categoryStats[cat]) {
-                        categoryStats[cat] = { count: 0, revenue: 0 };
-                    }
-                    categoryStats[cat].count += item.quantite;
-                    categoryStats[cat].revenue += parseFloat(item.prix_unitaire_achat) * item.quantite;
+            const startCurrent = new Date(now.getTime() - (days * 24 * 60 * 60 * 1000));
+            const startPrevious = new Date(now.getTime() - (2 * days * 24 * 60 * 60 * 1000));
+
+            // 2. Préparation des conditions de filtrage
+            const commonWhere = { statut: 'payé' };
+            if (region && region !== 'GLOBAL') {
+                commonWhere.adresse_livraison = { [Op.iLike]: `%${region}%` };
+            }
+
+            // 3. Récupération des données pour les deux périodes
+            const fetchPeriodData = async (start, end) => {
+                const orders = await Order.findAll({
+                    where: { 
+                        ...commonWhere,
+                        created_at: { [Op.between]: [start, end] }
+                    },
+                    include: [{
+                        model: OrderItem,
+                        as: 'details',
+                        include: [{ 
+                            model: Product, 
+                            as: 'produit',
+                            include: [{ model: Category, as: 'categorie' }]
+                        }]
+                    }]
                 });
-            });
 
-            const trends = Object.entries(categoryStats).map(([name, data]) => ({
-                name,
-                value: data.revenue,
-                growth: (Math.random() * 20 - 5).toFixed(1), // Simulation de croissance IA
-                confidence: (Math.random() * 20 + 75).toFixed(0)
-            })).sort((a, b) => b.value - a.value);
+                const stats = {};
+                orders.forEach(order => {
+                    order.details?.forEach(item => {
+                        const cat = item.produit?.categorie?.nom_categorie || 'Autre';
+                        if (!stats[cat]) stats[cat] = { count: 0, revenue: 0 };
+                        stats[cat].count += item.quantite;
+                        stats[cat].revenue += parseFloat(item.prix_unitaire_achat) * item.quantite;
+                    });
+                });
+                return { stats, orders };
+            };
+
+            const { stats: currentStats, orders: ordersCurrent } = await fetchPeriodData(startCurrent, now);
+            const { stats: previousStats } = await fetchPeriodData(startPrevious, startCurrent);
+
+            // 4. Fusion et calcul analytique (Croissance + Confiance)
+            const categories = Array.from(new Set([...Object.keys(currentStats), ...Object.keys(previousStats)]));
+            
+            const trends = categories.map(cat => {
+                const curr = currentStats[cat] || { revenue: 0, count: 0 };
+                const prev = previousStats[cat] || { revenue: 0, count: 0 };
+                
+                // Croissance réelle
+                let growth = 0;
+                if (prev.revenue > 0) {
+                    growth = ((curr.revenue - prev.revenue) / prev.revenue) * 100;
+                } else if (curr.revenue > 0) {
+                    growth = 100; // Nouvelle tendance
+                }
+
+                // Confiance indexée sur le volume (plus on a de commandes, plus c'est fiable)
+                const baseConfidence = 75;
+                const volumeBonus = Math.min(20, curr.count * 2); 
+                const stabilityPenalty = Math.abs(growth) > 50 ? 5 : 0;
+                const confidence = Math.min(99, baseConfidence + volumeBonus - stabilityPenalty);
+
+                return {
+                    name: cat.toUpperCase(),
+                    value: curr.revenue,
+                    count: curr.count,
+                    growth: growth.toFixed(1),
+                    confidence: confidence.toFixed(0)
+                };
+            }).sort((a, b) => b.value - a.value);
+
+            // 5. Génération Insight Contextuelle
+            let dynamicInsight = "Volume de données insuffisant pour une analyse prédictive fiable.";
+            if (trends.length > 0) {
+                const topCat = trends[0].name;
+                const explosive = trends.find(t => parseFloat(t.growth) > 20);
+                
+                if (explosive) {
+                    dynamicInsight = `L'IA a détecté une anomalie positive (+${explosive.growth}%) sur le segment ${explosive.name} à ${region}. Optimisation des stocks recommandée.`;
+                } else {
+                    dynamicInsight = `Stabilité confirmée pour ${topCat}. Les flux transactionnels à ${region} suivent les projections saisonnières avec une certitude de ${trends[0].confidence}%.`;
+                }
+            }
+
+            // 5. Génération de la Trajectoire Temporelle (Timeline réelle)
+            const timeline = generateTimeseries(
+                ordersCurrent.map(o => ({ created_at: o.created_at, total_ttc: o.total_ttc })), 
+                'created_at', 
+                'total_ttc', 
+                days
+            );
+
+            // 6. Analyse de l'Intensité Régionale (Breakdown par zone)
+            const zones = ['CONAKRY', 'BOKÉ', 'KAMSAR', 'KINDIA', 'MAMOU', 'KANKAN', 'SIGUIRI', 'LABÉ', 'N\'ZÉRÉKORÉ'];
+            const regionalData = await Promise.all(zones.map(async (z) => {
+                const count = await Order.count({
+                    where: {
+                        statut: 'payé',
+                        adresse_livraison: { [Op.iLike]: `%${z}%` },
+                        created_at: { [Op.between]: [startCurrent, now] }
+                    }
+                });
+                
+                // Normalisation de l'intensité (0-100) basée sur un seuil arbitraire de 50 commandes par zone
+                const intensity = Math.min(100, Math.round((count / 50) * 100));
+                let status = "Stable";
+                if (intensity > 85) status = "Critique";
+                else if (intensity > 60) status = "Haute";
+                else if (intensity > 30) status = "Modérée";
+                else if (intensity > 5) status = "Basse";
+
+                return { name: z, intensity, status };
+            }));
 
             res.json({
                 lastUpdated: new Date(),
-                trends,
-                globalInsight: "L'analyse IA indique une forte demande sur les produits de première nécessité pour le mois prochain."
+                period,
+                region,
+                trends: trends.length > 0 ? trends : [
+                    { name: 'DONNÉES INSUFFISANTES', value: 0, growth: '0.0', confidence: '0' }
+                ],
+                regionalImpact: regionalData.sort((a, b) => b.intensity - a.intensity),
+                timeline,
+                globalInsight: dynamicInsight
             });
         } catch (error) {
             next(error);

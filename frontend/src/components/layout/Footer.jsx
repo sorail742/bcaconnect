@@ -97,7 +97,7 @@ const Footer = () => {
     ];
 
     return (
-        <footer className="relative bg-slate-950 text-white overflow-hidden pt-20 border-t-4 border-primary">
+        <footer className="relative bg-background text-foreground overflow-hidden pt-20 border-t-4 border-primary">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent pointer-events-none" />
             
             {/* 1. Value Props Bar */}
@@ -110,12 +110,12 @@ const Footer = () => {
                         { icon: Globe, title: lang === 'FR' ? "E-commerce Unifié" : "Unified E-commerce", desc: lang === 'FR' ? "Le meilleur de l'Afrique en un clic." : "The best of Africa in one click." }
                     ].map((prop, i) => (
                         <div key={i} className="flex items-center gap-5 group">
-                            <div className="size-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-md">
+                            <div className="size-16 rounded-2xl bg-muted border border-border flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 shadow-md">
                                 <prop.icon className="size-8" />
                             </div>
                             <div>
-                                <h3 className="text-base font-black uppercase tracking-wider text-white">{prop.title}</h3>
-                                <p className="text-xs text-slate-400 uppercase font-bold tracking-widest mt-1">{prop.desc}</p>
+                                <h3 className="text-base font-black uppercase tracking-wider text-foreground">{prop.title}</h3>
+                                <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest mt-1">{prop.desc}</p>
                             </div>
                         </div>
                     ))}
@@ -139,11 +139,11 @@ const Footer = () => {
                                     placeholder={lang === 'FR' ? "votre@email.com" : "your@email.com"}
                                     value={newsletterEmail}
                                     onChange={(e) => setNewsletterEmail(e.target.value)}
-                                    className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl text-base px-6 pr-14 outline-none focus:border-primary transition-all text-white placeholder:text-slate-500" 
+                                    className="w-full h-14 bg-muted border border-border rounded-2xl text-base px-6 pr-14 outline-none focus:border-primary transition-all text-foreground placeholder:text-muted-foreground/60" 
                                 />
                                 <button 
                                     type="submit"
-                                    className="absolute right-2 top-2 bottom-2 px-6 bg-primary text-white rounded-xl hover:scale-105 transition-all shadow-lg active:scale-95 font-bold"
+                                    className="absolute right-2 top-2 bottom-2 px-6 bg-primary text-primary-foreground rounded-xl hover:scale-105 transition-all shadow-lg active:scale-95 font-bold"
                                 >
                                     <Send className="size-5" />
                                 </button>
@@ -160,7 +160,7 @@ const Footer = () => {
                                 <button 
                                     key={i} 
                                     onClick={() => handleSocialClick(name)}
-                                    className="size-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-primary hover:text-white hover:border-primary transition-all active:scale-95"
+                                    className="size-12 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all active:scale-95"
                                 >
                                     <Icon className="size-6" />
                                 </button>
@@ -172,14 +172,14 @@ const Footer = () => {
                     <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-8">
                         {footerSections.map((section, i) => (
                             <div key={i} className="space-y-8">
-                                <h4 className="text-base font-black text-white uppercase tracking-[0.1em] relative inline-block">
+                                <h4 className="text-base font-black text-foreground uppercase tracking-[0.1em] relative inline-block">
                                     {section.title}
                                     <div className="absolute -bottom-3 left-0 w-12 h-1 bg-primary" />
                                 </h4>
                                 <ul className="space-y-4">
                                     {section.links.map((link, j) => (
                                         <li key={j}>
-                                            <Link to={link.href} className="text-base text-slate-400 hover:text-white hover:translate-x-2 transition-all flex items-center gap-2 group font-medium">
+                                            <Link to={link.href} className="text-base text-muted-foreground hover:text-foreground hover:translate-x-2 transition-all flex items-center gap-2 group font-medium">
                                                 <ArrowRight className="size-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-primary" />
                                                 {link.label}
                                             </Link>
@@ -192,21 +192,21 @@ const Footer = () => {
                 </div>
 
                 {/* Categories Bar */}
-                <div className="py-12 border-t border-white/10">
+                <div className="py-12 border-t border-border">
                     <div className="flex flex-wrap gap-x-10 gap-y-6 justify-center">
                         {topCategories.map((cat, i) => (
-                            <Link key={i} to="/marketplace" className="text-sm font-bold uppercase tracking-widest text-slate-500 hover:text-white transition-colors">
+                            <Link key={i} to="/marketplace" className="text-sm font-bold uppercase tracking-widest text-muted-foreground/60 hover:text-foreground transition-colors">
                                 {cat}
                             </Link>
                         ))}
                     </div>
                   {/* Bottom Trust Bar & Payment Hub */}
-                <div className="py-10 border-t border-white/10 flex flex-col items-center justify-between gap-10">
+                <div className="py-10 border-t border-border flex flex-col items-center justify-between gap-10">
                     {/* Unified Payment Hub - High Visibility */}
-                    <div className="w-full bg-slate-50/10 backdrop-blur-md border border-white/10 rounded-[2rem] p-8 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl">
+                    <div className="w-full bg-muted/50 backdrop-blur-md border border-border rounded-[2rem] p-8 flex flex-col md:flex-row items-center justify-between gap-8 shadow-sm">
                         <div className="space-y-1 text-center md:text-left">
                             <h5 className="text-sm font-black uppercase tracking-[0.2em] text-primary">{lang === 'FR' ? "Partenaires Certifiés" : "Certified Partners"}</h5>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{lang === 'FR' ? "Paiement 100% sécurisé en Guinée" : "100% secure payment in Guinea"}</p>
+                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{lang === 'FR' ? "Paiement 100% sécurisé en Guinée" : "100% secure payment in Guinea"}</p>
                         </div>
                         
                         <div className="flex flex-wrap items-center justify-center gap-4">
@@ -218,7 +218,7 @@ const Footer = () => {
                              ].map((op, i) => (
                                 <div key={i} className="group relative">
                                     <div className={cn(
-                                        "h-16 px-6 rounded-2xl flex items-center justify-center shadow-lg border border-white/10 bg-white transition-all duration-500 hover:scale-105 hover:shadow-primary/20",
+                                        "h-16 px-6 rounded-2xl flex items-center justify-center shadow-lg border border-border bg-white transition-all duration-500 hover:scale-105 hover:shadow-primary/20",
                                         "overflow-hidden"
                                     )}>
                                         <img 
@@ -227,7 +227,7 @@ const Footer = () => {
                                             className="h-10 w-auto object-contain transition-transform duration-500 group-hover:scale-110" 
                                         />
                                     </div>
-                                    <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-black uppercase tracking-tighter text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                    <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-black uppercase tracking-tighter text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                                         {op.label}
                                     </span>
                                 </div>
@@ -236,10 +236,10 @@ const Footer = () => {
 
                         <button 
                             onClick={handleLanguageClick}
-                            className="flex items-center gap-3 px-6 py-3 bg-white/5 border border-white/10 rounded-2xl cursor-pointer hover:bg-white/10 transition-colors"
+                            className="flex items-center gap-3 px-6 py-3 bg-muted border border-border rounded-2xl cursor-pointer hover:bg-muted/80 transition-colors"
                         >
                             <Globe className="size-5 text-primary" />
-                            <span className="text-xs font-black uppercase tracking-widest text-white">{lang === 'FR' ? 'FR | GNF' : 'EN | GNF'}</span>
+                            <span className="text-xs font-black uppercase tracking-widest text-foreground">{lang === 'FR' ? 'FR | GNF' : 'EN | GNF'}</span>
                         </button>
                     </div>
 

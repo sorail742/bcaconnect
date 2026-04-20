@@ -121,13 +121,10 @@ const storeController = {
     getBySlug: async (req, res, next) => {
         try {
             const { slug } = req.params;
-            const store = await Store.findOne({
-                where: {
-                    [Op.or]: [
-                        { slug: slug },
-                        { id: slug }
-                    ]
-                },
+            
+            // 🛡️ Stratégie de recherche sécurisée
+            let store = await Store.findOne({
+                where: { slug: slug },
                 include: [
                     {
                         model: Product,
@@ -137,6 +134,22 @@ const storeController = {
                     { model: User, attributes: ['nom_complet'] }
                 ]
             });
+
+            // Si non trouvé par slug et que c'est peut-être un ID (UUID v4 regex check)
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+            if (!store && uuidRegex.test(slug)) {
+                store = await Store.findByPk(slug, {
+                    include: [
+                        {
+                            model: Product,
+                            as: 'produits',
+                            include: [{ model: Category, as: 'categorie', attributes: ['nom_categorie'] }]
+                        },
+                        { model: User, attributes: ['nom_complet'] }
+                    ]
+                });
+            }
+
             if (!store) return res.status(404).json({ message: "Boutique non trouvée." });
             res.json(store);
         } catch (error) {

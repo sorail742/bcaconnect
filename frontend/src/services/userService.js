@@ -8,6 +8,13 @@ const userService = {
         return response.data;
     },
 
+    getPublicSearch: async (search = '') => {
+        const response = await api.get('/users/public_search', {
+            params: { search }
+        });
+        return response.data;
+    },
+
     getById: async (id) => {
         const response = await api.get(`/users/${id}`);
         return response.data;

@@ -49,7 +49,7 @@ const Returns = () => {
     );
 
     return (
-        <DashboardLayout title="CONTRÔLE_FLUX_INVERSÉS_ALPHA">
+        <DashboardLayout title="Gestion des Retours">
             <div className="space-y-4 animate-in pb-16">
 
                 {/* Executive Command Center — Master Directive */}
@@ -67,7 +67,7 @@ const Returns = () => {
                                 <div className="flex items-center gap-3">
                                     <div className="size-2 rounded-full bg-[#FFB703] animate-pulse" />
                                     <p className="text-[10px] font-black text-muted-foreground/80 uppercase  opacity-80 pt-0.5">
-                                        REVERSE_FLOW SYNC — AUDIT_LIVE_{new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
+                                        Retours synchronisés à {new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
                                     </p>
                                 </div>
                             </div>
@@ -90,7 +90,7 @@ const Returns = () => {
                         <input
                             id="input-search-returns-ledger"
                             className="w-full pl-20 pr-8 h-11 bg-transparent text-[16px] font-black uppercase tracking-widest placeholder:text-slate-800 text-foreground outline-none"
-                            placeholder="IDENTIFIER_UNITÉ_RETOUR_OU_CLIENT..."
+                            placeholder="Rechercher par ID ou nom du client..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                         />
@@ -104,7 +104,7 @@ const Returns = () => {
                     ) : filtered.length === 0 ? (
                         <div className="lg:col-span-2 py-24 executive-card flex flex-col items-center justify-center gap-3 opacity-20 text-center border-dashed border-foreground/10">
                             <ArrowRightLeft className="size-6 text-foreground" />
-                            <p className="text-[14px] font-black uppercase  text-foreground">REGISTRE_FLUX_INVERSÉ_VIERGE</p>
+                            <p className="text-[14px] font-black uppercase  text-foreground">Aucun retour en cours</p>
                         </div>
                     ) : (
                         filtered.map(item => (
@@ -119,7 +119,7 @@ const Returns = () => {
                                             item.statut === 'rejete' ? "bg-rose-500/10 text-rose-500 border-rose-500/20" :
                                                 "bg-amber-500/10 text-amber-500 border-amber-500/20 animate-pulse"
                                     )}>
-                                        {item.statut === 'ouvert' ? 'ANALYSE_PULSE' : item.statut === 'resolu' ? 'PROTOCOLE_VALIDÉ' : 'RECOUVREMENT_REJETÉ'}
+                                        {item.statut === 'ouvert' ? 'En attente' : item.statut === 'resolu' ? 'Approuvé' : 'Rejeté'}
                                     </div>
                                 </div>
 
@@ -131,9 +131,9 @@ const Returns = () => {
                                         </div>
                                         <div className="space-y-2">
                                             <p className="text-sm font-black text-foreground uppercase truncate max-w-[280px] tracking-tight pt-1 leading-none">
-                                                {item.demandeur?.nom_complet || "ACTEUR_INCONNU"}
+                                                {item.demandeur?.nom_complet || "Client inconnu"}
                                             </p>
-                                            <p className="text-[10px] font-black text-muted-foreground uppercase  leading-none">ID_LOGS: #{item.id?.slice(0, 8).toUpperCase()}</p>
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase  leading-none">ID Demande: #{item.id?.slice(0, 8).toUpperCase()}</p>
                                         </div>
                                     </div>
 
@@ -141,8 +141,8 @@ const Returns = () => {
                                         <div className="flex items-start gap-3">
                                             <ShieldAlert className="size-6 text-[#FFB703] shrink-0 mt-1" />
                                             <div className="space-y-2">
-                                                <p className="text-[9px] font-black text-slate-600 uppercase  leading-none pt-1">MOTIF_DÉCLARÉ_UNITÉ</p>
-                                                <p className="text-[13px] text-foreground font-black uppercase leading-relaxed tracking-tight group-hover:text-[#FFB703] transition-colors">"{item.description || "AUCUNE_INDEXATION_DÉTAILLÉE_ASSET."}"</p>
+                                                <p className="text-[9px] font-black text-slate-600 uppercase  leading-none pt-1">Motif Déclaré</p>
+                                                <p className="text-[13px] text-foreground font-black uppercase leading-relaxed tracking-tight group-hover:text-[#FFB703] transition-colors">"{item.description || "Aucun détail fourni."}"</p>
                                             </div>
                                         </div>
                                         <div className="pt-8 border-t border-foreground/5 grid grid-cols-2 gap-3">
@@ -152,7 +152,7 @@ const Returns = () => {
                                             </div>
                                             <div className="flex items-center gap-4">
                                                 <History className="size-5 text-slate-700" />
-                                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-tight">CANAL_ACTIF</span>
+                                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-tight">Canal actif</span>
                                             </div>
                                         </div>
                                     </div>
@@ -165,7 +165,7 @@ const Returns = () => {
                                                 disabled={isResolving}
                                                 className="flex-1 h-12 bg-white/[0.03] border border-foreground/10 text-rose-500 rounded-2xl text-[10px] font-black uppercase  hover:bg-rose-500/10 hover:border-rose-500/30 transition-all flex items-center justify-center gap-4  shadow-sm disabled:opacity-50"
                                             >
-                                                <XCircle className="size-5" /> REJETER_UNITÉ
+                                                <XCircle className="size-5" /> Rejeter
                                             </button>
                                             <button
                                                 id={`btn-approve-return-${item.id}`}
@@ -173,7 +173,7 @@ const Returns = () => {
                                                 disabled={isResolving}
                                                 className="flex-1 h-12 bg-white text-background rounded-2xl text-[10px] font-black uppercase  hover:bg-[#FFB703] transition-all flex items-center justify-center gap-4  shadow-2xl shadow-white/5 border-0 disabled:opacity-50"
                                             >
-                                                <CheckCircle2 className="size-5" /> VALIDER_FLUX
+                                                <CheckCircle2 className="size-5" /> Approuver
                                             </button>
                                         </div>
                                     )}

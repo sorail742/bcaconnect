@@ -43,8 +43,13 @@ const orderController = {
             const orderItemsByVendor = [];
 
             for (const item of items) {
-                const product = await Product.findByPk(item.productId, { lock: t.LOCK.UPDATE, transaction: t });
-                if (!product) throw new Error(`Produit ${item.productId} non trouvé.`);
+                const pid = item.id || item.productId || item.product_id;
+                if (!pid) {
+                    console.error('🔴 [ORDER ERROR] item sans ID:', item);
+                    throw new Error("L'ID du produit est manquant pour l'un des articles.");
+                }
+                const product = await Product.findByPk(pid, { lock: t.LOCK.UPDATE, transaction: t });
+                if (!product) throw new Error(`Produit ${pid} non trouvé.`);
                 if (product.stock_quantite < item.quantity) throw new Error(`Stock insuffisant: ${product.nom_produit}.`);
 
                 const subtotal = product.prix_unitaire * item.quantity;
@@ -146,6 +151,8 @@ const orderController = {
             const { page = 1, limit = 10 } = req.query;
             const offset = (page - 1) * limit;
 
+            console.log(`🔍 Récupération des commandes pour l'utilisateur : ${req.user.id} (Rôle: ${req.user.role})`);
+
             const { count, rows: orders } = await Order.findAndCountAll({
                 where: { utilisateur_id: req.user.id },
                 include: [
@@ -155,10 +162,12 @@ const orderController = {
                         include: [{ model: Product, as: 'produit' }]
                     }
                 ],
-                order: [['createdAt', 'DESC']],
+                order: [['createdAt', 'DESC']], // Tri par date de création (Sequelize name)
                 limit: parseInt(limit),
                 offset: parseInt(offset)
             });
+
+            console.log(`✅ ${orders.length} commandes trouvées sur un total de ${count}.`);
 
             res.json({
                 total: count,
@@ -214,7 +223,7 @@ const orderController = {
                     {
                         model: Order,
                         as: 'commande',
-                        include: [{ model: User, attributes: ['nom_complet', 'telephone', 'email'] }]
+                        include: [{ model: User, as: 'client', attributes: ['nom_complet', 'telephone', 'email'] }]
                     },
                     { model: Product, as: 'produit' }
                 ],
@@ -248,6 +257,7 @@ const orderController = {
                     },
                     {
                         model: User,
+                        as: 'client',
                         attributes: ['nom_complet', 'telephone', 'email']
                     }
                 ],

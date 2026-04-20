@@ -192,7 +192,7 @@ const DashboardLayout = ({ children, title, noPadding }) => {
 
                 {/* Intelligence Viewport */}
                 <main data-lenis-prevent="true" className={cn(
-                    "flex-1 overflow-y-auto scroll-smooth relative bg-background",
+                    "flex-1 overflow-y-auto scroll-smooth relative bg-background custom-scrollbar",
                     noPadding ? "" : "p-4 md:p-6 pb-10"
                 )}>
                     {/* Visual Grain & Scale Layer */}
@@ -213,9 +213,9 @@ const DashboardLayout = ({ children, title, noPadding }) => {
                     <footer className="mt-40 py-12 px-10 border-t border-white/[0.02] flex flex-col sm:flex-row items-center justify-between gap-5 opacity-20 hover:opacity-100 transition-opacity duration-1000">
                         <div className="flex items-center gap-5">
                             <Zap className="size-5 text-primary animate-pulse" />
-                            <p className="text-[10px] font-black uppercase  text-muted-foreground pt-0.5">BCA_TERMINAL_CORE_8.2X</p>
+                            <p className="text-[10px] font-black uppercase  text-muted-foreground pt-0.5">BCA Connect v2.6</p>
                         </div>
-                        <p className="text-[10px] font-black uppercase  text-muted-foreground pt-0.5">© 2026 BCA_CONNECT • GOUVERNANCE_NODALE_SÉCURISÉE</p>
+                        <p className="text-[10px] font-black uppercase  text-muted-foreground pt-0.5">© 2026 BCA Connect v2.6</p>
                     </footer>
                 </main>
             </div>

@@ -25,7 +25,7 @@ const BcaLogo = ({ className, size = "h-10", variant = "color", hideText = false
             {!hideText && (
                 <div className="flex flex-col leading-none">
                     <span className="text-xl md:text-2xl font-black tracking-tighter flex items-center">
-                        <span className="text-slate-950 dark:text-white">BCA</span>
+                        <span className="text-foreground">BCA</span>
                         <span style={{ color: orangeBrand }} className="ml-1 uppercase">CONNECT</span>
                     </span>
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mt-0.5">

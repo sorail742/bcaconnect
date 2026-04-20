@@ -154,10 +154,11 @@ const deliveryController = {
                     },
                     {
                         model: User,
+                        as: 'client',
                         attributes: ['nom_complet', 'telephone', 'email']
                     }
                 ],
-                order: [['updatedAt', 'DESC']]
+                order: [['updated_at', 'DESC']]
             });
             res.json(history);
         } catch (error) {

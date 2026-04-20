@@ -24,8 +24,7 @@ const Order = sequelize.define('Order', {
         defaultValue: false,
     },
     cle_idempotence: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
+        type: DataTypes.STRING(255),
         unique: true,
     },
     signature_offline: {

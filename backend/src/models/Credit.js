@@ -31,6 +31,16 @@ const Credit = sequelize.define('Credit', {
         type: DataTypes.FLOAT,
         defaultValue: 0,
     },
+    motif: {
+        type: DataTypes.TEXT,
+    },
+    garanties: {
+        type: DataTypes.TEXT,
+    },
+    metadata: {
+        type: DataTypes.JSON,
+        defaultValue: {},
+    },
     statut: {
         type: DataTypes.STRING(32),
         defaultValue: 'en_attente',

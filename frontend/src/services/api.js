@@ -88,8 +88,15 @@ api.interceptors.response.use(
                         return new Promise((resolve, reject) => {
                             refreshQueue.push({ resolve, reject });
                         }).then(token => {
-                            config.headers.Authorization = `Bearer ${token}`;
-                            return api(config);
+                            // On crée une copie propre de la config pour le retry
+                            const retryConfig = {
+                                ...config,
+                                headers: {
+                                    ...config.headers,
+                                    Authorization: `Bearer ${token}`
+                                }
+                            };
+                            return api(retryConfig);
                         });
                     }
 
@@ -97,11 +104,11 @@ api.interceptors.response.use(
                     isRefreshing = true;
 
                     try {
-                        const storedToken = useAuthStore.getState().token;
                         const storedUser = useAuthStore.getState().user;
 
-                        if (!storedToken || !storedUser?.id) throw new Error('No stored credentials');
+                        if (!storedUser?.id) throw new Error('No stored credentials');
 
+                        console.log("🔄 Intercepteur: Jeton expiré, tentative de rafraîchissement silencieux...");
                         // Appel silencieux au refresh (Le HttpOnly Cookie est attaché automatiquement par le navigateur)
                         const refreshRes = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
                             userId: storedUser.id
@@ -111,20 +118,30 @@ api.interceptors.response.use(
 
                         const newToken = refreshRes.data?.accessToken || refreshRes.data?.token;
                         if (!newToken) throw new Error('No token in refresh response');
+                        
+                        console.log("✅ Intercepteur: Session restaurée avec succès.");
 
                         useAuthStore.getState().setAuth(storedUser, newToken);
+                        
+                        // ✅ Crucial : Informer toutes les requêtes en attente
                         processQueue(null, newToken);
 
+                        // ✅ Crucial : Utiliser le nouveau token DIRECTEMENT pour la requête actuelle
                         config.headers.Authorization = `Bearer ${newToken}`;
-                        return api(config);
+                        config._retry = true; // Empêcher les boucles infinies
+                        return api(config); 
                     } catch (refreshError) {
+                        isRefreshing = false;
                         processQueue(refreshError, null);
                         useAuthStore.getState().clearAuth();
                         toast.error('Session expirée. Veuillez vous reconnecter.');
-                        window.location.href = '/login';
+                        
+                        // Utilisons un setTimeout pour laisser la pile d'exécution se vider
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 500);
+                        
                         return Promise.reject(refreshError);
-                    } finally {
-                        isRefreshing = false;
                     }
                 }
 
@@ -153,10 +170,7 @@ api.interceptors.response.use(
         } else if (error.request) {
             // 🔇 UX : On ne montre un toast de connexion que si ce n'est pas une requête d'arrière-plan.
             if (!config._bg) {
-                toast.error(lang === 'FR' 
-                    ? "Problème de connexion réseau. Veuillez vérifier votre accès internet." 
-                    : "Network connection issue. Please check your internet access."
-                );
+                toast.error("Problème de connexion réseau. Veuillez vérifier votre accès internet.");
             }
             console.warn('Requête API sans réponse (réseau/CORS):', error.config?.url);
         }

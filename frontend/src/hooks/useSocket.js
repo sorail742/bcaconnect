@@ -33,12 +33,14 @@ export const useSocket = () => {
         socketService.emit(event, data);
     }, []);
 
+    const hasSocket = !!socketService.socket;
+    
     return {
         socket: socketService.socket,
         isConnected: socketService.isConnected(),
-        on,
-        off,
-        emit
+        on: (hasSocket && isAuthenticated) ? on : () => { /* no-op */ },
+        off: (hasSocket && isAuthenticated) ? off : () => { /* no-op */ },
+        emit: (hasSocket && isAuthenticated) ? emit : () => { /* no-op */ }
     };
 };
 

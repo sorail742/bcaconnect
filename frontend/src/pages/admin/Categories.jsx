@@ -1,29 +1,36 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Modal from '../../components/ui/Modal';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Plus,
-    Edit2,
-    Trash2,
-    Search,
-    RefreshCcw,
-    LayoutGrid,
-    ChevronRight,
-    Tag,
-    Image as ImageIcon,
-    AlertCircle,
-    CheckCircle2,
-    MoreVertical,
-    Activity,
-    Layers
+    Plus, Edit2, Trash2, Search, RefreshCcw,
+    LayoutGrid, ChevronRight, Tag,
+    Activity, Layers, Filter, CheckCircle2, ShieldCheck
 } from 'lucide-react';
 import categoryService from '../../services/categoryService';
 import { useCategories } from '../../hooks/useDomainData';
 import useApiMutation from '../../hooks/useApiMutation';
-import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
+
+const StatCard = ({ title, value, icon: Icon, color }) => (
+    <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group"
+    >
+        <div className={cn("absolute top-0 right-0 p-5 opacity-5 group-hover:scale-125 transition-transform duration-700", color)}>
+            <Icon className="size-10" />
+        </div>
+        <div className="relative z-10 space-y-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                {title}
+            </p>
+            <h3 className="text-2xl font-black text-slate-900 leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                {value}
+            </h3>
+        </div>
+    </motion.div>
+);
 
 const Categories = () => {
     const { data: categories = [], loading: isLoading, refetch } = useCategories();
@@ -45,7 +52,7 @@ const Categories = () => {
         },
         {
             invalidateKeys: ['categories'],
-            successMessage: editingCategory ? "Taxonomie mise à jour." : "Nouvelle classe créée.",
+            successMessage: editingCategory ? "TAXONOMIE MISE À JOUR." : "NOUVELLE CLASSE CRÉÉE.",
             onSuccess: () => setShowModal(false)
         }
     );
@@ -54,12 +61,12 @@ const Categories = () => {
         (id) => categoryService.delete(id),
         {
             invalidateKeys: ['categories'],
-            successMessage: "Classification révoquée."
+            successMessage: "CLASSIFICATION RÉVOQUÉE."
         }
     );
 
     const handleDelete = (id) => {
-        if (!window.confirm("Révoquer définitivement cette classification taxonomique ?")) return;
+        if (!window.confirm("RÉVOQUER DÉFINITIVEMENT CETTE CLASSIFICATION ?")) return;
         deleteMutation(id);
     };
 
@@ -78,205 +85,183 @@ const Categories = () => {
         setShowModal(true);
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        const payload = {
-            nom_categorie: formData.nom_categorie.trim(),
-            description: formData.description.trim(),
-            image_url: formData.image_url.trim() || null
-        };
-        crudMutation(payload);
-    };
-
-    const filtered = categories.filter(c =>
-        (c.nom_categorie || '').toLowerCase().includes(search.toLowerCase()) ||
-        (c.description || '').toLowerCase().includes(search.toLowerCase())
-    );
+    const filtered = categories.filter(c => {
+        const matchesSearch = (c.nom_categorie || '').toLowerCase().includes(search.toLowerCase()) ||
+                             (c.description || '').toLowerCase().includes(search.toLowerCase());
+        return matchesSearch;
+    });
 
     return (
-        <DashboardLayout title="ARCHITECTURE_OFFRE_RÉSEAU">
-            <div className="space-y-4 animate-in pb-16">
+        <DashboardLayout title="GESTION DES CATÉGORIES" noPadding>
+            <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8 space-y-8 custom-scrollbar">
+                
+                {/* Header HUD */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex items-start gap-4">
+                        <div className="size-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/5">
+                            <Layers className="size-7 text-primary" />
+                        </div>
+                        <div className="space-y-1">
+                            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                Architecture <span className="text-primary">Produits</span>
+                            </h1>
+                            <div className="flex items-center gap-2">
+                                <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                                    {categories.length} SEGMENTS RÉPERTORIÉS • SYNC_OK
+                                </p>
+                            </div>
+                        </div>
+                    </div>
 
-                {/* Executive Command Center — Master Directive */}
-                <div className="executive-card !p-4 group overflow-visible">
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#FFB703]/[0.02] to-transparent pointer-events-none" />
-                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 relative z-10">
-                        <div className="flex items-center gap-3">
-                            <div className="size-6 rounded-[2.2rem] bg-[#FFB703]/10 flex items-center justify-center text-[#FFB703] border border-[#FFB703]/20 shadow-inner group-hover:rotate-6 transition-transform">
-                                <Layers className="size-6 shadow-sm" />
-                            </div>
-                            <div className="space-y-2.5">
-                                <h2 className="text-sm font-black text-foreground uppercase tracking-tighter leading-none pt-0.5">
-                                    GESTION_<span className="text-[#FFB703]">TAXONOMIE</span>.
-                                </h2>
-                                <div className="flex items-center gap-3">
-                                    <div className="size-2 rounded-full bg-[#FFB703] animate-pulse" />
-                                    <p className="text-[10px] font-black text-muted-foreground/80 uppercase  opacity-80 pt-0.5">
-                                        OFFRE_NODE SYNC — FLUX_ACTIF_{new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <button 
-                                id="btn-refresh-taxo-hub"
-                                onClick={() => refetch()} 
-                                className="size-6 rounded-[2.2rem] bg-white/[0.03] border border-foreground/10 flex items-center justify-center text-muted-foreground/80 hover:text-[#FFB703] hover:border-[#FFB703]/20 transition-all "
-                            >
-                                <RefreshCcw className={cn("size-6", isLoading && "animate-spin")} />
-                            </button>
-                            <button 
-                                id="btn-deploy-new-taxon"
-                                onClick={() => handleOpenModal()}
-                                className="h-11 px-6 bg-[#FFB703] text-background hover:bg-white rounded-2xl font-medium text-sm text-muted-foreground transition-all shadow-[0_30px_90px_rgba(255,183,3,0.3)]  flex items-center gap-3 group/deploy border-0"
-                            >
-                                <Plus className="size-5" />
-                                <span>DÉPLOYER_NOUVELLE_CLASSE</span>
-                            </button>
-                        </div>
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => refetch()} className="h-12 px-5 bg-white border border-slate-100 rounded-2xl flex items-center gap-2 text-slate-600 hover:bg-slate-50 transition-all">
+                            <RefreshCcw className={cn("size-4", isLoading && "animate-spin")} />
+                        </button>
+                        <button onClick={() => handleOpenModal()} className="h-12 px-8 bg-primary text-foreground rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center gap-3">
+                            <Plus className="size-4" />
+                            Nouvelle Classe
+                        </button>
                     </div>
                 </div>
 
-                {/* Dashboard Stats & Search — High Density */}
-                <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
-                    <div className="xl:col-span-4 executive-card group/kpi hover-shine !py-12 flex items-center justify-center gap-3">
-                        <div className="size-6 rounded-2xl bg-[#FFB703]/5 border border-[#FFB703]/10 flex items-center justify-center">
-                            <Activity className="size-6 text-[#FFB703]" />
+                {/* Summary Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <StatCard title="Total Catégories" value={categories.length} icon={LayoutGrid} color="text-primary" />
+                    <StatCard title="Hiérarchie Active" value="Standard" icon={Activity} color="text-blue-500" />
+                    <StatCard title="Dernier Segment" value={categories[0]?.nom_categorie?.slice(0, 12).toUpperCase() || "VACANT"} icon={Tag} color="text-emerald-500" />
+                </div>
+
+                {/* Filter Surface */}
+                <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex items-center gap-3">
+                        <div className="size-10 rounded-xl bg-slate-50 flex items-center justify-center">
+                            <Filter className="size-4 text-slate-400" />
                         </div>
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase  leading-none pt-1">INDEX_GLOBAL_CLASSES</p>
-                            <p className="text-sm font-black text-foreground tabular-nums tracking-tighter leading-none">{categories.length}</p>
-                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Filtrage Intelligent</p>
                     </div>
-                    
-                    <div className="xl:col-span-8 executive-card !p-4 flex items-center bg-background/40 border-[#FFB703]/10">
-                        <div className="relative group w-full">
-                            <Search className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-600 size-5 group-focus-within:text-[#FFB703] transition-colors relative z-10" />
-                            <input
-                                id="input-search-taxo-ledger"
-                                className="w-full pl-20 pr-8 h-11 bg-transparent text-[16px] font-black uppercase tracking-widest placeholder:text-slate-800 text-foreground outline-none"
-                                placeholder="FILTRER_LES_CLASSIFICATIONS_RÉSEAU..."
-                                value={search}
-                                onChange={e => setSearch(e.target.value)}
-                            />
-                        </div>
+                    <div className="relative w-full md:w-96">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 size-4" />
+                        <input
+                            className="w-full pl-12 pr-4 h-11 bg-slate-50 border-none rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-slate-300"
+                            placeholder="RECHERCHER UNE CATÉGORIE..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                        />
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {isLoading ? (
-                        [1, 2, 3, 4, 5, 6].map(n => <div key={n} className="h-64 bg-white/[0.02] border border-foreground/5 rounded-2xl animate-pulse" />)
-                    ) : filtered.length === 0 ? (
-                        <div className="lg:col-span-3 py-24 executive-card flex flex-col items-center gap-3 opacity-20 text-center border-dashed border-foreground/10">
-                            <LayoutGrid className="size-6 text-foreground" />
-                            <p className="text-[14px] font-black uppercase  text-foreground">ARCHITECTURE_VIERGE_DÉPLOYÉE</p>
-                        </div>
-                    ) : (
-                        filtered.map(cat => (
-                            <div
-                                key={cat.id}
-                                className="executive-card p-4 group relative overflow-hidden flex flex-col justify-between h-[340px] hover:border-[#FFB703]/40 transition-all duration-500"
-                            >
-                                <div className="absolute top-0 right-0 size-6 bg-[#FFB703]/5 rounded-full blur-[60px] -mr-16 -mt-16 group-hover:bg-[#FFB703]/15 transition-all duration-700 pointer-events-none" />
-
-                                <div className="space-y-6">
-                                    <div className="flex items-start justify-between">
-                                        <div className="size-6 rounded-2xl bg-white/[0.03] border border-foreground/10 p-2 flex items-center justify-center overflow-hidden transition-all duration-700 group-hover:scale-110 group-hover:rotate-3 shadow-2xl">
-                                            {cat.image_url ? 
-                                                <img src={cat.image_url} alt="" className="w-full h-full object-cover rounded-lg" /> : 
-                                                <Tag className="size-6 text-slate-700" />
-                                            }
-                                        </div>
-                                        <div className="flex gap-4 opacity-40 group-hover:opacity-100 transition-opacity">
-                                            <button 
-                                                id={`btn-edit-taxon-${cat.id}`}
-                                                onClick={() => handleOpenModal(cat)} 
-                                                className="size-6 bg-white/[0.03] border border-foreground/10 text-muted-foreground/80 hover:text-[#FFB703] hover:border-[#FFB703]/20 rounded-xl flex items-center justify-center transition-all "
-                                            >
-                                                <Edit2 className="size-6" />
+                {/* Grid Deck */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <AnimatePresence mode="popLayout">
+                        {isLoading ? (
+                            Array(6).fill(0).map((_, i) => (
+                                <div key={i} className="h-64 rounded-[2rem] bg-white border border-slate-100 animate-pulse" />
+                            ))
+                        ) : filtered.length === 0 ? (
+                            <div className="col-span-full py-32 flex flex-col items-center gap-4 opacity-40 text-slate-400">
+                                <LayoutGrid className="size-16" />
+                                <p className="text-sm font-bold uppercase tracking-widest">Aucune catégorie au registre</p>
+                            </div>
+                        ) : (
+                            filtered.map((cat, idx) => (
+                                <motion.div
+                                    layout
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    key={cat.id}
+                                    className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden group flex flex-col min-h-[380px]"
+                                >
+                                    <div className="h-40 relative bg-slate-50 overflow-hidden">
+                                        {cat.image_url ? (
+                                            <img src={cat.image_url} alt="" className="size-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                        ) : (
+                                            <div className="size-full flex items-center justify-center opacity-10">
+                                                <Tag className="size-12" />
+                                            </div>
+                                        )}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent opacity-60" />
+                                        
+                                        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                                            <button onClick={() => handleOpenModal(cat)} className="size-9 rounded-xl bg-white/90 backdrop-blur shadow-xl flex items-center justify-center text-slate-600 hover:text-primary transition-all">
+                                                <Edit2 className="size-4" />
                                             </button>
-                                            <button 
-                                                id={`btn-delete-taxon-${cat.id}`}
-                                                onClick={() => handleDelete(cat.id)} 
-                                                className="size-6 bg-white/[0.03] border border-foreground/10 text-muted-foreground/80 hover:text-rose-500 hover:border-rose-500/20 rounded-xl flex items-center justify-center transition-all "
-                                            >
-                                                <Trash2 className="size-6" />
+                                            <button onClick={() => handleDelete(cat.id)} className="size-9 rounded-xl bg-white/90 backdrop-blur shadow-xl flex items-center justify-center text-slate-600 hover:text-rose-500 transition-all">
+                                                <Trash2 className="size-4" />
                                             </button>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        <h3 className="text-sm font-black text-foreground uppercase truncate tracking-tight group-hover:text-[#FFB703] transition-colors leading-none">
-                                            {cat.nom_categorie}.
-                                        </h3>
-                                        <p className="text-[12px] text-muted-foreground font-black uppercase tracking-tight border-l-2 border-[#FFB703]/20 pl-6 line-clamp-2 leading-relaxed opacity-60">
-                                            {cat.description || "AUCUNE_INDEXATION_DÉTAILLÉE_POUR_CETTE_CLASSE_TAXONOMIQUE."}
+                                    <div className="p-8 flex flex-col flex-1">
+                                        <div className="mb-4">
+                                            <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter leading-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                                {cat.nom_categorie}
+                                            </h3>
+                                            <div className="h-1 w-10 bg-primary/20 rounded-full mt-2" />
+                                        </div>
+                                        <p className="text-[11px] font-bold text-slate-400 leading-relaxed line-clamp-3 italic mb-6">
+                                            {cat.description || "Aucune documentation de classe disponible pour ce segment."}
                                         </p>
+                                        
+                                        <div className="mt-auto pt-6 flex items-center justify-between border-t border-slate-50">
+                                            <div className="flex flex-col">
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-slate-300">Segment ID</span>
+                                                <span className="text-[10px] font-bold text-slate-400 tabular-nums">#{cat.id?.slice(0, 8).toUpperCase()}</span>
+                                            </div>
+                                            <ChevronRight className="size-5 text-slate-200 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                                        </div>
                                     </div>
-                                </div>
-
-                                <div className="pt-8 mt-auto border-t border-foreground/5 flex items-center justify-between">
-                                    <span className="text-[10px] font-black text-slate-600 uppercase  truncate max-w-[180px]">UID: {cat.id?.slice(0, 16)}</span>
-                                    <ChevronRight className="size-5 text-slate-800 group-hover:text-[#FFB703] group-hover:translate-x-2 transition-all duration-500" />
-                                </div>
-                            </div>
-                        ))
-                    )}
+                                </motion.div>
+                            ))
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
 
-            {/* Executive Modal Form — High Density Taxon Deployment */}
+            {/* Classification Modal */}
             <Modal
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
-                title={editingCategory ? "RÉVISION_TAXONOMIE_UNITAIRE" : "DÉPLOIEMENT_NOUVEL_ASSET_CLASSE"}
+                title={editingCategory ? "ÉDITION CLASSIFICATION" : "NOUVELLE CLASSE"}
+                glass
             >
-                <form onSubmit={handleSubmit} className="space-y-6 p-4 bg-card">
-                    <div className="space-y-6">
-                        <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase  text-muted-foreground ml-1">DÉSIGNATION_STRUCTURELLE</label>
-                            <input
-                                required
-                                value={formData.nom_categorie}
-                                onChange={(e) => setFormData({ ...formData, nom_categorie: e.target.value })}
-                                placeholder="ALPHA_CONTRÔLE_..."
-                                className="w-full h-11 px-8 bg-white/[0.02] border border-foreground/10 rounded-2xl font-black text-[18px] uppercase tracking-tight text-foreground focus:border-[#FFB703]/40 outline-none transition-all shadow-inner"
-                            />
-                        </div>
-
-                        <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase  text-muted-foreground ml-1">DÉFINITION_SYSTÉMIQUE</label>
-                            <textarea
-                                className="w-full h-40 px-8 py-6 bg-white/[0.02] border border-foreground/10 rounded-2xl text-[14px] font-black uppercase tracking-tight text-foreground outline-none focus:border-[#FFB703]/40 transition-all resize-none shadow-inner placeholder:text-slate-800"
-                                placeholder="INJECTION_DATAS_TECHNIQUES_..."
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase  text-muted-foreground ml-1">IMAGE_PROXY_RÉSEAU (URL)</label>
-                            <div className="relative group">
-                                <ImageIcon className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 size-6" />
-                                <input
-                                    value={formData.image_url}
-                                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                                    placeholder="HTTPS://STORAGE.BCA.GN/ASSETS/..."
-                                    className="w-full h-11 pl-16 pr-8 bg-white/[0.02] border border-foreground/10 rounded-2xl font-black text-[12px] uppercase tracking-widest text-[#FFB703] focus:border-[#FFB703]/40 outline-none transition-all shadow-inner"
-                                />
-                            </div>
-                        </div>
+                <form onSubmit={(e) => { e.preventDefault(); crudMutation(formData); }} className="space-y-8">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Désignation de la Classe</label>
+                        <input 
+                            required 
+                            value={formData.nom_categorie} 
+                            onChange={(e) => setFormData({...formData, nom_categorie: e.target.value})} 
+                            className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-primary/20 transition-all uppercase" 
+                            placeholder="EX: ÉLECTRONIQUE, MODE..."
+                        />
                     </div>
 
-                    <div className="pt-8">
-                        <button
-                            id="btn-confirm-taxon-seal"
-                            type="submit"
-                            disabled={isSaving}
-                            className="w-full h-11 bg-[#FFB703] text-background rounded-2xl font-black text-[13px] uppercase  shadow-[0_30px_70px_rgba(255,183,3,0.3)] hover:bg-white transition-all  border-0 flex items-center justify-center gap-3 group/save"
-                        >
-                            {isSaving ? <RefreshCcw className="size-6 animate-spin" /> : <CheckCircle2 className="size-6 transition-transform group-hover/save:scale-125" />}
-                            <span>{editingCategory ? "SCELLER_MODIFICATION" : "VALIDER_NOUVEL_ASSET"}</span>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Documentation Technique</label>
+                        <textarea 
+                            rows={4}
+                            value={formData.description} 
+                            onChange={(e) => setFormData({...formData, description: e.target.value})} 
+                            className="w-full p-6 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-semibold text-slate-600 outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none shadow-inner italic" 
+                            placeholder="DÉCRIVEZ LES SPÉCIFICATIONS..."
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Image de Couverture (URL)</label>
+                        <input 
+                            value={formData.image_url} 
+                            onChange={(e) => setFormData({...formData, image_url: e.target.value})} 
+                            className="w-full h-14 px-6 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-medium text-slate-500 outline-none focus:ring-2 focus:ring-primary/20 transition-all" 
+                            placeholder="https://images.unsplash.com/..."
+                        />
+                    </div>
+
+                    <div className="flex gap-4 pt-6">
+                        <button type="submit" disabled={isSaving} className="flex-1 h-14 bg-primary text-foreground rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-3">
+                            {isSaving ? <RefreshCcw className="size-5 animate-spin" /> : <ShieldCheck className="size-5" />}
+                            {editingCategory ? "Enregistrer les Changements" : "Déployer la Classe"}
                         </button>
                     </div>
                 </form>

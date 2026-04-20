@@ -386,7 +386,7 @@ export default function SearchPage() {
                         {/* Loading */}
                         {isLoading && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {[...Array(6)].map(i => <ProductSkeleton key={i} />)}
+                                {[...Array(6)].map((_, i) => <ProductSkeleton key={i} />)}
                             </div>
                         )}
 

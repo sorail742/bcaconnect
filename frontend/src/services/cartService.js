@@ -13,7 +13,7 @@ const cartService = {
     formatOrderData: (cartItems, deliveryInfo, paymentMethod = 'wallet') => {
         return {
             items: cartItems.map(item => ({
-                productId: item.productId,
+                productId: item.id || item.productId || item.product_id,
                 quantity: item.quantity
             })),
             deliveryInfo: {

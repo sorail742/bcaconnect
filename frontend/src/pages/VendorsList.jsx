@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DashboardLayout from '../components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
 import { Search, Users, Star, Store, ArrowRight, ShieldCheck, MapPin, Globe } from 'lucide-react';
 import storeService from '../services/storeService';
@@ -10,6 +11,7 @@ import LazyImage from '../components/ui/LazyImage';
 import { useQueryClient } from '@tanstack/react-query';
 import Skeleton from '../components/ui/Skeleton';
 import PrefetchLink from '../components/ui/PrefetchLink';
+
 const VendorsList = () => {
     const { t } = useLanguage();
     const queryClient = useQueryClient();
@@ -22,20 +24,11 @@ const VendorsList = () => {
         (v.description?.toLowerCase() || '').includes(searchQuery.toLowerCase())
     );
 
-    const prefetchVendor = (slug) => {
-        if (!slug) return;
-        queryClient.prefetchQuery({
-            queryKey: ['vendor-slug', slug],
-            queryFn: () => storeService.getBySlug(slug),
-            staleTime: 2 * 60_000,
-        });
-    };
-
     return (
-        <div className="bg-background min-h-screen text-foreground pb-16">
-
+        <DashboardLayout title="RÉSEAU DES VENDEURS" noPadding>
+            <div className="pb-16 text-foreground">
                 {/* Hero */}
-                <div className="relative pt-28 pb-12 px-6 md:px-12 max-w-6xl mx-auto">
+                <div className="relative pb-12 px-6 md:px-12 max-w-6xl mx-auto pt-8">
                     <div className="absolute top-0 right-0 size-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -96,13 +89,13 @@ const VendorsList = () => {
                         </div>
                     ) : fetchError ? (
                         <div className="py-16 text-center bg-rose-500/5 rounded-2xl border border-rose-500/20">
-                            <h3 className="text-lg font-bold text-rose-500 mb-3">ERREUR_DE_SYNC_SYSTEME_V5</h3>
+                            <h3 className="text-lg font-bold text-rose-500 mb-3">Erreur de synchronisation système</h3>
                             <p className="text-xs text-muted-foreground mb-6 uppercase tracking-widest">{fetchError}</p>
                             <button
                                 className="h-10 px-8 bg-primary text-primary-foreground rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
                                 onClick={() => window.location.reload()}
                             >
-                                RÉINITIALISER_L_INTERFACE
+                                Réinitialiser l'interface
                             </button>
                         </div>
                     ) : filteredVendors.length > 0 ? (
@@ -203,6 +196,7 @@ const VendorsList = () => {
                     )}
                 </div>
             </div>
+        </DashboardLayout>
     );
 };
 

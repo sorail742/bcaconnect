@@ -1,5 +1,8 @@
 const { User, Wallet, Store, sequelize } = require('../models');
 const bcrypt = require('bcryptjs');
+const { OAuth2Client } = require('google-auth-library');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const tokenService = require('../services/tokenService');
 const twoFactorService = require('../services/twoFactorService');
 
@@ -118,6 +121,7 @@ const authController = {
             });
         } catch (error) {
             await t.rollback();
+            console.error('[Register 500 Error]:', error);
             next(error);
         }
     },
@@ -148,17 +152,79 @@ const authController = {
             res.cookie('bca_refresh_token', tokens.refreshToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: 'Strict',
+                sameSite: 'Lax',
                 maxAge: 7 * 24 * 60 * 60 * 1000 // 7 jours
             });
 
             res.json({
                 message: "Connexion réussie",
-                accessToken: tokens.accessToken, // Seul l'access token est retourné au front JS
+                token: tokens.accessToken, // Alias pour le hook frontend
+                accessToken: tokens.accessToken,
                 user: { id: user.id, nom_complet: user.nom_complet, role: user.role }
             });
         } catch (error) {
             next(error);
+        }
+    },
+
+    // 🌐 Authentification Google Social
+    googleLogin: async (req, res, next) => {
+        try {
+            const { credential } = req.body;
+            if (!credential) return res.status(400).json({ message: "Jeton Google manquant." });
+
+            const ticket = await googleClient.verifyIdToken({
+                idToken: credential,
+                audience: process.env.GOOGLE_CLIENT_ID
+            });
+
+            const { email, name, picture, sub: googleId } = ticket.getPayload();
+
+            // 1. Chercher si l'utilisateur existe déjà
+            let user = await User.findOne({ where: { email } });
+
+            if (!user) {
+                // Créer un nouvel utilisateur si inexistant
+                // Note: Mot de passe aléatoire car géré par Google
+                const randomPassword = require('crypto').randomBytes(16).toString('hex');
+                const hashedPassword = await bcrypt.hash(randomPassword, 10);
+                
+                user = await User.create({
+                    nom_complet: name,
+                    email,
+                    mot_de_passe: hashedPassword,
+                    role: 'client',
+                    telephone: `GOOGLE_${googleId.slice(0, 10)}`, // Placeholder unique
+                    statut: 'actif'
+                });
+
+                // Initialiser son portefeuille
+                await Wallet.create({ user_id: user.id, solde_reel: 0, solde_virtuel: 0 });
+            }
+
+            // check if user was disabled
+            if (user.statut === 'bloque') {
+                return res.status(403).json({ message: "Votre compte est suspendu." });
+            }
+
+            const tokens = await tokenService.getTokens(user);
+
+            res.cookie('bca_refresh_token', tokens.refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'Lax',
+                maxAge: 7 * 24 * 60 * 60 * 1000
+            });
+
+            res.json({
+                message: "Connexion Google réussie",
+                token: tokens.accessToken,
+                accessToken: tokens.accessToken,
+                user: { id: user.id, nom_complet: user.nom_complet, role: user.role }
+            });
+        } catch (error) {
+            console.error('🔴 [GOOGLE AUTH ERROR]:', error);
+            res.status(401).json({ message: "Authentification Google échouée." });
         }
     },
 
@@ -191,12 +257,13 @@ const authController = {
             res.cookie('bca_refresh_token', tokens.refreshToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: 'Strict',
+                sameSite: 'Lax',
                 maxAge: 7 * 24 * 60 * 60 * 1000
             });
 
             res.json({
                 message: "Vérification 2FA réussie",
+                token: tokens.accessToken, // Alias pour le hook frontend
                 accessToken: tokens.accessToken,
                 user: { id: user.id, nom_complet: user.nom_complet, role: user.role }
             });
@@ -258,7 +325,12 @@ const authController = {
             // Extraction asynchrone du HttpOnly cookie
             const refreshToken = req.cookies?.bca_refresh_token; 
             
-            if (!refreshToken) return res.status(401).json({ message: "Session expirée ou cookie introuvable." });
+            if (!refreshToken) {
+                console.warn('⚠️ Refresh Token Manquant dans les cookies.');
+                return res.status(401).json({ message: "Session expirée ou cookie introuvable." });
+            }
+
+            console.log(`🔄 Refresh Token pour userId: ${userId}`);
 
             const user = await User.findByPk(userId);
             if (!user) {
@@ -272,7 +344,7 @@ const authController = {
             res.cookie('bca_refresh_token', newTokens.refreshToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: 'Strict',
+                sameSite: 'Lax',
                 maxAge: 7 * 24 * 60 * 60 * 1000
             });
 
@@ -280,6 +352,19 @@ const authController = {
         } catch (error) {
             res.clearCookie('bca_refresh_token');
             res.status(401).json({ message: error.message });
+        }
+    },
+
+    logout: async (req, res, next) => {
+        try {
+            res.clearCookie('bca_refresh_token', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'Strict'
+            });
+            res.json({ message: "Déconnexion réussie." });
+        } catch (error) {
+            next(error);
         }
     },
 

@@ -123,7 +123,7 @@ const productController = {
             const { count, rows: products } = await Product.findAndCountAll({
                 where,
                 include: [
-                    { model: Store, attributes: ['nom_boutique', 'slug', 'id', 'logo_url'] },
+                    { model: Store, as: 'boutique', attributes: ['nom_boutique', 'slug', 'id', 'logo_url'] },
                     { model: Category, as: 'categorie', attributes: ['nom_categorie'] }
                 ],
                 order,
@@ -138,6 +138,7 @@ const productController = {
                 products
             });
         } catch (error) {
+            console.error('🔴 [ProductController.getAll] ERROR:', error.message, error.stack);
             next(error);
         }
     },
@@ -151,7 +152,7 @@ const productController = {
             const products = await Product.findAll({
                 where: { boutique_id: store.id },
                 include: [
-                    { model: Store, attributes: ['nom_boutique', 'slug', 'id'] },
+                    { model: Store, as: 'boutique', attributes: ['nom_boutique', 'slug', 'id'] },
                     { model: Category, as: 'categorie', attributes: ['nom_categorie'] }
                 ],
                 order: [['createdAt', 'DESC']]
@@ -167,7 +168,7 @@ const productController = {
             const product = await Product.findByPk(req.params.id, {
                 include: [
                     { model: Category, as: 'categorie' },
-                    { model: Store, attributes: ['nom_boutique', 'slug', 'id'] }
+                    { model: Store, as: 'boutique', attributes: ['nom_boutique', 'slug', 'id'] }
                 ]
             });
             if (!product) return res.status(404).json({ message: "Produit non trouvé." });
@@ -181,11 +182,11 @@ const productController = {
         try {
             const { nom_produit, description, prix_unitaire, prix_ancien, stock_quantite, categorie_id, image_url } = req.body;
             const product = await Product.findByPk(req.params.id, {
-                include: [{ model: Store }]
+                include: [{ model: Store, as: 'boutique' }]
             });
 
             if (!product) return res.status(404).json({ message: 'Produit non trouvé.' });
-            if (product.Store.proprietaire_id !== req.user.id && req.user.role !== 'admin') {
+            if (product.boutique.proprietaire_id !== req.user.id && req.user.role !== 'admin') {
                 return res.status(403).json({ message: 'Action non autorisée.' });
             }
 
@@ -209,10 +210,10 @@ const productController = {
     patchStock: async (req, res, next) => {
         try {
             const { stock_quantite } = req.body;
-            const product = await Product.findByPk(req.params.id, { include: [{ model: Store }] });
+            const product = await Product.findByPk(req.params.id, { include: [{ model: Store, as: 'boutique' }] });
 
             if (!product) return res.status(404).json({ message: 'Produit non trouvé.' });
-            if (product.Store.proprietaire_id !== req.user.id && req.user.role !== 'admin') {
+            if (product.boutique.proprietaire_id !== req.user.id && req.user.role !== 'admin') {
                 return res.status(403).json({ message: 'Action non autorisée.' });
             }
 
@@ -226,7 +227,7 @@ const productController = {
     delete: async (req, res, next) => {
         try {
             const product = await Product.findByPk(req.params.id, {
-                include: [{ model: Store }]
+                include: [{ model: Store, as: 'boutique' }]
             });
 
             if (!product) {
@@ -234,7 +235,7 @@ const productController = {
             }
 
             // Vérifier la propriété (ou admin)
-            if (product.Store.proprietaire_id !== req.user.id && req.user.role !== 'admin') {
+            if (product.boutique.proprietaire_id !== req.user.id && req.user.role !== 'admin') {
                 return res.status(403).json({ message: "Action non autorisée sur ce produit." });
             }
 

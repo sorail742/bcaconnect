@@ -5,8 +5,9 @@ import {
     Package, Image as ImageIcon, Tag, ArrowLeft,
     Save, AlertCircle, Loader2, Sparkles,
     Hash, Zap, Info, Box, PlusCircle,
-    ChevronRight, RefreshCcw
+    ChevronRight, ChevronDown, RefreshCcw, Upload
 } from 'lucide-react';
+import api from '../../services/api';
 import { toast } from 'sonner';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
@@ -39,7 +40,7 @@ const ProductPreview = ({ data, categories }) => {
 
     return (
         <div className="sticky top-28 space-y-6">
-            <div className="bg-white dark:bg-[#0F1219] rounded-2xl overflow-hidden border border-slate-200 dark:border-foreground/5 shadow-sm group">
+            <div className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm group">
                 <div className="relative aspect-square bg-slate-50 dark:bg-white/[0.02] overflow-hidden flex items-center justify-center border-b border-slate-100 dark:border-foreground/5">
                     {data.image_url ? (
                         <img
@@ -89,7 +90,7 @@ const ProductPreview = ({ data, categories }) => {
                 </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-900 text-foreground space-y-4 shadow-xl border border-slate-800 relative overflow-hidden group">
+            <div className="p-5 rounded-3xl bg-slate-900 text-white space-y-4 shadow-xl border border-slate-800 relative overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#FF6600]/20 to-transparent opacity-40" />
                 <p className="text-[9px] font-black uppercase tracking-widest text-[#FF6600] flex items-center gap-2 relative z-10">
                     <Sparkles className="size-4" /> CONSEIL MARCHAND
@@ -127,6 +128,7 @@ const AddProduct = () => {
 
     const [categories, setCategories] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [isInitializing, setIsInitializing] = useState(true);
     const [isSuggestingPrice, setIsSuggestingPrice] = useState(false);
     const [priceSuggestion, setPriceSuggestion] = useState(null);
@@ -164,6 +166,37 @@ const AddProduct = () => {
         const { name, value, type, checked } = e.target;
         setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
+    };
+    
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validation basique côté client
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("FICHIER TROP LOURD (MAX 5MO)");
+            return;
+        }
+
+        const uploadData = new FormData();
+        uploadData.append('file', file);
+
+        setIsUploading(true);
+        try {
+            const response = await api.post('/upload', uploadData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            
+            if (response.data?.url) {
+                setFormData(prev => ({ ...prev, image_url: response.data.url }));
+                toast.success("IMAGE TÉLÉCHARGÉE AVEC SUCCÈS.");
+            }
+        } catch (err) {
+            console.error('Erreur upload:', err);
+            toast.error("ÉCHEC DU TÉLÉCHARGEMENT DE L'IMAGE.");
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     const handleSuggestPrice = async () => {
@@ -264,20 +297,18 @@ const AddProduct = () => {
     }
 
     return (
-        <DashboardLayout title={isEditMode ? "ÉDITION_ACTIF_RÉSEAU" : "INDEXATION_NOUVEL_ACTIF"}>
-            <div className="space-y-4 animate-in pb-16">
+        <DashboardLayout title={isEditMode ? "Modifier l'Article" : "Nouveau Produit"} noPadding>
+            <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8 space-y-8 custom-scrollbar">
 
-                {/* Executive Command Center — Master Directive */}
-                <div className="executive-card !p-4 group overflow-visible">
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#FFB703]/[0.02] to-transparent pointer-events-none" />
+                <div className="premium-card p-4 relative overflow-hidden">
                     <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 relative z-10">
                         <div className="flex items-center gap-3">
                             <button 
                                 id="btn-back-catalogue-node"
                                 onClick={() => navigate('/vendor/products')} 
-                                className="size-6 rounded-[2.2rem] bg-white/[0.03] border border-foreground/10 flex items-center justify-center text-muted-foreground/80 hover:text-[#FFB703] hover:border-[#FFB703]/20 transition-all "
+                                className="size-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-primary transition-all "
                             >
-                                <ArrowLeft className="size-6" />
+                                <ArrowLeft className="size-5" />
                             </button>
                             <div className="space-y-2.5">
                                 <h2 className="text-sm font-black text-foreground uppercase tracking-tighter leading-none pt-0.5">
@@ -286,20 +317,20 @@ const AddProduct = () => {
                                 <div className="flex items-center gap-3">
                                     <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
                                     <p className="text-[10px] font-black text-muted-foreground/80 uppercase  opacity-80 pt-0.5">
-                                        VND_NODE SYNC — FLUX_ACTIF_{new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
+                                    {isEditMode ? "Modification en cours" : "Nouvel article"} — {new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
                                     </p>
                                 </div>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <button
-                                id="btn-master-save-directive"
-                                onClick={handleSubmit}
-                                disabled={isLoading}
-                                className="h-11 px-6 bg-white text-background hover:bg-[#FFB703] rounded-2xl font-medium text-sm text-muted-foreground transition-all shadow-[0_30px_90px_rgba(0,0,0,0.5)]  flex items-center gap-3 group/save border-0"
-                            >
+                                <button
+                                    id="btn-master-save-directive"
+                                    onClick={handleSubmit}
+                                    disabled={isLoading}
+                                    className="h-12 px-8 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-slate-200 flex items-center gap-3 group/save border-0"
+                                >
                                 {isLoading ? <Loader2 className="size-5 animate-spin" /> : <Save className="size-5 transition-all group-hover/save:scale-125" />}
-                                <span>{isEditMode ? "ACTUALISER_INDEX" : "PUBLIER_SUR_RÉSEAU"}</span>
+                                <span>{isEditMode ? "Mettre à jour" : "Publier l'article"}</span>
                             </button>
                         </div>
                     </div>
@@ -308,122 +339,122 @@ const AddProduct = () => {
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
                     <div className="xl:col-span-8 space-y-4">
                         {/* Technical Data Hub — Asset Identity */}
-                        <div className="executive-card group/hub overflow-hidden hover-shine !p-4 space-y-4">
-                            <div className="absolute top-0 right-0 p-4 opacity-[0.05] grayscale group-hover/hub:grayscale-0 group-hover/hub:rotate-0 rotate-12 group-hover/hub:scale-125 transition-all duration-1000">
-                                <Box className="size-60" />
+                        <div className="premium-card p-8 space-y-8 relative overflow-hidden group/hub">
+                            <div className="absolute top-0 right-0 p-8 opacity-[0.02] grayscale group-hover/hub:grayscale-0 group-hover/hub:rotate-0 rotate-12 group-hover/hub:scale-125 transition-all duration-1000">
+                                <Box className="size-48" />
                             </div>
 
                             <div className="flex items-center gap-3 relative z-20">
-                                <div className="size-6 rounded-2xl bg-[#FFB703]/10 flex items-center justify-center border border-[#FFB703]/20 shadow-inner group-hover/hub:rotate-6 transition-transform">
-                                    <Hash className="size-6 text-[#FFB703]" />
+                                <div className="size-10 rounded-2xl bg-amber-50 flex items-center justify-center border border-amber-100 group-hover/hub:rotate-6 transition-transform">
+                                    <Hash className="size-5 text-amber-500" />
                                 </div>
-                                <div className="space-y-2">
-                                    <h3 className="text-[15px] font-black text-foreground uppercase  leading-none pt-0.5">MÉTADATA_STRUCTURELLES</h3>
-                                    <p className="text-[9px] font-black text-muted-foreground uppercase  leading-none">IDENTIFICATION_NODALE_ET_VALEUR</p>
+                                <div className="space-y-1">
+                                    <h3 className="text-lg font-black text-slate-900 uppercase leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>Informations Produit</h3>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Identification de l'article</p>
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 gap-3 relative z-20">
-                                <FormField label="DÉSIGNATION_STRUCTURELLE_ACTIF" required error={errors.nom_produit}>
+                                <FormField label="Nom du Produit" required error={errors.nom_produit}>
                                     <div className="relative group/field">
-                                        <Tag className="absolute left-7 top-1/2 -translate-y-1/2 size-5 text-slate-600 group-focus-within/field:text-[#FFB703] transition-all" />
+                                        <Tag className="absolute left-6 top-1/2 -translate-y-1/2 size-4 text-slate-300 group-focus-within/field:text-primary transition-all" />
                                         <input
                                             id="input-asset-nom"
                                             name="nom_produit"
                                             value={formData.nom_produit}
                                             onChange={handleChange}
-                                            placeholder="DESIGNATION_ALPHA_..."
-                                            className="w-full h-11 pl-20 pr-8 bg-white/[0.01] border border-foreground/10 rounded-2xl text-[18px] font-black uppercase tracking-tight focus:border-[#FFB703]/40 outline-none transition-all text-foreground shadow-inner"
+                                            placeholder="EX: ÉCOUTEURS BLUETOOTH V5..."
+                                            className="w-full h-12 pl-14 pr-6 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold uppercase tracking-tight focus:ring-2 focus:ring-primary/20 outline-none transition-all text-slate-900"
                                         />
                                     </div>
                                 </FormField>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <FormField label="COTATION_UNITAIRE_INDEX" required error={errors.prix_unitaire}>
+                                    <FormField label="Prix Unitaire (GNF)" required error={errors.prix_unitaire}>
                                         <div className="relative group/field">
-                                            <div className="absolute left-7 top-1/2 -translate-y-1/2 text-[#FFB703] font-black text-xs z-10 tracking-widest">GNF</div>
+                                            <div className="absolute left-6 top-1/2 -translate-y-1/2 text-primary font-black text-[10px] z-10 tracking-widest">GNF</div>
                                             <input
                                                 id="input-asset-price"
                                                 name="prix_unitaire"
                                                 type="number"
                                                 value={formData.prix_unitaire}
                                                 onChange={handleChange}
-                                                className="w-full h-11 pl-20 pr-8 bg-white/[0.01] border border-foreground/10 rounded-2xl text-sm font-black outline-none focus:border-[#FFB703]/40 transition-all text-foreground tabular-nums"
+                                                className="w-full h-12 pl-16 pr-6 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20 transition-all text-slate-900 tabular-nums"
                                             />
                                         </div>
                                     </FormField>
 
-                                    <FormField label="UNITÉS_DISPONIBLES" required error={errors.stock_quantite}>
+                                    <FormField label="Quantité en Stock" required error={errors.stock_quantite}>
                                         <div className="relative group/field">
-                                            <Package className="absolute left-7 top-1/2 -translate-y-1/2 size-5 text-slate-600 group-focus-within/field:text-[#FFB703] transition-all" />
+                                            <Package className="absolute left-6 top-1/2 -translate-y-1/2 size-4 text-slate-300 group-focus-within/field:text-primary transition-all" />
                                             <input
                                                 id="input-asset-stock"
                                                 name="stock_quantite"
                                                 type="number"
                                                 value={formData.stock_quantite}
                                                 onChange={handleChange}
-                                                className="w-full h-11 pl-20 pr-8 bg-white/[0.01] border border-foreground/10 rounded-2xl text-sm font-black outline-none focus:border-[#FFB703]/40 transition-all text-foreground tabular-nums"
+                                                className="w-full h-12 pl-14 pr-6 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20 transition-all text-slate-900 tabular-nums"
                                             />
                                         </div>
                                     </FormField>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <FormField label="NODALE_CATÉGORIE" required error={errors.categorie_id}>
+                                    <FormField label="Catégorie" required error={errors.categorie_id}>
                                         <div className="relative group/field">
-                                            <Box className="absolute left-7 top-1/2 -translate-y-1/2 size-5 text-slate-600 group-focus-within/field:text-[#FFB703] transition-all" />
+                                            <Box className="absolute left-6 top-1/2 -translate-y-1/2 size-4 text-slate-300 group-focus-within/field:text-primary transition-all" />
                                             <select
                                                 id="input-asset-cat"
                                                 name="categorie_id"
                                                 value={formData.categorie_id}
                                                 onChange={handleChange}
-                                                className="w-full h-11 pl-20 pr-12 bg-white/[0.01] border border-foreground/10 rounded-2xl text-[12px] font-black uppercase  focus:border-[#FFB703]/40 outline-none transition-all text-foreground appearance-none"
+                                                className="w-full h-12 pl-14 pr-12 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold uppercase focus:ring-2 focus:ring-primary/20 outline-none transition-all text-slate-900 appearance-none"
                                             >
-                                                <option value="" className="bg-card">SÉLECTIONNER_NODAL...</option>
+                                                <option value="" className="bg-white">Sélectionner une catégorie...</option>
                                                 {categories.map(cat => (
-                                                    <option key={cat.id} value={cat.id} className="bg-card">{cat.nom_categorie.toUpperCase()}</option>
+                                                    <option key={cat.id} value={cat.id} className="bg-white">{cat.nom_categorie.toUpperCase()}</option>
                                                 ))}
                                             </select>
-                                            <ChevronRight className="absolute right-8 top-1/2 -translate-y-1/2 size-5 text-slate-600 pointer-events-none group-focus-within/field:rotate-90 transition-transform duration-500" />
+                                            <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none group-focus-within/field:rotate-180 transition-transform duration-500" />
                                         </div>
                                     </FormField>
 
-                                    <FormField label="INDEX_ANTÉRIEUR_OPT">
+                                    <FormField label="Ancien Prix (optionnel)">
                                         <div className="relative group/field">
-                                            <RefreshCcw className="absolute left-7 top-1/2 -translate-y-1/2 size-5 text-slate-600 group-focus-within/field:text-[#FFB703] transition-all" />
+                                            <RefreshCcw className="absolute left-6 top-1/2 -translate-y-1/2 size-4 text-slate-300 group-focus-within/field:text-primary transition-all" />
                                             <input
                                                 id="input-asset-old-price"
                                                 name="prix_ancien"
                                                 type="number"
                                                 value={formData.prix_ancien}
                                                 onChange={handleChange}
-                                                className="w-full h-11 pl-20 pr-8 bg-white/[0.01] border border-foreground/10 rounded-2xl text-sm font-black outline-none focus:border-[#FFB703]/40 transition-all text-slate-600 tabular-nums line-through decoration-[#FFB703]/20"
+                                                className="w-full h-12 pl-14 pr-6 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20 transition-all text-slate-400 tabular-nums line-through decoration-slate-200"
                                             />
                                         </div>
                                     </FormField>
                                 </div>
 
-                                <FormField label="SPÉCIFICATIONS_TECHNIQUES_DÉTAILLÉES">
+                                <FormField label="Description du Produit">
                                     <div className="relative group/field">
-                                        <Info className="absolute left-7 top-4 size-5 text-slate-600 group-focus-within/field:text-[#FFB703] transition-all" />
+                                        <Info className="absolute left-6 top-4 size-4 text-slate-300 group-focus-within/field:text-primary transition-all" />
                                         <textarea
                                             id="input-asset-desc"
                                             name="description"
                                             value={formData.description}
                                             onChange={handleChange}
-                                            rows="6"
-                                            placeholder="INJECTION_DATAS_TECHNIQUES_..."
-                                            className="w-full p-4 pl-20 rounded-2xl bg-white/[0.01] border border-foreground/10 focus:border-[#FFB703]/40 outline-none text-[14px] font-black uppercase tracking-tight transition-all text-foreground resize-none shadow-inner"
+                                            rows="5"
+                                            placeholder="DÉCRIVEZ VOTRE PRODUIT EN DÉTAIL POUR VOS CLIENTS..."
+                                            className="w-full p-4 pl-14 rounded-2xl bg-slate-50 border border-slate-100 focus:ring-2 focus:ring-primary/20 outline-none text-xs font-bold uppercase tracking-tight transition-all text-slate-900 resize-none"
                                         />
                                     </div>
                                 </FormField>
 
-                                <label className="relative flex items-center justify-between p-4 rounded-2xl bg-emerald-500/[0.03] cursor-pointer group/local border border-emerald-500/10 hover:bg-emerald-500/[0.06] transition-all ">
+                                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-between group/local transition-all">
                                     <div className="flex items-center gap-3">
-                                        <div className="size-6 rounded-2xl bg-emerald-500 text-background flex items-center justify-center text-sm shadow-[0_20px_50px_rgba(16,185,129,0.3)] group-hover/local:rotate-6 transition-transform relative z-10 font-bold">GN</div>
-                                        <div className="space-y-2 relative z-10">
-                                            <p className="text-[14px] font-black text-emerald-400 uppercase  leading-none">CERTIFICATION_ORIGINE_LOCALE</p>
-                                            <p className="text-[10px] font-black text-emerald-500/50 uppercase  leading-none">VALORISATION_DU_PATRIMOINE_UNITAIRE</p>
+                                        <div className="size-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-xs font-black shadow-lg shadow-emerald-200">GN</div>
+                                        <div className="space-y-0.5">
+                                            <p className="text-[11px] font-black text-slate-900 uppercase leading-none">Produit d'origine locale</p>
+                                            <p className="text-[9px] font-bold text-emerald-600/60 uppercase tracking-widest leading-none">Valorisation du patrimoine</p>
                                         </div>
                                     </div>
                                     <input
@@ -432,115 +463,138 @@ const AddProduct = () => {
                                         name="est_local"
                                         checked={formData.est_local}
                                         onChange={handleChange}
-                                        className="size-6 rounded-2xl border-2 border-emerald-500/30 bg-black text-emerald-500 focus:ring-emerald-500 cursor-pointer transition-all relative z-10"
+                                        className="size-6 rounded-lg border-2 border-emerald-200 bg-white text-emerald-500 focus:ring-emerald-500/20 cursor-pointer transition-all"
                                     />
-                                </label>
+                                </div>
                             </div>
                         </div>
 
-                        {/* AI Smart-Hub Centre — HUD Intelligence */}
-                        <div className="executive-card group/ai overflow-hidden shadow-[0_50px_120px_rgba(0,0,0,0.6)] !p-0">
-                            <div className="p-4 space-y-4 relative">
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,183,3,0.15),transparent)] pointer-events-none" />
-                                
-                                <div className="relative z-10 space-y-4">
-                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="size-6 rounded-[2.2rem] bg-white/[0.05] backdrop-blur-3xl border border-foreground/10 flex items-center justify-center shadow-2xl group-hover/ai:rotate-6 transition-transform duration-700">
-                                                <Sparkles className="size-6 text-[#FFB703] drop-shadow-[0_0_20px_rgba(255,183,3,0.8)]" />
-                                            </div>
-                                            <div className="space-y-3">
-                                                <h3 className="text-sm font-black text-foreground uppercase tracking-tighter leading-none pt-0.5">SMART_<span className="text-[#FFB703]">HUB</span>_AI.</h3>
-                                                <p className="text-[10px] font-black text-foreground/40 uppercase  leading-none">PROTOCOLE_V4.8 — ANALYSE_RÉSEAU</p>
-                                            </div>
-                                        </div>
-                                        <button
-                                            id="btn-ai-audit-trigger"
-                                            onClick={handleSuggestPrice}
-                                            disabled={isSuggestingPrice}
-                                            className="h-11 px-14 bg-white text-background rounded-2xl font-black text-[13px] uppercase  hover:bg-[#FFB703] hover:text-background transition-all shadow-[0_30px_70px_rgba(255,183,3,0.2)]  disabled:opacity-30 border-0 flex items-center gap-3 group/abtn"
-                                        >
-                                            {isSuggestingPrice ? <Loader2 className="size-6 animate-spin" /> : <Zap className="size-6 transition-transform group-hover/abtn:scale-125" />}
-                                            EXÉCUTER_AUDIT_VALEUR
-                                        </button>
+                        <div className="premium-card p-8 space-y-6 relative overflow-hidden group/ai">
+                            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-200 via-primary to-amber-200 opacity-20" />
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 rounded-xl bg-amber-50 flex items-center justify-center border border-amber-100 group-hover/ai:rotate-6 transition-transform duration-700">
+                                        <Sparkles className="size-5 text-amber-500" />
                                     </div>
+                                    <div className="space-y-1">
+                                        <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>Smart <span className="text-primary">Hub</span> IA.</h3>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Analyse prédictive du marché</p>
+                                    </div>
+                                </div>
+                                <button
+                                    id="btn-ai-audit-trigger"
+                                    onClick={handleSuggestPrice}
+                                    disabled={isSuggestingPrice}
+                                    className="h-12 px-8 bg-white border border-slate-100 text-slate-900 hover:bg-slate-50 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-sm active:scale-95 disabled:opacity-30 flex items-center gap-3 group/abtn"
+                                >
+                                    {isSuggestingPrice ? <Loader2 className="size-4 animate-spin text-primary" /> : <Zap className="size-4 text-amber-500 transition-transform group-hover/abtn:scale-125" />}
+                                    Analyser le marché
+                                </button>
+                            </div>
 
-                                    {priceSuggestion && (
-                                        <div className="p-14 rounded-2xl bg-white/[0.02] backdrop-blur-3xl border border-foreground/10 animate-in zoom-in-95 fade-in duration-700 shadow-inner">
-                                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-20">
-                                                <div className="lg:col-span-5 space-y-6">
-                                                    <div className="space-y-4">
-                                                        <p className="text-[10px] font-black text-[#FFB703] uppercase  opacity-60 pt-0.5">RECOMMANDATION_POINT_INDICE</p>
-                                                        <div className="flex items-baseline gap-3">
-                                                            <span className="text-7xl font-black tracking-tighter tabular-nums text-foreground">
-                                                                {priceSuggestion.prix_recommande.toLocaleString('fr-GN')}
-                                                            </span>
-                                                            <span className="text-[14px] font-black text-[#FFB703] uppercase ">GNF</span>
-                                                        </div>
-                                                    </div>
-                                                    <button
-                                                        id="btn-apply-ai-directive"
-                                                        onClick={applyPriceSuggestion}
-                                                        className="w-full h-11 bg-[#FFB703] text-background rounded-2xl font-black text-[13px] uppercase  shadow-[0_25px_60px_rgba(255,183,3,0.35)] hover:bg-white transition-all  border-0"
-                                                    >
-                                                        APPLIQUER_LA_DIRECTIVE
-                                                    </button>
+                            {priceSuggestion && (
+                                <div className="p-8 rounded-3xl bg-slate-50 border border-slate-100 animate-in zoom-in-95 fade-in duration-700 shadow-inner">
+                                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                                        <div className="lg:col-span-5 space-y-6">
+                                            <div className="space-y-2">
+                                                <p className="text-[10px] font-black text-primary uppercase tracking-widest leading-none">Prix recommandé</p>
+                                                <div className="flex items-baseline gap-2">
+                                                    <span className="text-5xl font-black tracking-tighter tabular-nums text-slate-900" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                                        {priceSuggestion.prix_recommande.toLocaleString('fr-GN')}
+                                                    </span>
+                                                    <span className="text-sm font-black text-primary uppercase tracking-widest">GNF</span>
                                                 </div>
-                                                <div className="lg:col-span-7 space-y-6">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="size-3 rounded-full bg-[#FFB703] animate-ping" />
-                                                        <p className="text-[10px] font-black text-foreground/40 uppercase  leading-none pt-0.5">ANALYSE_PARAMÉTRIQUE_SYSTÈME</p>
-                                                    </div>
-                                                    <p className="text-[17px] font-black leading-relaxed text-foreground uppercase tracking-tight opacity-90">
-                                                        {priceSuggestion.raisonnement}
+                                            </div>
+                                            <button
+                                                id="btn-apply-ai-directive"
+                                                onClick={applyPriceSuggestion}
+                                                className="w-full h-12 bg-primary text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20 hover:opacity-90 transition-all border-0"
+                                            >
+                                                Appliquer ce prix
+                                            </button>
+                                        </div>
+                                        <div className="lg:col-span-7 space-y-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="size-2 rounded-full bg-primary animate-pulse" />
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Analyse du marché</p>
+                                            </div>
+                                            <p className="text-xs font-bold leading-relaxed text-slate-600 uppercase tracking-tight">
+                                                {priceSuggestion.raisonnement}
+                                            </p>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="p-4 rounded-xl bg-white border border-slate-100 space-y-2">
+                                                    <p className="text-[9px] font-black text-slate-300 uppercase leading-none">Prix Min</p>
+                                                    <p className="text-xs font-black text-slate-700 tabular-nums tracking-tighter leading-none">
+                                                        {priceSuggestion.fourchette_min?.toLocaleString()} <span className="text-[10px] opacity-20">GNF</span>
                                                     </p>
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-6">
-                                                        <div className="p-4 rounded-2xl bg-white/[0.03] border border-foreground/5 space-y-4">
-                                                            <p className="text-[10px] font-black text-foreground/30 uppercase  leading-none pt-1">FLUX_MIN</p>
-                                                            <p className="text-sm font-black text-foreground tabular-nums tracking-tighter leading-none">
-                                                                {priceSuggestion.fourchette_min?.toLocaleString()} <span className="text-[12px] opacity-20">GNF</span>
-                                                            </p>
-                                                        </div>
-                                                        <div className="p-4 rounded-2xl bg-white/[0.03] border border-foreground/5 space-y-4">
-                                                            <p className="text-[10px] font-black text-foreground/30 uppercase  leading-none pt-1">FLUX_MAX</p>
-                                                            <p className="text-sm font-black text-foreground tabular-nums tracking-tighter leading-none">
-                                                                {priceSuggestion.fourchette_max?.toLocaleString()} <span className="text-[12px] opacity-20">GNF</span>
-                                                            </p>
-                                                        </div>
-                                                    </div>
+                                                </div>
+                                                <div className="p-4 rounded-xl bg-white border border-slate-100 space-y-2">
+                                                    <p className="text-[9px] font-black text-slate-300 uppercase leading-none">Prix Max</p>
+                                                    <p className="text-xs font-black text-slate-700 tabular-nums tracking-tighter leading-none">
+                                                        {priceSuggestion.fourchette_max?.toLocaleString()} <span className="text-[10px] opacity-20">GNF</span>
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
 
                         {/* Media Terminal Section — HD Proxy Asset */}
-                        <div className="executive-card group/media !p-4 space-y-4">
-                            <div className="flex items-center gap-3 text-[#FFB703] relative z-20">
-                                <div className="size-6 rounded-2xl bg-[#FFB703]/10 flex items-center justify-center border border-[#FFB703]/20 shadow-inner group-hover/media:scale-110 transition-transform">
-                                    <ImageIcon className="size-6" />
+                        <div className="premium-card p-8 space-y-8 relative group/media overflow-hidden">
+                            <div className="flex items-center gap-3 relative z-20">
+                                <div className="size-10 rounded-2xl bg-primary/5 flex items-center justify-center border border-primary/10 group-hover/media:scale-110 transition-transform">
+                                    <ImageIcon className="size-5 text-primary" />
                                 </div>
-                                <div className="space-y-2">
-                                    <h3 className="text-[15px] font-black text-foreground uppercase  leading-none pt-0.5">FLUX_VISUEL_HD</h3>
-                                    <p className="text-[9px] font-black text-muted-foreground uppercase  leading-none">PROXY_MÉDIA_ET_INDEXATION_VISUELLE</p>
+                                <div className="space-y-1">
+                                    <h3 className="text-lg font-black text-slate-900 uppercase leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>Média Visuel</h3>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Catalogue Haute-Résolution</p>
                                 </div>
                             </div>
-                            <FormField label="URL_SOURCE_ACTIF_MÉDIA">
-                                <div className="relative group/field">
-                                    <PlusCircle className="absolute left-7 top-1/2 -translate-y-1/2 size-5 text-slate-600 group-focus-within/field:text-[#FFB703] transition-all" />
-                                    <input
-                                        id="input-asset-image-proxy"
-                                        name="image_url"
-                                        type="url"
-                                        value={formData.image_url}
-                                        onChange={handleChange}
-                                        placeholder="HTTPS://STORAGE.BCA.GN/UNITS/..."
-                                        className="w-full h-11 pl-20 pr-8 bg-white/[0.01] border border-foreground/10 rounded-2xl text-[14px] font-black uppercase tracking-widest focus:border-[#FFB703]/40 outline-none transition-all text-[#FFB703]"
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div 
+                                    onClick={() => document.getElementById('product-image-upload').click()}
+                                    className={cn(
+                                        "relative group/upload h-32 border-2 border-dashed border-slate-100 rounded-3xl flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:border-primary/40 hover:bg-primary/[0.02] overflow-hidden",
+                                        isUploading && "pointer-events-none opacity-50"
+                                    )}
+                                >
+                                    {isUploading ? (
+                                        <Loader2 className="size-6 text-primary animate-spin" />
+                                    ) : (
+                                        <>
+                                            <div className="size-12 rounded-2xl bg-slate-50 flex items-center justify-center group-hover/upload:scale-110 transition-transform">
+                                                <Upload className="size-5 text-slate-400 group-hover/upload:text-primary" />
+                                            </div>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">TÉLÉVERSER IMAGE HD</p>
+                                        </>
+                                    )}
+                                    <input 
+                                        id="product-image-upload"
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={handleFileUpload}
                                     />
                                 </div>
-                            </FormField>
+
+                                <FormField label="Ou via un lien URL (Direct)">
+                                    <div className="relative group/field h-full flex flex-col justify-center">
+                                        <PlusCircle className="absolute left-6 top-1/2 -translate-y-1/2 size-4 text-slate-300 group-focus-within/field:text-primary transition-all" />
+                                        <input
+                                            id="input-asset-image-proxy"
+                                            name="image_url"
+                                            type="url"
+                                            value={formData.image_url}
+                                            onChange={handleChange}
+                                            placeholder="HTTPS://IMAGE-HOST.COM/..."
+                                            className="w-full h-12 pl-14 pr-6 bg-slate-50 border border-slate-100 rounded-2xl text-[10px] font-bold uppercase tracking-widest focus:ring-2 focus:ring-primary/20 outline-none transition-all text-primary"
+                                        />
+                                    </div>
+                                </FormField>
+                            </div>
                         </div>
                     </div>
 

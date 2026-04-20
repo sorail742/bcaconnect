@@ -12,11 +12,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import walletService from '../../services/walletService';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useOrders, useProducts, useWallet } from '../../hooks/useDomainData';
+import { useAIScore } from '../../hooks/useAIScore';
 
 const orderColumns = [
-    { key: 'numero_commande', label: 'RÉFÉRENCE', render: (val) => <span className="font-black text-[9px] uppercase tracking-widest text-muted-foreground/80">{val || '—'}</span> },
-    { key: 'montant_total', label: 'VALEUR FLUX', render: (val) => <span className="font-black text-[12px] text-slate-900 dark:text-foreground tabular-nums tracking-tighter">{parseFloat(val || 0).toLocaleString('fr-GN')} <span className="text-[9px] text-[#FF6600]">GNF</span></span> },
-    { key: 'statut', label: 'CANAL STATUT', render: (val) => <StatusBadge status={val} className="text-[8px] font-black uppercase tracking-widest border border-slate-100 dark:border-foreground/5 py-1 px-3" /> },
+    { key: 'id', label: 'RÉFÉRENCE', render: (row) => <span className="font-black text-[9px] uppercase tracking-widest text-[#FF6600]">#{row.id && typeof row.id === 'string' ? row.id.slice(0, 8).toUpperCase() : (row.id || '—')}</span> },
+    { key: 'total_ttc', label: 'VALEUR FLUX', render: (row) => <span className="font-black text-[12px] text-slate-900 dark:text-foreground tabular-nums tracking-tighter">{parseFloat(row.total_ttc || 0).toLocaleString('fr-GN')} <span className="text-[9px] text-[#FF6600]">GNF</span></span> },
+    { key: 'statut', label: 'CANAL STATUT', render: (row) => <StatusBadge status={row.statut} className="text-[8px] font-black uppercase tracking-widest border border-slate-100 dark:border-foreground/5 py-1 px-3" /> },
 ];
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -41,10 +42,13 @@ const Dashboard = () => {
     const { data: ordersData, loading: ordersLoading, error: ordersError } = useOrders();
     const { data: products, loading: productsLoading } = useProducts();
     const { data: wallet, loading: walletLoading } = useWallet();
+    const { scoreData, loading: scoreLoading } = useAIScore();
 
     const orders = ordersData?.orders || [];
     const totalOrders = ordersData?.total || 0;
-    const quickProducts = products?.slice(0, 4) || [];
+    
+    // Correction de la structure des produits (objet paginé ou tableau direct)
+    const quickProducts = products?.products?.slice(0, 4) || (Array.isArray(products) ? products.slice(0, 4) : []);
     
     const [chartData, setChartData] = useState([]);
 
@@ -54,7 +58,7 @@ const Dashboard = () => {
         }
     }, [orders]);
 
-    const isLoading = ordersLoading || productsLoading || walletLoading;
+    const isLoading = ordersLoading || productsLoading || walletLoading || scoreLoading;
     const hasError = !!ordersError;
 
     const processOrdersForChart = (ordersList) => {
@@ -72,7 +76,7 @@ const Dashboard = () => {
             const orderDate = new Date(order.createdAt);
             const dayName = days[orderDate.getDay()];
             if (activity.hasOwnProperty(dayName)) {
-                activity[dayName] += parseFloat(order.montant_total || 0);
+                activity[dayName] += parseFloat(order.total_ttc || 0);
             }
         });
 
@@ -85,9 +89,30 @@ const Dashboard = () => {
     };
 
     const stats = [
-        { title: 'PORTEFEUILLE', value: wallet ? `${parseFloat(wallet.solde_virtuel).toLocaleString('fr-GN')} GNF` : '0 GNF', icon: Wallet, trend: 'up', trendValue: 'RÉEL', description: 'FONDS DISPONIBLES EN SÉQUESTRE BCA' },
-        { title: 'COMMANDES', value: totalOrders.toString(), icon: ShoppingBag, trend: 'up', trendValue: `${orders.length > 0 ? 'ACTIF' : 'N/A'}`, description: 'HISTORIQUE TRANSACTIONNEL VÉRIFIÉ' },
-        { title: 'POINTS FIDÉLITÉ', value: user?.points_fidelite || '0', icon: Star, trend: 'up', trendValue: 'PRÉMIUM', description: 'STATUT DE GOUVERNANCE PRIVILÈGE' },
+        { 
+            title: 'PORTEFEUILLE', 
+            value: wallet ? `${parseFloat(wallet.solde_virtuel || 0).toLocaleString('fr-GN')} GNF` : '0 GNF', 
+            icon: Wallet, 
+            trend: 'up', 
+            trendValue: 'RÉEL', 
+            description: 'FONDS DISPONIBLES EN SÉQUESTRE BCA' 
+        },
+        { 
+            title: 'COMMANDES', 
+            value: totalOrders.toString(), 
+            icon: ShoppingBag, 
+            trend: 'up', 
+            trendValue: `${orders.length > 0 ? 'ACTIF' : 'N/A'}`, 
+            description: 'HISTORIQUE TRANSACTIONNEL VÉRIFIÉ' 
+        },
+        { 
+            title: 'POINTS FIDÉLITÉ', 
+            value: user?.points_fidelite || '0', 
+            icon: Star, 
+            trend: 'up', 
+            trendValue: 'PRÉMIUM', 
+            description: 'STATUT DE GOUVERNANCE PRIVILÈGE' 
+        },
     ];
 
     return (
@@ -177,23 +202,30 @@ const Dashboard = () => {
                                     <Shield className="size-6" />
                                 </div>
                                 <div className="space-y-3">
-                                    <p className="text-[9px] font-black text-muted-foreground/80 uppercase tracking-widest pt-1 leading-none">CONFIANCE RÉSEAU</p>
+                                    <p className="text-[9px] font-black text-muted-foreground/80 uppercase tracking-widest pt-1 leading-none">ALPHA-BCA SCORE</p>
                                     <div className="flex items-center gap-3">
                                         <span className="text-sm font-black text-slate-900 dark:text-foreground uppercase tracking-tight">
-                                            {user?.score_confiance >= 90 ? 'ELITE A++' : user?.score_confiance >= 70 ? 'PREMIUM B+' : 'STANDARD C'}
+                                            {scoreData?.metadata?.status || 'ANALYSE...'}
                                         </span>
                                     </div>
                                 </div>
                             </div>
                             <div className="space-y-4 relative z-10">
                                 <div className="flex justify-between text-[8px] font-black uppercase tracking-widest">
-                                    <span className="text-muted-foreground/80">INTÉGRITÉ NODALE</span>
-                                    <span className="text-[#FF6600]">{user?.score_confiance || 100}%</span>
+                                    <span className="text-muted-foreground/80">SOLVABILITÉ IA</span>
+                                    <span className="text-[#FF6600]">{scoreData?.score || 0}%</span>
                                 </div>
                                 <div className="h-2.5 bg-slate-50 dark:bg-foreground/5 rounded-full overflow-hidden border border-slate-100 dark:border-foreground/10 p-0.5">
-                                    <div className="bg-[#FF6600] h-full rounded-full shadow-[0_0_10px_rgba(255,102,0,0.4)]" style={{ width: `${user?.score_confiance || 100}%` }}></div>
+                                    <div className="bg-[#FF6600] h-full rounded-full shadow-[0_0_10px_rgba(255,102,0,0.4)] transition-all duration-1000" style={{ width: `${scoreData?.score || 0}%` }}></div>
                                 </div>
-                                <p className="text-[7px] font-black text-muted-foreground/80 uppercase tracking-widest text-center">SYSTÈME OPTIMAL — AUCUN RISQUE DÉTECTÉ</p>
+                                <div className="flex justify-between gap-1 pt-1">
+                                    {scoreData?.breakdown && Object.entries(scoreData.breakdown).map(([k, v]) => (
+                                        <div key={k} className="flex-1 h-1 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                                            <div className="h-full bg-[#FF6600]/40" style={{ width: `${v}%` }} />
+                                        </div>
+                                    ))}
+                                </div>
+                                <p className="text-[7px] font-black text-muted-foreground/80 uppercase tracking-widest text-center">SYSTÈME ALPHA v2.6 — PRÉDICTIONS BASÉES SUR FLUX</p>
                             </div>
                         </div>
 
