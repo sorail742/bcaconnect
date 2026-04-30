@@ -23,13 +23,16 @@ const upload = multer({
     storage,
     limits: { fileSize: 2 * 1024 * 1024 }, // 2MB max
     fileFilter: (req, file, cb) => {
-        const filetypes = /jpeg|jpg|png|webp/;
+        const filetypes = /jpeg|jpg|png|webp|avif|svg|gif/;
         const mimetype = filetypes.test(file.mimetype);
         const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        
         if (mimetype && extname) {
             return cb(null, true);
         }
-        cb(new Error("Format de fichier non supporté."));
+        
+        console.error(`🔴 UPLOAD REFUSÉ: Mimetype: ${file.mimetype}, Extension: ${path.extname(file.originalname)}`);
+        cb(new Error("Format de fichier non supporté. Types autorisés: jpeg, jpg, png, webp, avif, svg, gif"));
     }
 });
 

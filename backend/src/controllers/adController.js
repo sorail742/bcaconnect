@@ -5,19 +5,24 @@ const adController = {
     // Liste toutes les publicités (pour admin ou pour le feed public avec filtres)
     getAll: async (req, res, next) => {
         try {
+            console.log(`[DEBUG ADS] Get All - User: ${req.user?.role}`);
             const { position, status } = req.query;
             const where = {};
             
-            if (position) where.format = position; // On utilise le champ 'format' pour la position (Standard BCA)
+            if (position) where.format = position; 
             if (status) where.statut = status;
-            else if (!req.user || req.user.role !== 'admin') where.statut = 'active';
+            else if (!req.user || req.user.role?.toLowerCase() !== 'admin') where.statut = 'actif';
 
             const ads = await Publicite.findAll({
                 where,
-                include: [{ model: PubliciteCiblage, as: 'ciblages' }],
+                include: [
+                    { model: PubliciteCiblage, as: 'ciblages' },
+                    { model: PubliciteStat, as: 'stats' }
+                ],
                 order: [['createdAt', 'DESC']]
             });
             
+            console.log(`[DEBUG ADS] Found: ${ads.length}`);
             res.json(ads || []);
         } catch (error) {
             next(error);
@@ -27,7 +32,7 @@ const adController = {
     create: async (req, res, next) => {
         try {
             const { titre, contenu, url_image, url_destination, format, date_debut, date_fin, budget_total, ciblage } = req.body;
-            const vendeur_id = req.user.role === 'admin' ? (req.body.vendeur_id || null) : req.user.id;
+            const vendeur_id = req.user.role?.toLowerCase() === 'admin' ? (req.body.vendeur_id || null) : req.user.id;
 
             const ad = await Publicite.create({
                 titre,
@@ -40,7 +45,7 @@ const adController = {
                 budget_total,
                 budget_restant: budget_total,
                 vendeur_id,
-                statut: 'pending_payment'
+                statut: req.user.role?.toLowerCase() === 'admin' ? (req.body.statut || 'actif') : 'pending_payment'
             });
 
             if (ciblage) {
@@ -68,7 +73,7 @@ const adController = {
             // Trouver les pubs actives dont le ciblage correspond au rôle ou est 'all'
             const ads = await Publicite.findAll({
                 where: {
-                    statut: 'active',
+                    statut: 'actif',
                     date_debut: { [Op.lte]: new Date() },
                     date_fin: { [Op.gte]: new Date() },
                     budget_restant: { [Op.gt]: 0 }
@@ -132,6 +137,40 @@ const adController = {
             }
 
             res.json(ad.stats);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    update: async (req, res, next) => {
+        try {
+            const { id } = req.params;
+            const ad = await Publicite.findByPk(id);
+
+            if (!ad) return res.status(404).json({ message: "Publicité introuvable" });
+            if (req.user.role !== 'admin' && ad.vendeur_id !== req.user.id) {
+                return res.status(403).json({ message: "Non autorisé" });
+            }
+
+            await ad.update(req.body);
+            res.json(ad);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    delete: async (req, res, next) => {
+        try {
+            const { id } = req.params;
+            const ad = await Publicite.findByPk(id);
+
+            if (!ad) return res.status(404).json({ message: "Publicité introuvable" });
+            if (req.user.role !== 'admin' && ad.vendeur_id !== req.user.id) {
+                return res.status(403).json({ message: "Non autorisé" });
+            }
+
+            await ad.destroy();
+            res.json({ message: "Publicité supprimée avec succès" });
         } catch (error) {
             next(error);
         }

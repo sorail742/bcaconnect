@@ -16,7 +16,7 @@ class TokenService {
             const payload = {
                 id: user.id,
                 email: user.email,
-                role: user.role,
+                role: user.role ? user.role.toLowerCase() : null,
                 nom_complet: user.nom_complet
             };
 
@@ -49,10 +49,18 @@ class TokenService {
                 throw new Error('Token appartient à un autre utilisateur');
             }
 
+            const newPayload = {
+                id: user.id,
+                email: user.email,
+                role: user.role ? user.role.toLowerCase() : null,
+                nom_complet: user.nom_complet
+            };
+
             // Rotater le refresh token (détecte la réutilisation)
             const newTokenPair = await refreshTokenService.rotateRefreshToken(
                 user.id,
-                oldRefreshToken
+                oldRefreshToken,
+                newPayload
             );
 
             console.log(`✅ Tokens rafraîchis pour user ${user.id}`);

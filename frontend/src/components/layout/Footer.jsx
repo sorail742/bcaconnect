@@ -55,7 +55,7 @@ const Footer = () => {
                 { label: lang === 'FR' ? "Suivre ma commande" : "Track Order", href: "/tracking" },
                 { label: lang === 'FR' ? "Retours & Remboursements" : "Returns & Refunds", href: "/returns" },
                 { label: lang === 'FR' ? "Signaler un produit" : "Report a Product", href: "/report" },
-                { label: lang === 'FR' ? "Modes de paiement" : "Payment Methods", href: "/payments" },
+                { label: lang === 'FR' ? "Foire Aux Questions" : "FAQ", href: "/faq" },
             ]
         },
         {
@@ -63,9 +63,9 @@ const Footer = () => {
             links: [
                 { label: lang === 'FR' ? "Qui sommes-nous" : "Who we are", href: "/about" },
                 { label: lang === 'FR' ? "BCA Connect Careers" : "Careers", href: "/careers" },
-                { label: lang === 'FR' ? "Conditions Générales" : "Terms & Conditions", href: "/terms" },
-                { label: lang === 'FR' ? "Confidentialité" : "Privacy Policy", href: "/privacy" },
-                { label: lang === 'FR' ? "Ventes Flash" : "Flash Sales", href: "/marketplace" },
+                { label: lang === 'FR' ? "Actualités & Blog" : "News & Blog", href: "/blog" },
+                { label: lang === 'FR' ? "Relations Investisseurs" : "Investors", href: "/investors" },
+                { label: lang === 'FR' ? "Contactez-nous" : "Contact Us", href: "/contact" },
             ]
         },
         {
@@ -80,10 +80,10 @@ const Footer = () => {
         {
             title: lang === 'FR' ? "ÉCOSYSTÈME" : "ECOSYSTEM",
             links: [
-                { label: "BCA Pay", href: "/wallet" },
-                { label: "BCA Wallet", href: "/wallet" },
+                { label: "BCA Wallet (Portefeuille)", href: "/wallet" },
                 { label: "BCA Ads", href: "/ads" },
                 { label: "BCA Insights", href: "/insights" },
+                { label: "BCA AI Engine", href: "/ai-trends" }
             ]
         }
     ];

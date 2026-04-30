@@ -1,181 +1,134 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { UserPlus, PackageSearch, CreditCard, Truck, ArrowRight, Zap, CheckCircle2 } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useLanguage } from "../../context/LanguageContext";
-import { cn } from "../../lib/utils";
-import GeometricBackground from '../ui/GeometricBackground';
+import { UserPlus, PackageSearch, CreditCard, Truck, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../hooks/useAuth';
+
+const STEPS = [
+    {
+        number: "01", icon: UserPlus,
+        title: "Créez votre compte",
+        description: "Inscription gratuite en 2 minutes. Choisissez Acheteur, Fournisseur ou Transporteur.",
+        color: "text-blue-600", bg: "bg-blue-50", link: "/register"
+    },
+    {
+        number: "02", icon: PackageSearch,
+        title: "Explorez le Marché",
+        description: "Parcourez des milliers de produits vérifiés. Filtrez par catégorie ou fournisseur certifié.",
+        color: "text-[#FF6600]", bg: "bg-orange-50", link: "/marketplace"
+    },
+    {
+        number: "03", icon: CreditCard,
+        title: "Paiement Sécurisé",
+        description: "Réglez via Orange Money, Areeba ou virement. Fonds bloqués en séquestre jusqu'à réception.",
+        color: "text-emerald-600", bg: "bg-emerald-50", link: "/help"
+    },
+    {
+        number: "04", icon: Truck,
+        title: "Livraison & Confirmation",
+        description: "Suivez votre commande en temps réel. Le fournisseur est payé uniquement à votre confirmation.",
+        color: "text-amber-600", bg: "bg-amber-50", link: "/tracking"
+    },
+];
 
 export function HowItWorks() {
     const { t } = useLanguage();
-
-    const steps = [
-        {
-            number: "01",
-            icon: UserPlus,
-            title: "Créez votre compte",
-            description: "Inscription rapide en moins de 2 minutes. Choisissez votre profil — Acheteur, Vendeur ou Transporteur — et commencez immédiatement.",
-            color: "text-blue-600",
-            bg: "bg-blue-50",
-            border: "border-blue-100",
-            glow: "rgba(37,99,235,0.08)"
-        },
-        {
-            number: "02",
-            icon: PackageSearch,
-            title: "Explorez le Marché",
-            description: "Parcourez des milliers de produits vérifiés. Filtrez par catégorie, prix ou vendeur certifié BCA Connect.",
-            color: "text-[#FF6600]",
-            bg: "bg-orange-50",
-            border: "border-orange-100",
-            glow: "rgba(255,102,0,0.08)"
-        },
-        {
-            number: "03",
-            icon: CreditCard,
-            title: "Paiement Sécurisé",
-            description: "Réglez via Orange Money, Areeba, Paycard ou virement. Votre paiement est bloqué en séquestre jusqu'à la livraison.",
-            color: "text-emerald-600",
-            bg: "bg-emerald-50",
-            border: "border-emerald-100",
-            glow: "rgba(5,150,105,0.08)"
-        },
-        {
-            number: "04",
-            icon: Truck,
-            title: "Livraison & Confirmation",
-            description: "Suivez votre commande en temps réel. Les fonds sont libérés au vendeur uniquement à votre confirmation de réception.",
-            color: "text-amber-600",
-            bg: "bg-amber-50",
-            border: "border-amber-100",
-            glow: "rgba(217,119,6,0.08)"
-        }
-    ];
+    const navigate = useNavigate();
+    const { isAuthenticated } = useAuth();
 
     return (
-        <section className="relative py-32 bg-slate-50 overflow-hidden font-sans border-y border-slate-100">
-            <GeometricBackground />
-            
-            <div className="container mx-auto px-6 md:px-12 relative z-10 w-full max-w-[90%] lg:max-w-[1200px]">
+        <section className="bg-white border-t border-slate-100 py-10 sm:py-16">
+            <div className="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8">
 
-                {/* Section Header */}
-                <div className="text-center max-w-3xl mx-auto space-y-6 mb-20">
-                    <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-slate-900 text-white text-xs font-black uppercase tracking-widest shadow-sm"
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 sm:mb-10">
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-1 h-8 bg-[#FF6600] rounded-full" />
+                            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                                Comment ça marche ?
+                            </h2>
+                        </div>
+                        <p className="text-slate-500 text-sm pl-4 ml-1 border-l-2 border-slate-100">
+                            De l'inscription à la livraison — chaque étape sécurisée et transparente
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => navigate(isAuthenticated ? '/dashboard' : '/register')}
+                        className="flex items-center gap-2 h-10 px-5 bg-[#FF6600] text-white font-bold text-sm rounded-xl hover:bg-orange-600 transition-colors shrink-0 self-start sm:self-auto"
                     >
-                        <CheckCircle2 className="size-4 text-[#FF6600]" />
-                        {t('howBadge') || "Comment ça marche"}
-                    </motion.div>
-                    
-                    <motion.h2
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.1]"
-                    >
-                        {t('howTitle')?.split(' ').slice(0, -1).join(' ') || "Un processus"}{' '}
-                        <span className="text-[#FF6600] italic">{t('howTitle')?.split(' ').slice(-1) || "simplifié."}</span>
-                    </motion.h2>
-
-                    <motion.p
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
-                        transition={{ delay: 0.2 }}
-                        className="text-lg md:text-xl text-slate-500 font-medium"
-                    >
-                        De l'inscription à la livraison, BCA Connect garantit chaque étape de votre transaction.
-                    </motion.p>
+                        {isAuthenticated ? 'Mon Espace' : 'Commencer gratuitement'}
+                        <ArrowRight className="size-4" />
+                    </button>
                 </div>
 
-                {/* Steps Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 relative">
-                    {/* Animated Flow Connector (Desktop) */}
-                    <div className="absolute top-12 left-[10%] right-[10%] h-1 z-0 hidden lg:block overflow-hidden">
-                        <motion.div 
-                            initial={{ scaleX: 0 }}
-                            whileInView={{ scaleX: 1 }}
-                            transition={{ duration: 1.5, ease: "easeInOut" }}
-                            className="w-full h-full bg-gradient-to-r from-blue-500 via-[#FF6600] to-amber-500 origin-left opacity-30"
-                        />
-                         {/* Animated particles along the line */}
-                         <motion.div
-                            animate={{ x: ["0%", "100%"] }}
-                            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent w-20 h-full opacity-50"
-                        />
-                    </div>
+                {/* Steps */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 relative">
+                    {/* Connector line — desktop only */}
+                    <div className="absolute top-10 left-[12.5%] right-[12.5%] h-px bg-gradient-to-r from-blue-200 via-orange-200 to-amber-200 hidden lg:block pointer-events-none z-0" />
 
-                    {steps.map((step, index) => (
-                        <motion.div
-                            key={index}
-                            initial={{ opacity: 0, y: 40 }}
+                    {STEPS.map((step, i) => (
+                        <motion.button
+                            key={i}
+                            onClick={() => navigate(step.link)}
+                            initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.12, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                            className="group relative flex flex-col"
+                            viewport={{ once: true }}
+                            transition={{ delay: i * 0.08, duration: 0.5 }}
+                            className="group text-left relative z-10 bg-white border border-slate-100 rounded-2xl p-5 sm:p-6 hover:shadow-lg hover:border-[#FF6600]/20 transition-all duration-300"
                         >
-                            <div
-                                className={cn(
-                                    "flex flex-col p-8 rounded-[2rem] bg-white border-2 transition-all duration-500 group-hover:-translate-y-3 h-full",
-                                    step.border,
-                                    `hover:shadow-[0_24px_50px_-20px_${step.glow}]`
-                                )}
-                                style={{ boxShadow: '0 2px 12px -4px rgba(0,0,0,0.06)' }}
-                            >
-                                {/* Step number badge */}
-                                <div className="flex items-center justify-between mb-8">
-                                    <div className={cn("size-16 rounded-[1.2rem] flex items-center justify-center transition-transform duration-500 group-hover:scale-110 shadow-sm", step.bg)}>
-                                        <step.icon className={cn("size-8", step.color)} />
-                                    </div>
-                                    <span className="text-4xl font-black text-slate-100 tabular-nums select-none">{step.number}</span>
+                            {/* Step number + icon */}
+                            <div className="flex items-center justify-between mb-4">
+                                <div className={`size-12 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 ${step.bg}`}>
+                                    <step.icon className={`size-6 ${step.color}`} />
                                 </div>
-
-                                <h3 className="text-xl font-black text-slate-900 mb-3 group-hover:text-slate-800 transition-colors">
-                                    {step.title}
-                                </h3>
-                                <p className="text-base text-slate-500 leading-relaxed flex-1">
-                                    {step.description}
-                                </p>
-
-                                {/* Bottom arrow on last step hidden, connector arrow between others */}
-                                {index < steps.length - 1 && (
-                                    <div className="absolute -right-4 top-12 z-20 hidden lg:flex size-8 rounded-full bg-white border-2 border-slate-100 items-center justify-center shadow-sm">
-                                        <ArrowRight className="size-4 text-slate-400" />
-                                    </div>
-                                )}
+                                <span className="text-4xl font-black text-slate-100 tabular-nums select-none leading-none">
+                                    {step.number}
+                                </span>
                             </div>
-                        </motion.div>
+
+                            <h3 className={`text-base font-black text-slate-900 mb-2 group-hover:${step.color} transition-colors tracking-tight`}>
+                                {step.title}
+                            </h3>
+                            <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+                                {step.description}
+                            </p>
+
+                            {/* Arrow connector (desktop) */}
+                            {i < STEPS.length - 1 && (
+                                <div className="absolute -right-3 top-10 hidden lg:flex size-6 rounded-full bg-white border border-slate-200 items-center justify-center z-20 shadow-sm">
+                                    <ArrowRight className="size-3 text-slate-400" />
+                                </div>
+                            )}
+
+                            <div className={`mt-4 flex items-center gap-1.5 text-xs font-bold ${step.color} opacity-0 group-hover:opacity-100 transition-opacity`}>
+                                <CheckCircle2 className="size-3.5" /> En savoir plus
+                            </div>
+                        </motion.button>
                     ))}
                 </div>
 
-                {/* Bottom CTA Banner */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="mt-20 p-10 rounded-[2.5rem] bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl border border-white/5 relative overflow-hidden"
-                >
-                    {/* Glow overlay */}
-                    <div className="absolute top-0 left-1/4 w-1/2 h-px bg-gradient-to-r from-transparent via-[#FF6600]/50 to-transparent" />
-
-                    <div className="flex items-center gap-6">
-                        <div className="size-16 rounded-2xl bg-[#FF6600] flex items-center justify-center shadow-[0_8px_32px_-8px_rgba(255,102,0,0.6)] shrink-0">
-                            <Zap className="size-8 fill-white text-white" />
-                        </div>
-                        <div className="space-y-2">
-                            <h4 className="text-2xl font-black text-white leading-tight">Prêt à rejoindre l'écosystème BCA ?</h4>
-                            <p className="text-base text-slate-400 font-medium">Inscription gratuite • Paiement sécurisé • Support 24/7</p>
-                        </div>
+                {/* Mini CTA strip */}
+                <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 p-5 sm:p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p className="text-sm font-bold text-slate-700">
+                        Prêt à commencer votre première transaction sécurisée ?
+                    </p>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => navigate('/register')}
+                            className="h-9 px-5 bg-[#FF6600] text-white font-bold text-xs rounded-xl hover:bg-orange-600 transition-colors"
+                        >
+                            Créer un compte
+                        </button>
+                        <button
+                            onClick={() => navigate('/marketplace')}
+                            className="h-9 px-5 bg-white border border-slate-200 text-slate-700 font-bold text-xs rounded-xl hover:border-[#FF6600] hover:text-[#FF6600] transition-colors"
+                        >
+                            Explorer
+                        </button>
                     </div>
-
-                    <Link 
-                        to="/register"
-                        className="flex items-center gap-3 h-14 px-10 rounded-2xl bg-[#FF6600] text-white font-black text-base hover:bg-orange-500 hover:-translate-y-1 hover:shadow-[0_12px_30px_-8px_rgba(255,102,0,0.5)] transition-all duration-300 shrink-0 whitespace-nowrap"
-                    >
-                        {t('ctaStart') || "Démarrer maintenant"} <ArrowRight className="size-5" />
-                    </Link>
-                </motion.div>
+                </div>
             </div>
         </section>
     );

@@ -17,9 +17,14 @@ const StorePage = () => {
     const products = store?.produits || [];
     const notFound = !!error || (!isLoading && !store);
 
-    // ✅ Fix: variables manquantes qui causaient le crash de runtime
     const [currentSlide, setCurrentSlide] = useState(0);
     const [activeTab, setActiveTab] = useState('produits');
+
+    // Calcul dynamique des notes de la boutique basé sur ses produits
+    const totalReviews = products.reduce((acc, p) => acc + parseInt(p.reviews_count || 0), 0);
+    const averageRating = totalReviews > 0 
+        ? (products.reduce((acc, p) => acc + (parseFloat(p.rating || 0) * parseInt(p.reviews_count || 0)), 0) / totalReviews).toFixed(1)
+        : '0.0';
 
     useEffect(() => {
         if (store?.use_carousel && store?.banner_images?.length > 1) {
@@ -156,8 +161,8 @@ const StorePage = () => {
                                 </div>
                                 <div className="text-center px-5 py-3 bg-card border border-border rounded-xl shadow-sm">
                                     <div className="flex items-center gap-1 justify-center">
-                                        <Star className="size-4 fill-primary text-primary" />
-                                        <p className="text-2xl font-bold text-foreground">4.9</p>
+                                        <Star className="size-4 fill-[#FF6600] text-[#FF6600]" />
+                                        <p className="text-2xl font-bold text-foreground">{averageRating}</p>
                                     </div>
                                     <p className="text-xs text-muted-foreground">{t('spReviews') || 'Avis'}</p>
                                 </div>
@@ -169,7 +174,7 @@ const StorePage = () => {
                     <div className="flex gap-1 bg-muted p-1 rounded-xl w-fit mb-6 border border-border">
                         {[
                             { key: 'produits', label: `${t('spProducts') || 'Produits'} (${products.length})`, icon: Package },
-                            { key: 'avis', label: `${t('spReviews') || 'Avis'} (0)`, icon: Star },
+                            { key: 'avis', label: `${t('spReviews') || 'Avis'} (${totalReviews})`, icon: Star },
                         ].map(tab => (
                             <button
                                 key={tab.key}
@@ -209,9 +214,9 @@ const StorePage = () => {
 
                     {activeTab === 'avis' && (
                         <div className="py-16 flex flex-col items-center gap-4 text-center bg-card rounded-2xl border border-border">
-                            <Star className="size-10 text-primary/30" />
-                            <h3 className="text-base font-bold text-foreground">{t('spPerformance') || 'Aucun avis pour le moment'}</h3>
-                            <p className="text-sm text-muted-foreground max-w-sm">{t('spPerformanceDesc') || 'Les avis clients apparaîtront ici après les premières commandes.'}</p>
+                            <Star className="size-10 text-[#FF6600]/30" />
+                            <h3 className="text-base font-bold text-foreground">{totalReviews > 0 ? `${totalReviews} avis laissés` : (t('spPerformance') || 'Aucun avis pour le moment')}</h3>
+                            <p className="text-sm text-muted-foreground max-w-sm">{totalReviews > 0 ? 'Les clients sont satisfaits des services de cette boutique.' : (t('spPerformanceDesc') || 'Les avis clients apparaîtront ici après les premières commandes.')}</p>
                         </div>
                     )}
                 </div>

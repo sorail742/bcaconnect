@@ -4,8 +4,8 @@ export const translations = {
         marketplace: "Marketplace",
         catalog: "Catalogue Produits",
         catalogDesc: "Parcourir tous les produits",
-        vendors: "Liste des Vendeurs",
-        vendorsDesc: "Trouver un marchand certifié",
+        vendors: "Liste des Fournisseurs",
+        vendorsDesc: "Trouver un fournisseur certifié",
         tracking: "Suivi de Colis",
         trackingDesc: "Où est ma commande ?",
         help: "Aide",
@@ -50,7 +50,7 @@ export const translations = {
         heroTitle3: "du commerce africain.",
         heroDesc: "La première marketplace en Guinée qui allie confiance, rapidité et technologie IA.",
         users: "Utilisateurs",
-        merchants: "Vendeurs",
+        merchants: "Fournisseurs",
         transactions: "Transactions",
         satisfaction: "Satisfaction",
 
@@ -58,7 +58,7 @@ export const translations = {
         aboutHero: "L'AVENIR DU COMMERCE B2B.",
         aboutDescHero: "BCA Connect est la première marketplace Fintech de Guinée, conçue pour transformer le commerce local en une expérience numérique sécurisée et performante.",
         statsActive: "Utilisateurs Actifs",
-        statsShops: "Boutiques Partenaires",
+        statsShops: "Fournisseurs Partenaires",
         statsSatisfaction: "Taux de Satisfaction",
         statsSecured: "Transactions Sécurisées",
         missionTitle: "UNE VISION POUR L'AFRIQUE.",
@@ -121,7 +121,7 @@ export const translations = {
         registerFeature3: "IA de recommandation prédictive",
 
         roleBuyer: "ACHETEUR",
-        roleSeller: "VENDEUR",
+        roleSeller: "FOURNISSEUR",
         roleCarrier: "LIVREUR",
         forgotPassword: "Mot de passe oublié ?",
 
@@ -297,8 +297,8 @@ export const translations = {
         roleTitle: "REJOIGNEZ LA RÉVOLUTION.",
         roleBuyerTitle: "VOUS ÊTES ACHETEUR ?",
         roleBuyerDesc: "Accédez aux meilleurs prix du marché, à des produits garantis et une livraison rapide.",
-        roleVendorTitle: "VOUS ÊTES VENDEUR ?",
-        roleVendorDesc: "Digitalisez votre boutique, sécurisez vos paiements et boostez votre visibilité nationale.",
+        roleVendorTitle: "VOUS ÊTES FOURNISSEUR ?",
+        roleVendorDesc: "Digitalisez votre activité, sécurisez vos paiements et boostez votre visibilité nationale.",
 
         aiBadge: "ASSISTANT BCA AI",
         aiTitle: "L'IA AU SERVICE DU COMMERCE.",
@@ -310,9 +310,9 @@ export const translations = {
 
         // Help Center
         helpHero: "COMMENT POUVONS-NOUS VOUS AIDER ?",
-        helpSubHero: "Maîtrisez toutes les fonctionnalités de BCA Connect. Que vous soyez acheteur ou vendeur, nous vous accompagnons à chaque étape.",
+        helpSubHero: "Maîtrisez toutes les fonctionnalités de BCA Connect. Que vous soyez acheteur ou fournisseur, nous vous accompagnons à chaque étape.",
         buyerGuide: "GUIDE ACHETEUR",
-        sellerGuide: "GUIDE VENDEUR",
+        sellerGuide: "GUIDE FOURNISSEUR",
         buyWithConfidence: "ACHETER EN TOUTE CONFIANCE.",
         growBusiness: "DÉVELOPPER VOTRE ACTIVITÉ.",
         deployShop: "DÉPLOYER MA BOUTIQUE",

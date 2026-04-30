@@ -5,8 +5,8 @@ const authService = {
      * Authentifie l'utilisateur via email et mot_de_passe.
      * Endpoint: POST /auth/login
      */
-    login: async (email, mot_de_passe) => {
-        const response = await api.post('/auth/login', { email, mot_de_passe });
+    login: async (email, password) => {
+        const response = await api.post('/auth/login', { email, mot_de_passe: password });
         return response.data;
     },
 
@@ -57,6 +57,24 @@ const authService = {
      */
     confirm2FA: async (code) => {
         const response = await api.post('/auth/confirm-2fa', { code });
+        return response.data;
+    },
+
+    /**
+     * Met à jour le profil de l'utilisateur.
+     * Endpoint: PUT /auth/update
+     */
+    updateProfile: async (userData) => {
+        const response = await api.put('/auth/update', userData);
+        return response.data;
+    },
+
+    /**
+     * Supprime le compte de l'utilisateur.
+     * Endpoint: DELETE /auth/delete
+     */
+    deleteAccount: async () => {
+        const response = await api.delete('/auth/delete');
         return response.data;
     },
 

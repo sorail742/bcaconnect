@@ -45,14 +45,19 @@ const userController = {
     getPublicUsers: async (req, res, next) => {
         try {
             const { search = '' } = req.query;
+            // Include both 'actif' and 'en_attente' so users can be found even if not fully validated yet
             const where = {
-                statut: 'actif',
+                statut: { [Op.in]: ['actif', 'en_attente'] },
                 id: { [Op.ne]: req.user.id } // Ne pas se voir soi-même
             };
 
             const likeOp = sequelize.getDialect() === 'postgres' ? Op.iLike : Op.like;
             if (search) {
-                where.nom_complet = { [likeOp]: `%${search}%` };
+                where[Op.or] = [
+                    { nom_complet: { [likeOp]: `%${search}%` } },
+                    { email: { [likeOp]: `%${search}%` } },
+                    sequelize.where(sequelize.cast(sequelize.col('id'), 'varchar'), { [likeOp]: `%${search}%` })
+                ];
             }
 
             const users = await User.findAll({

@@ -3,13 +3,12 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 import { useWallet } from '../hooks/useDomainData';
 import { WalletSkeleton } from '../components/ui/Loader';
 import { ErrorState } from '../components/ui/DataStates';
-import { Wallet as WalletIcon, Send, Plus, Minus, History, TrendingUp, Lock, RefreshCcw, XCircle, Activity } from 'lucide-react';
+import { Wallet as WalletIcon, Send, Plus, Minus, History, TrendingUp, Lock, RefreshCcw, XCircle, Activity, ArrowUpRight, ArrowDownRight, Search, Info, CheckCircle2, Shield, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import walletService from '../services/walletService';
 import userService from '../services/userService';
 import { toast } from 'sonner';
 import { useSocket } from '../hooks/useSocket';
-import { Search, Info, CheckCircle2, Shield } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { cn } from '../lib/utils';
 import { useAIScore } from '../hooks/useAIScore';
@@ -18,6 +17,7 @@ const Wallet = () => {
     const { data: wallet, loading, error, mutate } = useWallet();
     const [showTransactions, setShowTransactions] = useState(false);
     const [isDepositing, setIsDepositing] = useState(false);
+    const [isTransferring, setIsTransferring] = useState(false);
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
@@ -26,7 +26,6 @@ const Wallet = () => {
     const [isSearching, setIsSearching] = useState(false);
 
     const { scoreData, loading: scoreLoading } = useAIScore();
-
     const { on, off } = useSocket();
 
     useEffect(() => {
@@ -51,9 +50,9 @@ const Wallet = () => {
             setIsDepositing(true);
             toast.loading("Initialisation du dépôt...");
             const response = await walletService.initiateDeposit({
-                amount: parseFloat(amountPrompt),
-                currency: 'GNF',
-                method: 'wallet_topup'
+                montant: parseFloat(amountPrompt),
+                methode_paiement: 'mobile_money', // Defaulting to mobile_money since 'wallet_topup' is invalid
+                description: 'Alimentation du portefeuille'
             });
             if (response.payment_url) { window.location.href = response.payment_url; }
             else { toast.success("Dépôt simulé réussi !"); mutate(); }
@@ -84,313 +83,331 @@ const Wallet = () => {
         finally { setIsTransferring(false); }
     };
 
-    const handleSend = () => {
-        setIsTransferModalOpen(true);
-    };
-
     return (
-        <DashboardLayout title="Portefeuille & Capital" noPadding>
-            <div className="min-h-screen pb-16">
-                <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
-                {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-                    <div>
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                                <WalletIcon className="size-6 text-primary" />
+        <DashboardLayout title="Portefeuille BCA" noPadding>
+            <div className="min-h-screen bg-[#f7f7f7] pb-16">
+                <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-8">
+                    
+                    {/* Header */}
+                    <div className="flex items-end justify-between gap-6 mb-8">
+                        <div>
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="size-10 rounded-xl bg-orange-100 flex items-center justify-center">
+                                    <WalletIcon className="size-5 text-[#FF6600]" />
+                                </div>
+                                <h1 className="text-3xl font-black text-slate-900 tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                    Mon <span className="text-[#FF6600]">Portefeuille</span>
+                                </h1>
                             </div>
-                            <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">
-                                Mon <span className="text-primary">Portefeuille</span>
-                            </h1>
+                            <p className="text-sm text-slate-500 font-medium ml-1">
+                                Gérez vos fonds, transférez de l'argent et consultez votre historique en toute sécurité.
+                            </p>
                         </div>
-                        <p className="text-lg text-muted-foreground uppercase tracking-widest text-[10px] font-black opacity-60">
-                            Gestion des flux financiers
-                        </p>
+                        <button onClick={() => mutate()} className="h-10 px-4 bg-white border border-slate-200 rounded-xl text-xs font-bold hover:border-[#FF6600] hover:text-[#FF6600] transition-all flex items-center gap-2 shadow-sm text-slate-600">
+                            <RefreshCcw className="size-3.5" /> <span className="hidden sm:inline">Actualiser</span>
+                        </button>
                     </div>
-                    <button onClick={() => mutate()} className="h-10 px-4 bg-muted border border-border rounded-xl text-xs font-bold hover:bg-muted/80 transition-all flex items-center gap-2">
-                        <RefreshCcw className="size-3" /> Actualiser
-                    </button>
-                </div>
 
-                {loading ? (
-                    <WalletSkeleton />
-                ) : error ? (
-                    <ErrorState error={error} />
-                ) : (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        {/* Balance Cards & IA Score */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {/* Main Balance */}
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="bg-slate-900 dark:bg-white rounded-3xl p-8 text-white dark:text-slate-900 shadow-2xl relative overflow-hidden group"
-                            >
-                                <div className="absolute top-0 right-0 size-40 bg-primary/20 rounded-full blur-[80px] -mr-20 -mt-20 group-hover:scale-110 transition-transform duration-700" />
-                                <div className="flex items-center justify-between mb-12 relative z-10">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest opacity-60">Solde Actif</h3>
-                                    <Lock className="size-5 opacity-40" />
-                                </div>
-                                <p className="text-5xl font-black mb-4 tabular-nums tracking-tighter relative z-10">
-                                    {balance.toLocaleString('fr-GN')}
-                                    <span className="text-sm ml-2 font-black text-primary uppercase">GNF</span>
-                                </p>
-                                <div className="flex items-center gap-2 relative z-10">
-                                    <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                                    <p className="text-[9px] font-black uppercase opacity-60">Sécurité de l'infrastructure active</p>
-                                </div>
-                            </motion.div>
-
-                            {/* Pending Balance */}
-                            <div className="bg-card border border-border rounded-3xl p-8 relative overflow-hidden flex flex-col justify-between">
-                                <div className="flex items-center justify-between mb-12">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Flux en attente</h3>
-                                    <TrendingUp className="size-5 text-amber-500" />
-                                </div>
-                                <div>
-                                    <p className="text-3xl font-black text-foreground mb-2 tabular-nums tracking-tight">
-                                        {pending.toLocaleString('fr-GN')} <span className="text-xs font-black text-muted-foreground uppercase">GNF</span>
-                                    </p>
-                                    <p className="text-[9px] font-black text-muted-foreground uppercase opacity-60">Crédité sous 24h après vérification</p>
-                                </div>
-                            </div>
-
-                            {/* Global Total */}
-                            <div className="bg-card border border-border rounded-3xl p-8 relative overflow-hidden flex flex-col justify-between">
-                                <div className="flex items-center justify-between mb-12">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Valeur totale des actifs</h3>
-                                    <Activity className="size-5 text-primary" />
-                                </div>
-                                <div>
-                                    <p className="text-3xl font-black text-foreground mb-2 tabular-nums tracking-tight">
-                                        {(balance + pending).toLocaleString('fr-GN')} <span className="text-xs font-black text-muted-foreground uppercase">GNF</span>
-                                    </p>
-                                    <p className="text-[9px] font-black text-muted-foreground uppercase opacity-60">Flux consolidés détectés</p>
-                                </div>
-                        </div>
-
-                        {/* AI Solvability Widget (New 4th Card) */}
-                        {!scoreLoading && scoreData && (
-                            <div className="bg-slate-900 dark:bg-white rounded-3xl p-8 text-white dark:text-slate-900 shadow-xl relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 size-40 bg-[#FF6600]/20 rounded-full blur-[80px] -mr-20 -mt-20 group-hover:scale-110 transition-transform duration-700" />
-                                <div className="flex items-center justify-between mb-8 relative z-10">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest opacity-60">SCORE Alpha-BCA</h3>
-                                    <Shield className="size-5 opacity-40 text-[#FF6600]" />
-                                </div>
-                                <div className="space-y-4 relative z-10 mb-2">
-                                    <p className="text-4xl font-black tabular-nums tracking-tighter">
-                                        {scoreData.score || 0}<span className="text-sm font-black text-[#FF6600] uppercase ml-1">%</span>
-                                    </p>
-                                    <div className="h-2 bg-white/10 dark:bg-slate-900/10 rounded-full overflow-hidden">
-                                        <div className="bg-[#FF6600] h-full rounded-full shadow-[0_0_10px_rgba(255,102,0,0.5)] transition-all duration-1000" style={{ width: `${scoreData.score || 0}%` }}></div>
-                                    </div>
-                                    <p className="text-[9px] font-black uppercase tracking-widest opacity-60 text-center">
-                                       INTÉGRITÉ: {scoreData.metadata?.status || 'STANDARD'}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-                        </div>
-
-                        {/* Actions Control Panel */}
-                        <div className="flex flex-wrap items-center gap-4 bg-card border border-border p-4 rounded-3xl shadow-sm">
-                            <button 
-                                onClick={handleDeposit}
-                                disabled={isDepositing}
-                                className="h-14 px-8 bg-primary text-primary-foreground rounded-2xl font-black text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all flex items-center gap-3 shadow-lg shadow-primary/20 disabled:opacity-50"
-                            >
-                                <Plus className="size-5" /> Alimenter le compte
-                            </button>
-                            <button 
-                                onClick={handleSend}
-                                className="h-14 px-8 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all flex items-center gap-3 shadow-xl"
-                            >
-                                <Send className="size-5" /> Transférer
-                            </button>
-                            <div className="h-14 w-px bg-border mx-2 hidden md:block" />
-                            <button
-                                onClick={() => setShowTransactions(!showTransactions)}
-                                className={cn(
-                                    "h-14 px-8 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-3 border border-border",
-                                    showTransactions ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/50"
-                                )}
-                            >
-                                <History className="size-5" /> {showTransactions ? "Masquer l'historique" : "Voir l'historique"}
-                            </button>
-                        </div>
-
-                        {/* Transactions Ledger */}
-                        <AnimatePresence>
-                            {showTransactions && (
+                    {loading ? (
+                        <WalletSkeleton />
+                    ) : error ? (
+                        <ErrorState error={error} />
+                    ) : (
+                        <div className="space-y-6">
+                            
+                            {/* Dashboard Top Cards */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                
+                                {/* 1. Main Balance Card (Alibaba Style Gradient) */}
                                 <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    className="overflow-hidden"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="lg:col-span-2 relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-[#FF6600] via-[#FF7A1A] to-[#FF9A3C] p-8 sm:p-10 text-white shadow-xl"
                                 >
-                                    <div className="bg-card border border-border rounded-3xl p-8 space-y-6">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h3 className="text-[10px] font-black text-foreground uppercase tracking-widest">Registre des transactions récentes</h3>
-                                            <div className="flex items-center gap-2">
-                                                <div className="size-2 rounded-full bg-emerald-500" />
-                                                <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Synchronisé</span>
+                                    <div className="absolute top-0 right-0 size-64 bg-white/10 rounded-full blur-[80px] -mr-20 -mt-20 pointer-events-none" />
+                                    
+                                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="px-3 py-1 bg-white/20 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-sm shadow-sm">
+                                                    Solde Actif
+                                                </span>
+                                                <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/20 text-emerald-100 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-sm shadow-sm border border-emerald-400/20">
+                                                    <Shield className="size-3" /> Protégé
+                                                </div>
                                             </div>
+                                            <p className="text-5xl sm:text-6xl font-black mb-1 tabular-nums tracking-tighter" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                                {balance.toLocaleString('fr-GN')}
+                                            </p>
+                                            <p className="text-white/80 font-bold uppercase tracking-widest text-sm">Francs Guinéens (GNF)</p>
                                         </div>
-                                        
+
+                                        {/* Quick Actions inside the main card */}
+                                        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto mt-6 md:mt-0 shadow-lg p-2 bg-white/10 rounded-2xl backdrop-blur-md border border-white/20">
+                                            <button 
+                                                onClick={handleDeposit}
+                                                disabled={isDepositing}
+                                                className="flex-1 md:flex-none flex items-center justify-center gap-2 h-12 px-6 bg-white text-[#FF6600] rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform"
+                                            >
+                                                <Plus className="size-4" /> Déposer
+                                            </button>
+                                            <button 
+                                                onClick={() => setIsTransferModalOpen(true)}
+                                                className="flex-1 md:flex-none flex items-center justify-center gap-2 h-12 px-6 bg-[#FF6600] text-white border border-white/30 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-white/20 transition-colors"
+                                            >
+                                                <Send className="size-4" /> Envoyer
+                                            </button>
+                                        </div>
+                                    </div>
+                                </motion.div>
+
+                                {/* 2. Pending Funds Card */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.1 }}
+                                    className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm flex flex-col justify-between"
+                                >
+                                    <div>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="size-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                                                <Activity className="size-5 text-amber-500" />
+                                            </div>
+                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">En attente</span>
+                                        </div>
+                                        <p className="text-3xl font-black text-slate-900 tabular-nums tracking-tight mb-1" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                            {pending.toLocaleString('fr-GN')} <span className="text-sm text-slate-400 font-bold">GNF</span>
+                                        </p>
+                                        <p className="text-xs text-slate-500 font-medium">
+                                            Fonds bloqués en séquestre (Escrow) jusqu'à validation de livraison.
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            </div>
+
+                            {/* Main Content Grid: Transactions + AI Score */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                
+                                {/* Left Side: Transactions List */}
+                                <div className="lg:col-span-2 bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+                                    <div className="p-6 sm:p-8 border-b border-slate-50 flex items-center justify-between">
+                                        <h2 className="text-lg font-black text-slate-900">Historique des transactions</h2>
+                                        <div className="flex items-center gap-2">
+                                            <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                                            <span className="text-xs font-bold text-slate-400">Live</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 sm:p-6">
                                         {transactions.length > 0 ? (
-                                            <div className="grid grid-cols-1 gap-3">
-                                                {transactions.map((tx, idx) => (
-                                                    <div key={tx.id || idx} className="flex items-center justify-between p-5 bg-muted/30 rounded-2xl border border-border/50 hover:bg-muted/50 transition-colors group">
-                                                        <div className="flex items-center gap-5">
+                                            <div className="space-y-3">
+                                                {transactions.slice(0, 10).map((tx, idx) => (
+                                                    <div key={tx.id || idx} className="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 rounded-2xl border border-slate-100 transition-colors">
+                                                        <div className="flex items-center gap-4">
                                                             <div className={cn(
-                                                                "size-10 rounded-xl flex items-center justify-center border",
-                                                                tx.type === 'credit' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" : "bg-primary/10 border-primary/20 text-primary"
+                                                                "size-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm border",
+                                                                tx.type === 'credit' ? "bg-emerald-50 border-emerald-100 text-emerald-500" : "bg-rose-50 border-rose-100 text-rose-500"
                                                             )}>
-                                                                {tx.type === 'credit' ? <Plus className="size-5" /> : <Minus className="size-5" />}
+                                                                {tx.type === 'credit' ? <ArrowDownRight className="size-5" /> : <ArrowUpRight className="size-5" />}
                                                             </div>
-                                                            <div>
-                                                                <p className="text-xs font-black text-foreground uppercase tracking-tight">{tx.description || 'Transfert'}</p>
-                                                                <p className="text-[9px] font-black text-muted-foreground uppercase opacity-60">
-                                                                    {new Date(tx.createdAt || tx.date).toLocaleDateString('fr-GN')} • ID: {(tx.id || 'N/A').slice(0, 8)}
+                                                            <div className="min-w-0">
+                                                                <p className="text-sm font-bold text-slate-900 truncate">
+                                                                    {tx.description || (tx.type === 'credit' ? 'Dépôt' : 'Paiement')}
+                                                                </p>
+                                                                <p className="text-xs text-slate-500">
+                                                                    {new Date(tx.createdAt || tx.date).toLocaleString('fr-FR', {
+                                                                        day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit'
+                                                                    })}
                                                                 </p>
                                                             </div>
                                                         </div>
-                                                        <div className="text-right">
+                                                        <div className="text-right shrink-0 ml-4">
                                                             <p className={cn(
-                                                                "text-sm font-black tabular-nums tracking-tight",
-                                                                tx.type === 'credit' ? "text-emerald-500" : "text-foreground"
+                                                                "text-base font-black tabular-nums tracking-tight",
+                                                                tx.type === 'credit' ? "text-emerald-600" : "text-slate-900"
                                                             )}>
-                                                                {tx.type === 'credit' ? '+' : '-'} {parseFloat(tx.montant).toLocaleString('fr-GN')}
+                                                                {tx.type === 'credit' ? '+' : '-'}{parseFloat(tx.montant).toLocaleString('fr-GN')}
                                                             </p>
-                                                            <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">{tx.statut?.toUpperCase() || 'VALIDÉ'}</p>
+                                                            <span className="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-slate-200/50 text-slate-500">
+                                                                {tx.statut || 'Terminé'}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 ))}
                                             </div>
                                         ) : (
-                                            <div className="py-20 text-center opacity-30 flex flex-col items-center gap-4">
-                                                <XCircle className="size-10" />
-                                                <p className="text-[10px] font-black uppercase tracking-widest">Aucun flux détecté</p>
+                                            <div className="py-16 text-center flex flex-col items-center">
+                                                <div className="size-16 rounded-full bg-slate-50 flex items-center justify-center mb-4 text-slate-300">
+                                                    <History className="size-8" />
+                                                </div>
+                                                <p className="font-bold text-slate-500 mb-1">Aucune transaction</p>
+                                                <p className="text-sm text-slate-400">Vos prochains flux apparaîtront ici.</p>
                                             </div>
                                         )}
                                     </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-                )}
-            </div>
-
-            {/* Transfer Modal */}
-            <AnimatePresence>
-                {isTransferModalOpen && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setIsTransferModalOpen(false)}
-                            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-                        />
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="relative w-full max-w-md bg-card border border-border rounded-[2rem] shadow-2xl overflow-hidden"
-                        >
-                            <div className="p-8 space-y-6">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-xl font-black text-foreground uppercase tracking-tight">Transfert Direct</h3>
-                                    <button onClick={() => setIsTransferModalOpen(false)} className="text-muted-foreground hover:text-foreground">
-                                        <XCircle className="size-6" />
-                                    </button>
                                 </div>
 
-                                {!selectedUser ? (
-                                    <div className="space-y-4">
-                                        <div className="relative">
-                                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                                            <input
-                                                className="w-full h-12 pl-12 pr-4 bg-muted border border-border rounded-2xl text-sm outline-none focus:border-primary transition-all"
-                                                placeholder="Rechercher par nom ou email..."
-                                                value={searchQuery}
-                                                onChange={(e) => handleSearchUsers(e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="max-h-[200px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                                            {isSearching ? (
-                                                <div className="text-center py-4 text-xs font-bold text-muted-foreground animate-pulse">RECHERCHE EN COURS...</div>
-                                            ) : searchResults.length > 0 ? (
-                                                searchResults.map(user => (
-                                                    <button
-                                                        key={user.id}
-                                                        onClick={() => setSelectedUser(user)}
-                                                        className="w-full flex items-center gap-3 p-3 bg-muted/30 hover:bg-muted rounded-2xl border border-border/50 text-left transition-all"
-                                                    >
-                                                        <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black text-xs">
-                                                            {user.nom_complet?.[0] || 'U'}
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-sm font-bold text-foreground">{user.nom_complet}</p>
-                                                            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{user.role}</p>
-                                                        </div>
-                                                    </button>
-                                                ))
-                                            ) : searchQuery.length >= 2 ? (
-                                                <div className="text-center py-4 text-xs font-bold text-muted-foreground">AUCUN RÉSULTAT</div>
-                                            ) : null}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
-                                        <div className="flex items-center gap-4 p-4 bg-primary/5 border border-primary/20 rounded-2xl">
-                                            <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-lg">
-                                                {selectedUser.nom_complet?.[0]}
+                                {/* Right Side: AI Analytics / Promo Box */}
+                                <div className="space-y-6">
+                                    {/* AI Score (If available) */}
+                                    {!scoreLoading && scoreData && (
+                                        <div className="bg-slate-900 rounded-[2rem] p-8 text-white shadow-xl relative overflow-hidden">
+                                            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,102,0,0.2),transparent)] pointer-events-none" />
+                                            <div className="flex items-center justify-between mb-6 relative z-10">
+                                                <h3 className="text-xs font-black uppercase tracking-widest text-[#FF6600]">Score de Fiabilité</h3>
+                                                <Shield className="size-5 text-[#FF6600]" />
                                             </div>
-                                            <div className="flex-1">
-                                                <p className="text-sm font-black text-foreground">{selectedUser.nom_complet}</p>
-                                                <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{selectedUser.email}</p>
+                                            <div className="relative z-10">
+                                                <div className="flex items-baseline gap-1 mb-2">
+                                                    <p className="text-5xl font-black tabular-nums tracking-tighter" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                                        {scoreData.score || 95}
+                                                    </p>
+                                                    <span className="text-[#FF6600] font-black text-xl">/100</span>
+                                                </div>
+                                                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden mb-3">
+                                                    <div className="h-full bg-[#FF6600] rounded-full transition-all duration-1000" style={{ width: `${scoreData.score || 95}%` }} />
+                                                </div>
+                                                <p className="text-xs text-white/60 font-medium">
+                                                    Votre profil est considéré comme <b className="text-white">Excellent</b> par notre moteur IA d'analyse des risques.
+                                                </p>
                                             </div>
-                                            <button onClick={() => setSelectedUser(null)} className="text-[10px] font-black text-primary hover:underline">CHANGER</button>
                                         </div>
+                                    )}
 
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">MONTANT (GNF)</label>
-                                            <input
-                                                type="number"
-                                                className="w-full h-14 px-6 bg-muted border border-border rounded-2xl text-xl font-black tabular-nums outline-none focus:border-primary transition-all"
-                                                placeholder="0.00"
-                                                value={amount}
-                                                onChange={(e) => setAmount(e.target.value)}
-                                            />
-                                            <p className="text-[10px] text-muted-foreground font-medium italic px-1">
-                                                Solde disponible : <span className="font-black text-foreground">{balance.toLocaleString()} GNF</span>
-                                            </p>
+                                    {/* Simple info banner */}
+                                    <div className="bg-blue-50 border border-blue-100 p-6 rounded-[2rem]">
+                                        <div className="size-10 rounded-xl bg-blue-100 flex items-center justify-center mb-4">
+                                            <Lock className="size-5 text-blue-600" />
                                         </div>
-
-                                        <div className="flex items-start gap-3 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
-                                            <Info className="size-4 text-amber-500 shrink-0 mt-0.5" />
-                                            <p className="text-[9px] font-bold text-amber-600 dark:text-amber-500 leading-normal">
-                                                Les transferts P2P sont instantanés et irréversibles. Assurez-vous de l'identité du destinataire.
-                                            </p>
-                                        </div>
-
-                                        <Button
-                                            onClick={handleTransfer}
-                                            disabled={isTransferring || !amount || parseFloat(amount) <= 0}
-                                            className="w-full h-14 bg-primary text-primary-foreground rounded-2xl font-black text-xs uppercase tracking-widest hover:brightness-110 shadow-lg shadow-primary/20"
-                                        >
-                                            {isTransferring ? 'TRAITEMENT EN COURS...' : 'CONFIRMER LE TRANSFERT'}
-                                        </Button>
+                                        <h3 className="text-sm font-black text-blue-900 mb-2">Paiement Sécurisé BCA</h3>
+                                        <p className="text-xs text-blue-700/80 leading-relaxed mb-4">
+                                            Tous les fonds en attente sont conservés sur un compte Escrow inviolable et garantis par nos partenaires bancaires.
+                                        </p>
                                     </div>
-                                )}
+                                </div>
+
                             </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
-        </div>
-    </DashboardLayout>
+                        </div>
+                    )}
+                </div>
+
+                {/* Transfer Modal */}
+                <AnimatePresence>
+                    {isTransferModalOpen && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setIsTransferModalOpen(false)}
+                                className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                            />
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                className="relative w-full max-w-md bg-white border border-slate-100 rounded-[2rem] shadow-2xl overflow-hidden"
+                            >
+                                <div className="p-8 space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-xl font-black text-slate-900 tracking-tight">Envoyer de l'argent</h3>
+                                        <button onClick={() => setIsTransferModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors bg-slate-50 p-2 rounded-full">
+                                            <XCircle className="size-5" />
+                                        </button>
+                                    </div>
+
+                                    {!selectedUser ? (
+                                        <div className="space-y-4">
+                                            <div className="relative">
+                                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+                                                <input
+                                                    className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-[#FF6600] focus:ring-1 focus:ring-[#FF6600] transition-all"
+                                                    placeholder="Nom, email ou ID..."
+                                                    value={searchQuery}
+                                                    onChange={(e) => handleSearchUsers(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="min-h-[150px] max-h-[250px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                                                {isSearching ? (
+                                                    <div className="flex justify-center py-8">
+                                                        <div className="size-6 border-2 border-[#FF6600] border-t-transparent rounded-full animate-spin" />
+                                                    </div>
+                                                ) : searchResults.length > 0 ? (
+                                                    searchResults.map(user => (
+                                                        <button
+                                                            key={user.id}
+                                                            onClick={() => setSelectedUser(user)}
+                                                            className="w-full flex items-center gap-3 p-3 bg-white hover:bg-slate-50 border border-slate-100 rounded-xl text-left transition-all"
+                                                        >
+                                                            <div className="size-10 rounded-lg bg-orange-50 flex items-center justify-center text-[#FF6600] font-black text-sm">
+                                                                {user.nom_complet?.[0] || 'U'}
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-bold text-slate-800">{user.nom_complet}</p>
+                                                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{user.role}</p>
+                                                            </div>
+                                                        </button>
+                                                    ))
+                                                ) : searchQuery.length >= 2 ? (
+                                                    <div className="text-center py-8 text-sm font-medium text-slate-400">Aucun utilisateur trouvé</div>
+                                                ) : (
+                                                    <div className="text-center py-8 text-xs font-medium text-slate-400">Recherchez le destinataire pour continuer</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-6">
+                                            <div className="flex items-center gap-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                                                <div className="size-12 rounded-xl bg-orange-100 flex items-center justify-center text-[#FF6600] font-black text-lg">
+                                                    {selectedUser.nom_complet?.[0]}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-bold text-slate-900 truncate">{selectedUser.nom_complet}</p>
+                                                    <p className="text-xs text-slate-500 truncate">{selectedUser.email}</p>
+                                                </div>
+                                                <button onClick={() => setSelectedUser(null)} className="text-[10px] font-black text-slate-400 hover:text-[#FF6600] bg-white border border-slate-200 px-2 py-1 rounded">Changer</button>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold text-slate-700 ml-1">Montant à envoyer (GNF)</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="number"
+                                                        className="w-full h-14 pl-4 pr-16 bg-white border border-slate-200 focus:border-[#FF6600] focus:ring-1 focus:ring-[#FF6600] rounded-xl text-xl font-black tabular-nums transition-all"
+                                                        placeholder="0"
+                                                        value={amount}
+                                                        onChange={(e) => setAmount(e.target.value)}
+                                                    />
+                                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400">GNF</div>
+                                                </div>
+                                                <div className="flex justify-between items-center px-1">
+                                                    <p className="text-xs text-slate-500 font-medium">
+                                                        Solde dispo : <span className="font-bold text-slate-900">{balance.toLocaleString()} GNF</span>
+                                                    </p>
+                                                    <button onClick={() => setAmount(balance.toString())} className="text-[10px] font-black text-[#FF6600] hover:underline">MAX</button>
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                onClick={handleTransfer}
+                                                disabled={isTransferring || !amount || parseFloat(amount) <= 0 || parseFloat(amount) > balance}
+                                                className="w-full h-12 flex items-center justify-center gap-2 bg-[#FF6600] text-white rounded-xl font-black text-sm hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md"
+                                            >
+                                                {isTransferring ? (
+                                                    <div className="size-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                ) : (
+                                                    <>Envoyer les fonds <ArrowRight className="size-4" /></>
+                                                )}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+            </div>
+        </DashboardLayout>
     );
 };
 

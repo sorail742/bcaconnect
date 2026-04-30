@@ -48,9 +48,9 @@ const messageService = {
         } catch { /* silent */ }
     },
 
-    getUnreadCount: async () => {
+    getUnreadCount: async (config = {}) => {
         try {
-            const response = await api.get('/messages/unread-count');
+            const response = await api.get('/messages/unread-count', { ...config });
             return response.data?.count || 0;
         } catch {
             return 0;

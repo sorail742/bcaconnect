@@ -19,29 +19,32 @@ const DashboardLayout = ({ children, title, noPadding }) => {
     const [unreadMessages, setUnreadMessages] = useState(0);
 
     const fetchUnreadCount = useCallback(async () => {
+        if (!user?.id) return; // 🛡️ Ne pas appeler si pas de session
         try {
-            const notifs = await notificationService.getAll();
-            const unread = notifs.filter(n => !n.est_lu).length;
+            const notifs = await notificationService.getAll({ _bg: true });
+            const unread = Array.isArray(notifs) ? notifs.filter(n => !n.est_lu).length : 0;
             setUnreadCount(unread);
         } catch (error) {
-            console.error("DashboardLayout: Error fetching notifications", error);
+            // Silencieux car _bg est actif dans l'intercepteur
         }
-    }, []);
+    }, [user?.id]);
 
     useEffect(() => {
+        if (!user?.id) return; // 🛑 Sécurité : Stop total si pas de session
+
         fetchUnreadCount();
         socketService.connect();
 
-        // Charger messages non lus
-        messageService.getUnreadCount().then(setUnreadMessages).catch(() => {});
+        // Charger messages non lus en arrière-plan
+        messageService.getUnreadCount({ _bg: true })
+            .then(setUnreadMessages)
+            .catch(() => {});
 
-        if (user?.id) {
-            socketService.on('connect', () => {
-                socketService.socket.emit('join', user.id);
-            });
-            if (socketService.socket?.connected) {
-                socketService.socket.emit('join', user.id);
-            }
+        socketService.on('connect', () => {
+            socketService.socket.emit('join', user.id);
+        });
+        if (socketService.socket?.connected) {
+            socketService.socket.emit('join', user.id);
         }
 
         const handleNewNotification = (notif) => {
@@ -68,10 +71,10 @@ const DashboardLayout = ({ children, title, noPadding }) => {
     return (
         <div className="flex h-screen bg-background font-sans text-foreground overflow-hidden selection:bg-primary/30 selection:text-foreground antialiased relative">
             
-            {/* Massive Atmospheric Pulse — Executive Ambiance */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-[-20%] right-[-10%] size-[800px] bg-primary/[0.03] rounded-full blur-[150px] animate-pulse-slow" />
-                <div className="absolute bottom-[-10%] left-[-20%] size-[600px] bg-secondary/[0.03] rounded-full blur-[120px] animate-pulse-slow" style={{ animationDelay: '3s' }} />
+            {/* Subtle Atmospheric Influence — Optimized for Performance */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 opacity-40">
+                <div className="absolute top-[-5%] right-[-5%] size-[400px] bg-primary/[0.02] rounded-full blur-[60px]" />
+                <div className="absolute bottom-[-5%] left-[-5%] size-[300px] bg-secondary/[0.02] rounded-full blur-[60px]" />
             </div>
 
             {/* Backdrop Overlay for Mobile Navigation */}
@@ -81,7 +84,7 @@ const DashboardLayout = ({ children, title, noPadding }) => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-background/90 backdrop-blur-3xl z-[60] md:hidden"
+                        className="fixed inset-0 bg-background/60 backdrop-blur-md z-[60] md:hidden"
                         onClick={() => setIsSidebarOpen(false)}
                     />
                 )}
@@ -98,7 +101,7 @@ const DashboardLayout = ({ children, title, noPadding }) => {
             <div className="flex-1 flex flex-col min-w-0 relative h-full z-10">
 
                 {/* Executive Command Bar — Glass High-Density */}
-                <header className="h-14 shrink-0 border-b border-border bg-background/80 backdrop-blur-[48px] z-40 px-4 md:px-6 flex items-center justify-between sticky top-0 shadow-sm">
+                <header className="h-14 shrink-0 border-b border-border bg-background/90 backdrop-blur-md z-40 px-4 md:px-6 flex items-center justify-between sticky top-0 shadow-sm">
                     <div className="flex items-center gap-5 relative z-10">
                         {/* Intelligent Toggle Hub */}
                         <button
@@ -129,19 +132,6 @@ const DashboardLayout = ({ children, title, noPadding }) => {
                     </div>
 
                     <div className="flex items-center gap-5 relative z-10">
-                        {/* Intelligent Data Module */}
-                        <div className="hidden xl:flex items-center gap-4 px-4 h-9 bg-muted border border-border rounded-xl">
-                            <div className="flex items-center gap-2.5">
-                                <Satellite className="size-4 text-primary" />
-                                <span className="text-[9px] font-bold text-foreground uppercase tracking-widest opacity-80">Satellite Link</span>
-                            </div>
-                            <div className="h-4 w-px bg-foreground/10" />
-                            <div className="flex items-center gap-2.5">
-                                <Activity className="size-4 text-emerald-500" />
-                                <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest tabular-nums">4.8 GB/s</span>
-                            </div>
-                        </div>
-
                         {/* Messages */}
                         <button
                             onClick={() => { navigate('/messages'); setUnreadMessages(0); }}
@@ -167,32 +157,42 @@ const DashboardLayout = ({ children, title, noPadding }) => {
                             )}
                         </button>
 
-                        {/* Identity Module */}
+                        {/* Identity Module — Fully Dynamic v2.7 */}
                         <button
                             id="btn-profile-hub"
                             onClick={() => navigate('/profile')}
                             className="flex items-center gap-3 group p-0.5 pr-3 rounded-xl bg-muted border border-border hover:border-primary/40 transition-all"
                         >
-                            <div className="size-8 rounded-lg bg-primary p-0.5 transition-all group-hover:scale-105 overflow-hidden">
-                                <img
-                                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id || 'guest'}`}
-                                    alt="Identité"
-                                    className="w-full h-full object-cover rounded shadow-md bg-background"
-                                />
+                            <div className="size-8 rounded-lg bg-primary p-0.5 transition-all group-hover:scale-105 overflow-hidden border border-border">
+                                {user?.avatar_url ? (
+                                    <img
+                                        src={user.avatar_url}
+                                        alt="Profil"
+                                        className="w-full h-full object-cover rounded shadow-md bg-background"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-[#FF6600] flex items-center justify-center text-white text-[10px] font-black">
+                                        {user?.nom_complet?.charAt(0).toUpperCase() || 'U'}
+                                    </div>
+                                )}
                             </div>
                             <div className="hidden sm:flex flex-col items-start text-left">
-                                <p className="text-[10px] font-bold text-foreground">
+                                <p className="text-[10px] font-black text-slate-900 dark:text-foreground leading-none mb-1">
                                     {user?.nom_complet || 'Utilisateur'}
                                 </p>
-                                <span className="text-[8px] font-bold text-primary uppercase opacity-70 leading-none">{user?.role === 'fournisseur' ? 'Marchand' : 'Administrateur'}</span>
+                                <span className="text-[8px] font-black text-primary uppercase tracking-widest opacity-80 leading-none">
+                                    {user?.role === 'admin' ? 'Administrateur' : 
+                                     user?.role === 'fournisseur' ? 'Marchand' : 
+                                     user?.role === 'transporteur' ? 'Logistique' : 'Client Privilège'}
+                                </span>
                             </div>
                         </button>
                     </div>
                 </header>
 
                 {/* Intelligence Viewport */}
-                <main data-lenis-prevent="true" className={cn(
-                    "flex-1 overflow-y-auto scroll-smooth relative bg-background custom-scrollbar",
+                <main className={cn(
+                    "flex-1 overflow-y-auto relative bg-background custom-scrollbar",
                     noPadding ? "" : "p-4 md:p-6 pb-10"
                 )}>
                     {/* Visual Grain & Scale Layer */}

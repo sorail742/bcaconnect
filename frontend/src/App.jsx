@@ -14,6 +14,7 @@ import useSocket from './hooks/useSocket';
 import { toast, Toaster } from 'sonner';
 import SocketHandler from './components/SocketHandler';
 import NetworkProgressBar from './components/layout/NetworkProgressBar';
+import ScrollToTop from './components/layout/ScrollToTop';
 
 function App() {
   const setAuth = useAuthStore(state => state.setAuth);
@@ -56,9 +57,9 @@ function App() {
   }, []);
 
   return (
-    <SmoothScroll>
       <MainLayout>
-        <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 selection:text-foreground">
+        <ScrollToTop />
+        <div className="min-h-svh bg-background text-foreground selection:bg-primary/30 selection:text-foreground pb-20">
           <NetworkProgressBar />
           <Toaster
             position="bottom-right"
@@ -78,7 +79,6 @@ function App() {
         </div>
         <AIChat />
       </MainLayout>
-    </SmoothScroll>
   );
 }
 

@@ -15,24 +15,27 @@ export const useOrders = () => {
         staleTime: 30_000,
         enabled: !!token && isAuthenticated,
     });
-    return { data, loading, error: error?.message || null, isFetching, refetch };
+    return { data, loading, error: error?.message || null, isFetching, refetch, mutate: refetch };
 };
 
 export const useOrderById = (id) => {
-    const { data, isLoading: loading, error, isFetching } = useQuery({
+    const { token, isAuthenticated } = useAuthStore();
+    const { data, isLoading: loading, error, isFetching, refetch } = useQuery({
         queryKey: ['order', id],
         queryFn: () => orderService.getById(id),
         staleTime: 30_000,
-        enabled: !!id,
+        enabled: !!id && !!token && isAuthenticated,
     });
-    return { data, loading, error: error?.message || null, isFetching };
+    return { data, loading, error: error?.message || null, isFetching, refetch, mutate: refetch };
 };
 
 export const useVendorOrders = () => {
-    const { data, isLoading: loading, error, isFetching } = useQuery({
+    const { token, isAuthenticated } = useAuthStore();
+    const { data, isLoading: loading, error, isFetching, refetch } = useQuery({
         queryKey: ['vendor-orders'],
         queryFn: () => orderService.getVendorOrders(),
         staleTime: 30_000,
+        enabled: !!token && isAuthenticated,
     });
-    return { data, loading, error: error?.message || null, isFetching };
+    return { data, loading, error: error?.message || null, isFetching, refetch, mutate: refetch };
 };

@@ -80,7 +80,7 @@ const VendorDashboard = () => {
         { title: "Chiffre d'Affaires", value: `${totalRevenue.toLocaleString('fr-GN')} GNF`, trend: 'up', trendValue: statsData?.growth || '--', icon: CreditCard, color: 'primary' },
         { title: 'Commandes Reçues', value: totalOrders.toString(), trend: 'up', trendValue: pendingOrders > 0 ? `${pendingOrders} en attente` : 'Optimal', icon: ShoppingBasket, color: 'emerald-500' },
         { title: 'Produits en Stock', value: productsCount.toString(), trend: 'up', trendValue: lowStockItems > 0 ? `${lowStockItems} stock bas` : 'Stock nominal', icon: Package, color: 'amber-500' },
-        { title: 'Score de Confiance', value: user?.score_confiance ? `${user.score_confiance}%` : '100%', trend: 'up', trendValue: 'Vendeur élite', icon: ShieldCheck, color: 'primary' },
+        { title: 'Score de Confiance', value: user?.score_confiance ? `${user.score_confiance}%` : '100%', trend: 'up', trendValue: 'Fournisseur élite', icon: ShieldCheck, color: 'primary' },
     ];
 
     const recentOrders = orders.slice(0, 5).map(item => ({
@@ -152,7 +152,7 @@ const VendorDashboard = () => {
     };
 
     return (
-        <DashboardLayout title="Tableau de Bord Vendeur" noPadding>
+        <DashboardLayout title="Tableau de Bord Fournisseur" noPadding>
             <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8 space-y-8 custom-scrollbar">
 
                 {/* Executive Welcome Station — Signal Header */}
@@ -358,7 +358,7 @@ const VendorDashboard = () => {
                                     </div>
                                     <div className="space-y-1">
                                         <h4 className="text-xs font-black uppercase tracking-tight text-slate-900" style={{ fontFamily: "'Outfit', sans-serif" }}>Score Confiance</h4>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Certification Vendeur</p>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Certification Fournisseur</p>
                                     </div>
                                 </div>
 

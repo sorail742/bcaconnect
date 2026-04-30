@@ -1,6 +1,7 @@
 const aiService = require('../services/aiService');
-const { Store, Order, OrderItem, Wallet, User } = require('../models');
+const { Store, Order, OrderItem, Wallet, User, Product, Category } = require('../models');
 const axios = require('axios');
+const { Op, Sequelize } = require('sequelize');
 
 // Config Groq — centralisée ici pour le chat direct (les autres appels passent par aiService)
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
@@ -155,8 +156,56 @@ Réponds toujours en français, de manière concise et très professionnelle.`;
             }
 
             const interpretation = await aiService.interpretSearch(query);
-            res.json({ data: interpretation });
+            const keywords = interpretation.keywords || [];
+            
+            let products = [];
+            let suppliers = [];
+
+            if (interpretation.search_type === 'supplier') {
+                // Recherche de fournisseurs (Stores)
+                const searchConditions = keywords.map(kw => ({
+                    nom_boutique: { [Op.like]: `%${kw}%` }
+                }));
+
+                try {
+                    suppliers = await Store.findAll({
+                        where: searchConditions.length > 0 ? { [Op.or]: searchConditions } : {},
+                        attributes: ['id', 'nom_boutique', 'description', 'logo_url', 'is_verified', 'rating'],
+                        limit: 10
+                    });
+                } catch (dbError) {
+                    console.error('[DB Supplier Error]', dbError);
+                    throw dbError;
+                }
+            } else {
+                // Recherche de produits classique
+                const searchConditions = keywords.flatMap(kw => [
+                    { nom_produit: { [Op.like]: `%${kw}%` } },
+                    { description: { [Op.like]: `%${kw}%` } }
+                ]);
+
+                try {
+                    products = await Product.findAll({
+                        where: searchConditions.length > 0 ? { [Op.or]: searchConditions } : {},
+                        include: [
+                            { model: Store, as: 'boutique', attributes: ['nom_boutique', 'is_verified'] },
+                            { model: Category, as: 'categorie', attributes: ['nom_categorie'] }
+                        ],
+                        limit: 20
+                    });
+                } catch (dbError) {
+                    console.error('[DB Product Error]', dbError);
+                    throw dbError;
+                }
+            }
+
+            res.json({ 
+                ...interpretation,
+                products,
+                suppliers 
+            });
         } catch (error) {
+            console.error('[AI Interpret Search Error]', error);
             next(error);
         }
     },
@@ -183,64 +232,156 @@ Réponds toujours en français, de manière concise et très professionnelle.`;
                 return res.status(400).json({ message: "Image requise." });
             }
 
-            // Convertir l'image en base64
+            const VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
             const imageBase64 = req.file.buffer.toString('base64');
 
-            const response = await axios.post(GROQ_API_URL, {
-                model: MODEL,
-                messages: [
-                    {
-                        role: 'system',
-                        content: `Tu es un expert en analyse d'images pour e-commerce.
-Analyse l'image et retourne un JSON avec:
-- description: description détaillée de l'objet
-- category: catégorie principale
-- keywords: array de mots-clés
-- similar_products: suggestions de produits similaires
+            let parsed = null;
 
-Réponds UNIQUEMENT avec le JSON.`
-                    },
-                    {
-                        role: 'user',
-                        content: [
-                            {
-                                type: 'text',
-                                text: 'Analyse cette image et suggère des produits similaires'
-                            },
-                            {
-                                type: 'image_url',
-                                image_url: {
-                                    url: `data:${req.file.mimetype};base64,${imageBase64}`
+            try {
+                const response = await axios.post(GROQ_API_URL, {
+                    model: VISION_MODEL,
+                    messages: [
+                        {
+                            role: 'user',
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: `Tu es un expert en analyse d'images pour e-commerce.
+Analyse l'image et retourne UNIQUEMENT un JSON brut avec:
+{"description": "description détaillée de l'objet en français", "keywords": ["mot1", "mot2", "mot3"]}
+Ne réponds qu'avec le JSON, rien d'autre.`
+                                },
+                                {
+                                    type: 'image_url',
+                                    image_url: { url: `data:${req.file.mimetype};base64,${imageBase64}` }
                                 }
-                            }
-                        ]
+                            ]
+                        }
+                    ],
+                    max_tokens: 300,
+                    temperature: 0.2
+                    // ⚠️ PAS de response_format : les modèles vision ne le supportent pas
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 45000
+                });
+
+                const content = response.data.choices[0]?.message?.content;
+                if (content) {
+                    try {
+                        parsed = JSON.parse(content.trim());
+                    } catch (e) {
+                        // Extraction JSON via regex si le modèle ajoute du texte autour
+                        const jsonMatch = content.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            try { parsed = JSON.parse(jsonMatch[0]); } catch (e2) { /* ignore */ }
+                        }
                     }
-                ],
-                max_tokens: 500,
-                temperature: 0.5
-            }, {
-                headers: {
-                    'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                timeout: 60000
+                }
+            } catch (visionError) {
+                console.warn('[Vision AI Error]', visionError.response?.data?.error?.message || visionError.message);
+                // Fallback : continuer sans analyse IA (on recherche tous les produits)
+                parsed = {
+                    description: "Désolé, je n'ai pas pu analyser cette image à cause d'une erreur technique (" + (visionError.response?.data?.error?.message || visionError.message) + ").",
+                    keywords: []
+                };
+            }
+
+            // Si l'IA n'a pas pu analyser, on retourne un résultat générique
+            if (!parsed || !parsed.description) {
+                parsed = {
+                    description: "Je n'ai pas pu analyser l'image. Le format est peut-être non supporté.",
+                    keywords: []
+                };
+            }
+
+            // --- RECHERCHE RÉELLE DES PRODUITS ---
+            const keywordsRaw = parsed.keywords || [];
+            
+            // Nettoyer et séparer les mots-clés (minuscule, sans ponctuation, mots de > 2 lettres)
+            let searchWords = [];
+            keywordsRaw.forEach(k => {
+                k.toLowerCase().split(/[\s,]+/).forEach(w => {
+                    if (w.length > 2) searchWords.push(w);
+                });
+            });
+            // Dédupliquer et ajouter "voiture" si le modèle a trouvé "automobile" etc (optionnel mais robuste)
+            searchWords = [...new Set(searchWords)];
+
+            const isPostgres = Product.sequelize.getDialect() === 'postgres';
+            const searchConditions = searchWords.flatMap(kw => {
+                const condition = [
+                    Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('Product.nom_produit')), { [Op.like]: `%${kw}%` }),
+                    Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('Product.description')), { [Op.like]: `%${kw}%` }),
+                    Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('Product.marque')), { [Op.like]: `%${kw}%` })
+                ];
+                
+                // Mots clés (JSON column)
+                if (isPostgres) {
+                    condition.push(Sequelize.where(Sequelize.cast(Sequelize.col('Product.mots_cles'), 'TEXT'), { [Op.iLike]: `%${kw}%` }));
+                } else {
+                    condition.push(Sequelize.where(Sequelize.col('Product.mots_cles'), { [Op.like]: `%${kw}%` }));
+                }
+                
+                return condition;
             });
 
-            const content = response.data.choices[0]?.message?.content;
-            const parsed = JSON.parse(content);
+            let products = [];
+            if (searchConditions.length > 0) {
+                try {
+                    products = await Product.findAll({
+                        where: { [Op.or]: searchConditions },
+                        include: [
+                            { model: Store, as: 'boutique', attributes: ['nom_boutique', 'is_verified'] },
+                            { model: Category, as: 'categorie', attributes: ['nom_categorie'] }
+                        ],
+                        limit: 20
+                    });
+                } catch (dbError) {
+                    console.warn('[AI Search] Fallback to simple product search:', dbError.message);
+                    products = await Product.findAll({
+                        where: { [Op.or]: searchConditions },
+                        limit: 10
+                    });
+                }
+            }
             
             res.json({
-                data: parsed
+                ...parsed,
+                message: parsed.description,
+                products: products
             });
         } catch (error) {
             console.error('[Image Analysis Error]', error.message);
-            res.status(500).json({
-                message: "Erreur lors de l'analyse de l'image",
-                error: error.message
-            });
+            res.status(500).json({ message: "Erreur analyse image", error: error.message });
         }
     },
-    // 10. Analyse de code pour le débogage de la plateforme
+    // 10. Suggérer les détails complets d'un produit pour auto-fill
+    suggestProductDetails: async (req, res, next) => {
+        try {
+            const { nom, imageAnalysis } = req.body;
+            const details = await aiService.generateProductDetails(nom, imageAnalysis);
+            res.json(details);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // 11. Suggérer une description pour une catégorie
+    suggestCategoryDescription: async (req, res, next) => {
+        try {
+            const { nom } = req.body;
+            const details = await aiService.generateCategoryDescription(nom);
+            res.json(details);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // 11. Analyse de code pour le débogage de la plateforme
     analyzeCode: async (req, res, next) => {
         try {
             const { code, context, language = 'javascript' } = req.body;

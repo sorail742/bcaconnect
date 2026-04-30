@@ -1,161 +1,145 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Package, Users, Bell, Search, ArrowUpRight, ArrowRight, Zap, Activity, Terminal } from "lucide-react";
-import { cn } from "../../lib/utils";
-import { useLanguage } from "../../context/LanguageContext";
-import GeometricBackground from '../ui/GeometricBackground';
+import { LayoutDashboard, TrendingUp, Users, Package, ShoppingCart, ArrowRight, Zap, MoreHorizontal, Wallet } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import statService from '../../services/statService';
+import { ROLES } from '../../constants/roles';
 
-export function DashboardPreview() {
-    const { lang } = useLanguage();
+export const DashboardPreview = () => {
+    const navigate = useNavigate();
+    const { user, isAuthenticated } = useAuth();
+    const [stats, setStats] = useState({
+        revenue: '124.5M',
+        orders: '1,240',
+        activeUsers: '8,420',
+        listings: '342'
+    });
+
+    useEffect(() => {
+        const fetch = async () => {
+            try {
+                const data = await statService.getAdminStats();
+                if (data) {
+                    setStats({
+                        revenue: `${(data.totalVolume / 1000000).toFixed(1)}M`,
+                        orders: data.totalOrders?.toLocaleString() || '1,240',
+                        activeUsers: data.totalUsers?.toLocaleString() || '8,420',
+                        listings: data.totalProducts?.toLocaleString() || '342'
+                    });
+                }
+            } catch (error) { console.error(error); }
+        };
+        fetch();
+    }, []);
+
+    const getDashboardLink = () => {
+        if (!isAuthenticated) return '/register';
+        const rolePaths = {
+            [ROLES.ADMIN]: '/admin/dashboard',
+            [ROLES.FOURNISSEUR]: '/vendor/dashboard',
+            [ROLES.TRANSPORTEUR]: '/carrier/dashboard',
+            [ROLES.BANQUE]: '/bank/dashboard',
+            [ROLES.CLIENT]: '/dashboard'
+        };
+        return rolePaths[user.role] || '/dashboard';
+    };
 
     return (
-        <section className="relative py-16 bg-background overflow-hidden font-jakarta border-y border-border">
-            <GeometricBackground />
-            <div className="container mx-auto px-6 md:px-12 relative z-10">
-                <div className="max-w-3xl mx-auto text-center mb-10 space-y-4">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-foreground text-background text-xs font-semibold uppercase tracking-wide shadow-sm">
-                        <Activity className="size-4 text-primary animate-pulse" />
-                        {lang === 'FR' ? "Interface Intuitive" : "Intuitive Interface"}
-                    </div>
-                    <h2 className="text-2xl md:text-4xl font-bold text-foreground tracking-tight">
-                        {lang === 'FR' ? "Une gestion " : "Simplified "}
-                        <span className="text-primary">{lang === 'FR' ? "simplifiée." : "management."}</span>
-                    </h2>
-                    <p className="text-base text-muted-foreground leading-relaxed max-w-xl mx-auto">
-                        {lang === 'FR'
-                            ? "Pilotez votre activité avec une clarté absolue grâce à notre tableau de bord tout-en-un."
-                            : "Drive your operations with absolute clarity and high-velocity performance."}
-                    </p>
-                </div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="relative max-w-5xl mx-auto"
-                >
-                    <div className="rounded-2xl overflow-hidden border border-border bg-card shadow-sm hover:border-primary/40 transition-all duration-300">
-                        {/* Header */}
-                        <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-muted/50">
-                            <div className="flex items-center gap-3">
-                                <div className="size-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
-                                    <span className="font-bold text-xs">BCA</span>
-                                </div>
-                                <div className="hidden sm:block">
-                                    <p className="font-semibold text-foreground text-sm leading-none">BCA Connect</p>
-                                    <div className="flex items-center gap-1.5 mt-1">
-                                        <div className="size-1.5 rounded-full bg-primary animate-pulse" />
-                                        <span className="text-xs text-primary font-medium">Actif</span>
-                                    </div>
-                                </div>
+        <section className="bg-slate-50 py-12 sm:py-16 border-t border-slate-100 mb-[-1px]">
+            <div className="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8">
+                
+                {/* Layout Container */}
+                <div className="bg-slate-900 rounded-[2.5rem] sm:rounded-[3.5rem] overflow-hidden border border-white/5 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)]">
+                    <div className="flex flex-col lg:flex-row min-h-[500px]">
+                        
+                        {/* Left: Interactive Preview */}
+                        <div className="flex-1 p-6 sm:p-10 lg:p-12 space-y-8">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-white text-[10px] font-black uppercase tracking-widest">
+                                <LayoutDashboard className="size-3.5" /> Système de gestion prédictive
                             </div>
-                            <div className="flex items-center gap-3">
-                                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background border border-border">
-                                    <Search className="size-3.5 text-muted-foreground" />
-                                    <span className="text-xs text-muted-foreground">Rechercher...</span>
-                                </div>
-                                <div className="relative p-2 rounded-lg bg-background border border-border cursor-pointer hover:border-primary/40 transition-colors">
-                                    <Bell className="size-4 text-foreground" />
-                                    <span className="absolute top-1.5 right-1.5 size-1.5 bg-primary rounded-full animate-pulse" />
-                                </div>
-                                <div className="size-8 rounded-full overflow-hidden border border-border">
-                                    <img src="https://ui-avatars.com/api/?name=BCA+Admin&background=FF6600&color=fff" alt="User" className="w-full h-full object-cover" />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Content */}
-                        <div className="p-5">
-                            {/* KPI row */}
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+                            
+                            <h2 className="text-3xl sm:text-4xl font-black text-white leading-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                Contrôlez chaque aspect <br /> de votre <span className="text-[#FF6600]">business live.</span>
+                            </h2>
+                            
+                            <div className="grid grid-cols-2 gap-4">
                                 {[
-                                    { icon: TrendingUp, label: lang === 'FR' ? "Volume Ventes" : "Sales Volume", val: "15,2M", unit: "GNF", color: "text-primary", bg: "bg-primary/10" },
-                                    { icon: Package, label: lang === 'FR' ? "Commandes" : "Orders", val: "284", unit: "unités", color: "text-blue-500", bg: "bg-blue-500/10" },
-                                    { icon: Users, label: lang === 'FR' ? "Utilisateurs" : "Users", val: "1 429", unit: "actifs", color: "text-emerald-500", bg: "bg-emerald-500/10" },
-                                    { icon: Activity, label: lang === 'FR' ? "Croissance" : "Growth", val: "94,2", unit: "%", color: "text-purple-500", bg: "bg-purple-500/10" },
-                                ].map((stat, i) => (
-                                    <div key={i} className="p-4 rounded-xl bg-muted border border-border hover:border-primary/30 transition-all shadow-sm">
-                                        <div className={cn("size-9 rounded-lg flex items-center justify-center mb-3 border border-border", stat.bg)}>
-                                            <stat.icon className={cn("size-4", stat.color)} />
+                                    { label: 'Volume (GNF)', val: `${stats.revenue}`, icon: TrendingUp, color: 'text-emerald-400' },
+                                    { label: 'Commandes', val: stats.orders, icon: ShoppingCart, color: 'text-blue-400' },
+                                    { label: 'Acheteurs', val: stats.activeUsers, icon: Users, color: 'text-orange-400' },
+                                    { label: 'Référencés', val: stats.listings, icon: Package, color: 'text-violet-400' },
+                                ].map((s, i) => (
+                                    <div key={i} className="bg-white/5 border border-white/10 p-4 rounded-2xl">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <s.icon className={`size-4 ${s.color}`} />
+                                            <span className="text-[10px] font-black text-white/40 uppercase">Live</span>
                                         </div>
-                                        <p className="text-xs font-medium text-muted-foreground mb-1">{stat.label}</p>
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-lg font-bold text-foreground tabular-nums">{stat.val}</span>
-                                            <span className="text-xs text-muted-foreground">{stat.unit}</span>
-                                        </div>
+                                        <p className="text-xl font-black text-white tabular-nums leading-none">{s.val}</p>
+                                        <p className="text-[10px] text-slate-500 font-bold mt-1 uppercase">{s.label}</p>
                                     </div>
                                 ))}
                             </div>
 
-                            {/* Bottom row */}
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                                <div className="lg:col-span-2 rounded-xl bg-muted border border-border overflow-hidden">
-                                    <div className="px-4 py-3 border-b border-border bg-background flex justify-between items-center">
-                                        <h4 className="font-semibold text-xs text-foreground border-l-4 border-primary pl-3 py-0.5">
-                                            {lang === 'FR' ? "Dernières Opérations" : "Recent Operations"}
-                                        </h4>
-                                        <span className="text-xs font-semibold text-primary cursor-pointer flex items-center gap-1">
-                                            {lang === 'FR' ? "Voir tout" : "View All"} <ArrowUpRight className="size-3" />
-                                        </span>
-                                    </div>
-                                    <div className="p-3 space-y-1">
-                                        {[
-                                            { name: "Alpha Diallo", ref: "#BCA-2847", amount: "850k", status: "Livré", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10" },
-                                            { name: "Fatou Barry", ref: "#BCA-2846", amount: "1,2M", status: "En cours", color: "text-primary", bg: "bg-primary/10" },
-                                            { name: "Ibrahim Sow", ref: "#BCA-2845", amount: "2,5M", status: "Livré", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-500/10" },
-                                        ].map((row, i) => (
-                                            <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-background border border-transparent hover:border-border transition-all cursor-default">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="size-7 rounded-lg bg-background border border-border flex items-center justify-center font-bold text-xs text-muted-foreground">0{i + 1}</div>
-                                                    <div>
-                                                        <p className="text-sm font-semibold text-foreground leading-none">{row.name}</p>
-                                                        <p className="text-xs text-muted-foreground mt-0.5">{row.ref}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <p className="text-sm font-bold text-foreground tabular-nums">{row.amount} GNF</p>
-                                                    <span className={cn("px-2.5 py-1 rounded-full text-xs font-semibold", row.bg, row.color)}>{row.status}</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
+                            <button
+                                onClick={() => navigate(getDashboardLink())}
+                                className="flex items-center gap-3 h-14 px-8 bg-white text-slate-900 font-black text-sm rounded-2xl hover:scale-105 transition-all group shadow-xl"
+                            >
+                                Accéder à mon espace
+                                <ArrowRight className="size-5 group-hover:translate-x-1 transition-transform" />
+                            </button>
+                        </div>
 
-                                <div className="space-y-3 flex flex-col justify-center">
-                                    <div className="p-5 rounded-xl bg-primary text-primary-foreground shadow-sm relative overflow-hidden cursor-pointer hover:bg-primary/90 transition-colors">
-                                        <div className="absolute top-0 right-0 p-4 opacity-10">
-                                            <Zap className="size-16 fill-current" />
-                                        </div>
-                                        <div className="relative z-10 space-y-3">
-                                            <div className="flex items-center justify-between">
-                                                <ArrowUpRight className="size-5" />
-                                                <span className="px-2.5 py-1 bg-background/20 rounded-full text-xs font-semibold">Premium</span>
-                                            </div>
-                                            <h5 className="text-sm font-bold leading-tight">
-                                                {lang === 'FR' ? "Passez au niveau supérieur" : "Upgrade to Premium"}
-                                            </h5>
-                                            <p className="text-xs opacity-80 leading-relaxed">
-                                                {lang === 'FR' ? "Débloquez les analyses avancées." : "Unlock advanced analytics."}
-                                            </p>
-                                        </div>
-                                    </div>
+                        {/* Right: Glassmorphism Card Stack */}
+                        <div className="lg:w-[45%] bg-white/5 border-l border-white/5 p-6 sm:p-10 flex items-center justify-center relative overflow-hidden">
+                            {/* Decorative Blur */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-64 bg-[#FF6600]/20 blur-[100px] pointer-events-none" />
 
-                                    <div className="p-4 rounded-xl bg-foreground text-background border border-border flex items-center justify-between cursor-pointer hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-sm">
-                                        <div className="flex items-center gap-3">
-                                            <Terminal className="size-5 text-primary" />
-                                            <div>
-                                                <p className="text-sm font-semibold leading-none">Console</p>
-                                                <p className="text-xs opacity-60 mt-0.5">Interface système</p>
-                                            </div>
+                            <div className="w-full max-w-sm space-y-4 relative z-10">
+                                {/* Wallet Card */}
+                                <motion.div 
+                                    initial={{ x: 20, opacity: 0 }}
+                                    whileInView={{ x: 0, opacity: 1 }}
+                                    className="bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 p-5 rounded-3xl shadow-2xl"
+                                >
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div className="size-10 bg-white/10 border border-white/10 rounded-xl flex items-center justify-center">
+                                            <Wallet className="size-5 text-white" />
                                         </div>
-                                        <ArrowRight className="size-4" />
+                                        <MoreHorizontal className="size-5 text-slate-500" />
                                     </div>
-                                </div>
+                                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Solde de Compte</p>
+                                    <p className="text-2xl font-black text-white mb-2">42.580.000 GNF</p>
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-1.5 flex-1 bg-white/10 rounded-full overflow-hidden">
+                                            <div className="w-[70%] h-full bg-[#FF6600]" />
+                                        </div>
+                                        <span className="text-[10px] font-black text-[#FF6600]">+12.4%</span>
+                                    </div>
+                                </motion.div>
+
+                                {/* Mini Chart Card */}
+                                <motion.div 
+                                    initial={{ x: -20, opacity: 0 }}
+                                    whileInView={{ x: 0, opacity: 1 }}
+                                    transition={{ delay: 0.2 }}
+                                    className="bg-white/10 backdrop-blur-xl border border-white/10 p-5 rounded-3xl shadow-xl ml-8"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="size-8 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                                            <Zap className="size-4 text-emerald-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-black text-white">Conversion Boost</p>
+                                            <p className="text-[10px] text-slate-400">Analysé par BCA-AI</p>
+                                        </div>
+                                    </div>
+                                </motion.div>
                             </div>
                         </div>
                     </div>
-                </motion.div>
+                </div>
             </div>
         </section>
     );
-}
+};

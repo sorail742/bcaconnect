@@ -95,15 +95,51 @@ export const aiService = {
         }
     },
 
-    /**
-     * Obtenir les tendances du marché analysées par l'IA
-     */
     getMarketTrends: async () => {
         try {
             const response = await api.get('/ai/market-trends');
             return response.data;
         } catch (error) {
             console.error('Erreur tendances IA:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Suggérer un prix pour un nouveau produit
+     */
+    suggestPrice: async (nom_produit, categorie, description) => {
+        try {
+            const response = await api.post('/ai/suggest-price', { nom: nom_produit, categorie, description });
+            return response.data;
+        } catch (error) {
+            console.error('Erreur suggestion prix IA:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Suggérer tous les détails d'un produit (Magic Fill)
+     */
+    suggestProductDetails: async (nom, imageAnalysis) => {
+        try {
+            const response = await api.post('/ai/suggest-details', { nom, imageAnalysis });
+            return response.data;
+        } catch (error) {
+            console.error('Erreur suggestion détails IA:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Générer une description technique pour une catégorie
+     */
+    generateCategoryDescription: async (nom_categorie) => {
+        try {
+            const response = await api.post('/ai/suggest-category-description', { nom: nom_categorie });
+            return response.data;
+        } catch (error) {
+            console.error('Erreur génération description catégorie IA:', error);
             throw error;
         }
     },

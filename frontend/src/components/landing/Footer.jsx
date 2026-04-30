@@ -36,7 +36,7 @@ export function Footer() {
             title: t('marketplace') || "Marché",
             links: [
                 { to: "/marketplace", label: t('catalog') || "Catalogue" },
-                { to: "/vendors", label: t('vendors') || "Vendeurs" },
+                { to: "/vendors", label: t('vendors') || "Fournisseurs" },
                 { to: "/tracking", label: t('tracking') || "Suivi" },
             ]
         },
@@ -86,7 +86,7 @@ export function Footer() {
 
                         <p className="text-sm text-muted-foreground leading-relaxed max-w-xs border-l-4 border-primary/30 pl-4">
                             {lang === 'FR'
-                                ? "La passerelle moderne du commerce africain. Connectez acheteurs, vendeurs et prestataires en un seul écosystème."
+                                ? "La passerelle moderne du commerce africain. Connectez acheteurs, fournisseurs et prestataires en un seul écosystème."
                                 : "The modern gateway for African commerce. Connect buyers, sellers and service providers in one ecosystem."}
                         </p>
 

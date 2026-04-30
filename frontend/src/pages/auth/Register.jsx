@@ -311,7 +311,7 @@ const Register = () => {
                             <div className="grid grid-cols-3 gap-3">
                                 {[
                                     { id: 'client', icon: User, label: 'Acheteur' },
-                                    { id: 'fournisseur', icon: Store, label: 'Vendeur' },
+                                    { id: 'fournisseur', icon: Store, label: 'Fournisseur' },
                                     { id: 'transporteur', icon: Truck, label: 'Livreur' },
                                 ].map(r => (
                                     <button

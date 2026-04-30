@@ -1,34 +1,84 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowRight, ShoppingCart, Star, Zap, Loader2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ShoppingCart, Star, Shield, Clock, Zap, ArrowRight, Tag, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import ProductCard from '../produits/ProductCard';
 import productService from '../../services/productService';
-import { Button } from '../ui/Button';
-import { cn } from '../../lib/utils';
 import { useLanguage } from '../../context/LanguageContext';
 import useCart from '../../hooks/useCart';
 import { toast } from 'sonner';
+import { cn } from '../../lib/utils';
+
+const FALLBACK = 'https://images.unsplash.com/photo-1523275319145-80b01958f7a2?auto=format&fit=crop&q=80&w=400';
+
+// Helper pour les images locales/distantes
+const getImageUrl = (url) => {
+    if (!url) return FALLBACK;
+    if (url.startsWith('http')) return url;
+    const serverUrl = 'http://localhost:5000';
+    return `${serverUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
+// Countdown timer hook
+function useCountdown(targetHours = 8) {
+    const [timeLeft, setTimeLeft] = useState({ h: targetHours, m: 0, s: 0 });
+    useEffect(() => {
+        const end = Date.now() + targetHours * 3600 * 1000;
+        const tick = () => {
+            const diff = Math.max(0, end - Date.now());
+            setTimeLeft({
+                h: Math.floor(diff / 3600000),
+                m: Math.floor((diff % 3600000) / 60000),
+                s: Math.floor((diff % 60000) / 1000),
+            });
+        };
+        tick();
+        const timer = setInterval(tick, 1000);
+        return () => clearInterval(timer);
+    }, []);
+    return timeLeft;
+}
+
+function TimeUnit({ value, label }) {
+    return (
+        <div className="flex flex-col items-center">
+            <div className="bg-slate-900 text-white font-black text-lg sm:text-xl px-2.5 py-1 rounded-lg min-w-[38px] text-center tabular-nums leading-none">
+                {String(value).padStart(2, '0')}
+            </div>
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{label}</span>
+        </div>
+    );
+}
 
 export const FeaturedProducts = () => {
     const { t } = useLanguage();
+    const navigate = useNavigate();
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('flash');
     const { addToCart } = useCart();
+    const timeLeft = useCountdown(6);
 
-    useEffect(() => {
-        const fetchProducts = async () => {
-            try {
-                const data = await productService.getFeatured(8);
-                const items = Array.isArray(data) ? data : (data.data || []);
-                setProducts(items);
-            } catch (error) {
-                console.error("Failed to fetch featured products", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchProducts();
+    const fetchByTab = useCallback(async (tab) => {
+        setIsLoading(true);
+        try {
+            let data;
+            if (tab === 'flash') data = await productService.getFeatured(8);
+            else if (tab === 'new') data = await productService.getAll({ sort: 'createdAt', order: 'desc', limit: 8 });
+            else data = await productService.getAll({ sort: 'views', limit: 8 });
+            const items = Array.isArray(data) ? data : (data?.products || data?.data || []);
+            setProducts(items);
+        } catch { setProducts([]); }
+        finally { setIsLoading(false); }
     }, []);
+
+    useEffect(() => { fetchByTab(activeTab); }, [activeTab, fetchByTab]);
+
+    const tabs = [
+        { id: 'flash', label: '🔥 Offres Flash', color: 'text-rose-600' },
+        { id: 'new', label: '✨ Nouveautés', color: 'text-blue-600' },
+        { id: 'popular', label: '⭐ Populaires', color: 'text-amber-600' },
+    ];
 
     const handleAddToCart = (e, product) => {
         e.preventDefault();
@@ -37,118 +87,105 @@ export const FeaturedProducts = () => {
         toast.success(`${product.nom_produit} ajouté au panier`);
     };
 
-    if (isLoading) {
-        return (
-            <div className="py-20 flex flex-col items-center justify-center gap-4">
-                <Loader2 className="size-10 text-primary animate-spin" />
-                <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">{t('loading') || 'Immersion...'}</p>
-            </div>
-        );
-    }
-
-    if (products.length === 0) return null;
-
     return (
-        <section className="py-32 bg-background relative overflow-hidden">
-            <div className="container mx-auto px-6 md:px-12 relative z-10">
-                
-                <div className="flex flex-col md:flex-row items-end justify-between gap-8 mb-16">
-                    <div className="space-y-4 max-w-2xl">
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 border border-primary/20 text-primary">
-                            <Zap className="size-4 fill-current" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em]">{t('featuredBadge')}</span>
+        <section className="bg-white py-8 sm:py-12">
+            <div className="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8">
+
+                {/* ── Section Header ─────────────────────────────────────── */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+                        <div className="flex items-center gap-3">
+                            <div className="w-1 h-8 bg-[#FF6600] rounded-full" />
+                            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                                {activeTab === 'flash' ? 'Ventes Flash' : activeTab === 'new' ? 'Nouveautés' : 'Best-sellers'}
+                            </h2>
+                            {activeTab === 'flash' && (
+                                <span className="hidden sm:inline-flex px-3 py-1 bg-rose-500 text-white text-[10px] font-black rounded-full uppercase tracking-widest animate-pulse">
+                                    Live
+                                </span>
+                            )}
                         </div>
-                        <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                            {t('featuredTitle1')} <span className="text-primary italic">{t('featuredTitle2')}</span>
-                        </h2>
-                        <p className="text-lg text-muted-foreground font-medium max-w-xl">
-                            {t('featuredDesc')}
-                        </p>
+                        {/* Countdown */}
+                        {activeTab === 'flash' && (
+                            <div className="flex items-center gap-2">
+                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest hidden sm:block">Fin dans</span>
+                                <div className="flex items-center gap-1">
+                                    <TimeUnit value={timeLeft.h} label="H" />
+                                    <span className="font-black text-slate-400 -mt-3">:</span>
+                                    <TimeUnit value={timeLeft.m} label="M" />
+                                    <span className="font-black text-slate-400 -mt-3">:</span>
+                                    <TimeUnit value={timeLeft.s} label="S" />
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    <Link to="/marketplace">
-                        <Button variant="outline" className="h-16 px-8 rounded-2xl border-2 border-border hover:border-primary/30 group text-[10px] font-black tracking-widest uppercase">
-                            {t('viewFullCatalog')}
-                            <ArrowRight className="size-5 ml-2 transition-transform group-hover:translate-x-1" />
-                        </Button>
+                    <Link to="/marketplace" className="flex items-center gap-1.5 text-[#FF6600] font-bold text-sm hover:underline shrink-0 self-end sm:self-auto">
+                        Voir tout <ArrowRight className="size-4" />
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {products.map((product, idx) => {
-                        const price = parseFloat(product.prix_unitaire || 0);
-                        return (
-                            <motion.div
-                                key={product.id}
-                                initial={{ opacity: 0, y: 30 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: idx * 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                            >
-                                <Link 
-                                    to={`/product/${product.id}`}
-                                    className="group block relative bg-card/40 backdrop-blur-xl border border-border rounded-[2.5rem] overflow-hidden hover:border-primary/30 transition-all duration-500 shadow-xl shadow-black/5"
-                                >
-                                    {/* Image Container */}
-                                    <div className="aspect-[4/5] overflow-hidden relative bg-muted">
-                                        <img 
-                                            src={product.image_url || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&q=80&w=600'} 
-                                            alt={product.nom_produit}
-                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                        
-                                        {/* Status Badge */}
-                                        <div className="absolute top-6 left-6 px-4 py-2 bg-black/70 backdrop-blur-xl border border-white/10 rounded-xl">
-                                            <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest">{t('flashDeal')}</span>
-                                        </div>
+                {/* ── Tabs ───────────────────────────────────────────────── */}
+                <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar pb-1">
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={cn(
+                                "shrink-0 px-4 py-2 rounded-full text-sm font-bold transition-all border",
+                                activeTab === tab.id
+                                    ? "bg-[#FF6600] text-white border-[#FF6600] shadow-md"
+                                    : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
+                            )}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
 
-                                        {/* Quick Action */}
-                                        <button 
-                                            onClick={(e) => handleAddToCart(e, product)}
-                                            className="absolute bottom-6 right-6 size-14 bg-primary text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/40 translate-y-20 group-hover:translate-y-0 transition-transform duration-500 hover:scale-110 active:scale-95 z-20"
-                                        >
-                                            <ShoppingCart className="size-6" />
-                                        </button>
-                                    </div>
-
-                                    {/* Content */}
-                                    <div className="p-8 space-y-4">
-                                        <div className="flex items-center gap-1.5">
-                                            {[...Array(5)].map((_, i) => (
-                                                <Star key={i} className="size-3 fill-amber-500 text-amber-500" />
-                                            ))}
-                                            <span className="text-[10px] font-black text-muted-foreground ml-1 uppercase tracking-widest">{t('featuredVerified')}</span>
-                                        </div>
-                                        
-                                        <h3 className="text-lg font-black text-foreground uppercase tracking-tight line-clamp-2 leading-none min-h-[2.5rem] group-hover:text-primary transition-colors">
-                                            {product.nom_produit}
-                                        </h3>
-
-                                        <div className="flex items-end justify-between pt-4 border-t border-border">
-                                            <div>
-                                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-1">{t('featuredUnitPrice')}</p>
-                                                <div className="flex items-baseline gap-1.5">
-                                                    <span className="text-2xl font-black text-foreground" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                                        {price.toLocaleString()}
-                                                    </span>
-                                                    <span className="text-[10px] font-black text-primary uppercase">GNF</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col items-end">
-                                                <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1">{t('featuredStock')}</p>
-                                                <p className="text-sm font-black text-foreground">{product.stock_quantite || 0}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Link>
+                {/* ── Product Grid ────────────────────────────────────────── */}
+                <div className="relative min-h-[200px]">
+                    <AnimatePresence mode="wait">
+                        {isLoading ? (
+                            <motion.div key="loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                className="absolute inset-0 flex items-center justify-center py-20">
+                                <Loader2 className="size-8 text-[#FF6600] animate-spin" />
                             </motion.div>
-                        );
-                    })}
+                        ) : (
+                            <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4"
+                            >
+                                {products.map((product, idx) => (
+                                    <motion.div
+                                        key={product.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: idx * 0.03 }}
+                                    >
+                                        <ProductCard product={product} />
+                                    </motion.div>
+                                ))}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+
+                {/* ── Bottom CTA banner ───────────────────────────────────── */}
+                <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                        { icon: Shield, title: 'Paiement Sécurisé', desc: 'Protection Escrow sur toutes vos commandes', color: 'border-emerald-200 bg-emerald-50' },
+                        { icon: Zap, title: 'Livraison Express', desc: 'Partout en Guinée en 24-48h', color: 'border-blue-200 bg-blue-50' },
+                        { icon: Tag, title: 'Meilleurs Prix', desc: 'Garantis par nos vendeurs certifiés', color: 'border-amber-200 bg-amber-50' },
+                    ].map((item, i) => (
+                        <div key={i} className={`flex items-center gap-3 p-4 rounded-xl border ${item.color}`}>
+                            <item.icon className="size-6 text-slate-600 shrink-0" />
+                            <div>
+                                <p className="text-sm font-bold text-slate-800">{item.title}</p>
+                                <p className="text-xs text-slate-500">{item.desc}</p>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
-
-            {/* Background elements */}
-            <div className="absolute -left-20 top-1/2 -translate-y-1/2 size-[600px] bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
         </section>
     );
 };

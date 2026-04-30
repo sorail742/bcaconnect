@@ -25,9 +25,11 @@ const calculateShippingFee = (adresse, itemsCount) => {
 
 const orderController = {
     create: async (req, res, next) => {
+        console.log("🚀 [ORDER CREATE] Début création commande...");
         const t = await sequelize.transaction();
         try {
             const { items, cle_idempotence, deliveryInfo, paymentMethod } = req.body;
+            console.log(`📦 [ORDER DEBUG] Items: ${items?.length}, Method: ${paymentMethod}`);
             const utilisateur_id = req.user.id;
 
             // ... (Vérification Idempotence existante)
@@ -55,7 +57,21 @@ const orderController = {
                 const subtotal = product.prix_unitaire * item.quantity;
                 total_produits += parseFloat(subtotal);
 
-                const store = await product.getStore({ transaction: t });
+                // Use the correct alias 'boutique' as defined in models/index.js
+                const store = await product.getBoutique({ transaction: t });
+                
+                if (!store) {
+                    console.error(`🔴 [ORDER ERROR] Boutique non trouvée pour le produit ${product.id}`);
+                    throw new Error(`La boutique associée au produit "${product.nom_produit}" est introuvable.`);
+                }
+
+                console.log(`[DEBUG ORDER] Item: ${product.nom_produit}, Vendor: ${store.proprietaire_id}`);
+                
+                // 🛑 SÉCURITÉ ANTI-FRAUDE : Empêcher l'achat de ses propres produits
+                if (store.proprietaire_id === utilisateur_id) {
+                    throw new Error(`Transaction refusée : Vous ne pouvez pas acheter votre propre produit ("${product.nom_produit}").`);
+                }
+
                 orderItemsByVendor.push({
                     produit_id: product.id,
                     fournisseur_id: store.proprietaire_id,
@@ -114,34 +130,41 @@ const orderController = {
             }
 
             await t.commit();
+            console.log(`✅ [ORDER SUCCESS] Commande ${order.id} créée.`);
 
-            // ⚡ NOTIFICATIONS TEMPS RÉEL
-            const io = req.app.get('socketio');
-            if (io) {
-                // 1. Notification pour l'acheteur (Confirmation)
-                const buyerNotif = await Notification.create({
-                    utilisateur_id: utilisateur_id,
-                    titre: "Commande confirmée !",
-                    message: `Votre commande <span class="font-black text-primary">#${order.id.slice(0, 8)}</span> d'un montant de <span class="italic font-bold text-emerald-600">${total_ttc.toLocaleString('fr-FR')} GNF</span> a été enregistrée.`,
-                    type: 'order'
-                });
-                io.to(utilisateur_id).emit('notification_received', buyerNotif);
-
-                // 2. Notifications pour les vendeurs
-                const uniqueVendors = [...new Set(orderItemsByVendor.map(item => item.fournisseur_id))];
-                for (const vendorId of uniqueVendors) {
-                    const vendorNotif = await Notification.create({
-                        utilisateur_id: vendorId,
-                        titre: "Nouvelle vente !",
-                        message: `Vous avez reçu une nouvelle commande <span class="font-black text-primary">#${order.id.slice(0, 8)}</span>. Veuillez préparer les produits.`,
+            // ⚡ NOTIFICATIONS TEMPS RÉEL (Non-bloquant)
+            try {
+                const io = req.app.get('socketio');
+                if (io) {
+                    // 1. Notification pour l'acheteur (Confirmation)
+                    const buyerNotif = await Notification.create({
+                        utilisateur_id: utilisateur_id,
+                        titre: "Commande confirmée !",
+                        message: `Votre commande <span class="font-black text-primary">#${order.id.slice(0, 8)}</span> d'un montant de <span class="italic font-bold text-emerald-600">${total_ttc.toLocaleString('fr-FR')} GNF</span> a été enregistrée.`,
                         type: 'order'
                     });
-                    io.to(vendorId).emit('notification_received', vendorNotif);
+                    io.to(utilisateur_id).emit('notification_received', buyerNotif);
+
+                    // 2. Notifications pour les vendeurs
+                    const uniqueVendors = [...new Set(orderItemsByVendor.map(item => item.fournisseur_id))];
+                    for (const vendorId of uniqueVendors) {
+                        const vendorNotif = await Notification.create({
+                            utilisateur_id: vendorId,
+                            titre: "Nouvelle vente !",
+                            message: `Vous avez reçu une nouvelle commande <span class="font-black text-primary">#${order.id.slice(0, 8)}</span>. Veuillez préparer les produits.`,
+                            type: 'order'
+                        });
+                        io.to(vendorId).emit('notification_received', vendorNotif);
+                    }
                 }
+            } catch (notifError) {
+                console.warn("⚠️ [ORDER WARN] Échec de l'envoi des notifications:", notifError.message);
             }
+
             res.status(201).json(order);
         } catch (error) {
-            await t.rollback();
+            console.error("🔴 [ORDER 500] Erreur fatale:", error.message);
+            if (t) await t.rollback();
             next(error);
         }
     },

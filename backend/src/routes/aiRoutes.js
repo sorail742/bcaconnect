@@ -61,7 +61,13 @@ router.post('/search/similar', aiController.findSimilarProducts);
 // 9. Analyser une image pour la recherche
 router.post('/search/image', upload.single('image'), aiController.analyzeImage);
 
-// 10. Analyser du code pour détecter les bugs (mode développeur)
+// 10. Suggérer les détails complets d'un produit (Fournisseurs)
+router.post('/suggest-details', authMiddleware, authorize(['fournisseur', 'admin']), aiController.suggestProductDetails);
+
+// 11. Suggérer une description pour une catégorie (Admin)
+router.post('/suggest-category-description', authMiddleware, authorize(['admin']), aiController.suggestCategoryDescription);
+
+// 12. Analyser du code pour détecter les bugs (mode développeur)
 router.post('/code-analyze', optionalAuth, aiController.analyzeCode);
 
 module.exports = router;

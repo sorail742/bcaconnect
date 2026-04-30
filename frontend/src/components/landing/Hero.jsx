@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Button } from "../ui/Button"
+import { motion } from "framer-motion"
 import { 
-    Search, Camera, ArrowRight, Zap, TrendingUp, Shield, Users, 
-    CreditCard, Activity, Globe, Cpu, Rocket, Sparkles, Star, Target
+    ArrowRight, Shield, Users, 
+    CreditCard, Activity, Cpu, Rocket, Target, LayoutDashboard
 } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import statService from "../../services/statService"
 import { useLanguage } from "../../context/LanguageContext"
+import { useAuth } from "../../hooks/useAuth"
 import GeometricBackground from '../ui/GeometricBackground';
 import { HeroCarousel } from "./HeroCarousel"
 import { cn } from "../../lib/utils"
+import AnimatedCounter from "../ui/AnimatedCounter"
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -31,7 +32,9 @@ const itemVariants = {
 };
 
 export function Hero() {
-    const { t, lang } = useLanguage();
+    const { t } = useLanguage();
+    const navigate = useNavigate();
+    const { user, isAuthenticated } = useAuth();
     const [stats, setStats] = useState({
         users: "10K+",
         vendors: "500+",
@@ -43,12 +46,22 @@ export function Hero() {
         const fetchStats = async () => {
             try {
                 const data = await statService.getAdminStats();
-                if (data) {
+                if (data && data.stats && data.overview) {
+                    const totalUsers = data.stats[0]?.value || 0;
+                    const totalVendors = data.overview.totalFournisseurs || data.overview.storesCount || 0;
+                    const totalOrders = data.overview.total_orders || 0;
+
                     setStats({
-                        users: `${(data.totalUsers || 0).toLocaleString()}+`,
-                        vendors: `${(data.totalVendors || 0).toLocaleString()}+`,
-                        transactions: `${(data.totalOrders || 0).toLocaleString()}+`,
-                        satisfaction: "99.8%"
+                        users: totalUsers > 0
+                            ? `${totalUsers.toLocaleString()}+`
+                            : "10K+",
+                        vendors: totalVendors > 0
+                            ? `${totalVendors.toLocaleString()}+`
+                            : "500+",
+                        transactions: totalOrders > 0
+                            ? `${totalOrders.toLocaleString()}+`
+                            : "50K+",
+                        satisfaction: `${data.overview.satisfaction_rate || '99'}%`
                     });
                 }
             } catch (error) {
@@ -59,11 +72,11 @@ export function Hero() {
     }, []);
 
     return (
-        <section className="relative min-h-screen flex items-center pt-32 pb-20 overflow-hidden bg-background">
+        <section className="relative min-h-[110vh] flex items-center pt-32 pb-32 overflow-hidden bg-background">
             <GeometricBackground />
             
-            {/* Immersive Backgrounds */}
-            <div className="absolute inset-x-0 bottom-0 h-[30vh] bg-gradient-to-t from-background via-background/80 to-transparent z-10" />
+            {/* Immersive Backgrounds & Depth Layers */}
+            <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-gradient-to-t from-background via-background/90 to-transparent z-10" />
             <HeroCarousel />
 
             <div className="container mx-auto px-6 md:px-12 relative z-20">
@@ -73,107 +86,147 @@ export function Hero() {
                     animate="visible"
                     className="flex flex-col items-center text-center"
                 >
-                    {/* Floating Tech Badge */}
+                    {/* Floating Tech Badge - Quantum Signature */}
                     <motion.div
                         variants={itemVariants}
-                        className="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-2xl bg-primary/10 backdrop-blur-3xl border border-primary/20 text-primary mb-12 shadow-2xl shadow-primary/5"
+                        className="inline-flex items-center gap-3 px-8 py-3 rounded-[2rem] bg-white/5 backdrop-blur-3xl border border-white/10 text-primary mb-16 shadow-[0_20px_50px_rgba(0,0,0,0.1)] group hover:border-primary/40 transition-all cursor-default"
                     >
-                        <Sparkles className="size-4 animate-pulse fill-current" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] font-jakarta">{t('badgeText') || "Ecosysteme Industriel v4.0"}</span>
+                        <div className="size-2 rounded-full bg-primary animate-ping" />
+                        <span className="text-[11px] font-black uppercase tracking-[0.4em] font-jakarta">{t('badgeText') || "Ecosysteme Industriel v5.0"}</span>
                     </motion.div>
 
-                    {/* Master Narrative - Outfit Black */}
+                    {/* Master Narrative - Ultra High Density Typography */}
                     <motion.h1 
                         variants={itemVariants}
-                        className="text-5xl md:text-8xl lg:text-[9rem] font-black tracking-[-0.05em] leading-[1.05] text-foreground dark:text-white max-w-7xl uppercase mb-10 text-center drop-shadow-[0_10px_30px_rgba(0,0,0,0.2)] dark:drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+                        className="text-4xl sm:text-6xl md:text-8xl lg:text-[8rem] font-black tracking-[-0.07em] leading-[1.0] text-foreground dark:text-white max-w-[90rem] uppercase mb-12 text-center"
                         style={{ fontFamily: "'Outfit', sans-serif" }}
                     >
                         {t('heroTitle1')} <br />
-                        <span className="text-primary italic drop-shadow-[0_0_20px_rgba(255,102,0,0.3)]">
+                        <span className="text-primary italic relative inline-block">
                             {t('heroTitle2')}
+                            <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: "100%" }}
+                                transition={{ delay: 1.5, duration: 1 }}
+                                className="absolute -bottom-4 left-0 h-4 bg-primary/20 blur-xl -z-10" 
+                            />
                         </span> <br />
-                        <span className="text-foreground dark:text-white">{t('heroTitle3')}</span>
+                        <span className="text-foreground dark:text-white drop-shadow-2xl">{t('heroTitle3')}</span>
                     </motion.h1>
 
-                    {/* Description Architecture */}
-                    <motion.div variants={itemVariants} className="max-w-3xl mx-auto space-y-8 mb-16">
-                        <p className="text-xl md:text-2xl text-foreground/80 dark:text-white/90 font-medium leading-[1.4] tracking-tight">
+                    {/* Description Architecture - Precision Narrative */}
+                    <motion.div variants={itemVariants} className="max-w-4xl mx-auto space-y-12 mb-20">
+                        <p className="text-2xl md:text-3xl text-foreground/60 dark:text-white/70 font-medium leading-[1.3] tracking-tight max-w-2xl mx-auto">
                             {t('heroDesc') || "L'infrastructure technologique ultime fusionnant logistique prédictive, finance inclusive et commerce global."}
                         </p>
                         
-                        <div className="flex flex-wrap justify-center gap-4">
+                        <div className="flex flex-wrap justify-center gap-6">
                             {[
-                                { label: "Performance IA", icon: Cpu },
-                                { label: "Sécurité Militaire", icon: Shield },
-                                { label: "Sync Temps Réel", icon: Activity },
+                                { label: "Performance IA", icon: Cpu, color: "text-blue-500" },
+                                { label: "Sécurité Militaire", icon: Shield, color: "text-emerald-500" },
+                                { label: "Sync Temps Réel", icon: Activity, color: "text-rose-500" },
                             ].map((tag, i) => (
-                                <div key={i} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 shadow-lg">
-                                    <tag.icon className="size-3.5 text-primary" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-foreground dark:text-white">{tag.label}</span>
-                                </div>
+                                <motion.div 
+                                    key={i} 
+                                    whileHover={{ y: -5 }}
+                                    className="flex items-center gap-3 px-6 py-3 rounded-[1.5rem] bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl hover:border-white/20 transition-all"
+                                >
+                                    <tag.icon className={cn("size-4", tag.color)} />
+                                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-foreground dark:text-white">{tag.label}</span>
+                                </motion.div>
                             ))}
                         </div>
                     </motion.div>
 
-                    {/* Action Hub */}
-                    <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-24 w-full">
-                        <Link to="/marketplace" className="w-full sm:w-auto">
-                            <button className="w-full sm:w-auto h-20 px-12 bg-primary text-primary-foreground font-black text-sm uppercase tracking-[0.3em] rounded-[1.5rem] shadow-[0_30px_60px_-15px_rgba(255,102,0,0.4)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 border border-white/20">
-                                EXPLORER LE MARCHÉ
-                                <ArrowRight className="size-5" />
+                    {/* Action Hub - High Contrast Decision Matrix */}
+                    <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-20 w-full">
+                        <button
+                            onClick={() => navigate('/marketplace')}
+                            className="w-full sm:w-auto h-16 sm:h-24 px-12 sm:px-16 bg-primary text-primary-foreground font-black text-sm uppercase tracking-[0.4em] rounded-[1.5rem] sm:rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(255,102,0,0.5)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4 border border-white/20 group"
+                        >
+                            EXPLORER LE MARCHÉ
+                            <ArrowRight className="size-5 sm:size-6 group-hover:translate-x-2 transition-transform" />
+                        </button>
+                        {isAuthenticated ? (
+                            <button
+                                onClick={() => navigate(
+                                    user?.role === 'admin' ? '/admin/dashboard'
+                                    : user?.role === 'fournisseur' ? '/vendor/dashboard'
+                                    : '/dashboard'
+                                )}
+                                className="w-full sm:w-auto h-16 sm:h-24 px-12 sm:px-16 bg-white/5 border-2 border-white/10 backdrop-blur-3xl text-foreground font-black text-sm uppercase tracking-[0.4em] rounded-[1.5rem] sm:rounded-[2.5rem] hover:bg-white/10 hover:border-primary/30 transition-all flex items-center justify-center gap-4 group"
+                            >
+                                <LayoutDashboard className="size-5 sm:size-6 text-primary group-hover:scale-110 transition-transform" />
+                                MON ESPACE
                             </button>
-                        </Link>
-                        <Link to="/register" className="w-full sm:w-auto">
-                            <button className="w-full sm:w-auto h-20 px-12 bg-foreground/5 border-2 border-border/50 backdrop-blur-3xl text-foreground font-black text-sm uppercase tracking-[0.3em] rounded-[1.5rem] hover:bg-foreground/10 hover:border-primary/20 transition-all flex items-center justify-center gap-3">
-                                <Rocket className="size-5 text-primary" />
+                        ) : (
+                            <button
+                                onClick={() => navigate('/register')}
+                                className="w-full sm:w-auto h-16 sm:h-24 px-12 sm:px-16 bg-white/5 border-2 border-white/10 backdrop-blur-3xl text-foreground font-black text-sm uppercase tracking-[0.4em] rounded-[1.5rem] sm:rounded-[2.5rem] hover:bg-white/10 hover:border-primary/30 transition-all flex items-center justify-center gap-4 group"
+                            >
+                                <Rocket className="size-5 sm:size-6 text-primary group-hover:-translate-y-1 transition-transform" />
                                 CRÉER UN COMPTE
                             </button>
-                        </Link>
+                        )}
                     </motion.div>
 
-                    {/* Bento Performance Grid */}
+                    {/* Bento Performance Hub - Real-Time Validation */}
                     <motion.div 
                         variants={itemVariants}
-                        className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 w-full max-w-6xl"
+                        className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10 w-full max-w-7xl"
                     >
                         {[
-                            { label: t('users') || "Utilisateurs Actifs", val: stats.users, icon: Users, sub: "Guinée & Diaspora" },
-                            { label: t('merchants') || "Partenaires PME", val: stats.vendors, icon: Store, sub: "Vendeurs Certifiés" },
-                            { label: t('transactions') || "Flux de Commandes", val: stats.transactions, icon: CreditCard, sub: "Volume Hebdomadaire" },
+                            { label: t('users') || "Utilisateurs Actifs", val: stats.users, icon: Users, sub: "Guinée & Diaspora", trend: "+12%" },
+                            { label: t('merchants') || "Fournisseurs Pro", val: stats.vendors, icon: StoreSVG, sub: "Fournisseurs Certifiés", trend: "Premium" },
+                            { label: t('transactions') || "Flux de Commandes", val: stats.transactions, icon: CreditCard, sub: "Volume Hebdomadaire", trend: "Secure" },
                             { label: t('satisfaction') || "Confiance Client", val: stats.satisfaction, icon: Target, sub: "SLA Garanti", highlight: true },
                         ].map((stat, i) => (
-                            <div 
+                            <motion.div 
                                 key={i}
+                                whileHover={{ scale: 1.02 }}
                                 className={cn(
-                                    "relative p-8 rounded-[2.5rem] border transition-all duration-700 hover:-translate-y-4 group overflow-hidden",
+                                    "relative p-6 md:p-8 rounded-[2rem] border transition-all duration-700 group overflow-hidden shadow-xl",
                                     stat.highlight 
-                                        ? "bg-primary border-primary shadow-2xl shadow-primary/20" 
-                                        : "bg-card backdrop-blur-3xl border-border hover:border-primary/30"
+                                        ? "bg-slate-900 border-slate-800 shadow-slate-900/40" 
+                                        : "bg-white/5 backdrop-blur-3xl border-white/10 hover:border-primary/40 shadow-black/5"
                                 )}
                             >
                                 {/* Static Ambient glow */}
-                                <div className="absolute -right-4 -top-4 size-24 bg-foreground/5 blur-3xl rounded-full" />
+                                <div className="absolute -right-6 -top-6 size-24 bg-primary/5 blur-3xl rounded-full" />
                                 
                                 <div className={cn(
-                                    "size-14 rounded-2xl flex items-center justify-center mb-6 transition-all duration-500",
-                                    stat.highlight ? "bg-white/20 text-white" : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white"
+                                    "flex items-center justify-between mb-6",
+                                    stat.highlight ? "text-white" : "text-primary"
                                 )}>
-                                    <stat.icon className="size-7" />
+                                    <div className={cn(
+                                        "size-12 rounded-xl flex items-center justify-center transition-all duration-500",
+                                        stat.highlight ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white"
+                                    )}>
+                                        <stat.icon className="size-6" />
+                                    </div>
+                                    {stat.trend && (
+                                        <span className={cn(
+                                            "text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full border",
+                                            stat.highlight ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/20" : "bg-white/5 text-slate-400 border-white/10"
+                                        )}>
+                                            {stat.trend}
+                                        </span>
+                                    )}
                                 </div>
 
-                                <div className="text-left space-y-1">
-                                    <h3 className={cn("text-3xl md:text-4xl font-black tracking-tighter tabular-nums", stat.highlight ? "text-white" : "text-foreground")}>
-                                        {stat.val}
+                                <div className="text-left space-y-2">
+                                    <h3 className={cn("text-3xl md:text-4xl font-black tracking-tighter tabular-nums leading-none", stat.highlight ? "text-white" : "text-foreground")}>
+                                        <AnimatedCounter value={stat.val} delay={i * 0.1} />
                                     </h3>
-                                    <p className={cn("text-[11px] font-black uppercase tracking-widest", stat.highlight ? "text-white/80" : "text-foreground/70")}>
+                                    <p className={cn("text-[10px] font-black uppercase tracking-[0.2em] pt-1", stat.highlight ? "text-white/60" : "text-foreground/40")}>
                                         {stat.label}
                                     </p>
-                                    <div className={cn("flex items-center gap-2 pt-2 opacity-50", stat.highlight ? "text-white" : "text-muted-foreground")}>
-                                        <div className="size-1 rounded-full bg-current animate-pulse" />
-                                        <p className="text-[9px] font-bold uppercase tracking-tight">{stat.sub}</p>
+                                    <div className={cn("flex items-center gap-3 pt-6 border-t mt-6", stat.highlight ? "border-white/10 text-white/40" : "border-white/5 text-muted-foreground/30")}>
+                                        <div className={cn("size-2 rounded-full animate-pulse", stat.highlight ? "bg-primary" : "bg-emerald-500")} />
+                                        <p className="text-[10px] font-bold uppercase tracking-widest">{stat.sub}</p>
                                     </div>
                                 </div>
-                            </div>
+                            </motion.div>
                         ))}
                     </motion.div>
                 </motion.div>
@@ -186,7 +239,7 @@ export function Hero() {
     )
 }
 
-function Store({ className }) {
+function StoreSVG({ className }) {
     return (
         <svg
             className={className}

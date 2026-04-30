@@ -5,16 +5,25 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const auditMiddleware = require('./middlewares/auditMiddleware');
+const { globalValidationMiddleware, validatePagination } = require('./middlewares/globalValidation');
 const { sequelize } = require('./models');
 
 const app = express();
+const path = require('path');
+
+// ─── Servir les fichiers statiques (Uploads) ─────────────────────────────────
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ─── Sécurité : CORS (Standard BCA v2.6) ────────────────────────────────────
 const allowedOrigins = [
     'http://localhost',
     'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175',
     'http://localhost:3000',
     'http://127.0.0.1',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
     process.env.FRONTEND_URL
 ].filter(Boolean);
 
@@ -46,6 +55,10 @@ app.use(cookieParser());
 // ─── Audit ───────────────────────────────────────────────────────────────────
 app.use(auditMiddleware);
 
+// ─── 🔐 VALIDATION GLOBALE (P0 - Sécurité) ──────────────────────────────────
+// Appliqué à TOUTES les requêtes pour une protection maximale
+app.use('/api', globalValidationMiddleware);
+
 // ─── Diagnostic & Health (Avant les limites de débit) ───────────────────────
 app.get('/api/ping', (req, res) => res.json({ message: 'pong', version: '2.6' }));
 app.get('/health', (req, res) => {
@@ -54,7 +67,8 @@ app.get('/health', (req, res) => {
         version: '2.6',
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
-        db_connected: !!sequelize
+        db_connected: !!sequelize,
+        validation: 'enabled'
     });
 });
 
@@ -68,6 +82,9 @@ app.use('/api', globalLimiter);
 
 // ─── Registre des Routes API V1 ──────────────────────────────────────────────
 const apiRouter = express.Router();
+
+// Appliquer la validation de pagination sur les routes GET
+apiRouter.use(validatePagination);
 
 apiRouter.use('/auth', require('./routes/authRoutes'));
 apiRouter.use('/categories', require('./routes/categoryRoutes'));
@@ -117,3 +134,4 @@ app.use((err, req, res, next) => {
 });
 
 module.exports = app;
+// Force restart

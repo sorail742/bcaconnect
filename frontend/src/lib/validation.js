@@ -20,7 +20,7 @@ export const registerClientSchema = registerBaseSchema.extend({
     adresse: z.string().optional(),
 });
 
-export const registerVendeurSchema = registerBaseSchema.extend({
+export const registerFournisseurSchema = registerBaseSchema.extend({
     nom_boutique: z.string().min(2, "Le nom de la boutique est requis (min 2 caractères)"),
     categorie_activite: z.string().min(1, "Veuillez sélectionner une catégorie d'activité"),
     adresse_boutique: z.string().min(3, "L'adresse du commerce est requise"),
@@ -37,7 +37,7 @@ export const registerTransporteurSchema = registerBaseSchema.extend({
 // Helper : retourne le bon schéma selon le rôle
 export const getRegisterSchema = (role) => {
     switch (role) {
-        case 'fournisseur': return registerVendeurSchema;
+        case 'fournisseur': return registerFournisseurSchema;
         case 'transporteur': return registerTransporteurSchema;
         default: return registerClientSchema;
     }

@@ -34,6 +34,14 @@ const Store = sequelize.define('Store', {
         type: DataTypes.STRING(255),
         allowNull: true,
     },
+    is_verified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    },
+    rating: {
+        type: DataTypes.FLOAT,
+        defaultValue: 4.5,
+    },
     use_carousel: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,

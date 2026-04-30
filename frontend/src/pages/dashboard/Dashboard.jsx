@@ -4,6 +4,7 @@ import DashboardCard from '../../components/ui/DashboardCard';
 import DataTable from '../../components/ui/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
 import { Wallet, ShoppingBag, Star, Activity, ArrowRight, Shield, Package, Zap, ChevronRight, Sparkles } from 'lucide-react';
+import ProductCard from '../../components/produits/ProductCard';
 import { CardSkeleton, TableRowSkeleton, ProductSkeleton } from '../../components/ui/Loader';
 import { useAuth } from '../../hooks/useAuth';
 import orderService from '../../services/orderService';
@@ -13,6 +14,8 @@ import walletService from '../../services/walletService';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useOrders, useProducts, useWallet } from '../../hooks/useDomainData';
 import { useAIScore } from '../../hooks/useAIScore';
+
+const FALLBACK = 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&q=80&w=600';
 
 const orderColumns = [
     { key: 'id', label: 'RÉFÉRENCE', render: (row) => <span className="font-black text-[9px] uppercase tracking-widest text-[#FF6600]">#{row.id && typeof row.id === 'string' ? row.id.slice(0, 8).toUpperCase() : (row.id || '—')}</span> },
@@ -114,34 +117,67 @@ const Dashboard = () => {
             description: 'STATUT DE GOUVERNANCE PRIVILÈGE' 
         },
     ];
+    // Helper pour les images locales/distantes
+    const getImageUrl = (url) => {
+        if (!url) return FALLBACK;
+        if (url.startsWith('http')) return url;
+        const serverUrl = 'http://localhost:5000';
+        return `${serverUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+    };
 
     return (
         <DashboardLayout title="CONSOLE UTILISATEUR">
             <div className="space-y-4 animate-in fade-in duration-700 pb-24">
 
-                {/* Compact Command Bar */}
-                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 bg-white dark:bg-[#0F1219] p-4 rounded-2xl border border-slate-200 dark:border-foreground/5 shadow-sm overflow-hidden relative group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#FF6600]/[0.01] to-transparent pointer-events-none" />
-                    <div className="flex items-center gap-3 relative z-10">
-                        <div className="size-6 rounded-xl bg-[#FF6600]/10 flex items-center justify-center text-[#FF6600] border border-[#FF6600]/5 group-hover:rotate-6 transition-transform">
-                            <Zap className="size-6 shadow-sm" />
+                {/* Compact Command Bar — Modernized v2.7 */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#0F1219] p-5 rounded-3xl border border-slate-200 dark:border-foreground/5 shadow-xl shadow-black/[0.02] overflow-hidden relative group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#FF6600]/[0.03] to-transparent pointer-events-none" />
+                    
+                    <div className="flex items-center gap-5 relative z-10">
+                        {/* Avatar / Icon Circle */}
+                        <div className="relative">
+                            {user?.avatar_url ? (
+                                <img 
+                                    src={user.avatar_url} 
+                                    alt="" 
+                                    className="size-14 rounded-2xl object-cover border-2 border-[#FF6600]/20 shadow-lg shadow-[#FF6600]/10 group-hover:scale-105 transition-transform" 
+                                />
+                            ) : (
+                                <div className="size-14 rounded-2xl bg-gradient-to-br from-[#FF6600] to-orange-600 flex items-center justify-center text-white shadow-lg shadow-[#FF6600]/20 group-hover:rotate-3 transition-transform">
+                                    <span className="text-xl font-black">{user?.nom_complet?.charAt(0) || 'B'}</span>
+                                </div>
+                            )}
+                            <div className="absolute -bottom-1 -right-1 size-5 rounded-lg bg-emerald-500 border-4 border-white dark:border-[#0F1219] flex items-center justify-center">
+                                <div className="size-1.5 rounded-full bg-white animate-pulse" />
+                            </div>
                         </div>
-                        <div className="space-y-1">
-                            <h2 className="text-sm font-black text-slate-900 dark:text-foreground uppercase tracking-tight leading-none pt-0.5">
-                                BIENVENUE, <span className="text-[#FF6600]">{user?.nom_complet?.split(' ')[0] || 'MEMBRE'}</span>.
+
+                        <div className="space-y-1.5">
+                            <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none">
+                                BIENVENUE, <span className="text-[#FF6600]">{user?.nom_complet || 'MEMBRE'}</span>
                             </h2>
-                            <p className="text-[9px] font-black text-muted-foreground/80 uppercase tracking-widest opacity-80 decoration-[#FF6600]/20 underline underline-offset-4">
-                                {user?.role?.toUpperCase() || 'MEMBRE'} — SYNC RÉSEAU : {new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
-                            </p>
+                            <div className="flex items-center gap-3">
+                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <Shield className="size-3 text-emerald-500" />
+                                    {user?.role || 'CLIENT'} ACCRÉDITÉ
+                                </p>
+                                <span className="h-1 w-1 rounded-full bg-slate-300" />
+                                <p className="text-[10px] font-black text-[#FF6600] uppercase tracking-widest animate-pulse">
+                                    RÉSEAU ACTIF
+                                </p>
+                            </div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4 relative z-10">
+
+                    <div className="flex items-center gap-3 relative z-10">
                         <button
                             onClick={() => navigate('/profile')}
-                            className="h-10 px-6 bg-slate-900 dark:bg-white text-foreground dark:text-slate-900 hover:bg-[#FF6600] hover:text-foreground rounded-xl font-black text-[9px] uppercase tracking-widest transition-all shadow-md active:scale-95 flex items-center gap-3 group/btn"
+                            className="h-12 px-8 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-[#FF6600] hover:text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.15em] transition-all shadow-xl shadow-black/10 active:scale-95 flex items-center gap-3 group/btn"
                         >
                             <span>MON PROFIL</span>
-                            <ArrowRight className="size-4 group-hover/btn:translate-x-1 transition-transform" />
+                            <div className="size-6 rounded-lg bg-white/10 dark:bg-slate-900/5 flex items-center justify-center group-hover/btn:translate-x-1 transition-all">
+                                <ArrowRight className="size-4" />
+                            </div>
                         </button>
                     </div>
                 </div>
@@ -256,28 +292,41 @@ const Dashboard = () => {
                         <Link to="/marketplace" className="text-[9px] font-black text-[#FF6600] hover:text-slate-900 dark:text-foreground transition-colors uppercase  flex items-center gap-2">ACCÉDER AU MARCHÉ <ArrowRight className="size-3" /></Link>
                     </div>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        {isLoading ? [1, 2, 3, 4].map(i => <ProductSkeleton key={i} />) : quickProducts.map((product, idx) => (
-                            <Link to={`/product/${product.id}`} key={idx} className="bg-white dark:bg-[#0F1219] border border-slate-200 dark:border-foreground/5 p-4 rounded-2xl flex flex-col gap-3 hover:border-[#FF6600]/20 transition-all group shadow-sm">
-                                <div className="aspect-square rounded-xl bg-slate-50 dark:bg-white/[0.03] overflow-hidden flex-shrink-0 relative border border-slate-100 dark:border-foreground/5">
-                                    <img src={product.images?.[0]?.url_image} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-all duration-[2s]" />
-                                    <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent" />
-                                    <div className="absolute bottom-4 left-4 flex items-center gap-2">
-                                        <div className="size-1.5 rounded-full bg-[#FF6600] animate-pulse" />
-                                        <span className="text-[8px] font-black text-foreground uppercase tracking-widest pt-0.5">INDEXÉ</span>
-                                    </div>
-                                </div>
-                                <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black text-slate-800 dark:text-foreground uppercase tracking-tight line-clamp-1 group-hover:text-[#FF6600] transition-colors">{product.nom_produit}</h4>
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-sm font-black text-[#FF6600] tracking-tighter tabular-nums">{parseFloat(product.prix_unitaire).toLocaleString()} <span className="text-[8px] text-muted-foreground/80">GNF</span></p>
-                                        <div className="size-6 rounded-lg bg-slate-50 dark:bg-foreground/5 flex items-center justify-center text-muted-foreground/80 group-hover:bg-[#FF6600] group-hover:text-foreground transition-all shadow-sm">
-                                            <ArrowRight className="size-4" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </Link>
-                        ))}
+                    <div className="bg-white dark:bg-[#0F1219] border border-slate-200 dark:border-foreground/5 rounded-2xl overflow-hidden shadow-sm">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b border-slate-100 dark:border-white/5 bg-slate-50/30 dark:bg-white/[0.02]">
+                                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Aperçu</th>
+                                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Produit</th>
+                                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Catégorie</th>
+                                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Prix</th>
+                                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Stock</th>
+                                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Évaluation</th>
+                                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {isLoading ? (
+                                    [1, 2, 3, 4].map(i => (
+                                        <tr key={i} className="animate-pulse border-b border-slate-50 dark:border-white/5">
+                                            <td colSpan={7} className="p-8"><div className="h-8 bg-slate-100 dark:bg-white/5 rounded-xl w-full" /></td>
+                                        </tr>
+                                    ))
+                                ) : quickProducts.length > 0 ? (
+                                    quickProducts.map((product) => (
+                                        <ProductCard 
+                                            key={product.id} 
+                                            product={product} 
+                                            variant="row" 
+                                        />
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={7} className="py-20 text-center opacity-30 text-[10px] font-black uppercase tracking-widest">Aucune recommandation disponible</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
 
                     <div className="bg-white dark:bg-[#0F1219] border border-slate-200 dark:border-foreground/5 rounded-2xl shadow-sm overflow-hidden mt-12">

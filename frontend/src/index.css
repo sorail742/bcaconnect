@@ -101,16 +101,37 @@
 /* ── HUD Custom Scrollbar ────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
-  border-radius: 4px;
+  background: #cbd5e1;
+  border-radius: 20px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #f97316;
+  background-clip: content-box;
+}
+
+/* Numeric & Text Scaling Utilities */
+.auto-scale-text {
+  font-size: clamp(0.75rem, 4vw, 1.125rem);
+  word-break: break-word;
+}
+
+.price-text {
+  font-size: clamp(1rem, 6vw, 1.75rem);
+  line-height: 1;
+  letter-spacing: -0.05em;
+  font-family: 'Outfit', sans-serif;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
 .premium-card {
@@ -122,14 +143,18 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
+  width: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f8fafc;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(249, 115, 22, 0.2);
+  background: #e2e8f0;
   border-radius: 10px;
+  border: 2px solid #f8fafc;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(249, 115, 22, 0.5);
+  background: #f97316;
 }
 
 .no-scrollbar::-webkit-scrollbar {

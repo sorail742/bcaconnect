@@ -30,16 +30,105 @@ const callGroq = async (systemPrompt, userMessage, maxTokens = 400, jsonMode = t
 
         const response = await axios.post(GROQ_API_URL, payload, {
             headers: groqHeaders(),
-            timeout: 20000
+            timeout: 45000
         });
 
         const content = response.data.choices[0]?.message?.content;
-        return jsonMode ? JSON.parse(content) : content;
+        
+        if (jsonMode) {
+            if (!content) {
+                console.error('[AI Error] Groq returned empty content');
+                throw new Error('Réponse IA vide.');
+            }
+            try {
+                // Tenter un parse direct
+                return JSON.parse(content);
+            } catch (e) {
+                // Si échec, tenter d'extraire le JSON via regex (au cas où il y a du texte autour)
+                const jsonMatch = content.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    try {
+                        return JSON.parse(jsonMatch[0]);
+                    } catch (e2) {
+                        console.error('[AI Parse Error] Extracted string is not valid JSON:', jsonMatch[0]);
+                        throw new Error('Format de réponse IA invalide.');
+                    }
+                }
+                throw new Error('Aucun JSON trouvé dans la réponse IA.');
+            }
+        }
+        return content || "";
     } catch (error) {
         const msg = error.response?.data?.error?.message || error.message;
         console.error('[Groq AI Error]', msg);
         throw new Error('Service IA temporairement indisponible.');
     }
+};
+
+// ─── Moteur de Recherche Local (Fallback sans IA) ────────────────────────────
+/**
+ * Interprétation locale de la requête sans appel Groq.
+ * Utilisée comme fallback quand Groq est indisponible ou timeout.
+ */
+const interpretSearchLocally = (query) => {
+    const q = query.toLowerCase().trim();
+
+    // Mots-clés indiquant une salutation
+    const greetingWords = ['bonjour', 'salut', 'bonsoir', 'hello', 'hi', 'coucou', 'hey'];
+    const isGreeting = greetingWords.some(g => q.includes(g)) && q.split(' ').length <= 5;
+
+    // Détection d'intention : Fournisseur vs Produit
+    const supplierKeywords = ['fournisseur', 'grossiste', 'boutique', 'vendeur', 'fabricant', 'distributeur', 'store', 'marchand'];
+    const isSupplierSearch = supplierKeywords.some(sk => q.includes(sk));
+
+    // Mots vides français à exclure des mots-clés
+    const stopWords = new Set([
+        'je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles',
+        'me', 'te', 'se', 'le', 'la', 'les', 'un', 'une', 'des',
+        'du', 'de', 'da', 'et', 'ou', 'ni', 'car', 'mais', 'donc',
+        'or', 'en', 'à', 'au', 'aux', 'sur', 'sous', 'dans', 'par',
+        'pour', 'avec', 'sans', 'entre', 'vers', 'chez', 'que', 'qui',
+        'quoi', 'dont', 'où', 'mon', 'ton', 'son', 'ma', 'ta', 'sa',
+        'mes', 'tes', 'ses', 'notre', 'votre', 'leur', 'leurs',
+        'cherche', 'trouve', 'trouver', 'chercher', 'veux', 'voudrais',
+        'besoin', 'moi', 'avoir', 'est', 'sont', 'ai', 'as', 'a',
+        'chercher', 'trouver', 'acheter', 'commander', 'voir', 'avoir',
+        'une', 'un', 'des', 'les', 'the', 'of', 'and', 'is', 'in',
+        'this', 'that', 'all', 'any', 'some', 'no', 'not', 'other', 'si', 'me'
+    ]);
+
+    // Extraction des mots-clés significatifs
+    const keywords = q
+        .replace(/[^\w\sàâäéèêëîïôùûüç]/gi, ' ')
+        .split(/\s+/)
+        .filter(w => w.length > 2 && !stopWords.has(w))
+        .slice(0, 5); // Max 5 mots-clés
+
+    if (isGreeting) {
+        return {
+            message: "Bonjour ! Je suis BCA IA Assistant. Dites-moi ce que vous cherchez et je trouve les meilleurs produits et fournisseurs pour vous.",
+            search_type: 'product',
+            keywords: [],
+            category: '',
+            thought_process: "Salutation détectée (mode hors-ligne).",
+            is_greeting: true,
+            _fallback: true
+        };
+    }
+
+    const message = isSupplierSearch
+        ? `Recherche de fournisseurs pour : ${keywords.join(', ') || query}`
+        : `Voici les résultats pour : "${keywords.join(', ') || query}"`;
+
+    return {
+        message,
+        search_type: isSupplierSearch ? 'supplier' : 'product',
+        keywords,
+        category: '',
+        thought_process: `Analyse locale (mode hors-ligne) : ${isSupplierSearch ? 'intention fournisseur détectée' : 'recherche de produits'}, mots-clés extraits : [${keywords.join(', ')}].`,
+        is_greeting: false,
+        _fallback: true
+    };
 };
 
 // ─── Service IA ───────────────────────────────────────────────────────────────
@@ -216,19 +305,35 @@ Description: ${productData.description || 'Non fournie'}`;
 
     /**
      * 7. Interprète une requête de recherche utilisateur
+     * Version avancée : Détection d'intention (Produits vs Fournisseurs)
+     * Fallback local si Groq est indisponible/timeout
      */
     interpretSearch: async (query) => {
-        const systemPrompt = `Tu es un expert en interprétation de requêtes de recherche pour une plateforme e-commerce africaine (BCA Connect).
-Analyse la requête et retourne un JSON avec:
+        const systemPrompt = `Tu es "BCA IA Assistant", l'intelligence de sourcing de BCA Connect.
+Ton rôle est d'analyser l'intention de l'utilisateur.
+
+Structure JSON attendue:
 {
-  "interpretation": "explication claire de ce que l'utilisateur cherche",
-  "keywords": ["array", "de", "mots-clés", "pertinents"],
-  "category": "catégorie principale"
+  "message": "Ta réponse directe et pro (Inspiré d'Accio Alibaba)",
+  "search_type": "product|supplier",
+  "keywords": ["mots", "clés"],
+  "category": "catégorie",
+  "thought_process": "Explication brève de ta réflexion pour arriver à ce résultat",
+  "is_greeting": boolean
 }
+
+Note: Si l'utilisateur demande des "fournisseurs", des "grossistes" ou des "boutiques", search_type doit être "supplier".
 Réponds UNIQUEMENT avec le JSON.`;
 
-        const userMessage = `Interprète cette recherche: "${query}"`;
-        return await callGroq(systemPrompt, userMessage, 300);
+        const userMessage = `Requête: "${query}"`;
+
+        try {
+            return await callGroq(systemPrompt, userMessage, 600);
+        } catch (groqError) {
+            // ─── FALLBACK LOCAL : Groq indisponible / timeout ─────────────────
+            console.warn('[AI Fallback] Groq indisponible, utilisation du moteur local pour:', query);
+            return interpretSearchLocally(query);
+        }
     },
 
     /**
@@ -246,6 +351,64 @@ Réponds TOUJOURS en JSON valide:
 
         const userMessage = `Trouve des produits similaires à: "${description}"`;
         return await callGroq(systemPrompt, userMessage, 400);
+    },
+
+    /**
+     * 9. Génère les détails d'un produit (description, prix, catégorie, etc.)
+     * à partir d'un nom et/ou d'une description d'image
+     */
+    generateProductDetails: async (name, imageAnalysis = '') => {
+        const systemPrompt = `Tu es un assistant de saisie e-commerce expert pour BCA Connect en Guinée.
+Ta mission est d'aider le vendeur à remplir sa fiche produit RAPIDEMENT.
+Basé sur le NOM du produit ou l'ANALYSE D'IMAGE fournie, génère des données réalistes et professionnelles.
+
+Réponds TOUJOURS en JSON valide avec la structure suivante:
+{
+  "description": "string (Description attractive et détaillée en français)",
+  "prix_suggere": number (en GNF, réaliste pour le marché guinéen),
+  "categorie_suggeree": "string (Une des catégories Alibaba standards)",
+  "unite_suggeree": "string (ex: Pièce, kg, Paire, Carton, Ensemble)",
+  "mots_cles": ["string", "string"],
+  "caracteristiques": [{"nom": "string", "valeur": "string"}]
+}
+
+Liste des catégories standards autorisées:
+"Vêtements & Accessoires", "Électronique grand public", "Maison & Jardin", "Sports & Loisirs", 
+"Bijoux, Lunettes & Montres", "Produits de beauté", "Chaussures & Accessoires", "Médical & Santé",
+"Machines industrielles", "Équipements et machines commerciaux", "Machines pour le Bâtiment & la Construction",
+"Construction & Immobilier", "Meubles", "Lumière & Éclairage", "Électroménager",
+"Fournitures & Outils auto", "Pièces & Accessoires pour véhicules", "Bricolage & Quincaillerie",
+"Énergies renouvelables", "Équipements & Fournitures Électriques", "Sûreté & sécurité",
+"Manutention", "Instrument & Équipement de test", "Transmission d'énergie",
+"Composants électroniques", "Véhicules et transport", "Agriculture, Aliments & Boissons",
+"Matières premières", "Services de fabrication", "Service"
+
+Réponds UNIQUEMENT avec le JSON.`;
+
+        const userMessage = `Génère les détails pour ce produit:
+Nom: ${name || 'Inconnu'}
+Analyse Image: ${imageAnalysis || 'Aucune image fournie'}`;
+
+        return await callGroq(systemPrompt, userMessage, 800);
+    },
+
+    /**
+     * 10. Génère une description technique pour une catégorie
+     */
+    generateCategoryDescription: async (name) => {
+        const systemPrompt = `Tu es un expert en taxonomie e-commerce pour BCA Connect.
+Ta mission est de rédiger une description technique et attractive pour une CATÉGORIE de produits.
+Cette description sera affichée aux acheteurs pour les aider à comprendre ce qu'ils trouveront dans ce segment.
+
+Réponds TOUJOURS en JSON valide:
+{
+  "description": "string (Description professionnelle, environ 200 caractères, mettant en avant la qualité et la diversité)"
+}
+
+Réponds UNIQUEMENT avec le JSON.`;
+
+        const userMessage = `Génère une description pour la catégorie: "${name}"`;
+        return await callGroq(systemPrompt, userMessage, 300);
     },
 
     /**

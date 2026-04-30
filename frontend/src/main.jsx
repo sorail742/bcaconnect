@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import { ThemeProvider } from './context/ThemeContext'
 import { LanguageProvider } from './context/LanguageContext'
+import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './App.jsx'
 
@@ -34,9 +35,12 @@ createRoot(document.getElementById('root')).render(
 )
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
-      // Fail silently in production or handle gracefully
-    });
-  });
+  const updateSW = registerSW({
+    onNeedRefresh() {
+      // Prompt user to update
+    },
+    onOfflineReady() {
+      // App is ready to work offline
+    },
+  })
 }

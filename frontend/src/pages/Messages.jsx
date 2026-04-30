@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import {
@@ -105,6 +106,8 @@ const Messages = () => {
     const [isLoadingUsers, setIsLoadingUsers] = useState(false);
     const [typingUsers, setTypingUsers] = useState({});
     const [mobileShowChat, setMobileShowChat] = useState(false);
+    const [searchParams] = useSearchParams();
+    const recipientId = searchParams.get('recipient');
     const messagesEndRef = useRef(null);
     const typingTimeoutRef = useRef(null);
     const inputRef = useRef(null);
@@ -305,6 +308,37 @@ const Messages = () => {
             }
         }
     };
+
+    // ── Gestion automatique du destinataire via URL ───────────────────────────
+    useEffect(() => {
+        const checkRecipient = async () => {
+            if (!recipientId || !user?.id || isLoading) return;
+
+            // Chercher dans les conversations existantes
+            const existing = conversations.find(c =>
+                c.participants?.some(p => p.id === recipientId)
+            );
+
+            if (existing) {
+                if (selectedConv?.id !== existing.id) {
+                    setSelectedConv(existing);
+                    setMobileShowChat(true);
+                }
+            } else {
+                // Créer une nouvelle conversation
+                try {
+                    const newConv = await messageService.startConversation(recipientId);
+                    await loadConversations();
+                    setSelectedConv(newConv);
+                    setMobileShowChat(true);
+                } catch (err) {
+                    console.error("Impossible de démarrer la conversation avec le destinataire:", err);
+                }
+            }
+        };
+
+        checkRecipient();
+    }, [recipientId, conversations, isLoading, user?.id, selectedConv?.id, loadConversations]);
 
     const handleSelectConv = (conv) => {
         setSelectedConv(conv);

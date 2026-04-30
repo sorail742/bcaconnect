@@ -97,7 +97,16 @@ const storeController = {
         try {
             const stores = await Store.findAll({
                 where: { statut: 'actif' },
-                include: [{ model: User, attributes: ['nom_complet'] }]
+                include: [
+                    { model: User, attributes: ['nom_complet'] },
+                    { 
+                        model: Product, 
+                        as: 'produits', 
+                        limit: 4,
+                        order: [['views', 'DESC']],
+                        attributes: ['id', 'nom_produit', 'image_url', 'prix_unitaire']
+                    }
+                ]
             });
             res.json(stores);
         } catch (error) {

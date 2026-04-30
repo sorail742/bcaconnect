@@ -1,173 +1,219 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Rocket, ArrowLeft, Zap, Bell, CheckCircle2, Loader2 } from 'lucide-react';
+import { Rocket, ArrowLeft, Zap, Bell, CheckCircle2, Loader2, Sparkles, LayoutDashboard, Activity } from 'lucide-react';
 import BcaLogo from '../components/ui/BcaLogo';
 import { toast } from 'sonner';
+import { cn } from '../lib/utils';
 
 /**
- * Page générique pour les routes en cours de développement.
- * Affichée pour toutes les routes orphelines détectées dans l'audit.
+ * Page générique pour les routes en développement (Sleek Alibaba-inspired)
  */
 const PAGE_LABELS = {
-    '/careers':     { title: 'Carrières',              desc: 'Rejoignez notre équipe et faites partie de l\'aventure BCA Connect.' },
-    '/ads':         { title: 'BCA Ads',                desc: 'La régie publicitaire BCA pour promouvoir vos produits auprès de milliers d\'acheteurs.' },
-    '/insights':    { title: 'BCA Insights',           desc: 'Tableau de bord analytique pour piloter votre activité avec précision.' },
-    '/consultant':  { title: 'Devenir Consultant',     desc: 'Accompagnez les entreprises guinéennes dans leur transformation digitale.' },
-    '/logistics':   { title: 'BCA Logistique',         desc: 'Infrastructure logistique de bout en bout pour vos livraisons en Guinée.' },
-    '/carrier-join':{ title: 'Devenir Transporteur',   desc: 'Rejoignez le réseau de transporteurs certifiés BCA Connect.' },
-    '/download':    { title: 'Application Mobile',     desc: 'BCA Connect sur iOS et Android — disponible prochainement.' },
-    '/returns':     { title: 'Retours & Remboursements', desc: 'Système de retours et de remboursements entièrement automatisé.' },
+    '/careers':     { title: 'Carrières',              desc: 'Rejoignez notre équipe et participez à la révolution E-commerce.', icon: Rocket, color: 'from-blue-500 to-cyan-400' },
+    '/ads':         { title: 'BCA Ads System',         desc: 'Touchez des millions de clients avec des campagnes hyper-ciblées propulsées par IA.', icon: Zap, color: 'from-[#FF6600] to-orange-400' },
+    '/insights':    { title: 'BCA Insights',           desc: 'Votre centre de commandement Big Data. Prenez le contrôle de vos KPIs.', icon: LayoutDashboard, color: 'from-emerald-500 to-teal-400' },
+    '/ai-trends':   { title: 'BCA AI Engine',          desc: 'Anticipez les ruptures et prédisez les tendances du marché Guinéen avec précision.', icon: Sparkles, color: 'from-violet-500 to-fuchsia-400' },
+    '/consultant':  { title: 'Devenir Consultant',     desc: 'Accompagnez l\'écosystème BCA dans la transformation digitale.', icon: Rocket, color: 'from-blue-500 to-indigo-400' },
+    '/logistics':   { title: 'BCA Logistique',         desc: 'Gérez vos flottes, optimisez les trajets et garantissez vos SLAs.', icon: CheckCircle2, color: 'from-blue-500 to-cyan-400' },
+    '/carrier-join':{ title: 'Rejoindre le Réseau',    desc: 'Devenez transporteur agréé et rentabilisez tous vos déplacements.', icon: Activity, color: 'from-emerald-500 to-teal-400' },
+    '/download':    { title: 'App Mobile BCA',         desc: 'Achetez, Vendez, Gérez. Tout BCA dans votre poche.', icon: Rocket, color: 'from-[#FF6600] to-[#FF9033]' },
+    '/returns':     { title: 'Centre de Résolution',   desc: 'Gestion des litiges, retours et remboursements automatisés par IA Escrow.', icon: CheckCircle2, color: 'from-slate-500 to-slate-400' },
 };
 
 const DEFAULT_LABEL = {
     title: 'Bientôt disponible',
-    desc: 'Cette fonctionnalité est en cours de développement. Elle sera disponible très prochainement.',
+    desc: 'Ce module stratégique est en cours d\'assemblage dans nos laboratoires.',
+    icon: Rocket,
+    color: 'from-[#FF6600] to-orange-400'
 };
 
 export default function ComingSoon() {
     const location = useLocation();
     const page = PAGE_LABELS[location.pathname] || DEFAULT_LABEL;
+    const Icon = page.icon;
     const [email, setEmail] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubscribed, setIsSubscribed] = useState(false);
 
     const handleNotifyMe = async (e) => {
         e.preventDefault();
-
-        // Validation email basique
-        if (!email.trim()) {
-            toast.error('Veuillez entrer une adresse email.');
-            return;
-        }
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
+        if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             toast.error('Veuillez entrer une adresse email valide.');
             return;
         }
 
         setIsSubmitting(true);
         try {
-            // Sauvegarde locale (en attendant un endpoint API dédié)
-            const subscriptions = JSON.parse(localStorage.getItem('bca-notify-subscriptions') || '[]');
-            const alreadySubscribed = subscriptions.some(s => s.email === email && s.page === location.pathname);
-            
-            if (alreadySubscribed) {
-                toast.info('Vous êtes déjà inscrit pour les notifications de cette page.');
+            const subscriptions = JSON.parse(localStorage.getItem('bca-notify') || '[]');
+            if (subscriptions.some(s => s.email === email && s.page === location.pathname)) {
+                toast.info('Vous êtes déjà sur liste d\'attente VIP pour cette invite.');
                 setIsSubscribed(true);
                 return;
             }
-
             subscriptions.push({ email, page: location.pathname, date: new Date().toISOString() });
-            localStorage.setItem('bca-notify-subscriptions', JSON.stringify(subscriptions));
-
-            // Simuler un délai réseau réaliste
-            await new Promise(resolve => setTimeout(resolve, 600));
-
+            localStorage.setItem('bca-notify', JSON.stringify(subscriptions));
+            
+            await new Promise(resolve => setTimeout(resolve, 800));
             setIsSubscribed(true);
-            toast.success(`Vous serez alerté lorsque "${page.title}" sera disponible.`, {
-                duration: 5000,
-            });
+            toast.success(`Accès prioritaire accordé pour "${page.title}" !`);
         } catch {
-            toast.error('Impossible de vous inscrire pour le moment. Réessayez plus tard.');
+            toast.error('Erreur temporaire, veuillez réessayer.');
         } finally {
             setIsSubmitting(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 relative overflow-hidden">
-            {/* Background glow */}
-            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[40rem] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute inset-0 opacity-[0.015]" style={{
-                backgroundImage: `linear-gradient(to right, #64748b 1px, transparent 1px), linear-gradient(to bottom, #64748b 1px, transparent 1px)`,
-                backgroundSize: '3rem 3rem'
-            }} />
+        <div className="min-h-screen bg-slate-900 flex flex-col justify-center relative overflow-hidden font-sans">
+            
+            {/* Alibaba Industrial Dark Aesthetic Background */}
+            <div className="absolute inset-0 z-0">
+                <div className="absolute -top-[20%] -right-[10%] w-[70vw] h-[70vw] rounded-full bg-gradient-to-b from-[#FF6600]/10 to-transparent blur-[150px] opacity-70" />
+                <div className="absolute top-[40%] -left-[20%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-tr from-blue-500/10 to-transparent blur-[120px] opacity-50" />
+                
+                {/* Tech Grid Pattern */}
+                <div 
+                    className="absolute inset-0 opacity-[0.03]" 
+                    style={{ 
+                        backgroundImage: `linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)`,
+                        backgroundSize: '4rem 4rem' 
+                    }} 
+                />
+            </div>
 
-            <motion.div
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
-                className="relative z-10 flex flex-col items-center text-center max-w-lg gap-8"
-            >
-                {/* Logo */}
-                <Link to="/">
-                    <BcaLogo size="h-10" />
+            <div className="container relative z-10 mx-auto px-6 py-20 flex flex-col max-w-4xl">
+                
+                {/* Header Back */}
+                <Link to="/" className="w-fit flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-white transition-all group mb-16">
+                    <ArrowLeft className="size-4 group-hover:-translate-x-2 transition-transform" /> Retour à l'accueil
                 </Link>
 
-                {/* Icon */}
-                <motion.div
-                    animate={{ y: [0, -8, 0] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                    className="size-24 rounded-[2rem] bg-primary/10 border-2 border-primary/20 flex items-center justify-center shadow-xl shadow-primary/10"
-                >
-                    <Rocket className="size-12 text-primary" />
-                </motion.div>
-
-                {/* Badge */}
-                <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20">
-                    <Zap className="size-3 text-primary fill-primary" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">En développement</span>
-                </div>
-
-                {/* Title */}
-                <div className="space-y-3">
-                    <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-foreground leading-tight">
-                        {page.title}
-                    </h1>
-                    <p className="text-base text-muted-foreground leading-relaxed font-medium max-w-sm mx-auto">
-                        {page.desc}
-                    </p>
-                </div>
-
-                {/* Notify CTA */}
-                {isSubscribed ? (
-                    <div className="w-full flex items-center justify-center gap-3 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
-                        <CheckCircle2 className="size-5 text-emerald-500" />
-                        <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                            Vous serez alerté dès le lancement !
-                        </span>
-                    </div>
-                ) : (
-                    <form onSubmit={handleNotifyMe} className="w-full flex items-center gap-2 p-1.5 bg-muted border border-border rounded-2xl">
-                        <div className="flex items-center gap-3 flex-1 px-4">
-                            <Bell className="size-4 text-muted-foreground shrink-0" />
-                            <input
-                                type="email"
-                                placeholder="votre@email.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                disabled={isSubmitting}
-                                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 outline-none disabled:opacity-50"
-                            />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                    
+                    {/* Left: Content */}
+                    <motion.div 
+                        initial={{ opacity: 0, x: -30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.6 }}
+                        className="space-y-8"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/10 flex items-center gap-2">
+                                <span className={cn("size-2 rounded-full animate-pulse bg-gradient-to-r", page.color)} />
+                                <span className="text-[10px] font-black tracking-widest text-white uppercase">Module Stratégique</span>
+                            </div>
                         </div>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="shrink-0 h-10 px-5 bg-primary text-primary-foreground rounded-xl font-bold text-xs hover:brightness-110 active:scale-95 transition-all whitespace-nowrap disabled:opacity-50 flex items-center gap-2"
-                        >
-                            {isSubmitting ? (
-                                <>
-                                    <Loader2 className="size-3.5 animate-spin" />
-                                    Envoi...
-                                </>
-                            ) : (
-                                "M'alerter"
-                            )}
-                        </button>
-                    </form>
-                )}
 
-                {/* Back link */}
-                <Link
-                    to="/"
-                    className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-foreground transition-colors group"
-                >
-                    <ArrowLeft className="size-4 group-hover:-translate-x-1 transition-transform" />
-                    Retour à l'accueil
-                </Link>
-            </motion.div>
+                        <div>
+                            <h1 className="text-5xl sm:text-6xl font-black text-white tracking-tighter mb-4 leading-[1.1]" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                {page.title}
+                            </h1>
+                            <p className="text-lg text-slate-400 font-medium leading-relaxed max-w-md">
+                                {page.desc}
+                            </p>
+                        </div>
+
+                        {/* Early Access Form */}
+                        <div className="pt-4">
+                            {!isSubscribed ? (
+                                <form onSubmit={handleNotifyMe} className="relative group max-w-md">
+                                    <div className="absolute -inset-1 bg-gradient-to-r from-[#FF6600] to-orange-400 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
+                                    <div className="relative flex items-center bg-slate-800 border border-slate-700 hover:border-slate-600 rounded-2xl overflow-hidden transition-colors shadow-2xl">
+                                        <div className="pl-5 shrink-0">
+                                            <Bell className="size-5 text-slate-400" />
+                                        </div>
+                                        <input
+                                            type="email"
+                                            placeholder="Adresse email professionnelle..."
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            disabled={isSubmitting}
+                                            className="w-full h-14 bg-transparent text-sm font-medium text-white px-4 outline-none placeholder:text-slate-500 disabled:opacity-50"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={isSubmitting}
+                                            className="m-1.5 h-11 px-6 bg-white text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 active:scale-95 transition-all disabled:opacity-50 shrink-0 flex items-center justify-center min-w-[120px]"
+                                        >
+                                            {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : "Accès VIP"}
+                                        </button>
+                                    </div>
+                                </form>
+                            ) : (
+                                <motion.div 
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="max-w-md flex items-center gap-4 bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl"
+                                >
+                                    <div className="size-10 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
+                                        <CheckCircle2 className="size-5 text-emerald-400" />
+                                    </div>
+                                    <p className="text-sm font-bold text-emerald-100 leading-tight">
+                                        Invitation VIP confirmée. Vous serez notifié dès l'ouverture de l'accès anticipé.
+                                    </p>
+                                </motion.div>
+                            )}
+                        </div>
+                    </motion.div>
+
+                    {/* Right: Glassmorphism Visual */}
+                    <motion.div 
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                        className="hidden lg:flex justify-center relative"
+                    >
+                        <div className="relative w-full max-w-[400px] aspect-square rounded-[3rem] bg-white/[0.02] border border-white/5 backdrop-blur-3xl shadow-2xl flex items-center justify-center p-12 overflow-hidden group">
+                           
+                            {/* Inner Glow */}
+                            <div className={cn("absolute inset-0 bg-gradient-to-br opacity-20 pointer-events-none transition-transform duration-1000 group-hover:scale-110", page.color)} />
+                            
+                            {/* Central Element */}
+                            <div className="relative z-10 size-40 rounded-full bg-slate-800/80 border border-white/10 shadow-2xl flex items-center justify-center">
+                                <Icon className="size-16 text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]" />
+                            </div>
+
+                            {/* Floating Stats/Badges to sell the "System" feel */}
+                            <motion.div 
+                                animate={{ y: [0, -10, 0] }} 
+                                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                                className="absolute top-12 right-6 bg-slate-800/80 backdrop-blur-xl border border-white/10 px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3"
+                            >
+                                <div className="size-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                                    <Activity className="size-4 text-emerald-400" />
+                                </div>
+                                <div>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Statut</p>
+                                    <p className="text-xs font-bold text-white">En déploiement</p>
+                                </div>
+                            </motion.div>
+
+                            <motion.div 
+                                animate={{ y: [0, 10, 0] }} 
+                                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+                                className="absolute bottom-16 left-6 bg-slate-800/80 backdrop-blur-xl border border-white/10 px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3"
+                            >
+                                <div className="size-8 rounded-lg bg-[#FF6600]/20 flex items-center justify-center">
+                                    <Zap className="size-4 text-[#FF6600]" />
+                                </div>
+                                <div>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Performances</p>
+                                    <p className="text-xs font-bold text-white">Pré-calculs en cours</p>
+                                </div>
+                            </motion.div>
+
+                        </div>
+                    </motion.div>
+
+                </div>
+            </div>
+            
+            {/* Absolute Logo Bottom */}
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 opacity-20 pointer-events-none">
+                <BcaLogo variant="light" size="h-6" />
+            </div>
+            
         </div>
     );
 }
-

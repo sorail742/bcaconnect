@@ -72,10 +72,9 @@ const envSchema = Joi.object({
     // Redis - Refresh Token Rotation
     REDIS_URL: Joi.string()
         .uri()
-        .required()
+        .optional()
         .messages({
-            'string.uri': 'REDIS_URL doit être une URI valide',
-            'any.required': 'REDIS_URL est requis'
+            'string.uri': 'REDIS_URL doit être une URI valide'
         }),
 
     // Groq AI

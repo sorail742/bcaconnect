@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import ProductCard from '../components/produits/ProductCard';
 import { Button } from '../components/ui/Button';
 import { LoadingState, ErrorState, EmptyState } from '../components/ui/DataStates';
-import { useProducts, useCategories, useVendors, useHeroSlides } from '../hooks/useDomainData';
+import { useProducts, useCategories, useHeroSlides } from '../hooks/useDomainData';
 import { cn } from '../lib/utils';
 import {
     Search, ChevronLeft, ChevronRight, LayoutGrid, List, ArrowRight,
-    ShieldCheck, Truck, RotateCcw, Tag, Award, Sparkles
+    Sparkles, Filter, ShieldCheck
 } from 'lucide-react';
 import socketService from '../services/socketService';
 import { toast } from 'sonner';
 import { useLanguage } from '../context/LanguageContext';
 import { ProductSkeleton } from '../components/ui/Loader';
+import { getCategoryIconComponent } from '../lib/categoryConstants';
 
 const ProductCatalogue = () => {
     const { t, lang } = useLanguage();
@@ -20,43 +22,45 @@ const ProductCatalogue = () => {
     const [page, setPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeCategory, setActiveCategory] = useState("Tous");
-    const [priceRange, setPriceRange] = useState([0, 100000000]);
+    const [priceRange, setPriceRange] = useState([0, 1000000000]);
     const [sortBy, setSortBy] = useState('newest');
     const [viewMode, setViewMode] = useState('grid');
     const [currentSlide, setCurrentSlide] = useState(0);
+    const [condition, setCondition] = useState('');
+    const [isVerified, setIsVerified] = useState(false);
 
-    // Fetching categories and hero slides
     const { data: categoriesRaw, loading: categoriesLoading } = useCategories();
-    const { data: heroSlidesRaw, loading: heroLoading } = useHeroSlides();
-    const { data: vendorsRaw, loading: vendorsLoading } = useVendors();
+    const { data: heroSlidesRaw } = useHeroSlides();
 
     const categories = Array.isArray(categoriesRaw) ? categoriesRaw : [];
     const heroSlides = Array.isArray(heroSlidesRaw) ? heroSlidesRaw : [];
-    const vendors = Array.isArray(vendorsRaw) ? vendorsRaw : [];
 
-    // Fetching products with server-side filters
-    const { data: productsData, loading: productsLoading, error: productsError } = useProducts({
+    // Mapping exact des paramètres pour valider le DTO (Backend validateSearch)
+    const queryParams = {
         page,
-        search: searchQuery,
-        categorie_id: activeCategory === 'Tous' ? '' : activeCategory,
-        min_price: priceRange[0],
-        max_price: priceRange[1],
-        sort: sortBy,
-        limit: 12
-    });
+        limit: 36,
+        sort: sortBy
+    };
+    if (searchQuery.trim()) queryParams.q = searchQuery.trim();
+    if (activeCategory !== 'Tous') queryParams.categorie_id = activeCategory;
+    if (priceRange[0] > 0) queryParams.min_price = priceRange[0];
+    if (priceRange[1] < 1000000000) queryParams.max_price = priceRange[1];
+    if (condition) queryParams.condition = condition;
+    if (isVerified) queryParams.is_verified = true;
+
+    const { data: productsData, loading: productsLoading, error: productsError } = useProducts(queryParams);
 
     const products = productsData?.products || [];
     const totalPages = productsData?.pages || 1;
 
-    // Fallback slides si l'API ne renvoie rien
     const DEFAULT_SLIDES = [
         {
-            tag: "INNOVATION",
+            tag: "INNOVATION B2B",
             title: "Performance & Mobilité",
-            subtitle: "La nouvelle gamme d'ordinateurs professionnels est arrivée.",
-            cta: "DÉCOUVRIR",
+            subtitle: "Découvrez notre sélection premium d'équipements pour professionnels et entreprises.",
+            cta: "DÉCOUVRIR LE CATALOGUE",
             ctaLink: "/marketplace",
-            img: "https://images.unsplash.com/photo-1491933382434-500287f9b54b?auto=format&fit=crop&q=80&w=1200",
+            img: "https://images.unsplash.com/photo-1491933382434-500287f9b54b?auto=format&fit=crop&q=80&w=1600",
         }
     ];
 
@@ -65,8 +69,9 @@ const ProductCatalogue = () => {
     useEffect(() => {
         socketService.connect();
         const handleNewProduct = (newProduct) => {
-            toast.info(`🎉 Nouveau produit : ${newProduct.nom_produit}`, {
-                duration: 5000
+            toast.info(`Nouveau produit disponible : ${newProduct.nom_produit}`, {
+                duration: 5000,
+                icon: '🛒'
             });
         };
         socketService.on('product_added', handleNewProduct);
@@ -83,205 +88,272 @@ const ProductCatalogue = () => {
 
     const slide = displaySlides[currentSlide] || DEFAULT_SLIDES[0];
 
-    return (
-        <div className="relative bg-card min-h-screen text-foreground font-jakarta selection:bg-primary selection:text-background">
-            {/* Hero Section */}
-            <section className="relative min-h-[50vh] flex items-center overflow-hidden pt-20">
-                <div className="absolute inset-0 transition-all duration-[2s]">
-                    <img src={slide.img} className="w-full h-full object-cover" alt="" />
-                    <div className="absolute inset-0 bg-background/60" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-transparent" />
-                </div>
+    const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
+    const itemVariants = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 
-                <div className="container mx-auto px-8 relative z-10">
-                    <div className="max-w-[800px] space-y-8">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/10 text-[10px] font-black uppercase tracking-widest text-primary">
-                            <Sparkles className="size-3" />
+    return (
+        <div className="relative bg-slate-50 dark:bg-[#0A0D14] min-h-screen text-slate-900 dark:text-foreground font-sans">
+            
+            {/* ══ HERO SECTION ══ */}
+            <section className="relative min-h-[60vh] flex items-center overflow-hidden">
+                <AnimatePresence mode="wait">
+                    <motion.div 
+                        key={currentSlide}
+                        initial={{ opacity: 0, scale: 1.05 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 1.5 }}
+                        className="absolute inset-0"
+                    >
+                        <img src={slide.img} className="w-full h-full object-cover" alt="Hero background" />
+                        <div className="absolute inset-0 bg-slate-900/60 dark:bg-[#0A0D14]/80" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 via-slate-900/50 to-transparent dark:from-[#0A0D14] dark:via-[#0A0D14]/80" />
+                    </motion.div>
+                </AnimatePresence>
+
+                <div className="max-w-[1600px] mx-auto px-6 md:px-12 relative z-10 w-full pt-20">
+                    <motion.div 
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                        className="max-w-2xl space-y-6"
+                    >
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#FF6600]/30 bg-[#FF6600]/10 text-xs font-bold uppercase tracking-wider text-[#FF6600] backdrop-blur-sm">
+                            <Sparkles className="size-4" />
                             {slide.tag}
                         </div>
-                        <h1 className="text-4xl md:text-6xl font-black text-foreground tracking-tighter leading-[0.9]">
+                        <h1 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.1]">
                             {slide.title}
                         </h1>
-                        <p className="text-muted-foreground text-base md:text-lg font-medium leading-relaxed max-w-xl">
+                        <p className="text-lg text-slate-300 font-medium leading-relaxed max-w-xl">
                             {slide.subtitle}
                         </p>
-                        <div className="flex items-center gap-4 pt-4">
-                            <Link to={slide.ctaLink || '/marketplace'}>
-                                <Button className="h-12 px-8 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-black rounded-xl shadow-lg group border-none">
-                                    {slide.cta}
-                                    <ArrowRight className="size-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                                </Button>
-                            </Link>
+                        <div className="pt-6">
+                            <Button className="h-14 px-10 bg-[#FF6600] text-white hover:bg-[#FF6600]/90 text-sm font-bold rounded-xl shadow-xl shadow-[#FF6600]/20 transition-all hover:-translate-y-1">
+                                {slide.cta}
+                                <ArrowRight className="size-5 ml-3" />
+                            </Button>
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
             </section>
 
-            {/* Main Catalogue Grid */}
-            <section className="max-w-[1600px] mx-auto px-4 md:px-8 py-12 flex flex-col lg:flex-row gap-8">
+            {/* ══ TRUST BAR ══ */}
+            <div className="border-b border-border bg-white dark:bg-slate-900 hidden md:block relative z-20 shadow-sm">
+                <div className="max-w-[1600px] mx-auto px-6 md:px-12 h-16 flex items-center gap-8 text-sm font-semibold text-slate-600 dark:text-slate-400">
+                    <span className="flex items-center gap-2 text-slate-900 dark:text-white"><ShieldCheck className="size-5 text-[#FF6600]"/> Achat Protégé</span>
+                    <span className="w-px h-4 bg-border" />
+                    <span>Fournisseurs Certifiés</span>
+                    <span className="w-px h-4 bg-border" />
+                    <span>Paiements Sécurisés (Escrow)</span>
+                    <span className="w-px h-4 bg-border" />
+                    <span>Support Client B2B 24/7</span>
+                </div>
+            </div>
+
+            {/* ══ MAIN CATALOGUE ══ */}
+            <section className="max-w-[1600px] mx-auto px-4 md:px-12 py-12 flex flex-col lg:flex-row gap-8">
                 
-                {/* Advanced Filtering Rails */}
-                <aside className="lg:w-80 shrink-0 space-y-6">
-                    <div className="bg-muted/30 border border-border rounded-2xl p-6 space-y-8 sticky top-24">
+                {/* Advanced Filtering Sidebar */}
+                <aside className="lg:w-72 shrink-0 space-y-6">
+                    <div className="bg-white dark:bg-slate-800 border border-border rounded-2xl p-6 space-y-8 sticky top-24 shadow-sm">
+                        
+                        {/* Search Input */}
                         <div>
-                            <h3 className="text-sm font-black text-foreground uppercase tracking-widest mb-4">Filtrage Intelligent</h3>
+                            <div className="flex items-center gap-2 mb-4 text-slate-900 dark:text-white">
+                                <Filter className="size-5" />
+                                <h3 className="text-base font-bold">Filtres de recherche</h3>
+                            </div>
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400" />
                                 <input
-                                    className="h-11 w-full pl-10 pr-4 bg-background border border-border focus:border-primary/50 rounded-xl text-sm outline-none transition-all"
-                                    placeholder="Rechercher un produit..."
+                                    className="h-12 w-full pl-12 pr-4 bg-slate-50 dark:bg-slate-700/50 border border-border focus:border-[#FF6600] rounded-xl text-sm font-medium outline-none transition-all text-slate-900 dark:text-white"
+                                    placeholder="Mot-clé, produit..."
                                     value={searchQuery}
                                     onChange={e => { setSearchQuery(e.target.value); setPage(1); }}
                                 />
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Catégories</h4>
-                            <div className="flex flex-wrap gap-2">
+                        {/* Categories List */}
+                        <div className="space-y-3">
+                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Catégories</h4>
+                            <div className="flex flex-col gap-1">
                                 <button 
                                     onClick={() => { setActiveCategory('Tous'); setPage(1); }}
                                     className={cn(
-                                        "px-4 py-2 rounded-xl text-xs font-bold border transition-all",
-                                        activeCategory === 'Tous' ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20" : "bg-background border-border text-muted-foreground hover:border-primary/40"
+                                        "w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2",
+                                        activeCategory === 'Tous' ? "bg-orange-50 dark:bg-[#FF6600]/10 text-[#FF6600]" : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white"
                                     )}
                                 >
-                                    Tous
+                                    <LayoutGrid className="size-4" />
+                                    Toutes les catégories
                                 </button>
-                                {categories.map(cat => (
+                                {!categoriesLoading && categories.map(cat => (
                                     <button 
                                         key={cat.id}
                                         onClick={() => { setActiveCategory(cat.id); setPage(1); }}
                                         className={cn(
-                                            "px-4 py-2 rounded-xl text-xs font-bold border transition-all",
-                                            activeCategory === cat.id ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20" : "bg-background border-border text-muted-foreground hover:border-primary/40"
+                                            "w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold transition-all truncate flex items-center gap-2",
+                                            activeCategory === cat.id ? "bg-orange-50 dark:bg-[#FF6600]/10 text-[#FF6600]" : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white"
                                         )}
                                     >
+                                        <span className="scale-[0.8] flex items-center justify-center shrink-0">{getCategoryIconComponent(cat.nom_categorie)}</span>
                                         {cat.nom_categorie}
                                     </button>
                                 ))}
                             </div>
                         </div>
 
+                        {/* Price Range */}
                         <div className="space-y-4">
                             <div className="flex justify-between items-center">
-                                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Budget (GNF)</h4>
-                                <span className="text-[10px] font-black text-primary">{priceRange[1].toLocaleString()}</span>
+                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Budget Max</h4>
+                                <span className="text-sm font-bold text-slate-900 dark:text-white">{priceRange[1].toLocaleString()} GNF</span>
                             </div>
                             <input 
                                 type="range" 
                                 min={0} 
-                                max={100000000} 
-                                step={100000}
+                                max={1000000000} 
+                                step={1000000}
                                 value={priceRange[1]}
                                 onChange={e => { setPriceRange([0, parseInt(e.target.value)]); setPage(1); }}
-                                className="w-full h-1.5 bg-border rounded-full appearance-none accent-primary cursor-pointer"
+                                className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full appearance-none accent-[#FF6600] cursor-pointer"
                             />
                         </div>
 
+                        {/* Condition Filter */}
+                        <div className="space-y-3">
+                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">État du Produit</h4>
+                            <div className="grid grid-cols-2 gap-2">
+                                {['neuf', 'occasion'].map(c => (
+                                    <button
+                                        key={c}
+                                        onClick={() => { setCondition(condition === c ? '' : c); setPage(1); }}
+                                        className={cn(
+                                            "px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
+                                            condition === c 
+                                                ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" 
+                                                : "bg-transparent border-slate-200 dark:border-border text-slate-600 dark:text-slate-400 hover:border-primary/50"
+                                        )}
+                                    >
+                                        {c}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Seller Type Filter */}
+                        <div className="space-y-3">
+                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Certification</h4>
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <div 
+                                    className={cn(
+                                        "size-5 rounded-lg border flex items-center justify-center transition-all",
+                                        isVerified ? "bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-500/20" : "border-slate-200 dark:border-border bg-transparent"
+                                    )}
+                                    onClick={() => { setIsVerified(!isVerified); setPage(1); }}
+                                >
+                                    {isVerified && <ShieldCheck className="size-3.5 text-white" />}
+                                </div>
+                                <span className={cn(
+                                    "text-xs font-bold transition-colors",
+                                    isVerified ? "text-emerald-500" : "text-slate-600 dark:text-slate-400 group-hover:text-primary"
+                                )}>Fournisseurs Vérifiés</span>
+                            </label>
+                        </div>
+
+                        {/* Sort Select */}
                         <div className="space-y-4">
-                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Trier par</h4>
+                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Trier par</h4>
                             <select 
                                 value={sortBy}
                                 onChange={e => { setSortBy(e.target.value); setPage(1); }}
-                                className="w-full h-11 px-4 bg-background border border-border rounded-xl text-xs font-bold outline-none"
+                                className="w-full h-12 px-4 bg-slate-50 dark:bg-slate-700/50 border border-border rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-[#FF6600]"
                             >
-                                <option value="newest">Nouveautés</option>
+                                <option value="newest">Nouveautés d'abord</option>
                                 <option value="price_asc">Prix croissant</option>
                                 <option value="price_desc">Prix décroissant</option>
-                                <option value="popular">Popularité</option>
+                                <option value="popular">Popularité globale</option>
                             </select>
                         </div>
                     </div>
                 </aside>
 
-                {/* Unified Terminal Grid */}
-                <div className="flex-1 space-y-8">
-                    <div className="flex items-center justify-between border-b border-border pb-6">
-                        <div className="flex items-center gap-4">
-                            <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                {/* Main Grid Area */}
+                <div className="flex-1 space-y-6">
+                    {/* Toolbar */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-800 border border-border rounded-2xl p-4 shadow-sm">
+                        <div className="flex items-center gap-3">
+                            <div className="size-10 rounded-lg bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-[#FF6600]">
                                 <LayoutGrid className="size-5" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-black text-foreground">Catalogue Global</h2>
-                                <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">{productsData?.total || 0} Résultats trouvés</p>
+                                <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">Catalogue Produit</h2>
+                                <p className="text-sm text-slate-500 font-medium">{productsData?.total || 0} produits correspondants</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <button onClick={() => setViewMode('grid')} className={cn("size-10 flex items-center justify-center rounded-xl transition-all", viewMode === 'grid' ? "bg-foreground text-background" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 p-1 rounded-xl">
+                            <button onClick={() => setViewMode('grid')} className={cn("size-9 flex items-center justify-center rounded-lg transition-all", viewMode === 'grid' ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-900 dark:hover:text-white")}>
                                 <LayoutGrid className="size-4" />
                             </button>
-                            <button onClick={() => setViewMode('list')} className={cn("size-10 flex items-center justify-center rounded-xl transition-all", viewMode === 'list' ? "bg-foreground text-background" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                            <button onClick={() => setViewMode('list')} className={cn("size-9 flex items-center justify-center rounded-lg transition-all", viewMode === 'list' ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-900 dark:hover:text-white")}>
                                 <List className="size-4" />
                             </button>
                         </div>
                     </div>
 
+                    {/* Products Grid */}
                     {productsLoading ? (
                         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {[1,2,3,4,5,6,7,8].map(i => (
-                                <ProductSkeleton key={i} />
-                            ))}
+                            {[...Array(8)].map((_, i) => <ProductSkeleton key={i} />)}
                         </div>
                     ) : productsError ? (
                         <ErrorState error={productsError} />
                     ) : products.length > 0 ? (
                         <>
-                            <div className={cn(
-                                "grid gap-6",
-                                viewMode === 'grid' ? "grid-cols-2 md:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"
-                            )}>
-                                {products.map(p => <ProductCard key={p.id} product={p} layout={viewMode} />)}
-                            </div>
+                            <motion.div 
+                                variants={containerVariants}
+                                initial="hidden"
+                                animate="show"
+                                className={cn(
+                                    "grid gap-6",
+                                    viewMode === 'grid' ? "grid-cols-2 md:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"
+                                )}
+                            >
+                                {products.map(p => (
+                                    <motion.div key={p.id} variants={itemVariants}>
+                                        <ProductCard product={p} layout={viewMode} />
+                                    </motion.div>
+                                ))}
+                            </motion.div>
 
-                            {/* Pagination Terminal */}
-                            <div className="flex items-center justify-center gap-2 pt-12">
-                                <Button 
-                                    disabled={page <= 1}
-                                    onClick={() => setPage(page - 1)}
-                                    className="size-11 rounded-xl bg-muted border-none text-foreground hover:bg-foreground hover:text-background disabled:opacity-30"
-                                >
-                                    <ChevronLeft className="size-5" />
-                                </Button>
-                                <div className="h-11 px-6 bg-muted rounded-xl flex items-center justify-center text-xs font-black border-border border">
-                                    PAGE {page} SUR {totalPages}
+                            {/* Pagination */}
+                            {totalPages > 1 && (
+                                <div className="flex items-center justify-center gap-3 pt-12 pb-8">
+                                    <Button 
+                                        disabled={page <= 1}
+                                        onClick={() => setPage(page - 1)}
+                                        className="size-12 rounded-xl bg-white dark:bg-slate-800 border border-border text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 shadow-sm"
+                                    >
+                                        <ChevronLeft className="size-5" />
+                                    </Button>
+                                    <div className="h-12 px-6 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center text-sm font-bold border border-border text-slate-900 dark:text-white shadow-sm">
+                                        Page {page} sur {totalPages}
+                                    </div>
+                                    <Button 
+                                        disabled={page >= totalPages}
+                                        onClick={() => setPage(page + 1)}
+                                        className="size-12 rounded-xl bg-white dark:bg-slate-800 border border-border text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 shadow-sm"
+                                    >
+                                        <ChevronRight className="size-5" />
+                                    </Button>
                                 </div>
-                                <Button 
-                                    disabled={page >= totalPages}
-                                    onClick={() => setPage(page + 1)}
-                                    className="size-11 rounded-xl bg-muted border-none text-foreground hover:bg-foreground hover:text-background disabled:opacity-30"
-                                >
-                                    <ChevronRight className="size-5" />
-                                </Button>
-                            </div>
+                            )}
                         </>
                     ) : (
-                        <EmptyState message="Aucun produit ne correspond à ces critères d'exécution." />
+                        <EmptyState message="Aucun produit ne correspond à vos filtres de recherche." />
                     )}
-                </div>
-            </section>
-
-            {/* CTA Section */}
-            <section className="py-20 bg-primary relative overflow-hidden">
-                <div className="relative z-10 max-w-4xl mx-auto px-6 text-center space-y-6">
-                    <h2 className="text-3xl md:text-5xl font-black text-primary-foreground tracking-tighter">
-                        Prenez le contrôle de vos achats
-                    </h2>
-                    <p className="text-primary-foreground/70 text-base md:text-lg max-w-2xl mx-auto font-medium">
-                        Rejoignez des milliers de clients satisfaits sur la plateforme BCA Connect.
-                    </p>
-                    <div className="flex justify-center">
-                        <Link to="/register">
-                            <Button className="h-14 px-10 bg-background text-foreground hover:bg-foreground hover:text-background font-black rounded-2xl border-none shadow-2xl transition-all scale-100 hover:scale-105">
-                                Créer un compte maintenant
-                                <ArrowRight className="size-5 ml-2" />
-                            </Button>
-                        </Link>
-                    </div>
-                </div>
-                {/* Decorative Pattern */}
-                <div className="absolute top-0 right-0 p-20 opacity-10">
-                    <Sparkles className="size-64" />
                 </div>
             </section>
         </div>

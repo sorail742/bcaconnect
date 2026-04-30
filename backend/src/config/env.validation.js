@@ -11,7 +11,7 @@ const envSchema = Joi.object({
   PORT: Joi.number().default(3000),
   
   // Base de données
-  DATABASE_URL: Joi.string().uri().required(),
+  DATABASE_URL: Joi.string().uri().optional().allow(''),
   
   // Sécurité JWT (BCA Connect v2.5 Standard)
   JWT_SECRET: Joi.string().min(32).required(),

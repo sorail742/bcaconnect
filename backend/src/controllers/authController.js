@@ -4,6 +4,7 @@ const { OAuth2Client } = require('google-auth-library');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const tokenService = require('../services/tokenService');
+const refreshTokenService = require('../services/refreshTokenService');
 const twoFactorService = require('../services/twoFactorService');
 
 const authController = {
@@ -130,12 +131,19 @@ const authController = {
     login: async (req, res, next) => {
         try {
             const { email, mot_de_passe } = req.body;
+            console.log(`[DEBUG] Tentative login: ${email}`);
 
             const user = await User.findOne({ where: { email } });
-            if (!user) return res.status(401).json({ message: "Identifiants invalides." });
+            if (!user) {
+                console.log(`[DEBUG] User introuvable: ${email}`);
+                return res.status(401).json({ message: "Identifiants invalides." });
+            }
 
             const isMatch = await bcrypt.compare(mot_de_passe, user.mot_de_passe);
-            if (!isMatch) return res.status(401).json({ message: "Identifiants invalides." });
+            if (!isMatch) {
+                console.log(`[DEBUG] Mot de passe incorrect pour: ${email}`);
+                return res.status(401).json({ message: "Identifiants invalides." });
+            }
 
             // 🛡️ Vérification 2FA obligatoire pour les admins (Standard BCA v2.5)
             if (user.two_factor_enabled) {
@@ -155,6 +163,8 @@ const authController = {
                 sameSite: 'Lax',
                 maxAge: 7 * 24 * 60 * 60 * 1000 // 7 jours
             });
+
+            console.log(`✅ Login réussi pour user ${user.id} - Refresh token stocké en Redis`);
 
             res.json({
                 message: "Connexion réussie",
@@ -216,6 +226,8 @@ const authController = {
                 maxAge: 7 * 24 * 60 * 60 * 1000
             });
 
+            console.log(`✅ Google Login réussi pour user ${user.id} - Refresh token stocké en Redis`);
+
             res.json({
                 message: "Connexion Google réussie",
                 token: tokens.accessToken,
@@ -260,6 +272,8 @@ const authController = {
                 sameSite: 'Lax',
                 maxAge: 7 * 24 * 60 * 60 * 1000
             });
+
+            console.log(`✅ 2FA réussi pour user ${user.id} - Refresh token stocké en Redis`);
 
             res.json({
                 message: "Vérification 2FA réussie",
@@ -348,6 +362,8 @@ const authController = {
                 maxAge: 7 * 24 * 60 * 60 * 1000
             });
 
+            console.log(`✅ Refresh Token rotaté avec succès pour user ${userId}`);
+
             res.json({ accessToken: newTokens.accessToken });
         } catch (error) {
             res.clearCookie('bca_refresh_token');
@@ -357,11 +373,20 @@ const authController = {
 
     logout: async (req, res, next) => {
         try {
+            const userId = req.user?.id;
+            
+            // Révoquer tous les tokens en Redis
+            if (userId) {
+                await refreshTokenService.revokeAllTokens(userId);
+                console.log(`✅ Tous les tokens révoqués pour user ${userId}`);
+            }
+
             res.clearCookie('bca_refresh_token', {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'Strict'
             });
+            
             res.json({ message: "Déconnexion réussie." });
         } catch (error) {
             next(error);
@@ -381,7 +406,7 @@ const authController = {
 
     updateProfile: async (req, res, next) => {
         try {
-            const { nom_complet, telephone, email, mot_de_passe } = req.body;
+            const { nom_complet, telephone, email, mot_de_passe, avatar_url } = req.body;
             const user = await User.findByPk(req.user.id);
             if (!user) return res.status(404).json({ message: "Utilisateur non trouvé." });
 
@@ -393,6 +418,7 @@ const authController = {
 
             if (nom_complet) user.nom_complet = nom_complet;
             if (telephone) user.telephone = telephone;
+            if (avatar_url) user.avatar_url = avatar_url;
             if (mot_de_passe) {
                 const salt = await bcrypt.genSalt(10);
                 user.mot_de_passe = await bcrypt.hash(mot_de_passe, salt);
@@ -401,7 +427,13 @@ const authController = {
             await user.save();
             res.json({
                 message: "Profil mis à jour avec succès",
-                user: { id: user.id, nom_complet: user.nom_complet, email: user.email, role: user.role }
+                user: { 
+                    id: user.id, 
+                    nom_complet: user.nom_complet, 
+                    email: user.email, 
+                    role: user.role,
+                    avatar_url: user.avatar_url 
+                }
             });
         } catch (error) { next(error); }
     },
@@ -414,6 +446,10 @@ const authController = {
                 await t.rollback();
                 return res.status(404).json({ message: "Utilisateur non trouvé." });
             }
+            
+            // Révoquer tous les tokens avant suppression
+            await refreshTokenService.revokeAllTokens(user.id);
+            
             await user.update({
                 nom_complet: '[Compte supprimé]',
                 email: `deleted_${user.id}@bca.invalid`,
@@ -424,6 +460,8 @@ const authController = {
                 two_factor_secret: null
             }, { transaction: t });
             await t.commit();
+            
+            res.clearCookie('bca_refresh_token');
             res.json({ message: "Compte supprimé conformément au RGPD." });
         } catch (error) { await t.rollback(); next(error); }
     }

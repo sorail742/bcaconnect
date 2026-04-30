@@ -2,9 +2,9 @@ import api from './api';
 
 const notificationService = {
     // Récupérer toutes les notifications
-    getAll: async () => {
+    getAll: async (config = {}) => {
         try {
-            const response = await api.get('/notifications');
+            const response = await api.get('/notifications', { ...config });
             return response.data;
         } catch (error) {
             return [];

@@ -64,7 +64,7 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
         client: [
             { path: '/dashboard', label: 'Mon Espace', icon: LayoutDashboard },
             { path: '/marketplace', label: 'Marché', icon: Store },
-            { path: '/vendors', label: 'Vendeurs', icon: Users },
+            { path: '/vendors', label: 'Fournisseurs', icon: Users },
             { path: '/orders', label: 'Mes Commandes', icon: ShoppingCart, permission: 'view_own_history' },
             { path: '/payments', label: 'Paiements', icon: Wallet },
             { path: '/tracking', label: 'Livraisons', icon: Truck },
@@ -110,7 +110,9 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
                                 <div className="flex items-center gap-2 mt-1">
                                     <div className="size-1.5 rounded-full bg-primary animate-pulse" />
                                     <p className="text-primary text-[8px] font-bold uppercase tracking-widest leading-none">
-                                        {user?.role === 'admin' ? 'Administrateur' : 'Marchand'}
+                                        {user?.role === 'admin' ? 'Administration' : 
+                                         user?.role === 'fournisseur' ? 'Fournisseur Vérifié' : 
+                                         user?.role === 'transporteur' ? 'Logistique' : 'Client Privilège'}
                                     </p>
                                 </div>
                             </div>
@@ -176,31 +178,6 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
                                 </NavLink>
                             ))}
                         </nav>
-
-                        {/* Infrastructure Monitoring Module — Discrete */}
-                        {!isCollapsed && (
-                            <div className="px-3 space-y-3 animate-in" style={{ animationDelay: '0.3s' }}>
-                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Infrastructure</p>
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-3 p-2 rounded-lg bg-muted">
-                                        <Satellite className="size-4 text-primary shrink-0" />
-                                        <div>
-                                            <p className="text-[10px] font-semibold text-foreground">Synchronisation</p>
-                                            <p className="text-[10px] text-primary font-medium">Connecté</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3 p-2 rounded-lg bg-muted">
-                                        <Zap className="size-4 text-blue-500 shrink-0" />
-                                        <div>
-                                            <p className="text-[10px] font-semibold text-foreground">Charge CPU</p>
-                                            <div className="w-20 h-1.5 bg-border rounded-full overflow-hidden mt-1">
-                                                <div className="h-full bg-blue-500 w-2/3" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
                     </div>
 
                     {/* Protocol Termination Ledger — Executive Deck */}

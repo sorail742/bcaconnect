@@ -9,28 +9,32 @@ const jwtService = require('./jwtService');
  */
 class RefreshTokenService {
     constructor() {
-        this.client = redis.createClient({
-            url: process.env.REDIS_URL,
-            socket: {
-                reconnectStrategy: (retries) => Math.min(retries * 50, 500)
-            }
-        });
+        if (process.env.REDIS_URL) {
+            this.client = redis.createClient({
+                url: process.env.REDIS_URL,
+                socket: {
+                    reconnectStrategy: (retries) => Math.min(retries * 50, 500)
+                }
+            });
 
-        this.client.on('error', (err) => {
-            console.error('❌ Erreur Redis:', err);
-        });
+            this.client.on('error', (err) => {
+                console.error('❌ Erreur Redis:', err);
+            });
 
-        this.client.on('connect', () => {
-            console.log('✅ Redis connecté');
-        });
-
-        // Connecter au démarrage
-        this.connect();
+            this.client.on('connect', () => {
+                console.log('✅ Redis connecté');
+            });
+        } else {
+            console.warn('⚠️  Redis désactivé (REDIS_URL manquant)');
+            this.client = { isOpen: false }; // Mock minimal pour éviter les crashs
+        }
     }
 
     async connect() {
         try {
-            await this.client.connect();
+            if (this.client && typeof this.client.connect === 'function') {
+                await this.client.connect();
+            }
         } catch (error) {
             console.error('❌ Impossible de connecter à Redis:', error);
             // En développement, continuer sans Redis
@@ -45,6 +49,10 @@ class RefreshTokenService {
      */
     async storeRefreshToken(userId, token) {
         try {
+            if (!this.client.isOpen) {
+                console.warn('⚠️  Redis non connecté - token non stocké');
+                return true; // Continuer sans Redis en dev
+            }
             const key = `rt:${userId}`;
             const tokenHash = jwtService.generateRevocationKey(token);
             
@@ -63,8 +71,14 @@ class RefreshTokenService {
      * Vérifier et rotater un refresh token
      * Détecte la réutilisation et invalide tous les tokens
      */
-    async rotateRefreshToken(userId, oldToken) {
+    async rotateRefreshToken(userId, oldToken, newPayload = null) {
         try {
+            // Si Redis n'est pas connecté, générer simplement une nouvelle paire
+            if (!this.client.isOpen) {
+                const payload = newPayload || { id: userId };
+                return jwtService.generateTokenPair(payload);
+            }
+
             const key = `rt:${userId}`;
             const oldTokenHash = jwtService.generateRevocationKey(oldToken);
             
@@ -89,7 +103,7 @@ class RefreshTokenService {
             }
 
             // Générer une nouvelle paire de tokens
-            const payload = { id: userId };
+            const payload = newPayload || { id: userId };
             const newTokenPair = jwtService.generateTokenPair(payload);
             
             // Stocker le nouveau refresh token
@@ -109,6 +123,9 @@ class RefreshTokenService {
      */
     async revokeAllTokens(userId) {
         try {
+            if (!this.client.isOpen) {
+                return true;
+            }
             const key = `rt:${userId}`;
             await this.client.del(key);
             console.log(`✅ Tous les tokens révoqués pour user ${userId}`);
@@ -124,6 +141,9 @@ class RefreshTokenService {
      */
     async isTokenValid(userId, token) {
         try {
+            if (!this.client.isOpen) {
+                return true; // Accepter en dev sans Redis
+            }
             const key = `rt:${userId}`;
             const tokenHash = jwtService.generateRevocationKey(token);
             const storedHash = await this.client.get(key);
@@ -140,6 +160,9 @@ class RefreshTokenService {
      */
     async logSecurityIncident(userId, incidentType) {
         try {
+            if (!this.client.isOpen) {
+                return;
+            }
             const key = `security:${userId}:${incidentType}`;
             const timestamp = new Date().toISOString();
             
@@ -172,8 +195,10 @@ class RefreshTokenService {
      */
     async disconnect() {
         try {
-            await this.client.quit();
-            console.log('✅ Redis déconnecté');
+            if (this.client.isOpen) {
+                await this.client.quit();
+                console.log('✅ Redis déconnecté');
+            }
         } catch (error) {
             console.error('❌ Erreur déconnexion Redis:', error);
         }

@@ -1,66 +1,132 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, ShoppingBag, Store, Zap, ShieldCheck, Globe, Star, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ArrowRight, Store, Zap, ShieldCheck, Globe, LayoutDashboard } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
+import { useAuth } from "../../hooks/useAuth";
+import { ROLES } from "../../constants/roles";
 
 export function CTASection() {
     const { t } = useLanguage();
+    const navigate = useNavigate();
+    const { user, isAuthenticated } = useAuth();
+
+    const getDashboardLink = () => {
+        if (!user) return '/register';
+        if (user.role === ROLES.ADMIN) return '/admin/dashboard';
+        if (user.role === ROLES.FOURNISSEUR) return '/vendor/dashboard';
+        if (user.role === ROLES.TRANSPORTEUR) return '/carrier/dashboard';
+        if (user.role === ROLES.BANQUE) return '/bank/dashboard';
+        return '/dashboard';
+    };
+
+    const features = [
+        { icon: ShieldCheck, label: 'Paiements Sécurisés', desc: 'Protection Escrow' },
+        { icon: Globe, label: 'Couverture Nationale', desc: 'Toute la Guinée' },
+        { icon: Store, label: 'Plateforme Unifiée', desc: 'Tout en un' },
+        { icon: Zap, label: 'Synchronisation Live', desc: 'Données temps réel' },
+    ];
 
     return (
-        <section className="relative py-16 bg-background overflow-hidden font-jakarta border-t border-border">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] via-transparent to-transparent pointer-events-none" />
+        <section className="bg-slate-900 py-12 sm:py-16 lg:py-20">
+            <div className="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8">
 
-            <div className="container mx-auto px-6 md:px-12 relative z-10 space-y-10">
-                <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-foreground text-background text-xs font-semibold uppercase tracking-wide shadow-sm">
-                    <Sparkles className="size-4 text-primary" /> {t('ctaReady') || "Rejoignez l'écosystème"}
-                </div>
+                {/* Main content */}
+                <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
 
-                <div className="max-w-3xl space-y-4">
-                    <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
-                        {t('ctaTitle')?.split(' ').slice(0, -1).join(' ') || "Rejoignez la"}{' '}
-                        <span className="text-primary">{t('ctaTitle')?.split(' ').slice(-1) || "révolution"}</span>
-                    </h2>
-                    <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-2xl border-l-4 border-primary/30 pl-4">
-                        {t('ctaDesc') || "Découvrez une plateforme complète pour gérer, développer et optimiser vos opérations commerciales."}
-                    </p>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-start gap-4">
-                    <Link to="/register">
-                        <button className="h-12 px-8 bg-primary text-primary-foreground font-semibold text-sm rounded-xl shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 transition-all flex items-center gap-3 group">
-                            {t('ctaStart') || "Commencer maintenant"}
-                            <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
-                        </button>
-                    </Link>
-                    <div className="flex items-center gap-2 pt-3 sm:pt-0">
-                        <div className="flex gap-1">
-                            {[1,2,3,4,5].map(i => <Star key={i} className="size-4 text-primary fill-primary" />)}
+                    {/* Left — text + CTA */}
+                    <div className="flex-1 text-center lg:text-left space-y-6">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-[#FF6600] text-[11px] font-black uppercase tracking-widest">
+                            <span className="size-2 rounded-full bg-[#FF6600] animate-pulse" />
+                            {isAuthenticated
+                                ? `Espace de ${user?.nom_complet?.split(' ')[0] || 'Membre'}`
+                                : 'Rejoignez BCA Connect'}
                         </div>
-                        <span className="text-sm text-muted-foreground font-medium">Noté 5/5 par nos utilisateurs</span>
+
+                        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                            {isAuthenticated
+                                ? <>Bienvenue sur <span className="text-[#FF6600]">BCA Connect</span></>
+                                : <>La plateforme de commerce <span className="text-[#FF6600]">la plus avancée</span> d'Afrique de l'Ouest</>
+                            }
+                        </h2>
+
+                        <p className="text-slate-400 text-base sm:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0">
+                            {isAuthenticated
+                                ? "Continuez à gérer votre activité depuis votre espace personnel dédié."
+                                : "Acheteurs, fournisseurs, transporteurs — une plateforme unique pour connecter tous les acteurs du commerce guinéen."}
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+                            {isAuthenticated ? (
+                                <>
+                                    <button
+                                        onClick={() => navigate(getDashboardLink())}
+                                        className="flex items-center gap-3 h-14 px-8 bg-[#FF6600] text-white font-black text-sm rounded-2xl shadow-lg hover:shadow-orange-500/25 hover:-translate-y-0.5 transition-all group"
+                                    >
+                                        <LayoutDashboard className="size-5" />
+                                        Mon Espace
+                                        <ArrowRight className="size-5 group-hover:translate-x-1 transition-transform" />
+                                    </button>
+                                    <button
+                                        onClick={() => navigate('/marketplace')}
+                                        className="flex items-center gap-3 h-14 px-8 bg-white/10 border border-white/20 text-white font-bold text-sm rounded-2xl hover:bg-white/20 transition-all"
+                                    >
+                                        Explorer le marché
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button
+                                        onClick={() => navigate('/register')}
+                                        className="flex items-center gap-3 h-14 px-8 bg-[#FF6600] text-white font-black text-sm rounded-2xl shadow-lg hover:shadow-orange-500/25 hover:-translate-y-0.5 transition-all group"
+                                    >
+                                        Créer un compte gratuit
+                                        <ArrowRight className="size-5 group-hover:translate-x-1 transition-transform" />
+                                    </button>
+                                    <button
+                                        onClick={() => navigate('/marketplace')}
+                                        className="flex items-center gap-3 h-14 px-8 bg-white/10 border border-white/20 text-white font-bold text-sm rounded-2xl hover:bg-white/20 transition-all"
+                                    >
+                                        Explorer le marché
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Right — feature grid */}
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full max-w-sm lg:max-w-xs shrink-0">
+                        {features.map((item, i) => (
+                            <motion.button
+                                key={i}
+                                onClick={() => navigate('/marketplace')}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: i * 0.08 }}
+                                className="group text-left p-4 sm:p-5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 hover:border-[#FF6600]/30 transition-all"
+                            >
+                                <div className="size-10 rounded-xl bg-[#FF6600]/10 flex items-center justify-center mb-3 group-hover:bg-[#FF6600]/20 transition-colors">
+                                    <item.icon className="size-5 text-[#FF6600]" />
+                                </div>
+                                <p className="text-xs font-black text-white leading-tight mb-1">{item.label}</p>
+                                <p className="text-[10px] text-slate-500">{item.desc}</p>
+                            </motion.button>
+                        ))}
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
-                    {[
-                        { icon: ShieldCheck, label: "Paiements sécurisés" },
-                        { icon: Globe, label: "Couverture nationale" },
-                        { icon: Store, label: "Plateforme unifiée" },
-                        { icon: Zap, label: "Synchronisation live" }
-                    ].map((item, i) => (
-                        <motion.div
-                            key={i}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.1 }}
-                            className="flex items-center gap-3 p-4 bg-card border border-border rounded-xl shadow-sm"
-                        >
-                            <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                                <item.icon className="size-4 text-primary" />
-                            </div>
-                            <p className="text-sm font-medium text-foreground">{item.label}</p>
-                        </motion.div>
-                    ))}
+                {/* Bottom divider + links */}
+                <div className="mt-12 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p className="text-slate-500 text-sm">© 2025 BCA Connect · Guinée · Tous droits réservés</p>
+                    <div className="flex items-center gap-6">
+                        {['Confidentialité', 'Conditions', 'Contact', 'À propos'].map(link => (
+                            <button key={link} onClick={() => navigate(`/${link.toLowerCase()}`)}
+                                className="text-slate-500 hover:text-white text-xs transition-colors">
+                                {link}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
         </section>

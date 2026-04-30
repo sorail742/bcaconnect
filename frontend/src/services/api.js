@@ -69,10 +69,21 @@ api.interceptors.response.use(
         if (response) {
             switch (response.status) {
                 case 401: {
+                    // 🛡️ SÉCURITÉ & UX : Si nous sommes déjà sur la page de login, on ignore
+                    if (window.location.pathname === '/login') return Promise.reject(error);
+
                     // ✅ Fix: Ne pas redémarrer si la requête était déjà un refresh
                     if (config._retry) {
                         useAuthStore.getState().clearAuth();
                         window.location.href = '/login';
+                        return Promise.reject(error);
+                    }
+
+                    // 🔇 OPTIMISATION - ALIBABA STYLE :
+                    // Si c'est une requête d'arrière-plan (polling/badging), on ne déclenche pas de refresh agressif
+                    // pour éviter de spammer le serveur si la session est vraiment KO.
+                    if (config._bg) {
+                        console.warn('Background request skipped due to 401:', config.url);
                         return Promise.reject(error);
                     }
 
@@ -108,7 +119,7 @@ api.interceptors.response.use(
 
                         if (!storedUser?.id) throw new Error('No stored credentials');
 
-                        console.log("🔄 Intercepteur: Jeton expiré, tentative de rafraîchissement silencieux...");
+                        console.log("🔄 Intercepteur: Jeton expiré, tentative de rafraîchissement...");
                         // Appel silencieux au refresh (Le HttpOnly Cookie est attaché automatiquement par le navigateur)
                         const refreshRes = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
                             userId: storedUser.id
@@ -119,6 +130,7 @@ api.interceptors.response.use(
                         const newToken = refreshRes.data?.accessToken || refreshRes.data?.token;
                         if (!newToken) throw new Error('No token in refresh response');
                         
+                        isRefreshing = false;
                         console.log("✅ Intercepteur: Session restaurée avec succès.");
 
                         useAuthStore.getState().setAuth(storedUser, newToken);
@@ -128,13 +140,17 @@ api.interceptors.response.use(
 
                         // ✅ Crucial : Utiliser le nouveau token DIRECTEMENT pour la requête actuelle
                         config.headers.Authorization = `Bearer ${newToken}`;
-                        config._retry = true; // Empêcher les boucles infinies
                         return api(config); 
                     } catch (refreshError) {
                         isRefreshing = false;
                         processQueue(refreshError, null);
                         useAuthStore.getState().clearAuth();
-                        toast.error('Session expirée. Veuillez vous reconnecter.');
+                        
+                        // Une seule notification de session expirée
+                        if (!window.sessionExpiredNotified) {
+                            toast.error('Session expirée. Reconnexion requise.');
+                            window.sessionExpiredNotified = true;
+                        }
                         
                         // Utilisons un setTimeout pour laisser la pile d'exécution se vider
                         setTimeout(() => {

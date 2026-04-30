@@ -50,6 +50,24 @@ const Product = sequelize.define('Product', {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
     },
+    condition: {
+        type: DataTypes.ENUM('neuf', 'occasion', 'reconditionne'),
+        defaultValue: 'neuf',
+    },
+    marque: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+    },
+    unite_mesure: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        defaultValue: 'Pièce',
+    },
+    mots_cles: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        defaultValue: [],
+    },
 }, {
     tableName: 'produits',
     underscored: true,

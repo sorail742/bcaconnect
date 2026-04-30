@@ -12,6 +12,7 @@ import NotFound from '../pages/NotFound';
 import ComingSoon from '../pages/ComingSoon';
 import PrivacyPage from '../pages/PrivacyPage';
 import TermsPage from '../pages/TermsPage';
+import AiMode from '../pages/AiMode';
 
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 import { ROLES } from '../constants/roles';
@@ -111,6 +112,7 @@ const AppRoutes = () => {
                     <ProductDetail />
                 </Suspense>
             } />
+            <Route path="/ai-mode" element={<AiMode />} />
 
             <Route path="/cart" element={
                 <Suspense fallback={<LazyFallback />}>
@@ -169,6 +171,12 @@ const AppRoutes = () => {
             <Route path="/help" element={
                 <Suspense fallback={<LazyFallback />}>
                     <HelpCenter />
+                </Suspense>
+            } />
+
+            <Route path="/tracking" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <Tracking />
                 </Suspense>
             } />
 
@@ -432,7 +440,7 @@ const AppRoutes = () => {
             } />
 
             {/* Coming Soon Routes */}
-            {['/careers', '/ads', '/insights', '/consultant', '/logistics', '/carrier-join', '/download', '/returns'].map(path => (
+            {['/careers', '/ads', '/insights', '/ai-trends', '/consultant', '/logistics', '/carrier-join', '/download', '/returns', '/blog', '/investors'].map(path => (
                 <Route key={path} path={path} element={<ComingSoon />} />
             ))}
 

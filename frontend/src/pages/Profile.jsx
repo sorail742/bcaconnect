@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
@@ -8,16 +8,15 @@ import {
     CalendarDays, BadgeCheck, Edit3, Trash2, Shield,
     User as UserIcon, ShieldAlert, Zap, RefreshCw,
     Clock, Lock, Settings, CheckCircle2, Globe,
-    Activity, ArrowRight, Bell, Mail
+    Activity, ArrowRight, Bell, Mail, Camera, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import authService from '../services/authService';
+import uploadService from '../services/uploadService';
 import useApiMutation from '../hooks/useApiMutation';
 import { RefreshCcw as RefreshIcon, QrCode, X } from 'lucide-react';
 import { profileUpdateSchema } from '../lib/validation';
-
-
 
 const Toggle = ({ enabled, onChange, id }) => (
     <button
@@ -57,6 +56,7 @@ const UserProfile = () => {
     const { user, updateProfile, deleteAccount, refreshUser } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
+    const fileInputRef = useRef(null);
 
     const [activeTab, setActiveTab] = useState(location.pathname === '/settings' ? 'settings' : 'profile');
 
@@ -76,6 +76,7 @@ const UserProfile = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [emailAlerts, setEmailAlerts] = useState(user?.settings?.emailAlerts ?? true);
     const [pushNotifs, setPushNotifs] = useState(user?.settings?.pushNotifs ?? false);
+    const [isUploading, setIsUploading] = useState(false);
 
     // 2FA States
     const [show2FASetup, setShow2FASetup] = useState(false);
@@ -94,6 +95,37 @@ const UserProfile = () => {
             }
         }
     );
+
+    const handleAvatarClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            toast.error("Format d'image non supporté.");
+            return;
+        }
+
+        if (file.size > 2 * 1024 * 1024) {
+            toast.error("Image trop lourde (2MB max).");
+            return;
+        }
+
+        try {
+            setIsUploading(true);
+            const { url } = await uploadService.uploadFile(file);
+            await updateProfile({ avatar_url: url });
+            toast.success("Photo de profil mise à jour !");
+        } catch (error) {
+            console.error('Upload error:', error);
+            toast.error("Échec du téléchargement de l'image.");
+        } finally {
+            setIsUploading(false);
+        }
+    };
 
     const { mutate: deleteAccountMutation } = useApiMutation(
         () => deleteAccount(),
@@ -170,6 +202,15 @@ const UserProfile = () => {
         <DashboardLayout title={activeTab === 'profile' ? "Mon Profil" : "Paramètres"}>
             <div className="space-y-6 pb-10">
 
+                {/* Hidden File Input */}
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept="image/*"
+                />
+
                 {/* Header card */}
                 <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
                     <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5">
@@ -220,14 +261,24 @@ const UserProfile = () => {
                             </div>
                             <div className="px-5 pb-5 -mt-10 relative">
                                 <div className="relative w-fit">
-                                    <div className="size-20 rounded-2xl border-4 border-card bg-muted flex items-center justify-center overflow-hidden shadow-md">
-                                        {user?.photo_url
-                                            ? <img src={user.photo_url} alt="" className="w-full h-full object-cover" />
+                                    <div className="size-20 rounded-2xl border-4 border-card bg-muted flex items-center justify-center overflow-hidden shadow-md group relative">
+                                        {isUploading ? (
+                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10 backdrop-blur-[2px]">
+                                                <Loader2 className="size-8 text-white animate-spin" />
+                                            </div>
+                                        ) : null}
+                                        {user?.avatar_url
+                                            ? <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
                                             : <span className="text-2xl font-bold text-primary">{getInitials(user?.nom_complet)}</span>
                                         }
                                     </div>
-                                    <button className="absolute -bottom-1 -right-1 size-7 bg-primary text-primary-foreground rounded-lg shadow-sm flex items-center justify-center hover:bg-primary/90 transition-colors">
-                                        <Edit3 className="size-3.5" />
+                                    <button 
+                                        onClick={handleAvatarClick}
+                                        disabled={isUploading}
+                                        className="absolute -bottom-1 -right-1 size-7 bg-primary text-primary-foreground rounded-lg shadow-sm flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
+                                        title="Changer la photo"
+                                    >
+                                        <Camera className="size-3.5" />
                                     </button>
                                 </div>
                                 <div className="mt-3 space-y-1">
@@ -245,8 +296,8 @@ const UserProfile = () => {
                                         <p className="text-xs text-muted-foreground">Points</p>
                                     </div>
                                     <div className="bg-muted rounded-xl p-3 text-center border border-border">
-                                        <p className="text-lg font-bold text-foreground">
-                                            {user?.createdAt ? new Date(user.createdAt).getFullYear() : '2024'}
+                                        <p className="text-lg font-bold text-foreground tabular-nums">
+                                            {user?.createdAt ? new Date(user.createdAt).getFullYear() : new Date().getFullYear()}
                                         </p>
                                         <p className="text-xs text-muted-foreground">Membre depuis</p>
                                     </div>
@@ -254,7 +305,9 @@ const UserProfile = () => {
                                 <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
                                     <CalendarDays className="size-3.5 text-primary/60" />
                                     <span>
-                                        Inscrit le : {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('fr-GN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Compte récent'}
+                                        Inscrit le : {user?.createdAt 
+                                            ? new Date(user.createdAt).toLocaleDateString('fr-GN', { day: 'numeric', month: 'long', year: 'numeric' }) 
+                                            : 'Compte récent'}
                                     </span>
                                 </div>
                             </div>

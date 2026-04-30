@@ -1,4 +1,4 @@
-const { Product, Store, Category, Notification } = require('../models');
+const { Product, Store, Category, Notification, Review } = require('../models');
 
 const productController = {
     create: async (req, res, next) => {
@@ -87,15 +87,26 @@ const productController = {
                 search = '', 
                 categorie_id = '', 
                 min_price = 0, 
-                max_price = 100000000, 
-                sort = 'newest' 
+                max_price = 1000000000, 
+                sort = 'newest',
+                condition = '',
+                marque = '',
+                is_verified = 'false',
+                featured = 'false'
             } = req.query;
             
             const offset = (parseInt(page) - 1) * parseInt(limit);
-            const { Op } = require('sequelize');
+            const { Op, Sequelize } = require('sequelize');
 
             const where = {};
             
+            // Filtre 'featured' - Si on ne peut pas encore filtrer par colonne, on renvoie les plus récents ou aléatoires
+            // Note: On pourrait aussi filtrer par les boutiques vérifiées uniquement
+            if (featured === 'true') {
+                // Par exemple, on privilégie les produits avec image et venant de boutiques vérifiées
+                // Mais pour l'instant, on reste simple
+            }
+
             // Filtres textuels
             if (search) {
                 where[Op.or] = [
@@ -114,17 +125,37 @@ const productController = {
                 [Op.between]: [parseFloat(min_price), parseFloat(max_price)]
             };
 
+            // Filtre par condition
+            if (condition) {
+                where.condition = condition;
+            }
+
+            // Filtre par marque
+            if (marque) {
+                where.marque = marque;
+            }
+            
             // Logique de tri
             let order = [['createdAt', 'DESC']];
             if (sort === 'price_asc') order = [['prix_unitaire', 'ASC']];
             if (sort === 'price_desc') order = [['prix_unitaire', 'DESC']];
-            if (sort === 'popular') order = [['stock_quantite', 'ASC']]; // Proxy pour le test
+            if (sort === 'popular') order = [['stock_quantite', 'DESC']]; // Plus de stock = plus de visibilité ?
+            if (featured === 'true' && sort === 'newest') {
+                // Pour les produits à la une, on peut aussi faire un tri aléatoire ou par score
+                // order = [Sequelize.fn('RAND')]; // Pour MySQL/Neon
+            }
 
             const { count, rows: products } = await Product.findAndCountAll({
                 where,
                 include: [
-                    { model: Store, as: 'boutique', attributes: ['nom_boutique', 'slug', 'id', 'logo_url'] },
-                    { model: Category, as: 'categorie', attributes: ['nom_categorie'] }
+                    { 
+                        model: Store, 
+                        as: 'boutique', 
+                        attributes: ['nom_boutique', 'slug', 'id', 'logo_url', 'is_verified', 'proprietaire_id'],
+                        where: is_verified === 'true' ? { is_verified: true } : {}
+                    },
+                    { model: Category, as: 'categorie', attributes: ['nom_categorie'] },
+                    { model: Review, as: 'avis', attributes: ['note'] }
                 ],
                 order,
                 limit: parseInt(limit),
@@ -153,7 +184,8 @@ const productController = {
                 where: { boutique_id: store.id },
                 include: [
                     { model: Store, as: 'boutique', attributes: ['nom_boutique', 'slug', 'id'] },
-                    { model: Category, as: 'categorie', attributes: ['nom_categorie'] }
+                    { model: Category, as: 'categorie', attributes: ['nom_categorie'] },
+                    { model: Review, as: 'avis', attributes: ['note', 'commentaire', 'utilisateur_id', 'created_at', 'ia_sentiment'] }
                 ],
                 order: [['createdAt', 'DESC']]
             });
@@ -168,7 +200,8 @@ const productController = {
             const product = await Product.findByPk(req.params.id, {
                 include: [
                     { model: Category, as: 'categorie' },
-                    { model: Store, as: 'boutique', attributes: ['nom_boutique', 'slug', 'id'] }
+                    { model: Store, as: 'boutique', attributes: ['nom_boutique', 'slug', 'id', 'proprietaire_id'] },
+                    { model: Review, as: 'avis', attributes: ['note', 'commentaire', 'utilisateur_id', 'created_at', 'ia_sentiment'] }
                 ]
             });
             if (!product) return res.status(404).json({ message: "Produit non trouvé." });

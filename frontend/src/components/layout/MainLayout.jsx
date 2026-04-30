@@ -8,7 +8,7 @@ const MainLayout = ({ children }) => {
     const dashboardRoutes = [
         '/dashboard', '/messages', '/wallet', '/profile', '/orders', 
         '/notifications', '/settings', '/credits', '/tracking', '/payments',
-        '/vendor', '/admin', '/bank', '/carrier'
+        '/vendor', '/admin', '/bank', '/carrier', '/dispute'
     ];
     
     const hideLayout = ['/login', '/register', '/onboarding', '/forgot-password', '/reset-password'].includes(location.pathname) 

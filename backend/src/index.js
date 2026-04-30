@@ -24,7 +24,7 @@ async function runSafeMigrations(sequelize) {
     const qi = sequelize.getQueryInterface();
 
     const migrations = [
-        // Table boutiques — colonnes carousel
+        // Table boutiques
         {
             table: 'boutiques',
             column: 'use_carousel',
@@ -34,24 +34,68 @@ async function runSafeMigrations(sequelize) {
             table: 'boutiques',
             column: 'banner_images',
             definition: { type: require('sequelize').DataTypes.TEXT, allowNull: true }
+        },
+        {
+            table: 'boutiques',
+            column: 'is_verified',
+            definition: { type: require('sequelize').DataTypes.BOOLEAN, defaultValue: false }
+        },
+        {
+            table: 'boutiques',
+            column: 'rating',
+            definition: { type: require('sequelize').DataTypes.FLOAT, defaultValue: 4.5 }
+        },
+        // Table utilisateurs
+        {
+            table: 'utilisateurs',
+            column: 'avatar_url',
+            definition: { type: require('sequelize').DataTypes.STRING(255), allowNull: true }
+        },
+        {
+            table: 'utilisateurs',
+            column: 'points_fidelite',
+            definition: { type: require('sequelize').DataTypes.INTEGER, defaultValue: 0 }
+        },
+        // Table produits
+        {
+            table: 'produits',
+            column: 'condition',
+            definition: { type: require('sequelize').DataTypes.STRING(20), defaultValue: 'neuf' }
+        },
+        {
+            table: 'produits',
+            column: 'marque',
+            definition: { type: require('sequelize').DataTypes.STRING(100), allowNull: true }
+        },
+        {
+            table: 'produits',
+            column: 'is_featured',
+            definition: { type: require('sequelize').DataTypes.BOOLEAN, defaultValue: false }
+        },
+        {
+            table: 'produits',
+            column: 'unite_mesure',
+            definition: { type: require('sequelize').DataTypes.STRING(50), defaultValue: 'Pièce', allowNull: true }
+        },
+        {
+            table: 'produits',
+            column: 'mots_cles',
+            definition: { type: require('sequelize').DataTypes.JSON, defaultValue: [], allowNull: true }
         }
     ];
 
     for (const m of migrations) {
         try {
-            // Vérifier si la colonne existe déjà
-            const tableDesc = await sequelize.query(
-                `PRAGMA table_info(${m.table})`,
-                { type: QueryTypes.SELECT }
-            );
-            const exists = tableDesc.some(col => col.name === m.column);
+            // Vérifier si la colonne existe déjà (Agnostique SQL)
+            const tableDefinition = await qi.describeTable(m.table);
+            const exists = !!tableDefinition[m.column];
 
             if (!exists) {
                 await qi.addColumn(m.table, m.column, m.definition);
                 console.log(`✅ Migration : colonne '${m.column}' ajoutée à '${m.table}'`);
             }
         } catch (err) {
-            console.warn(`⚠️  Migration '${m.column}' ignorée : ${err.message}`);
+            console.warn(`⚠️  Migration '${m.column}' sur '${m.table}' ignorée : ${err.message}`);
         }
     }
 }
@@ -60,12 +104,13 @@ const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 const ALLOWED_ORIGINS = process.env.NODE_ENV === 'production'
     ? ['https://bcaconnect-backend.onrender.com', 'https://bcaconnect.onrender.com', 'https://bcaconnect.vercel.app']
-    : ['http://localhost:5173', 'http://localhost:3000'];
+    : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:3000', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174'];
 
 const io = new Server(server, {
     cors: {
-        origin: ALLOWED_ORIGINS,
-        methods: ["GET", "POST"]
+        origin: process.env.NODE_ENV === 'production' ? ALLOWED_ORIGINS : true,
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
 
@@ -104,8 +149,20 @@ io.on('connection', (socket) => {
 const start = async () => {
     try {
         // 🔐 Initialiser Redis pour la rotation des refresh tokens
-        console.log('🔄 Initialisation de Redis...');
-        await refreshTokenService.connect();
+        if (process.env.REDIS_URL) {
+            console.log('🔄 Initialisation de Redis...');
+            try {
+                await refreshTokenService.connect();
+                console.log('✅ Redis initialisé avec succès');
+            } catch (redisError) {
+                if (process.env.NODE_ENV === 'production') {
+                    throw redisError;
+                }
+                console.warn('⚠️  Redis non disponible en développement - continuant sans Redis');
+            }
+        } else {
+            console.warn('⚠️  REDIS_URL non configuré - refresh token rotation désactivée');
+        }
 
         // Connexion à la base de données
         await sequelize.authenticate();

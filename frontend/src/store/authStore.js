@@ -41,8 +41,10 @@ const useAuthStore = create(
             /**
              * Met à jour les informations utilisateur sans toucher au token.
              */
-            updateUser: (user) => {
-                set({ user });
+            updateUser: (userData) => {
+                set((state) => ({
+                    user: state.user ? { ...state.user, ...userData } : userData
+                }));
             },
 
             /**

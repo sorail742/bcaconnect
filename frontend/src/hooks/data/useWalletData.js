@@ -4,13 +4,13 @@ import useAuthStore from '../../store/authStore';
 
 export const useWallet = () => {
     const { token, isAuthenticated } = useAuthStore();
-    const { data, isLoading: loading, error, isFetching } = useQuery({
+    const { data, isLoading: loading, error, refetch, isFetching } = useQuery({
         queryKey: ['wallet'],
         queryFn: () => walletService.getWallet(),
         staleTime: 0,
         enabled: !!token && isAuthenticated, // 🛡️ Verrou d'Authentification
     });
-    return { data, loading, error: error?.message || null, isFetching };
+    return { data, loading, error: error?.message || null, mutate: refetch, refetch, isFetching };
 };
 
 export const useWalletTransactions = () => {

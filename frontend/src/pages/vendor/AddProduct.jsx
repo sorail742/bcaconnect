@@ -9,12 +9,13 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import CreatableSelect from '../../components/ui/CreatableSelect';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
 import aiService from '../../services/aiService';
 import { cn } from '../../lib/utils';
 import { productSchema } from '../../lib/validation';
-
+import { getCategoryIconComponent } from '../../lib/categoryConstants';
 const FormField = ({ label, required, children, error }) => (
     <div className="space-y-2.5">
         <label className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground/80 ml-1 flex items-center gap-2">
@@ -71,18 +72,22 @@ const ProductPreview = ({ data, categories }) => {
 
                 <div className="p-4 space-y-4">
                     <div className="space-y-1">
-                        <p className="text-[8px] font-black text-[#FF6600] uppercase tracking-widest leading-none">{cat ? cat.nom_categorie : 'CATÉGORIE'}</p>
+                        <div className="flex items-center gap-1.5">
+                            <span className="scale-[0.6] text-[#FF6600]">{getCategoryIconComponent(cat ? cat.nom_categorie : '')}</span>
+                            <p className="text-[8px] font-black text-[#FF6600] uppercase tracking-widest leading-none">{cat ? cat.nom_categorie : 'CATÉGORIE'}</p>
+                        </div>
                         <h4 className="text-sm font-black text-slate-900 dark:text-foreground uppercase truncate tracking-tight pt-1">
                             {data.nom_produit || 'NOM RÉSEAU'}
                         </h4>
                     </div>
 
-                    <div className="flex items-baseline gap-3">
-                        <span className="text-sm font-black text-slate-900 dark:text-foreground tracking-tighter tabular-nums">
-                            {price.toLocaleString('fr-GN')} <small className="text-[9px] font-black text-[#FF6600]">GNF</small>
+                    <div className="flex items-baseline gap-2 overflow-hidden">
+                        <span className="price-text text-slate-900 dark:text-foreground tabular-nums truncate">
+                            {price.toLocaleString('fr-GN')}
                         </span>
+                        <span className="text-[10px] font-black text-[#FF6600] uppercase tracking-widest shrink-0">GNF</span>
                         {oldPrice > price && oldPrice > 0 && (
-                            <span className="text-[10px] text-muted-foreground/80 line-through font-black uppercase tabular-nums">
+                            <span className="text-[10px] text-muted-foreground/40 line-through font-black uppercase tabular-nums ml-auto shrink-0">
                                 {oldPrice.toLocaleString('fr-GN')}
                             </span>
                         )}
@@ -124,14 +129,66 @@ const AddProduct = () => {
         image_url: '',
         categorie_id: '',
         est_local: true,
+        unite_mesure: 'Pièce',
+        mots_cles: '',
     });
 
     const [categories, setCategories] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isInitializing, setIsInitializing] = useState(true);
+    const [isAiLoading, setIsAiLoading] = useState(false);
     const [isSuggestingPrice, setIsSuggestingPrice] = useState(false);
     const [priceSuggestion, setPriceSuggestion] = useState(null);
+
+    const handleMagicFill = async (name = formData.nom_produit, analysis = '') => {
+        if (!name && !analysis) return;
+        
+        setIsAiLoading(true);
+        try {
+            const result = await aiService.suggestProductDetails(name, analysis);
+            
+            setFormData(prev => ({
+                ...prev,
+                nom_produit: name || prev.nom_produit,
+                description: result.description || prev.description,
+                prix_unitaire: result.prix_suggere?.toString() || prev.prix_unitaire,
+                unite_mesure: result.unite_suggeree || prev.unite_mesure,
+                mots_cles: Array.isArray(result.mots_cles) ? result.mots_cles.join(', ') : (result.mots_cles || prev.mots_cles)
+            }));
+
+            // Auto-select category if found
+            if (result.categorie_suggeree) {
+                const foundCat = categories.find(c => 
+                    c.nom_categorie.toLowerCase().includes(result.categorie_suggeree.toLowerCase())
+                );
+                if (foundCat) {
+                    setFormData(prev => ({ ...prev, categorie_id: foundCat.id }));
+                    toast.info(`IA : CATÉGORIE "${foundCat.nom_categorie.toUpperCase()}" DÉTECTÉE.`);
+                }
+            }
+
+            toast.success("IA : FICHE PRODUIT AUTO-COMPLÉTÉE.");
+        } catch (err) {
+            console.error('Magic Fill error:', err);
+        } finally {
+            setIsAiLoading(false);
+        }
+    };
+
+    // DEBOUNCED AI FILL FOR NAME
+    useEffect(() => {
+        if (!formData.nom_produit || isEditMode || formData.description) return;
+        
+        const timer = setTimeout(() => {
+            if (formData.nom_produit.length > 5 && !formData.description) {
+                handleMagicFill(formData.nom_produit);
+            }
+        }, 2000); // Trigger after 2s of typing pause
+
+        return () => clearTimeout(timer);
+    }, [formData.nom_produit]);
+
     const [errors, setErrors] = useState({});
 
     useEffect(() => {
@@ -151,6 +208,8 @@ const AddProduct = () => {
                         image_url: (p.images && p.images[0]?.url_image) || p.image_url || '',
                         categorie_id: p.categorie_id || '',
                         est_local: p.est_local ?? true,
+                        unite_mesure: p.unite_mesure || 'Pièce',
+                        mots_cles: Array.isArray(p.mots_cles) ? p.mots_cles.join(', ') : (p.mots_cles || ''),
                     });
                 }
             } catch (err) {
@@ -173,8 +232,8 @@ const AddProduct = () => {
         if (!file) return;
 
         // Validation basique côté client
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error("FICHIER TROP LOURD (MAX 5MO)");
+        if (file.size > 10 * 1024 * 1024) { // Augmenté à 10MB
+            toast.error("FICHIER TROP LOURD (MAX 10MO)");
             return;
         }
 
@@ -190,6 +249,18 @@ const AddProduct = () => {
             if (response.data?.url) {
                 setFormData(prev => ({ ...prev, image_url: response.data.url }));
                 toast.success("IMAGE TÉLÉCHARGÉE AVEC SUCCÈS.");
+
+                // AI ANALYSIS TRIGGER
+                toast.info("L'IA ANALYSE VOTRE IMAGE...");
+                try {
+                    const analysis = await aiService.analyzeImage(file);
+                    if (analysis && analysis.description) {
+                        await handleMagicFill(formData.nom_produit, analysis.description);
+                    }
+                } catch (aiErr) {
+                    console.error('AI Analysis failed, but upload succeeded:', aiErr);
+                    // On ne bloque pas si l'IA échoue
+                }
             }
         } catch (err) {
             console.error('Erreur upload:', err);
@@ -269,6 +340,8 @@ const AddProduct = () => {
                 image_url: formData.image_url.trim() || null,
                 categorie_id: formData.categorie_id || null,
                 est_local: formData.est_local,
+                unite_mesure: formData.unite_mesure || 'Pièce',
+                mots_cles: formData.mots_cles.split(',').map(k => k.trim()).filter(k => k),
             };
 
             if (isEditMode) {
@@ -280,7 +353,9 @@ const AddProduct = () => {
             }
             navigate('/vendor/products');
         } catch (err) {
-            toast.error("ERREUR LORS DE L'ÉCRITURE RÉSEAU.");
+            console.error('Submission error:', err.response?.data);
+            const backendMsg = err.response?.data?.errors?.[0]?.message || err.response?.data?.message || "ERREUR LORS DE L'ÉCRITURE RÉSEAU.";
+            toast.error(backendMsg);
         } finally {
             setIsLoading(false);
         }
@@ -356,16 +431,32 @@ const AddProduct = () => {
 
                             <div className="grid grid-cols-1 gap-3 relative z-20">
                                 <FormField label="Nom du Produit" required error={errors.nom_produit}>
-                                    <div className="relative group/field">
-                                        <Tag className="absolute left-6 top-1/2 -translate-y-1/2 size-4 text-slate-300 group-focus-within/field:text-primary transition-all" />
-                                        <input
-                                            id="input-asset-nom"
-                                            name="nom_produit"
-                                            value={formData.nom_produit}
-                                            onChange={handleChange}
-                                            placeholder="EX: ÉCOUTEURS BLUETOOTH V5..."
-                                            className="w-full h-12 pl-14 pr-6 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold uppercase tracking-tight focus:ring-2 focus:ring-primary/20 outline-none transition-all text-slate-900"
-                                        />
+                                    <div className="relative group/field flex gap-2">
+                                        <div className="relative flex-1">
+                                            <Tag className="absolute left-6 top-1/2 -translate-y-1/2 size-4 text-slate-300 group-focus-within/field:text-primary transition-all" />
+                                            <input
+                                                id="input-asset-nom"
+                                                name="nom_produit"
+                                                value={formData.nom_produit}
+                                                onChange={handleChange}
+                                                placeholder="EX: ÉCOUTEURS BLUETOOTH V5..."
+                                                className="w-full h-12 pl-14 pr-6 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold uppercase tracking-tight focus:ring-2 focus:ring-primary/20 outline-none transition-all text-slate-900"
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleMagicFill()}
+                                            disabled={isAiLoading || !formData.nom_produit}
+                                            className="h-12 px-6 bg-primary/10 text-primary rounded-2xl flex items-center gap-2 hover:bg-primary/20 transition-all disabled:opacity-50 group/magic"
+                                            title="Auto-remplir avec l'IA"
+                                        >
+                                            {isAiLoading ? (
+                                                <Loader2 className="size-4 animate-spin" />
+                                            ) : (
+                                                <Sparkles className="size-4 group-hover/magic:scale-125 transition-transform" />
+                                            )}
+                                            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Magic Fill</span>
+                                        </button>
                                     </div>
                                 </FormField>
 
@@ -401,21 +492,47 @@ const AddProduct = () => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     <FormField label="Catégorie" required error={errors.categorie_id}>
-                                        <div className="relative group/field">
-                                            <Box className="absolute left-6 top-1/2 -translate-y-1/2 size-4 text-slate-300 group-focus-within/field:text-primary transition-all" />
-                                            <select
-                                                id="input-asset-cat"
-                                                name="categorie_id"
-                                                value={formData.categorie_id}
-                                                onChange={handleChange}
-                                                className="w-full h-12 pl-14 pr-12 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold uppercase focus:ring-2 focus:ring-primary/20 outline-none transition-all text-slate-900 appearance-none"
-                                            >
-                                                <option value="" className="bg-white">Sélectionner une catégorie...</option>
-                                                {categories.map(cat => (
-                                                    <option key={cat.id} value={cat.id} className="bg-white">{cat.nom_categorie.toUpperCase()}</option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none group-focus-within/field:rotate-180 transition-transform duration-500" />
+                                        <CreatableSelect
+                                            options={categories.map(c => ({ id: c.id, label: c.nom_categorie }))}
+                                            value={formData.categorie_id}
+                                            onChange={(val) => setFormData(prev => ({ ...prev, categorie_id: val }))}
+                                            placeholder="Sélectionner une catégorie..."
+                                            onCreate={async (newCatName) => {
+                                                try {
+                                                    const newCat = await categoryService.create({ 
+                                                        nom_categorie: newCatName,
+                                                        description: "Catégorie créée automatiquement lors de l'ajout d'un produit."
+                                                    });
+                                                    setCategories(prev => [...prev, newCat]);
+                                                    setFormData(prev => ({ ...prev, categorie_id: newCat.id }));
+                                                    toast.success(`NOUVELLE CATÉGORIE "${newCatName.toUpperCase()}" CRÉÉE.`);
+                                                } catch (err) {
+                                                    toast.error("ÉCHEC DE LA CRÉATION DE LA CATÉGORIE.");
+                                                }
+                                            }}
+                                        />
+
+                                        {/* QUICK CATEGORY GRID */}
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                            {categories.slice(0, 12).map(cat => (
+                                                <button
+                                                    key={cat.id}
+                                                    type="button"
+                                                    onClick={() => setFormData(prev => ({ ...prev, categorie_id: cat.id }))}
+                                                    className={cn(
+                                                        "px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-1.5",
+                                                        formData.categorie_id === cat.id
+                                                            ? "bg-primary text-white border-primary shadow-lg shadow-primary/20"
+                                                            : "bg-white text-slate-400 border-slate-100 hover:border-primary/30 hover:text-primary"
+                                                    )}
+                                                >
+                                                    <span className="scale-[0.6] flex items-center justify-center">{getCategoryIconComponent(cat.nom_categorie)}</span>
+                                                    {cat.nom_categorie}
+                                                </button>
+                                            ))}
+                                            {categories.length > 12 && (
+                                                <span className="text-[8px] font-bold text-slate-300 py-1.5 px-2">+{categories.length - 12} PLUS</span>
+                                            )}
                                         </div>
                                     </FormField>
 
@@ -429,6 +546,34 @@ const AddProduct = () => {
                                                 value={formData.prix_ancien}
                                                 onChange={handleChange}
                                                 className="w-full h-12 pl-14 pr-6 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20 transition-all text-slate-400 tabular-nums line-through decoration-slate-200"
+                                            />
+                                        </div>
+                                    </FormField>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <FormField label="Unité de Mesure" error={errors.unite_mesure}>
+                                        <div className="relative group/field">
+                                            <Box className="absolute left-6 top-1/2 -translate-y-1/2 size-4 text-slate-300 group-focus-within/field:text-primary transition-all" />
+                                            <input
+                                                name="unite_mesure"
+                                                value={formData.unite_mesure}
+                                                onChange={handleChange}
+                                                placeholder="Pièce, Kg, Paire, Carton..."
+                                                className="w-full h-12 pl-14 pr-6 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-primary/20 transition-all text-slate-900"
+                                            />
+                                        </div>
+                                    </FormField>
+
+                                    <FormField label="Mots Clés (Séparés par des virgules)">
+                                        <div className="relative group/field">
+                                            <Hash className="absolute left-6 top-1/2 -translate-y-1/2 size-4 text-slate-300 group-focus-within/field:text-primary transition-all" />
+                                            <input
+                                                name="mots_cles"
+                                                value={formData.mots_cles}
+                                                onChange={handleChange}
+                                                placeholder="promo, nouveau, bio..."
+                                                className="w-full h-12 pl-14 pr-6 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-primary/20 transition-all text-slate-900"
                                             />
                                         </div>
                                     </FormField>

@@ -13,7 +13,8 @@ import {
     CheckCircle2,
     Send,
     Truck,
-    Sparkles
+    Sparkles,
+    X
 } from 'lucide-react';
 import { useTickets } from '../hooks/useDomainData';
 import useApiMutation from '../hooks/useApiMutation';
@@ -25,9 +26,9 @@ import { toast } from 'sonner';
 import { ticketSchema } from '../lib/validation';
 
 const FAQ_CATEGORIES = [
-    { title: "Commandes & Livraison", icon: Truck, q: "Comment suivre ma commande ?", a: "Vous pouvez suivre votre commande dans la section 'Mes Commandes' en cliquant sur le bouton 'Suivre'." },
-    { title: "Paiements & Portefeuille", icon: ShieldCheck, q: "Mes transactions sont-elles sécurisées ?", a: "Oui, toutes les transactions sur BCA Connect sont cryptées et protégées par notre système de séquestre." },
-    { title: "Compte & Sécurité", icon: LifeBuoy, q: "Comment activer la 2FA ?", a: "Allez dans votre profil, section 'Sécurité' et suivez les instructions pour activer l'authentification à deux facteurs." }
+    { title: "Commandes & Livraison", icon: Truck, q: "Comment suivre ma commande ?", a: "Dans 'Mes Commandes', cliquez sur le bouton de suivi en temps réel." },
+    { title: "Paiements & Wallet", icon: ShieldCheck, q: "Transactions sécurisées ?", a: "Sécurisées à 100% via notre système de séquestre (Escrow)." },
+    { title: "Compte & Sécurité", icon: LifeBuoy, q: "Activer la connexion 2FA ?", a: "Options de sécurité disponibles dans vos paramètres de profil." }
 ];
 
 const HelpCenter = () => {
@@ -52,7 +53,6 @@ const HelpCenter = () => {
     const handleCreateTicket = async (e) => {
         e.preventDefault();
 
-        // Zod Validation
         const validation = ticketSchema.safeParse(ticketData);
         if (!validation.success) {
             toast.error(validation.error.errors[0].message);
@@ -62,149 +62,177 @@ const HelpCenter = () => {
         createTicketMutation(ticketData);
     };
 
+    const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
+    const itemVariants = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
+
     return (
-        <div className="bg-background min-h-screen text-foreground pt-24 pb-20">
-            <div className="max-w-6xl mx-auto px-6">
+        <div className="bg-background text-foreground min-h-screen font-jakarta">
+            
+            {/* ══ HERO SECTION ══ */}
+            <section className="relative pt-32 pb-24 overflow-hidden border-b border-border bg-muted/20">
+                <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none" />
                 
-                {/* Header */}
-                <div className="text-center space-y-4 mb-16">
-                    <h1 className="text-4xl md:text-6xl font-black tracking-tighter">BCA <span className="text-primary">Support</span> Center</h1>
-                    <p className="text-muted-foreground text-lg font-medium max-w-2xl mx-auto">
-                        Besoin d'aide ? Recherchez dans notre FAQ ou ouvrez un ticket d'assistance pour une réponse personnalisée.
-                    </p>
+                <motion.div 
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="max-w-4xl mx-auto px-6 text-center space-y-8 relative z-10"
+                >
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/20">
+                        <Sparkles className="size-3" /> Centre d'assistance B2B
+                    </div>
+                    <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-foreground leading-[0.9]" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                        Comment pouvons-nous vous <span className="text-primary">aider</span> ?
+                    </h1>
                     
-                    {/* Search Bar */}
-                    <div className="relative max-w-xl mx-auto pt-8">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+                    {/* Centered Search */}
+                    <div className="relative max-w-2xl mx-auto group mt-8">
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 size-6 text-muted-foreground group-focus-within:text-primary transition-colors" />
                         <input 
                             type="text"
-                            placeholder="Comment pouvons-nous vous aider aujourd'hui ?"
-                            className="w-full h-14 pl-12 pr-6 bg-card border border-border focus:border-primary/50 rounded-2xl outline-none shadow-xl transition-all"
+                            placeholder="Rechercher une solution (ex: mot de passe oublié...)"
+                            className="w-full h-16 pl-16 pr-6 bg-card border-2 border-border focus:border-primary rounded-[2rem] text-sm font-bold outline-none shadow-2xl transition-all"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                </div>
+                </motion.div>
+            </section>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            <div className="max-w-7xl mx-auto px-6 py-16 relative z-20">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                     
-                    {/* Left Column: FAQ & Categories */}
-                    <div className="lg:col-span-2 space-y-12">
+                    {/* Left Column: FAQ & My Tickets */}
+                    <motion.div 
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="show"
+                        className="lg:col-span-8 space-y-12"
+                    >
+                        {/* Quick Help Categories */}
                         <section>
-                            <h2 className="text-2xl font-black mb-6 flex items-center gap-3">
+                            <h2 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-3 mb-6 text-foreground">
                                 <HelpCircle className="size-6 text-primary" />
-                                Questions Fréquentes
+                                Aide Rapide
                             </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 {FAQ_CATEGORIES.map((cat, i) => (
                                     <motion.div 
                                         key={i}
+                                        variants={itemVariants}
                                         whileHover={{ y: -5 }}
-                                        className="p-6 bg-card border border-border rounded-2xl hover:border-primary/30 transition-all cursor-pointer group"
+                                        className="p-6 bg-card border border-border rounded-[2rem] hover:border-primary/40 hover:shadow-2xl transition-all cursor-pointer group"
                                     >
-                                        <cat.icon className="size-8 text-primary mb-4 group-hover:scale-110 transition-transform" />
-                                        <h3 className="font-bold text-lg mb-2">{cat.title}</h3>
-                                        <p className="text-sm text-muted-foreground line-clamp-2">{cat.q}</p>
+                                        <div className="size-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 text-primary border border-primary/20">
+                                            <cat.icon className="size-6 transition-transform group-hover:scale-110" />
+                                        </div>
+                                        <h3 className="font-black text-foreground mb-3 leading-tight">{cat.title}</h3>
+                                        <p className="text-xs text-muted-foreground font-medium leading-relaxed">{cat.q}</p>
                                     </motion.div>
                                 ))}
                             </div>
                         </section>
 
-                        <section>
-                            <div className="flex items-center justify-between mb-8">
-                                <h2 className="text-2xl font-black flex items-center gap-3">
+                        {/* Recent Tickets Section */}
+                        <section className="bg-card border border-border rounded-[2rem] p-8 shadow-2xl">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                                <h2 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-3 text-foreground">
                                     <MessageSquare className="size-6 text-primary" />
-                                    Mes Tickets
+                                    Historique des Requêtes
                                 </h2>
                                 <Button 
                                     onClick={() => setShowTicketForm(true)}
-                                    className="h-10 px-4 bg-primary text-primary-foreground font-black rounded-xl border-none text-[10px] uppercase tracking-widest"
+                                    className="h-12 px-6 bg-foreground hover:opacity-90 text-background font-black uppercase tracking-widest rounded-2xl text-xs whitespace-nowrap"
                                 >
-                                    <Plus className="size-4 mr-2" />
-                                    Nouveau Ticket
+                                    <Plus className="size-4 mr-2" /> Ouvrir un ticket
                                 </Button>
                             </div>
 
                             {ticketsLoading ? (
-                                <LoadingState message="Chargement de vos tickets..." />
+                                <LoadingState message="Chargement en cours..." />
                             ) : ticketsError ? (
                                 <ErrorState error={ticketsError} />
                             ) : tickets.length > 0 ? (
                                 <div className="space-y-4">
                                     {tickets.map((ticket) => (
-                                        <div key={ticket.id} className="p-5 bg-card border border-border rounded-2xl flex items-center justify-between hover:bg-muted/30 transition-colors">
+                                        <div key={ticket.id} className="p-5 bg-muted/40 border border-border rounded-2xl flex items-center justify-between hover:border-primary/40 hover:shadow-lg transition-all group cursor-pointer">
                                             <div className="flex items-center gap-4">
                                                 <div className={cn(
-                                                    "size-10 rounded-full flex items-center justify-center",
-                                                    ticket.status === 'resolu' ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-500"
+                                                    "size-12 rounded-2xl flex items-center justify-center border",
+                                                    ticket.status === 'resolu' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" : "bg-primary/10 border-primary/20 text-primary"
                                                 )}>
-                                                    {ticket.status === 'resolu' ? <CheckCircle2 className="size-5" /> : <Clock className="size-5" />}
+                                                    {ticket.status === 'resolu' ? <CheckCircle2 className="size-6" /> : <Clock className="size-6" />}
                                                 </div>
                                                 <div>
-                                                    <h4 className="font-bold text-sm tracking-tight">{ticket.sujet}</h4>
-                                                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mt-1">
-                                                        REF: #{ticket.id.slice(0, 8)} • {new Date(ticket.createdAt).toLocaleDateString()}
+                                                    <h4 className="font-black text-base text-foreground mb-1 group-hover:text-primary transition-colors uppercase tracking-tighter">{ticket.sujet}</h4>
+                                                    <p className="text-xs text-muted-foreground tracking-wide font-bold uppercase">
+                                                        #{ticket.id.slice(0, 8).toUpperCase()} • {new Date(ticket.createdAt).toLocaleDateString()}
                                                     </p>
                                                 </div>
                                             </div>
-                                            <ChevronRight className="size-4 text-muted-foreground" />
+                                            <ChevronRight className="size-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <EmptyState message="Vous n'avez aucun ticket d'assistance en cours." />
+                                <EmptyState message="Vous n'avez aucun ticket d'assistance ouvert." />
                             )}
                         </section>
-                    </div>
+                    </motion.div>
 
-                    {/* Right Column: Dynamic Form or Contact Card */}
-                    <div className="space-y-8">
+                    {/* Right Column: Interactive Actions */}
+                    <div className="lg:col-span-4 space-y-6">
                         <AnimatePresence mode="wait">
                             {showTicketForm ? (
                                 <motion.div 
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 20 }}
-                                    className="bg-card border border-border rounded-3xl p-8 shadow-2xl relative"
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    className="bg-card border border-border rounded-[2rem] p-8 shadow-2xl relative"
                                 >
                                     <button 
                                         onClick={() => setShowTicketForm(false)}
-                                        className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+                                        className="absolute top-6 right-6 p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                                     >
-                                        <Plus className="size-5 rotate-45" />
+                                        <X className="size-5" />
                                     </button>
-                                    <h3 className="text-xl font-black mb-6">Ouvrir un <span className="text-primary">Ticket</span></h3>
-                                    <form onSubmit={handleCreateTicket} className="space-y-5">
+                                    
+                                    <div className="mb-6 pr-10">
+                                        <h3 className="text-xl font-black text-foreground uppercase tracking-tighter">Créer un ticket</h3>
+                                        <p className="text-sm text-muted-foreground mt-1 font-medium">Un conseiller vous répondra sous 24h.</p>
+                                    </div>
+
+                                    <form onSubmit={handleCreateTicket} className="space-y-4">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Sujet</label>
+                                            <label className="text-xs font-black text-foreground uppercase tracking-widest">Sujet principal</label>
                                             <input 
                                                 required
-                                                className="w-full h-11 px-4 bg-background border border-border rounded-xl text-sm outline-none focus:border-primary/50 transition-all"
-                                                placeholder="Ex: Problème de paiement"
+                                                className="w-full h-12 px-4 bg-muted border border-border rounded-2xl text-sm font-medium outline-none focus:border-primary transition-all text-foreground"
+                                                placeholder="Ex: Problème de livraison"
                                                 value={ticketData.sujet}
                                                 onChange={e => setTicketData({...ticketData, sujet: e.target.value})}
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Catégorie</label>
+                                            <label className="text-xs font-black text-foreground uppercase tracking-widest">Catégorie associée</label>
                                             <select 
-                                                className="w-full h-11 px-4 bg-background border border-border rounded-xl text-sm outline-none font-bold"
+                                                className="w-full h-12 px-4 bg-muted border border-border rounded-2xl text-sm font-medium outline-none focus:border-primary transition-all text-foreground"
                                                 value={ticketData.categorie}
                                                 onChange={e => setTicketData({...ticketData, categorie: e.target.value})}
                                             >
-                                                <option value="technique">Technique</option>
-                                                <option value="facturation">Facturation</option>
-                                                <option value="logistique">Logistique</option>
-                                                <option value="autre">Autre</option>
+                                                <option value="technique">Support Technique</option>
+                                                <option value="facturation">Service Facturation</option>
+                                                <option value="logistique">Information Logistique</option>
+                                                <option value="autre">Requête Générale</option>
                                             </select>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Message</label>
+                                            <label className="text-xs font-black text-foreground uppercase tracking-widest">Description détaillée</label>
                                             <textarea 
                                                 required
-                                                rows={4}
-                                                className="w-full p-4 bg-background border border-border rounded-xl text-sm outline-none focus:border-primary/50 transition-all resize-none"
-                                                placeholder="Décrivez votre problème en détail..."
+                                                rows={5}
+                                                className="w-full p-4 bg-muted border border-border rounded-2xl text-sm font-medium outline-none focus:border-primary transition-all resize-none text-foreground"
+                                                placeholder="Fournissez un maximum de détails..."
                                                 value={ticketData.message}
                                                 onChange={e => setTicketData({...ticketData, message: e.target.value})}
                                             />
@@ -212,10 +240,10 @@ const HelpCenter = () => {
                                         <Button 
                                             type="submit"
                                             disabled={creatingTicket}
-                                            className="w-full h-12 bg-primary text-primary-foreground font-black rounded-xl border-none shadow-lg shadow-primary/20"
+                                            className="w-full h-12 mt-2 bg-primary text-primary-foreground hover:bg-primary/90 font-black uppercase tracking-widest rounded-2xl shadow-xl"
                                         >
-                                            {creatingTicket ? "ENVOI EN COURS..." : "SOUMETTRE LE TICKET"}
-                                            <Send className="size-4 ml-2" />
+                                            {creatingTicket ? "ENVOI..." : "SOUMETTRE"}
+                                            {!creatingTicket && <Send className="size-4 ml-2" />}
                                         </Button>
                                     </form>
                                 </motion.div>
@@ -223,43 +251,39 @@ const HelpCenter = () => {
                                 <motion.div 
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="bg-primary rounded-3xl p-8 text-primary-foreground relative overflow-hidden group"
+                                    className="bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden group shadow-xl"
                                 >
+                                    <div className="absolute inset-0 bg-[#FF6600]/10 mix-blend-overlay" />
                                     <div className="relative z-10 space-y-6">
-                                        <h3 className="text-2xl font-black tracking-tighter">Support Direct</h3>
-                                        <p className="font-medium text-primary-foreground/80">
-                                            Nos agents sont disponibles du Lundi au Samedi, de 9h à 18h.
+                                        <div className="size-12 rounded-xl bg-[#FF6600] flex items-center justify-center mb-6">
+                                            <LifeBuoy className="size-6 text-white" />
+                                        </div>
+                                        <h3 className="text-2xl font-bold tracking-tight">Assistance Premium</h3>
+                                        <p className="text-sm font-medium text-slate-300 leading-relaxed">
+                                            Profitez d'un accompagnement personnalisé avec nos experts. Temps de réponse garanti en moins de 2 heures.
                                         </p>
-                                        <div className="space-y-4 pt-4">
-                                            <div className="flex items-center gap-3">
-                                                <CheckCircle2 className="size-5" />
-                                                <span className="text-sm font-bold">Temps de réponse : &lt; 2h</span>
+                                        <div className="space-y-3 pt-2">
+                                            <div className="flex items-center gap-3 text-sm text-slate-200">
+                                                <CheckCircle2 className="size-4 text-[#FF6600]" /> 100% basé en Guinée
                                             </div>
-                                            <div className="flex items-center gap-3">
-                                                <ShieldCheck className="size-5" />
-                                                <span className="text-sm font-bold">Assistance locale 100% Guinéenne</span>
+                                            <div className="flex items-center gap-3 text-sm text-slate-200">
+                                                <CheckCircle2 className="size-4 text-[#FF6600]" /> Lundi - Samedi, 8h-18h
                                             </div>
                                         </div>
-                                        <Button 
-                                            variant="outline" 
-                                            className="w-full bg-background text-foreground border-none font-black rounded-xl h-11 mt-4"
-                                        >
-                                            APPELER LE 121
-                                        </Button>
                                     </div>
-                                    <Sparkles className="absolute -bottom-10 -right-10 size-64 opacity-10 group-hover:scale-110 transition-transform duration-1000" />
+                                    <Sparkles className="absolute -bottom-6 -right-6 size-48 opacity-5 group-hover:scale-110 transition-transform duration-1000 text-white" />
                                 </motion.div>
                             )}
                         </AnimatePresence>
 
-                        <div className="p-6 bg-muted border border-border rounded-3xl space-y-4">
-                            <div className="flex items-center gap-3">
-                                <AlertCircle className="size-5 text-amber-500" />
-                                <h4 className="font-bold text-sm">Rapport de bug ?</h4>
+                        <div className="p-6 bg-muted/50 border border-border rounded-[2rem] flex gap-4 mt-6">
+                            <AlertCircle className="size-6 text-amber-500 shrink-0" />
+                            <div>
+                                <h4 className="font-black text-sm text-foreground mb-1 uppercase tracking-tighter">Rapport de Bug ?</h4>
+                                <p className="text-xs font-medium text-muted-foreground leading-relaxed">
+                                    Veuillez joindre une capture d'écran claire dans votre descriptif de ticket si possible.
+                                </p>
                             </div>
-                            <p className="text-xs font-medium text-muted-foreground">
-                                Si vous rencontrez un problème technique majeur, merci de joindre une capture d'écran à votre ticket.
-                            </p>
                         </div>
                     </div>
                 </div>
@@ -267,7 +291,5 @@ const HelpCenter = () => {
         </div>
     );
 };
-
-// Remove local Truck mock as it's now imported
 
 export default HelpCenter;

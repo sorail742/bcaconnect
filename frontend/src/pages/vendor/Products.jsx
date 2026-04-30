@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import DataTable from '../../components/ui/DataTable';
 import { TableRowSkeleton } from '../../components/ui/Loader';
 import DashboardCard from '../../components/ui/DashboardCard';
+import ProductCard from '../../components/produits/ProductCard';
 
 // ── Stock Badge ─────────────────────────────────────────
 const StockBadge = ({ qty }) => {
@@ -254,72 +255,50 @@ const Products = () => {
                         </div>
                     </div>
 
-                    <div className="p-2">
-                        <DataTable
-                            selectable
-                            selectedIds={selectedIds}
-                            onSelectionChange={setSelectedIds}
-                            isLoading={isLoading}
-                            className="bg-transparent border-0"
-                            columns={[
-                                {
-                                    label: 'Produit',
-                                    render: (p) => (
-                                        <div className="flex items-center gap-3 py-4 group/item">
-                                            <div className="size-6 rounded-2xl bg-foreground/5 border-2 border-foreground/10 flex items-center justify-center overflow-hidden shrink-0 group-hover/item:scale-110 group-hover/item:rotate-6 transition-all shadow-2xl relative">
-                                                <div className="absolute inset-0 bg-gradient-to-tr from-[#FFB703]/30 via-transparent to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity duration-700" />
-                                                {p.image_url ? <img src={p.image_url} className="w-full h-full object-cover relative z-10" alt="" /> : <Package className="size-6 text-slate-700" />}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b border-slate-100 dark:border-white/5 bg-slate-50/30 dark:bg-white/[0.02]">
+                                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Aperçu</th>
+                                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Produit</th>
+                                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Catégorie</th>
+                                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Prix</th>
+                                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Stock</th>
+                                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Évaluation</th>
+                                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {isLoading ? (
+                                    [1,2,3,4,5].map(i => (
+                                        <tr key={i} className="animate-pulse border-b border-slate-50 dark:border-white/5">
+                                            <td colSpan={7} className="p-8">
+                                                <div className="h-10 bg-slate-100 dark:bg-white/5 rounded-2xl w-full" />
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : filtered.length > 0 ? (
+                                    filtered.map(p => (
+                                        <ProductCard 
+                                            key={p.id} 
+                                            product={p} 
+                                            variant="row" 
+                                            onEdit={(prod) => navigate(`/vendor/products/edit/${prod.id}`)}
+                                            onDelete={(prod) => setDeleteConfirm(prod)}
+                                        />
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={7} className="py-32 text-center">
+                                            <div className="flex flex-col items-center gap-4 opacity-30">
+                                                <ShoppingBag className="size-12 text-slate-400" />
+                                                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Aucun produit trouvé</p>
                                             </div>
-                                            <div className="space-y-1">
-                                                <p className="text-[14px] font-black text-foreground uppercase tracking-tighter group-hover/item:text-[#FFB703] transition-colors truncate max-w-[250px] leading-none">{p.nom_produit}</p>
-                                                <p className="text-[9px] font-black text-slate-600 uppercase  leading-none">Réf: {p.id.slice(0,8)}</p>
-                                            </div>
-                                        </div>
-                                    )
-                                },
-                                {
-                                    label: 'Catégorie',
-                                    render: (p) => <span className="text-[10px] font-black text-muted-foreground uppercase  font-jakarta">{p.categorie?.nom_categorie || 'Non classifié'}</span>
-                                },
-                                {
-                                    label: 'Prix Unitaire',
-                                    render: (p) => <span className="text-[14px] font-black text-foreground tracking-tighter tabular-nums uppercase font-jakarta">{parseFloat(p.prix_unitaire).toLocaleString('fr-GN')} <small className="text-[10px] font-black text-[#FFB703] tracking-widest ml-1">GNF</small></span>
-                                },
-                                {
-                                    label: 'Stock',
-                                    render: (p) => <StockEditor productId={p.id} initialStock={p.stock_quantite} onUpdated={handleStockUpdated} />
-                                },
-                                {
-                                    label: 'Statut',
-                                    render: (p) => <StockBadge qty={p.stock_quantite} />
-                                },
-                                {
-                                    label: 'Actions',
-                                    render: (p) => (
-                                        <div className="flex items-center justify-end gap-3 pr-8">
-                                            <button id={`edit-p-${p.id}`} onClick={() => navigate(`/vendor/products/edit/${p.id}`)} className="size-6 flex items-center justify-center text-muted-foreground hover:text-foreground bg-foreground/5 border-2 border-foreground/5 rounded-2xl transition-all group/edit hover:border-[#FFB703]/30 ">
-                                                <Edit3 className="size-5 group-hover/edit:scale-110 transition-transform" />
-                                            </button>
-                                            <button id={`delete-p-${p.id}`} onClick={() => setDeleteConfirm(p)} className="size-6 flex items-center justify-center text-muted-foreground hover:text-rose-500 bg-foreground/5 border-2 border-foreground/5 rounded-2xl transition-all group/trash hover:border-rose-500/30 ">
-                                                <Trash2 className="size-5 group-hover/trash:scale-110 transition-transform" />
-                                            </button>
-                                        </div>
-                                    )
-                                }
-                            ]}
-                            data={filtered}
-                        />
-
-                        {!isLoading && filtered.length === 0 && (
-                            <div className="py-24 text-center opacity-40 flex flex-col items-center gap-3">
-                                <div className="relative">
-                                    <ShoppingBag className="size-6 text-slate-800 animate-pulse" />
-                                    <Satellite className="absolute -top-4 -right-4 size-6 text-[#FFB703] animate-bounce" />
-                                </div>
-                                <p className="text-[12px] font-black uppercase  text-foreground">Aucun article trouvé</p>
-                                <button onClick={load} className="text-[#FFB703] text-[10px] font-black uppercase  border-b-2 border-[#FFB703]/20 pb-2 hover:border-[#FFB703] transition-all">Actualiser</button>
-                            </div>
-                        )}
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

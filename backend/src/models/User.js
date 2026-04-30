@@ -90,6 +90,16 @@ const User = sequelize.define('User', {
         allowNull: true,
         defaultValue: null,
         comment: 'Données transporteur: { type_vehicule, numero_permis, zone_couverture, disponibilite }',
+    },
+    avatar_url: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        comment: 'URL de la photo de profil de l\'utilisateur',
+    },
+    points_fidelite: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        comment: 'Points de fidélité accumulés par l\'utilisateur',
     }
 }, {
     tableName: 'utilisateurs',

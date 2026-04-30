@@ -55,9 +55,20 @@ const permissions = {
  * @returns {boolean}
  */
 const hasPermission = (role, permission) => {
-    if (role === 'admin') return true; // L'admin a toutes les permissions implicitement
-    if (!permissions[role]) return false;
-    return permissions[role].includes(permission);
+    // Si le rôle est absent, on bloque par défaut par sécurité
+    if (!role) {
+        console.warn(`[PERM] Tentative d'accès sans rôle défini pour la permission: ${permission}`);
+        return false;
+    }
+    
+    // Normalisation (force string + lowercase)
+    const normalizedRole = String(role).toLowerCase();
+    
+    // Règle d'or : l'admin a TOUJOURS toutes les permissions
+    if (normalizedRole === 'admin') return true;
+    
+    if (!permissions[normalizedRole]) return false;
+    return permissions[normalizedRole].includes(permission);
 };
 
 module.exports = { permissions, hasPermission };

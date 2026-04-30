@@ -1,172 +1,133 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingBag, Store, ArrowRight, ShieldCheck, Zap, Star, LayoutDashboard, CheckCircle2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ShoppingBag, Store, ArrowRight, ShieldCheck, Zap, Star, LayoutDashboard, Truck, Landmark } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
+import { useAuth } from "../../hooks/useAuth";
+import { ROLES } from "../../constants/roles";
 import { cn } from "../../lib/utils";
-import TiltWrapper from '../ui/TiltWrapper';
-import GeometricBackground from '../ui/GeometricBackground';
 
 export function RolesSection() {
-    const { t, lang } = useLanguage();
+    const { t } = useLanguage();
+    const navigate = useNavigate();
+    const { user, isAuthenticated } = useAuth();
+
+    const getDashboardLink = (role) => {
+        if (!isAuthenticated) return `/register?role=${role}`;
+        if (user.role === role) {
+            if (role === ROLES.ADMIN) return '/admin/dashboard';
+            if (role === ROLES.FOURNISSEUR) return '/vendor/dashboard';
+            if (role === ROLES.TRANSPORTEUR) return '/carrier/dashboard';
+            if (role === ROLES.BANQUE) return '/bank/dashboard';
+            return '/dashboard';
+        }
+        return '/dashboard'; // Fallback
+    };
 
     const roles = [
         {
-            title: t('roleBuyerTitle') || "Acheteur Certifié",
-            description: t('roleBuyerDesc') || "Accédez au marché en toute sécurité avec notre protection des achats et paiements garantis.",
+            id: 'client',
+            title: "Acheteur Certifié",
+            desc: "Accédez au marché avec protection Escrow et suivi logistique.",
             icon: ShoppingBag,
-            to: "/register?role=client",
             color: "text-blue-600",
             bg: "bg-blue-50",
-            hoverBorder: "hover:border-blue-500/50",
-            buttonHover: "group-hover:bg-blue-600",
-            shadow: "hover:shadow-[0_20px_40px_-15px_rgba(37,99,235,0.15)]",
-            features: [
-                "Protection des paiements (Escrow)",
-                "Support client prioritaire",
-                "Suivi logistique en temps réel"
-            ]
+            features: ["Paiements sécurisés", "Suivi temps réel", "Support 24/7"]
         },
         {
-            title: t('roleVendorTitle') || "Vendeur Professionnel",
-            description: t('roleVendorDesc') || "Ouvrez votre boutique numérique, touchez des milliers de clients et gérez vos ventes facilement.",
+            id: 'fournisseur',
+            title: "Fournisseur Pro",
+            desc: "Ouvrez votre espace fournisseur, gérez vos stocks et boostez vos ventes.",
             icon: Store,
-            to: "/register?role=vendeur",
             color: "text-[#FF6600]",
             bg: "bg-orange-50",
-            hoverBorder: "hover:border-[#FF6600]/50",
-            buttonHover: "group-hover:bg-[#FF6600]",
-            shadow: "hover:shadow-[0_20px_40px_-15px_rgba(255,102,0,0.15)]",
-            features: [
-                "Boutique personnalisée en ligne",
-                "Tableau de bord et statistiques poussées",
-                "Règlements unifiés et sécurisés"
-            ]
+            features: ["Tableau de bord IA", "Gestion de stock", "Règlements rapides"]
+        },
+        {
+            id: 'transporteur',
+            title: "Transporteur",
+            desc: "Optimisez vos trajets et livrez les commandes du réseau BCA.",
+            icon: Truck,
+            color: "text-emerald-600",
+            bg: "bg-emerald-50",
+            features: ["Gestion de flotte", "Preuve de livraison", "Paiements garantis"]
         }
     ];
 
     return (
-        <section className="relative py-32 bg-background font-sans overflow-hidden border-t border-border">
-            <GeometricBackground />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-muted/50 via-background to-background pointer-events-none" />
-            
-            <div className="container mx-auto px-6 md:px-12 relative z-10 w-full max-w-[90%] lg:max-w-[1200px]">
+        <section className="bg-white py-10 sm:py-16 border-t border-slate-100">
+            <div className="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8">
                 
-                {/* Header Title */}
-                <div className="text-center max-w-3xl mx-auto mb-20 space-y-6">
-                    <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        className="inline-block px-4 py-1.5 rounded-full bg-muted border border-border text-xs font-black text-muted-foreground uppercase tracking-widest shadow-sm"
-                    >
-                        Création de Compte
-                    </motion.div>
-                    
-                    <motion.h2 
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="text-4xl md:text-5xl lg:text-6xl font-black text-foreground tracking-tight leading-[1.1]"
-                    >
-                        Rejoignez l'écosystème <span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground to-muted-foreground">BCA</span>
-                    </motion.h2>
-                    
-                    <motion.p 
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="text-lg md:text-xl text-muted-foreground font-medium max-w-2xl mx-auto"
-                    >
-                        {t('aboutDescHero') || "Une seule plateforme unifiée pour vos achats sécurisés et l'accélération de votre croissance commerciale en Afrique."}
-                    </motion.p>
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                            <div className="w-1 h-8 bg-[#FF6600] rounded-full" />
+                            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase">
+                                Un Écosystème Unifié
+                            </h2>
+                        </div>
+                        <p className="text-slate-500 text-sm pl-4 ml-1 border-l-2 border-slate-100 italic">
+                            Choisissez votre rôle et commencez à transformer le commerce en Guinée.
+                        </p>
+                    </div>
                 </div>
 
-                {/* Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-                    {roles.map((role, index) => (
+                {/* Roles Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                    {roles.map((role, idx) => (
                         <motion.div
-                            key={index}
-                            initial={{ opacity: 0, y: 40 }}
+                            key={role.id}
+                            initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 + (index * 0.1), duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                            viewport={{ once: true }}
+                            transition={{ delay: idx * 0.1 }}
+                            className="group relative bg-white border border-slate-100 rounded-3xl p-6 hover:shadow-xl hover:border-[#FF6600]/20 transition-all duration-300 overflow-hidden"
                         >
-                            <TiltWrapper className="h-full">
-                                <Link 
-                                    to={role.to}
-                                    className={cn(
-                                        "group flex flex-col p-10 rounded-[2.5rem] bg-card border-2 border-border transition-all duration-500 relative overflow-hidden h-full",
-                                        role.hoverBorder,
-                                        "hover:shadow-[0_40px_100px_-25px_rgba(0,0,0,0.1)]"
-                                    )}
-                                >
-                                {/* Decorative Blur Background on hover */}
-                                <div className={cn(
-                                    "absolute -top-32 -right-32 size-64 rounded-full blur-[100px] opacity-0 group-hover:opacity-60 transition-opacity duration-700",
-                                    role.bg
-                                )} />
-
-                                <div className="relative z-10 flex flex-col h-full">
-                                    <div className="flex items-center gap-6 mb-8">
-                                        <div className={cn("size-16 rounded-[1.2rem] flex items-center justify-center transition-transform duration-500 group-hover:scale-110 shadow-sm border border-border", role.bg)}>
-                                            <role.icon className={cn("size-8", role.color)} />
-                                        </div>
-                                        <h3 className="text-2xl font-black text-foreground">{role.title}</h3>
-                                    </div>
-                                    
-                                    <p className="text-base text-muted-foreground leading-relaxed mb-10 min-h-[4rem]">
-                                        {role.description}
-                                    </p>
-
-                                    <div className="space-y-4 mb-12 flex-1">
-                                        {role.features.map((feat, i) => (
-                                            <div key={i} className="flex items-start gap-4">
-                                                <CheckCircle2 className={cn("size-5 shrink-0 mt-0.5", role.color)} />
-                                                <span className="text-base font-semibold text-muted-foreground group-hover:text-foreground transition-colors">{feat}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    {/* Premium Button */}
-                                    <div className={cn(
-                                        "h-14 w-full rounded-2xl bg-foreground text-background font-bold text-base transition-all duration-500 overflow-hidden relative"
-                                    )}>
-                                        <div className={cn(
-                                            "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500",
-                                            role.buttonHover
-                                        )} />
-                                        <div className="absolute inset-0 flex items-center justify-center gap-3 relative z-10">
-                                            {t('join') || "Créer un compte"} 
-                                            <ArrowRight className="size-5 transform group-hover:translate-x-1 transition-transform" />
-                                        </div>
-                                    </div>
+                            {/* Icon & Title */}
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className={cn("size-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", role.bg)}>
+                                    <role.icon className={cn("size-7", role.color)} />
                                 </div>
-                                </Link>
-                            </TiltWrapper>
+                                <h3 className="text-lg font-black text-slate-900 leading-tight">
+                                    {role.title}
+                                </h3>
+                            </div>
+
+                            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+                                {role.desc}
+                            </p>
+
+                            {/* Feature Pills */}
+                            <div className="flex flex-wrap gap-2 mb-8">
+                                {role.features.map(f => (
+                                    <span key={f} className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-lg">
+                                        • {f}
+                                    </span>
+                                ))}
+                            </div>
+
+                            {/* Action Button */}
+                            <button
+                                onClick={() => navigate(getDashboardLink(role.id === 'fournisseur' ? ROLES.FOURNISSEUR : role.id === 'transporteur' ? ROLES.TRANSPORTEUR : role.id === 'banque' ? ROLES.BANQUE : ROLES.CLIENT))}
+                                className={cn(
+                                    "w-full flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-black transition-all",
+                                    isAuthenticated && user?.role === (role.id === 'fournisseur' ? ROLES.FOURNISSEUR : role.id === 'transporteur' ? ROLES.TRANSPORTEUR : role.id === 'banque' ? ROLES.BANQUE : ROLES.CLIENT)
+                                        ? "bg-slate-900 text-white shadow-lg"
+                                        : "bg-slate-50 text-slate-600 hover:bg-[#FF6600] hover:text-white"
+                                )}
+                            >
+                                {isAuthenticated && user?.role === (role.id === 'fournisseur' ? ROLES.FOURNISSEUR : role.id === 'transporteur' ? ROLES.TRANSPORTEUR : role.id === 'banque' ? ROLES.BANQUE : ROLES.CLIENT)
+                                    ? "Mon Dashboard"
+                                    : "Rejoindre"}
+                                <ArrowRight className="size-4" />
+                            </button>
+
+                            {/* Background decoration */}
+                            <div className={cn("absolute -bottom-6 -right-6 size-24 rounded-full blur-3xl opacity-0 group-hover:opacity-10 transition-opacity", role.bg.replace('bg-', 'bg-'))} />
                         </motion.div>
                     ))}
                 </div>
-
-                {/* Bottom Stats / Badges */}
-                <motion.div 
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    transition={{ delay: 0.6 }}
-                    className="mt-24 grid grid-cols-2 md:grid-cols-4 gap-8 text-center max-w-4xl mx-auto border-t border-slate-100 pt-16"
-                >
-                    {[
-                        { icon: ShieldCheck, label: "Sécurité Infaillible" },
-                        { icon: Zap, label: "Expérience Fluide" },
-                        { icon: Star, label: "Qualité Premium" },
-                        { icon: LayoutDashboard, label: "Interface Intuitive" }
-                    ].map((item, i) => (
-                        <div key={i} className="flex flex-col items-center gap-4 group">
-                            <div className="size-12 rounded-xl bg-muted flex items-center justify-center border border-border transition-transform group-hover:-translate-y-1">
-                                <item.icon className="size-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                            </div>
-                            <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{item.label}</p>
-                        </div>
-                    ))}
-                </motion.div>
             </div>
         </section>
     );

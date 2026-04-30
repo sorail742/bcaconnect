@@ -15,6 +15,7 @@ const authMiddleware = (req, res, next) => {
         
         // Vérifier et décoder le token avec RS256
         const decoded = jwtService.verifyToken(token);
+        console.log(`[DEBUG AUTH] User: ${decoded.email}, Role: ${decoded.role}, ID: ${decoded.id}`);
         req.user = decoded;
         next();
     } catch (error) {
@@ -45,14 +46,23 @@ const grantAccess = (permission) => {
 // Middleware pour vérifier les rôles : accepte string ou tableau
 const authorize = (...roles) => {
     // Aplatir si un tableau est passé directement
-    const allowedRoles = roles.flat();
+    const allowedRoles = roles.flat().map(r => r.toLowerCase());
     return (req, res, next) => {
         if (!req.user) {
             return res.status(401).json({ message: "Non authentifié." });
         }
-        if (!allowedRoles.includes(req.user.role)) {
+        
+        const userRole = req.user.role ? req.user.role.toLowerCase() : '';
+
+        // Si l'utilisateur est admin, il passe partout même si non listé explicitement
+        if (userRole === 'admin') return next();
+
+        if (!allowedRoles.includes(userRole)) {
+            console.warn(`[AUTH 403] Accès refusé : User=${req.user.email}, RoleDonne=${userRole}, RolesAttendus=${allowedRoles.join('|')}, Route=${req.originalUrl}`);
             return res.status(403).json({
-                message: `Accès interdit pour le rôle : ${req.user.role}`
+                message: `Accès interdit pour le rôle : ${req.user.role}`,
+                error: 'PERMISSION_DENIED',
+                debug: { role: userRole, expected: allowedRoles }
             });
         }
         next();
