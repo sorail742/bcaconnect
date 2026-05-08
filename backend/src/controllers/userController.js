@@ -30,11 +30,27 @@ const userController = {
                 order: [['createdAt', 'DESC']]
             });
 
+            // Calculate dynamic stats
+            const now = new Date();
+            const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+            const sixtyDaysAgo = new Date(now.getTime() - (60 * 24 * 60 * 60 * 1000));
+            const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+
+            const currentCount = await User.count({ where: { createdAt: { [Op.gte]: thirtyDaysAgo } } });
+            const previousCount = await User.count({ where: { createdAt: { [Op.between]: [sixtyDaysAgo, thirtyDaysAgo] } } });
+            const growth = previousCount === 0 ? 100 : ((currentCount - previousCount) / previousCount) * 100;
+            const newLast7Days = await User.count({ where: { createdAt: { [Op.gte]: sevenDaysAgo } } });
+
             res.json({
                 total: count,
                 pages: Math.ceil(count / limit),
                 currentPage: parseInt(page),
-                users
+                users,
+                stats: {
+                    growth: growth.toFixed(1),
+                    newLast7Days,
+                    status: 'Actif'
+                }
             });
         } catch (error) {
             next(error);

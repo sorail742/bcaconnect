@@ -44,10 +44,10 @@ const envSchema = Joi.object({
 
     JWT_PRIVATE_KEY: Joi.string()
         .required()
-        .pattern(/BEGIN RSA PRIVATE KEY/)
+        .pattern(/BEGIN (RSA )?PRIVATE KEY/)
         .messages({
             'any.required': 'JWT_PRIVATE_KEY est requis',
-            'string.pattern.base': 'JWT_PRIVATE_KEY doit être une clé RSA valide'
+            'string.pattern.base': 'JWT_PRIVATE_KEY doit être une clé RSA valide (PKCS#1 ou PKCS#8)'
         }),
 
     JWT_PUBLIC_KEY: Joi.string()

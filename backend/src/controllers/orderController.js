@@ -127,6 +127,30 @@ const orderController = {
                     type_transaction: 'achat_produit',
                     statut: 'terminé'
                 }, { transaction: t });
+
+                // 🛡️ SÉQUESTRE AUTOMATIQUE : Créditer les vendeurs en mode séquestre
+                const vendorsToCredit = {};
+                for (const item of orderItemsByVendor) {
+                    vendorsToCredit[item.fournisseur_id] = (vendorsToCredit[item.fournisseur_id] || 0) + (item.prix_unitaire_achat * item.quantite);
+                }
+
+                for (const [vendorId, amount] of Object.entries(vendorsToCredit)) {
+                    const vWallet = await Wallet.findOne({ where: { user_id: vendorId }, transaction: t, lock: t.LOCK.UPDATE });
+                    if (vWallet) {
+                        vWallet.solde_sequestre = parseFloat(vWallet.solde_sequestre) + parseFloat(amount);
+                        await vWallet.save({ transaction: t });
+
+                        // Log de mise en séquestre
+                        await Transaction.create({
+                            portefeuille_id: vWallet.id,
+                            commande_id: order.id,
+                            montant: amount,
+                            type_transaction: 'depot',
+                            statut: 'en_attente',
+                            metadata: { type: 'escrow_deposit', description: 'Fonds mis en séquestre suite à une vente' }
+                        }, { transaction: t });
+                    }
+                }
             }
 
             await t.commit();

@@ -103,7 +103,7 @@ const storeController = {
                         model: Product, 
                         as: 'produits', 
                         limit: 4,
-                        order: [['views', 'DESC']],
+                        order: [['createdAt', 'DESC']],
                         attributes: ['id', 'nom_produit', 'image_url', 'prix_unitaire']
                     }
                 ]

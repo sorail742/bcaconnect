@@ -1,61 +1,55 @@
 const { Category } = require('../models');
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/AppError');
 
 const categoryController = {
-    getAll: async (req, res, next) => {
-        try {
-            const categories = await Category.findAll();
-            res.json(categories);
-        } catch (error) {
-            next(error);
-        }
-    },
+    getAll: catchAsync(async (req, res, next) => {
+        const categories = await Category.findAll({
+            include: [{ model: Category, as: 'sous_categories' }]
+        });
+        res.json(categories);
+    }),
 
-    create: async (req, res, next) => {
-        try {
-            const { nom_categorie, description, image_url } = req.body;
-            const category = await Category.create({ 
-                nom_categorie, 
-                description,
-                image_url: image_url || null 
-            });
-            res.status(201).json(category);
-        } catch (error) {
-            next(error);
-        }
-    },
+    create: catchAsync(async (req, res, next) => {
+        const { nom_categorie, description, image_url, parent_id } = req.body;
+        const category = await Category.create({ 
+            nom_categorie, 
+            description,
+            image_url: image_url || null,
+            parent_id: parent_id || null
+        });
+        res.status(201).json(category);
+    }),
 
-    update: async (req, res, next) => {
-        try {
-            const { id } = req.params;
-            const { nom_categorie, description, image_url } = req.body;
-            const category = await Category.findByPk(id);
-            if (!category) {
-                return res.status(404).json({ message: "Catégorie non trouvée." });
-            }
-            await category.update({ 
-                nom_categorie, 
-                description,
-                image_url: image_url !== undefined ? image_url : category.image_url
-            });
-            res.json(category);
-        } catch (error) {
-            next(error);
+    update: catchAsync(async (req, res, next) => {
+        const { id } = req.params;
+        const { nom_categorie, description, image_url, parent_id } = req.body;
+        const category = await Category.findByPk(id);
+        
+        if (!category) {
+            return next(new AppError("Catégorie non trouvée.", 404));
         }
-    },
 
-    delete: async (req, res, next) => {
-        try {
-            const { id } = req.params;
-            const category = await Category.findByPk(id);
-            if (!category) {
-                return res.status(404).json({ message: "Catégorie non trouvée." });
-            }
-            await category.destroy();
-            res.json({ message: "Catégorie supprimée avec succès." });
-        } catch (error) {
-            next(error);
+        await category.update({ 
+            nom_categorie, 
+            description,
+            image_url: image_url !== undefined ? image_url : category.image_url,
+            parent_id: parent_id !== undefined ? parent_id : category.parent_id
+        });
+        res.json(category);
+    }),
+
+    delete: catchAsync(async (req, res, next) => {
+        const { id } = req.params;
+        const category = await Category.findByPk(id);
+        
+        if (!category) {
+            return next(new AppError("Catégorie non trouvée.", 404));
         }
-    }
+
+        await category.destroy();
+        res.json({ message: "Catégorie supprimée avec succès." });
+    })
 };
 
 module.exports = categoryController;

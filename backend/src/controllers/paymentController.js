@@ -63,7 +63,7 @@ const paymentController = {
 
             res.status(201).json({
                 message: isSuspect ? "Transaction initiée (Vérification de sécurité en cours)" : "Transaction initiée",
-                payment_url: `https://mock-payment-gateway.com/pay/${transaction.id}`,
+                payment_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment/simulate/${transaction.id}`,
                 transaction_id: transaction.id,
                 is_suspect: isSuspect
             });

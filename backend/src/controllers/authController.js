@@ -145,7 +145,16 @@ const authController = {
                 return res.status(401).json({ message: "Identifiants invalides." });
             }
 
-            // 🛡️ Vérification 2FA obligatoire pour les admins (Standard BCA v2.5)
+            // 🛡️ SÉCURITÉ RENFORCÉE : 2FA obligatoire pour les admins (Audit P1)
+            if (user.role === 'admin' && !user.two_factor_enabled) {
+                console.warn(`🚨 Accès refusé : L'admin ${user.email} n'a pas activé le 2FA.`);
+                return res.status(403).json({
+                    message: "Accès refusé. L'authentification à deux facteurs (2FA) est obligatoire pour les administrateurs.",
+                    require2FA_setup: true,
+                    userId: user.id
+                });
+            }
+
             if (user.two_factor_enabled) {
                 return res.json({
                     message: "Authentification à deux facteurs requise.",
@@ -179,9 +188,13 @@ const authController = {
 
     // 🌐 Authentification Google Social
     googleLogin: async (req, res, next) => {
+        const t = await sequelize.transaction();
         try {
             const { credential } = req.body;
-            if (!credential) return res.status(400).json({ message: "Jeton Google manquant." });
+            if (!credential) {
+                await t.rollback();
+                return res.status(400).json({ message: "Jeton Google manquant." });
+            }
 
             const ticket = await googleClient.verifyIdToken({
                 idToken: credential,
@@ -204,18 +217,27 @@ const authController = {
                     email,
                     mot_de_passe: hashedPassword,
                     role: 'client',
-                    telephone: `GOOGLE_${googleId.slice(0, 10)}`, // Placeholder unique
-                    statut: 'actif'
-                });
+                    telephone: `GOOGLE_${googleId}`, // Full ID pour assurer l'unicité
+                    statut: 'actif',
+                    est_approuve: true, // Auto-approuvé car vérifié par Google
+                    avatar_url: picture
+                }, { transaction: t });
 
                 // Initialiser son portefeuille
-                await Wallet.create({ user_id: user.id, solde_reel: 0, solde_virtuel: 0 });
+                await Wallet.create({ 
+                    user_id: user.id, 
+                    solde_virtuel: 0,
+                    solde_sequestre: 0 
+                }, { transaction: t });
             }
 
             // check if user was disabled
             if (user.statut === 'bloque') {
+                await t.rollback();
                 return res.status(403).json({ message: "Votre compte est suspendu." });
             }
+
+            await t.commit();
 
             const tokens = await tokenService.getTokens(user);
 
@@ -235,6 +257,7 @@ const authController = {
                 user: { id: user.id, nom_complet: user.nom_complet, role: user.role }
             });
         } catch (error) {
+            if (t) await t.rollback();
             console.error('🔴 [GOOGLE AUTH ERROR]:', error);
             res.status(401).json({ message: "Authentification Google échouée." });
         }

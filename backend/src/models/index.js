@@ -40,6 +40,9 @@ Product.belongsTo(Store, { foreignKey: 'boutique_id', as: 'boutique' });
 Category.hasMany(Product, { foreignKey: 'categorie_id', as: 'produits' });
 Product.belongsTo(Category, { foreignKey: 'categorie_id', as: 'categorie' });
 
+Category.hasMany(Category, { foreignKey: 'parent_id', as: 'sous_categories' });
+Category.belongsTo(Category, { foreignKey: 'parent_id', as: 'parent' });
+
 // 5. Relations Commandes
 User.hasMany(Order, { foreignKey: 'utilisateur_id', as: 'commandes' });
 Order.belongsTo(User, { foreignKey: 'utilisateur_id', as: 'client' });

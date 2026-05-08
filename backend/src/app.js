@@ -7,6 +7,8 @@ const cookieParser = require('cookie-parser');
 const auditMiddleware = require('./middlewares/auditMiddleware');
 const { globalValidationMiddleware, validatePagination } = require('./middlewares/globalValidation');
 const { sequelize } = require('./models');
+const AppError = require('./utils/AppError');
+const globalErrorHandler = require('./middlewares/errorHandler');
 
 const app = express();
 const path = require('path');
@@ -21,9 +23,14 @@ const allowedOrigins = [
     'http://localhost:5174',
     'http://localhost:5175',
     'http://localhost:3000',
+    'http://localhost:3001',
     'http://127.0.0.1',
     'http://127.0.0.1:5173',
     'http://127.0.0.1:5174',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
+    'http://localhost:3002',
+    'http://127.0.0.1:3002',
     process.env.FRONTEND_URL
 ].filter(Boolean);
 
@@ -44,7 +51,15 @@ app.use(cors({
 // ─── Middlewares de base ─────────────────────────────────────────────────────
 app.use(helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
-    contentSecurityPolicy: false // Désactivé pour faciliter le dev avec images Unsplash/AWS
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            "img-src": ["'self'", "data:", "https://images.unsplash.com", "https://*.s3.amazonaws.com", "https://*.googleusercontent.com"],
+            "script-src": ["'self'", "'unsafe-inline'", "https://accounts.google.com"],
+            "connect-src": ["'self'", "https://*.sentry.io", "https://accounts.google.com", "wss://*.upstash.io"],
+            "frame-src": ["'self'", "https://accounts.google.com"]
+        }
+    }
 }));
 
 app.use(morgan('dev'));
@@ -61,7 +76,7 @@ app.use('/api', globalValidationMiddleware);
 
 // ─── Diagnostic & Health (Avant les limites de débit) ───────────────────────
 app.get('/api/ping', (req, res) => res.json({ message: 'pong', version: '2.6' }));
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
         version: '2.6',
@@ -112,26 +127,12 @@ app.use('/api', apiRouter);
 // ─── Gestion des erreurs standardisée ────────────────────────────────────────
 
 // 404
-app.use((req, res) => {
-    console.log(`⚠️ Route introuvable : ${req.method} ${req.url}`);
-    res.status(404).json({ 
-        message: 'Route introuvable (Standard BCA v2.6)',
-        path: req.url 
-    });
+app.use((req, res, next) => {
+    next(new AppError(`Route introuvable : ${req.method} ${req.url} (Standard BCA v2.6)`, 404));
 });
 
-// Erreurs 500
-app.use((err, req, res, next) => {
-    const status = err.status || 500;
-    console.error(`🔴 ERREUR SERVEUR [${req.method} ${req.url}]:`, err.message);
-    if (status === 500) console.error(err.stack);
-
-    res.status(status).json({
-        message: status === 500 ? 'Une erreur interne est survenue (Standard BCA v2.6)' : err.message,
-        error: process.env.NODE_ENV === 'development' ? err.message : undefined,
-        code: err.code || 'SERVER_ERROR'
-    });
-});
+// Middleware global de gestion d'erreurs
+app.use(globalErrorHandler);
 
 module.exports = app;
 // Force restart

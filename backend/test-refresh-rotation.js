@@ -9,9 +9,26 @@ const https = require('https');
 
 const API_URL = process.env.API_URL || 'http://localhost:5000/api';
 const TEST_USER = {
+    nom_complet: 'Test User',
     email: 'test@example.com',
-    mot_de_passe: 'TestPassword123!'
+    telephone: '224612345678',
+    mot_de_passe: 'TestPassword123!',
+    role: 'client'
 };
+
+
+// Helper to ensure test user exists
+async function ensureTestUser() {
+    try {
+        await client.post('/auth/register', TEST_USER);
+        console.log('✅ Test user registered or already exists');
+    } catch (error) {
+        // Ignore if already exists (400/409/422/401)
+        if (error.response?.status !== 400 && error.response?.status !== 422 && error.response?.status !== 409) {
+            // console.warn('⚠️  Registration warning:', error.message);
+        }
+    }
+}
 
 // Disable SSL verification for self-signed certs
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
@@ -170,6 +187,9 @@ async function runTests() {
     console.log(`Test User: ${TEST_USER.email}`);
     
     try {
+        // Ensure test user exists
+        await ensureTestUser();
+
         // Test 1: Login
         const { accessToken, userId } = await testLogin();
         

@@ -3,6 +3,7 @@
  * BCA Connect — Script de démarrage sécurisé.
  * Valide les variables d'environnement et initialise les services de sécurité.
  */
+require('./instrument'); // 🛠️ Sentry (Monitoring)
 require('dotenv').config();
 
 // 🔐 Validation des variables d'environnement (P0 - Sécurité)
@@ -81,6 +82,12 @@ async function runSafeMigrations(sequelize) {
             table: 'produits',
             column: 'mots_cles',
             definition: { type: require('sequelize').DataTypes.JSON, defaultValue: [], allowNull: true }
+        },
+        // Table catégories
+        {
+            table: 'categories',
+            column: 'image_url',
+            definition: { type: require('sequelize').DataTypes.STRING, allowNull: true }
         }
     ];
 
@@ -104,7 +111,7 @@ const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 const ALLOWED_ORIGINS = process.env.NODE_ENV === 'production'
     ? ['https://bcaconnect-backend.onrender.com', 'https://bcaconnect.onrender.com', 'https://bcaconnect.vercel.app']
-    : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:3000', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174'];
+    : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174', process.env.FRONTEND_URL].filter(Boolean);
 
 const io = new Server(server, {
     cors: {
@@ -182,18 +189,39 @@ const start = async () => {
             console.log(`📊 Environnement: ${process.env.NODE_ENV}\n`);
         });
 
-        // Gestion de l'arrêt gracieux
-        process.on('SIGTERM', async () => {
-            console.log('\n⏹️  Signal SIGTERM reçu. Arrêt gracieux...');
-            await refreshTokenService.disconnect();
-            process.exit(0);
-        });
+        // Gestion de l'arrêt gracieux (Standard BCA v2.6)
+        const gracefulShutdown = async (signal) => {
+            console.log(`\n⏹️  Signal ${signal} reçu. Arrêt gracieux...`);
+            
+            // 1. Arrêter d'accepter de nouvelles connexions
+            server.close(async (err) => {
+                if (err) {
+                    console.error('❌ Erreur lors de la fermeture du serveur:', err);
+                    process.exit(1);
+                }
+                console.log('✅ Serveur HTTP arrêté.');
 
-        process.on('SIGINT', async () => {
-            console.log('\n⏹️  Signal SIGINT reçu. Arrêt gracieux...');
-            await refreshTokenService.disconnect();
-            process.exit(0);
-        });
+                // 2. Déconnexion des services tiers (Redis, DB...)
+                try {
+                    await refreshTokenService.disconnect();
+                    await sequelize.close();
+                    console.log('✅ Services déconnectés.');
+                } catch (error) {
+                    console.error('❌ Erreur lors de la déconnexion des services:', error);
+                }
+
+                process.exit(0);
+            });
+
+            // 3. Sécurité : Forcer l'arrêt après 5 secondes si le serveur reste bloqué
+            setTimeout(() => {
+                console.error('⚠️  Délai d\'attente dépassé. Arrêt forcé.');
+                process.exit(1);
+            }, 5000).unref();
+        };
+
+        process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+        process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
     } catch (error) {
         console.error('❌ Échec du démarrage du serveur :', error);

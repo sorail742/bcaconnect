@@ -8,5 +8,6 @@ router.get('/admin/public', dashboardController.getAdminStats); // Route publiqu
 router.get('/financial', protect, authorize('admin', 'banque'), dashboardController.getFinancialReports);
 router.get('/vendor', protect, authorize('fournisseur', 'admin'), dashboardController.getVendorStats);
 router.get('/trends', dashboardController.getTrends);
+router.get('/ai-logs', dashboardController.getAiLogs);
 
 module.exports = router;

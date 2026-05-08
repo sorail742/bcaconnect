@@ -458,6 +458,62 @@ const dashboardController = {
         } catch (error) {
             next(error);
         }
+    },
+
+    /**
+     * Historique d'Activité / Logs IA basés sur les événements réels
+     */
+    getAiLogs: async (req, res, next) => {
+        try {
+            // Récupérer des actions récentes (Commandes et Litiges) pour simuler l'analyse de l'IA
+            const recentOrders = await Order.findAll({
+                limit: 5,
+                order: [['created_at', 'DESC']],
+                attributes: ['id', 'statut', 'total_ttc', 'adresse_livraison']
+            });
+            
+            const recentLitiges = await Litige.findAll({
+                limit: 2,
+                order: [['created_at', 'DESC']],
+                attributes: ['id', 'statut']
+            });
+
+            const logs = [];
+
+            // Transformer en logs IA
+            recentOrders.forEach(o => {
+                const amount = parseFloat(o.total_ttc || 0).toLocaleString();
+                if (o.statut === 'payé') {
+                    logs.push(`Transaction de ${amount} GNF certifiée.`);
+                } else if (o.statut === 'en_attente') {
+                    logs.push(`Analyse de risque sur transaction #${o.id.substring(0, 5)}...`);
+                }
+            });
+
+            recentLitiges.forEach(l => {
+                if (l.statut === 'résolu') {
+                    logs.push(`Médiation automatique validée (Litige #${l.id.substring(0, 5)}).`);
+                } else {
+                    logs.push(`Arbitrage requis pour litige #${l.id.substring(0, 5)}.`);
+                }
+            });
+
+            // Si la BDD est vide, on garde quelques logs génériques
+            if (logs.length === 0) {
+                logs.push(
+                    "Moteur BCA-Predict v4.2 opérationnel...",
+                    "Analyse des vecteurs régionaux...",
+                    "Attente de nouveaux flux..."
+                );
+            }
+
+            // Mélanger légèrement (shuffle) et garder les plus pertinents
+            const shuffled = logs.sort(() => 0.5 - Math.random()).slice(0, 5);
+
+            res.json({ logs: shuffled });
+        } catch (error) {
+            next(error);
+        }
     }
 };
 

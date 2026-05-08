@@ -8,8 +8,8 @@ const crypto = require('crypto');
  */
 class JwtService {
     constructor() {
-        this.privateKey = process.env.JWT_PRIVATE_KEY;
-        this.publicKey = process.env.JWT_PUBLIC_KEY;
+        this.privateKey = process.env.JWT_PRIVATE_KEY ? process.env.JWT_PRIVATE_KEY.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n') : null;
+        this.publicKey = process.env.JWT_PUBLIC_KEY ? process.env.JWT_PUBLIC_KEY.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n') : null;
         
         if (!this.privateKey || !this.publicKey) {
             throw new Error('JWT_PRIVATE_KEY et JWT_PUBLIC_KEY sont requis');

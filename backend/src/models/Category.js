@@ -15,6 +15,17 @@ const Category = sequelize.define('Category', {
     description: {
         type: DataTypes.TEXT,
     },
+    image_url: {
+        type: DataTypes.STRING,
+    },
+    parent_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: {
+            model: 'categories',
+            key: 'id'
+        }
+    }
 }, {
     tableName: 'categories',
     underscored: true,
