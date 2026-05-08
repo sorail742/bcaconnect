@@ -38,3 +38,25 @@ Thumbs.db
 
 # Clés de Sécurité (NE JAMAIS COMMITER)
 *.pem
+.env
+.env.*
+
+node_modules/
+.vite/
+dist/
+build/
+
+*.log
+logs/
+
+*.sqlite
+*.sqlite3
+
+uploads/
+coverage/
+
+.DS_Store
+.vscode/
+.idea/
+
+.agent/
