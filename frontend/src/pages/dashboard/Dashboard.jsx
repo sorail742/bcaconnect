@@ -14,6 +14,7 @@ import walletService from '../../services/walletService';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useOrders, useProducts, useWallet } from '../../hooks/useDomainData';
 import { useAIScore } from '../../hooks/useAIScore';
+import { getImageUrl } from '../../lib/utils';
 
 const FALLBACK = 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&q=80&w=600';
 
@@ -117,13 +118,6 @@ const Dashboard = () => {
             description: 'STATUT DE GOUVERNANCE PRIVILÈGE' 
         },
     ];
-    // Helper pour les images locales/distantes
-    const getImageUrl = (url) => {
-        if (!url) return FALLBACK;
-        if (url.startsWith('http')) return url;
-        const serverUrl = 'http://localhost:5000';
-        return `${serverUrl}${url.startsWith('/') ? '' : '/'}${url}`;
-    };
 
     return (
         <DashboardLayout title="CONSOLE UTILISATEUR">

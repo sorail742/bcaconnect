@@ -193,7 +193,7 @@ export default function SearchPage() {
             let directResults = [];
             try {
                 const response = await productService.searchProducts(query);
-                directResults = response.data || [];
+                directResults = Array.isArray(response) ? response : (response.products || response.data || []);
             } catch (err) { /* silent */ }
 
             if (directResults.length < 3) {
@@ -206,7 +206,8 @@ export default function SearchPage() {
                             category: aiResponse.data.category
                         });
                         const aiResults = await productService.searchProducts(aiResponse.data.keywords.join(' '));
-                        directResults = [...directResults, ...(aiResults.data || [])];
+                        const aiProducts = Array.isArray(aiResults) ? aiResults : (aiResults.products || aiResults.data || []);
+                        directResults = [...directResults, ...aiProducts];
                     }
                 } catch (aiErr) { /* silent */ }
             }

@@ -72,6 +72,7 @@ const AdManager = lazy(() => import('../pages/admin/AdManager'));
 const AdminDisputes = lazy(() => import('../pages/admin/AdminDisputes'));
 const AITrends = lazy(() => import('../pages/admin/AITrends'));
 const FinancialReports = lazy(() => import('../pages/admin/FinancialReports'));
+const PaymentSimulation = lazy(() => import('../pages/PaymentSimulation'));
 
 const AppRoutes = () => {
     return (
@@ -80,6 +81,14 @@ const AppRoutes = () => {
             <Route path="/" element={
                 <Suspense fallback={<LazyFallback />}>
                     <LandingPage />
+                </Suspense>
+            } />
+
+            <Route path="/payment/simulate/:transactionId" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <PaymentSimulation />
+                    </ProtectedRoute>
                 </Suspense>
             } />
 

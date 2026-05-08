@@ -3,27 +3,29 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShieldCheck, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import deliveryService from '../../services/deliveryService';
+import { useLanguage } from '../../context/LanguageContext';
 
 const OtpVerificationModal = ({ isOpen, onClose, orderId, onSuccess }) => {
+    const { t } = useLanguage();
     const [otp, setOtp] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!otp || otp.length < 6) {
-            toast.error("Veuillez entrer le code à 6 chiffres.");
+            toast.error(t('otpInvalid'));
             return;
         }
 
         setLoading(true);
         try {
             await deliveryService.verifyDelivery(orderId, otp);
-            toast.success("LIVRAISON VALIDÉE — LIBÉRATION DES FONDS RÉUSSIE.");
+            toast.success(t('otpSuccess'));
             onSuccess();
             onClose();
         } catch (err) {
             console.error(err);
-            toast.error(err.response?.data?.message || "CODE OTP INCORRECT OU ERREUR SYSTÈME.");
+            toast.error(err.response?.data?.message || t('otpError'));
         } finally {
             setLoading(false);
         }
@@ -64,10 +66,10 @@ const OtpVerificationModal = ({ isOpen, onClose, orderId, onSuccess }) => {
 
                             <div className="space-y-2">
                                 <h2 className="text-xl font-black text-white uppercase tracking-tight">
-                                    VÉRIFICATION <span className="text-emerald-500">OTP</span>.
+                                    {t('otpTitle').split(' ')[0]} <span className="text-emerald-500">{t('otpTitle').split(' ')[1] || 'OTP'}</span>.
                                 </h2>
                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-relaxed">
-                                    VEUILLEZ SAISIR LE CODE DE SÉCURITÉ FOURNI PAR LE CLIENT POUR FINALISER LA TRANSACTION.
+                                    {t('otpDesc')}
                                 </p>
                             </div>
 
@@ -92,14 +94,14 @@ const OtpVerificationModal = ({ isOpen, onClose, orderId, onSuccess }) => {
                                     ) : (
                                         <>
                                             <ShieldCheck className="size-5" />
-                                            CONFIRMER LA LIVRAISON
+                                            {t('otpConfirm')}
                                         </>
                                     )}
                                 </button>
                             </form>
 
                             <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-50 underline decoration-emerald-500/20 underline-offset-4">
-                                PROTOCOLE DE SÉQUESTRE BCA_CONNECT V2.6
+                                {t('otpProtocol')}
                             </p>
                         </div>
                     </motion.div>

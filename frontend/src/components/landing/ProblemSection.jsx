@@ -135,9 +135,9 @@ export function ProblemSection() {
                     >
                         <div className="space-y-4 text-left">
                             <h3 className="text-4xl md:text-5xl font-black leading-none text-slate-900 uppercase tracking-tighter" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                L'Avenir de l'Économie <span className="text-primary italic">Guinéenne</span>
+                                {t('futureEconomy') || "L'Avenir de l'Économie Guinéenne"}
                             </h3>
-                            <p className="text-xs text-primary font-black tracking-[0.4em] uppercase">Sécurité Infaillible • Livraison Garantie • Prix Transparents</p>
+                            <p className="text-xs text-primary font-black tracking-[0.4em] uppercase">{t('secureInfallible') || "Sécurité Infaillible • Livraison Garantie • Prix Transparents"}</p>
                         </div>
                         <div className="size-28 rounded-[2rem] bg-slate-900 flex items-center justify-center text-primary shadow-2xl shrink-0 border border-white/10 group-hover:rotate-12 transition-transform duration-700">
                             <Zap className="size-14 fill-current drop-shadow-[0_0_20px_rgba(255,102,0,0.5)]" />

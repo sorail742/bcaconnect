@@ -1,12 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import orderService from '../../services/orderService';
 import useAuthStore from '../../store/authStore';
 import { ROLES } from '../../constants/roles';
+import { toast } from 'sonner';
 
 export const useOrders = () => {
     const { user, token, isAuthenticated } = useAuthStore();
-    
-    // 🛡️ Vérification de rôle ultra-sécurisée (insensible à la casse)
     const isAdmin = user?.role?.toLowerCase() === ROLES.ADMIN;
 
     const { data, isLoading: loading, error, isFetching, refetch } = useQuery({
@@ -38,4 +37,22 @@ export const useVendorOrders = () => {
         enabled: !!token && isAuthenticated,
     });
     return { data, loading, error: error?.message || null, isFetching, refetch, mutate: refetch };
+};
+
+/**
+ * useUpdateOrderStatus — Mutation pour changer le statut d'un item de commande.
+ */
+export const useUpdateOrderStatus = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, status }) => orderService.updateItemStatus(id, status),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['vendor-orders'] });
+            queryClient.invalidateQueries({ queryKey: ['order-stats'] });
+            toast.success(`STATUT_MIS_À_JOUR_ALPHA : ${variables.status.toUpperCase()}`);
+        },
+        onError: () => {
+            toast.error("ERREUR_MISE_À_JOUR_STATUT_SYSTÈME.");
+        }
+    });
 };

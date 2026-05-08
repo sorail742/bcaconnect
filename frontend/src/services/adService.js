@@ -7,7 +7,7 @@ const adService = {
     },
 
     getActive: async () => {
-        const response = await api.get('/ads/active');
+        const response = await api.get('/ads?status=actif');
         return response.data;
     },
 

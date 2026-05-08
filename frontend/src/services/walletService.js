@@ -24,6 +24,11 @@ const walletService = {
     transfer: async (transferData) => {
         const response = await api.post('/wallet/transfer', transferData);
         return response.data;
+    },
+
+    captureSimulation: async (transactionId) => {
+        const response = await api.post('/payments/capture-simulation', { transaction_id: transactionId });
+        return response.data;
     }
 };
 

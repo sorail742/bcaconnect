@@ -1,20 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import supportService from '../../services/supportService';
 import aiService from '../../services/aiService';
-import categoryService from '../../services/categoryService';
 import api from '../../services/api';
-
-/**
- * useCategories — Liste des catégories globales.
- */
-export const useCategories = () => {
-    const { data, isLoading: loading, error, isFetching } = useQuery({
-        queryKey: ['categories'],
-        queryFn: () => categoryService.getAll(),
-        staleTime: 10 * 60_000, 
-    });
-    return { data, loading, error: error?.message || null, isFetching };
-};
 
 /**
  * useTickets — Support technique / tickets.

@@ -14,8 +14,8 @@ export function FeaturesSection() {
     const features = [
         {
             icon: ShoppingBag,
-            title: t('catalog') || "Catalogue complet",
-            description: lang === 'FR' ? "Un catalogue réunissant les meilleurs articles localement et internationalement." : "A complete catalog featuring local and international goods.",
+            title: t('featFullCatalog') || "Catalogue complet",
+            description: t('featFullCatalogDesc') || "Un catalogue réunissant les meilleurs articles localement et internationalement.",
             route: "/marketplace",
             color: "text-primary",
             bg: "bg-primary/10",
@@ -24,7 +24,7 @@ export function FeaturesSection() {
         {
             icon: Users,
             title: t('vendors') || "Réseau de vendeurs",
-            description: lang === 'FR' ? "Accédez à une liste de vendeurs certifiés, vérifiés et fiables." : "Access a list of certified and reliable vendor nodes.",
+            description: t('featVendorsDesc') || "Accédez à une liste de vendeurs certifiés, vérifiés et fiables.",
             route: "/vendors",
             color: "text-blue-500",
             bg: "bg-blue-500/10",
@@ -33,7 +33,7 @@ export function FeaturesSection() {
         {
             icon: MapPin,
             title: t('tracking') || "Suivi en temps réel",
-            description: lang === 'FR' ? "Suivez vos colis en temps réel depuis l'expédition jusqu'à votre porte." : "Track your packages in real-time through global geo-sync.",
+            description: t('featTrackingDesc') || "Suivez vos colis en temps réel depuis l'expédition jusqu'à votre porte.",
             route: "/tracking",
             color: "text-emerald-500",
             bg: "bg-emerald-500/10",
@@ -60,7 +60,7 @@ export function FeaturesSection() {
         {
             icon: MessageCircle,
             title: t('contact') || "Support direct",
-            description: lang === 'FR' ? "Une assistance dédiée disponible 24h/24 par système de messagerie sécurisé." : "Dedicated 24/7 support nodes via secure chat.",
+            description: t('featSupportDesc') || "Une assistance dédiée disponible 24h/24 par système de messagerie sécurisé.",
             route: "/contact",
             color: "text-pink-500",
             bg: "bg-pink-500/10",
@@ -73,10 +73,10 @@ export function FeaturesSection() {
             <div className="container mx-auto px-6 md:px-12">
                 <div className="text-center max-w-2xl mx-auto mb-16">
                     <h2 className="text-2xl md:text-3xl font-semibold text-foreground tracking-tight mb-4">
-                        Des outils conçus pour simplifier votre commerce
+                        {t('featMainTitle') || "Des outils conçus pour simplifier votre commerce"}
                     </h2>
                     <p className="text-sm md:text-base text-muted-foreground">
-                        {lang === 'FR' ? "Découvrez des fonctionnalités modernes et rapides pensées pour connecter vendeurs, acheteurs et livreurs dans un seul même écosystème." : "Modern tools engineered to simplify commerce and tracking across the continent."}
+                        {t('featMainDesc') || "Découvrez des fonctionnalités modernes et rapides pensées pour connecter vendeurs, acheteurs et livreurs dans un seul même écosystème."}
                     </p>
                 </div>
 
@@ -99,7 +99,7 @@ export function FeaturesSection() {
                             </p>
 
                             <div className="mt-8 flex items-center gap-2 text-sm font-medium text-primary opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                                {lang === 'FR' ? "En savoir plus" : "Learn more"}
+                                {t('learnMore') || "En savoir plus"}
                                 <ArrowRight className="size-4" />
                             </div>
                         </Link>

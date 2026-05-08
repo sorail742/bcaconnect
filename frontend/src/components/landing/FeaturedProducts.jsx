@@ -7,17 +7,7 @@ import productService from '../../services/productService';
 import { useLanguage } from '../../context/LanguageContext';
 import useCart from '../../hooks/useCart';
 import { toast } from 'sonner';
-import { cn } from '../../lib/utils';
-
-const FALLBACK = 'https://images.unsplash.com/photo-1523275319145-80b01958f7a2?auto=format&fit=crop&q=80&w=400';
-
-// Helper pour les images locales/distantes
-const getImageUrl = (url) => {
-    if (!url) return FALLBACK;
-    if (url.startsWith('http')) return url;
-    const serverUrl = 'http://localhost:5000';
-    return `${serverUrl}${url.startsWith('/') ? '' : '/'}${url}`;
-};
+import { cn, getImageUrl } from '../../lib/utils';
 
 // Countdown timer hook
 function useCountdown(targetHours = 8) {
@@ -75,21 +65,21 @@ export const FeaturedProducts = () => {
     useEffect(() => { fetchByTab(activeTab); }, [activeTab, fetchByTab]);
 
     const tabs = [
-        { id: 'flash', label: '🔥 Offres Flash', color: 'text-rose-600' },
-        { id: 'new', label: '✨ Nouveautés', color: 'text-blue-600' },
-        { id: 'popular', label: '⭐ Populaires', color: 'text-amber-600' },
+        { id: 'flash', label: `🔥 ${t('flashDeals')}`, color: 'text-rose-600' },
+        { id: 'new', label: `✨ ${t('newArrivals')}`, color: 'text-blue-600' },
+        { id: 'popular', label: `⭐ ${t('popularProducts')}`, color: 'text-amber-600' },
     ];
 
     const handleAddToCart = (e, product) => {
         e.preventDefault();
         e.stopPropagation();
         addToCart(product);
-        toast.success(`${product.nom_produit} ajouté au panier`);
+        toast.success(`${product.nom_produit} ${t('pdAddedToCart')}`);
     };
 
     return (
         <section className="bg-white py-8 sm:py-12">
-            <div className="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8">
+            <div className="w-full max-w-none px-4 lg:px-12">
 
                 {/* ── Section Header ─────────────────────────────────────── */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -97,7 +87,7 @@ export const FeaturedProducts = () => {
                         <div className="flex items-center gap-3">
                             <div className="w-1 h-8 bg-[#FF6600] rounded-full" />
                             <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                                {activeTab === 'flash' ? 'Ventes Flash' : activeTab === 'new' ? 'Nouveautés' : 'Best-sellers'}
+                                {activeTab === 'flash' ? t('flashSales') : activeTab === 'new' ? t('newArrivals') : t('bestSellers')}
                             </h2>
                             {activeTab === 'flash' && (
                                 <span className="hidden sm:inline-flex px-3 py-1 bg-rose-500 text-white text-[10px] font-black rounded-full uppercase tracking-widest animate-pulse">
@@ -108,7 +98,7 @@ export const FeaturedProducts = () => {
                         {/* Countdown */}
                         {activeTab === 'flash' && (
                             <div className="flex items-center gap-2">
-                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest hidden sm:block">Fin dans</span>
+                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest hidden sm:block">{t('endsIn')}</span>
                                 <div className="flex items-center gap-1">
                                     <TimeUnit value={timeLeft.h} label="H" />
                                     <span className="font-black text-slate-400 -mt-3">:</span>
@@ -120,7 +110,7 @@ export const FeaturedProducts = () => {
                         )}
                     </div>
                     <Link to="/marketplace" className="flex items-center gap-1.5 text-[#FF6600] font-bold text-sm hover:underline shrink-0 self-end sm:self-auto">
-                        Voir tout <ArrowRight className="size-4" />
+                        {t('viewAll')} <ArrowRight className="size-4" />
                     </Link>
                 </div>
 
@@ -152,7 +142,7 @@ export const FeaturedProducts = () => {
                             </motion.div>
                         ) : (
                             <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4"
+                                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 sm:gap-4"
                             >
                                 {products.map((product, idx) => (
                                     <motion.div
@@ -172,9 +162,9 @@ export const FeaturedProducts = () => {
                 {/* ── Bottom CTA banner ───────────────────────────────────── */}
                 <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
-                        { icon: Shield, title: 'Paiement Sécurisé', desc: 'Protection Escrow sur toutes vos commandes', color: 'border-emerald-200 bg-emerald-50' },
-                        { icon: Zap, title: 'Livraison Express', desc: 'Partout en Guinée en 24-48h', color: 'border-blue-200 bg-blue-50' },
-                        { icon: Tag, title: 'Meilleurs Prix', desc: 'Garantis par nos vendeurs certifiés', color: 'border-amber-200 bg-amber-50' },
+                        { icon: Shield, title: t('footerSecureTitle'), desc: t('securePaymentDesc'), color: 'border-emerald-200 bg-emerald-50' },
+                        { icon: Zap, title: t('expressDelivery'), desc: t('expressDeliveryDesc'), color: 'border-blue-200 bg-blue-50' },
+                        { icon: Tag, title: t('bestPrice'), desc: t('bestPriceDesc'), color: 'border-amber-200 bg-amber-50' },
                     ].map((item, i) => (
                         <div key={i} className={`flex items-center gap-3 p-4 rounded-xl border ${item.color}`}>
                             <item.icon className="size-6 text-slate-600 shrink-0" />

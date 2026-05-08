@@ -165,14 +165,21 @@ const Register = () => {
         setLocalError('');
         setFieldErrors({});
 
-        if (formData.password !== formData.confirmPassword) {
-            setFieldErrors(prev => ({ ...prev, confirmPassword: "Les mots de passe ne correspondent pas" }));
+        // Validation de correspondance des mots de passe (seulement si non vides ou en cours de soumission)
+        if (formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword) {
+            setFieldErrors(prev => ({ ...prev, confirmPassword: t('regPasswordMatchError') }));
+            return;
+        }
+
+        if (formData.password && !formData.confirmPassword) {
+            setFieldErrors(prev => ({ ...prev, confirmPassword: t('regConfirmPasswordReq') }));
             return;
         }
 
         const validationData = {
             nom_complet: formData.fullName,
             email: formData.email,
+            telephone: formData.telephone,
             password: formData.password,
             role: formData.role,
         };
@@ -200,7 +207,7 @@ const Register = () => {
                 if (!errors[fieldName]) errors[fieldName] = err.message;
             });
             setFieldErrors(errors);
-            toast.error("Veuillez vérifier les informations saisies.");
+            toast.error(t('regValidationFailed'));
             return;
         }
 
@@ -227,7 +234,7 @@ const Register = () => {
 
         try {
             await register(payload);
-            toast.success(formData.role === 'client' ? 'Bienvenue !' : 'Candidature soumise !');
+            toast.success(formData.role === 'client' ? t('regWelcome') : t('regApplied'));
             navigate('/login');
         } catch (err) {
             console.error(err);
@@ -260,10 +267,10 @@ const Register = () => {
                             <Zap className="size-10 fill-current" />
                         </div>
                         <h2 className="text-5xl font-black text-white tracking-tight leading-[0.9] mb-4">
-                            Bâtissons <br/> <span className="text-primary uppercase italic">L'AVENIR</span> <br/> Du Commerce.
+                            {t('regShowcaseTitle')}
                         </h2>
                         <p className="text-white/70 text-lg font-medium leading-relaxed mb-10">
-                            Rejoignez la plateforme qui connecte producteurs, commerçants et logisticiens en Guinée.
+                            {t('regShowcaseDesc')}
                         </p>
                         
                         <div className="grid grid-cols-2 gap-4">
@@ -292,8 +299,8 @@ const Register = () => {
                             <BcaLogo size="h-10" />
                         </Link>
                         
-                        <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">Créer un compte</h1>
-                        <p className="text-slate-500 text-sm">Rejoignez l'écosystème BCA Connect</p>
+                        <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">{t('registerTitleText')}</h1>
+                        <p className="text-slate-500 text-sm">{t('registerSubText')}</p>
                     </header>
 
                     {(localError || authError) && (
@@ -307,12 +314,12 @@ const Register = () => {
                         
                         {/* Role Tabs */}
                         <div className="space-y-3">
-                            <label className="text-[13px] font-bold text-slate-800">Type de compte</label>
+                            <label className="text-[13px] font-bold text-slate-800">{t('regProfileType')}</label>
                             <div className="grid grid-cols-3 gap-3">
                                 {[
-                                    { id: 'client', icon: User, label: 'Acheteur' },
-                                    { id: 'fournisseur', icon: Store, label: 'Fournisseur' },
-                                    { id: 'transporteur', icon: Truck, label: 'Livreur' },
+                                    { id: 'client', icon: User, label: t('roleBuyer') },
+                                    { id: 'fournisseur', icon: Store, label: t('roleSeller') },
+                                    { id: 'transporteur', icon: Truck, label: t('roleCarrier') },
                                 ].map(r => (
                                     <button
                                         key={r.id}
@@ -334,17 +341,17 @@ const Register = () => {
 
                         {/* Base Identity Info */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <FormInput icon={User} label="Nom complet" name="fullName" value={formData.fullName} onChange={handleChange} placeholder="Votre nom" error={fieldErrors.fullName} />
-                            <FormInput icon={Mail} label="E-mail" type="email" name="email" value={formData.email} onChange={handleChange} placeholder="votre@email.com" error={fieldErrors.email} />
+                            <FormInput icon={User} label={t('regFullName')} name="fullName" value={formData.fullName} onChange={handleChange} placeholder={t('regFullName')} error={fieldErrors.fullName} />
+                            <FormInput icon={Mail} label={t('formEmail')} type="email" name="email" value={formData.email} onChange={handleChange} placeholder="votre@email.com" error={fieldErrors.email} />
                         </div>
                         
-                        <FormInput icon={Phone} label="Téléphone" name="telephone" value={formData.telephone} onChange={handleChange} placeholder="+224 XX XX XX XX" error={fieldErrors.telephone} />
+                        <FormInput icon={Phone} label={t('formPhone')} name="telephone" value={formData.telephone} onChange={handleChange} placeholder="+224 XX XX XX XX" error={fieldErrors.telephone} />
                         
                         {/* Dynamic Fields per Role */}
                         <AnimatePresence mode="popLayout">
                             {formData.role === 'client' && (
                                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="pt-2">
-                                    <FormInput icon={MapPin} label="Adresse de Livraison" name="adresse" value={formData.adresse} onChange={handleChange} placeholder="Commune, Quartier, Avenue..." error={fieldErrors.adresse} />
+                                    <FormInput icon={MapPin} label={t('regDeliveryAddress')} name="adresse" value={formData.adresse} onChange={handleChange} placeholder="Commune, Quartier, Avenue..." error={fieldErrors.adresse} />
                                 </motion.div>
                             )}
 
@@ -372,8 +379,8 @@ const Register = () => {
 
                         {/* Security */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <FormInput icon={Lock} label="Mot de passe" type="password" name="password" value={formData.password} onChange={handleChange} placeholder="••••••••" error={fieldErrors.password} />
-                            <FormInput icon={Lock} label="Confirmateur" type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="••••••••" error={fieldErrors.confirmPassword} />
+                            <FormInput icon={Lock} label={t('registerPassword')} type="password" name="password" value={formData.password} onChange={handleChange} placeholder="••••••••" error={fieldErrors.password} autoComplete="new-password" />
+                            <FormInput icon={Lock} label={t('registerConfirm')} type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="••••••••" error={fieldErrors.confirmPassword} autoComplete="new-password" />
                         </div>
 
                         <button 
@@ -381,12 +388,12 @@ const Register = () => {
                             disabled={authLoading}
                             className="w-full h-14 mt-4 rounded-xl bg-primary text-white font-bold tracking-wide flex items-center justify-center gap-2 hover:bg-primary/90 transition-all disabled:opacity-50"
                         >
-                            {authLoading ? <Loader2 className="size-5 animate-spin" /> : <>Créer un compte <ArrowRight className="size-5" /></>}
+                            {authLoading ? <Loader2 className="size-5 animate-spin" /> : <>{t('registerTitleText')} <ArrowRight className="size-5" /></>}
                         </button>
                     </form>
 
                     <p className="mt-8 text-center text-sm font-medium text-slate-500 pb-12">
-                        Vous avez déjà un compte ? <Link to="/login" className="text-primary font-bold hover:underline">Se connecter</Link>
+                        {t('loginHasAccount')} <Link to="/login" className="text-primary font-bold hover:underline">{t('login')}</Link>
                     </p>
                 </div>
             </div>

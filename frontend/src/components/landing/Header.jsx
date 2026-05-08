@@ -56,7 +56,7 @@ export function Header() {
                 ? "bg-background/95 backdrop-blur-3xl border-b border-foreground/5 py-6" 
                 : "bg-transparent py-14"
         )}>
-            <div className="max-w-[1700px] mx-auto px-10 md:px-16 flex items-center justify-between">
+            <div className="container px-10 md:px-16 flex items-center justify-between">
 
                 {/* Brand Logo */}
                 <div className="flex items-center gap-8">
@@ -194,12 +194,12 @@ export function Header() {
                     
                     {/* Language Switcher */}
                     <div className="hidden sm:flex bg-white/[0.02] p-1.5 rounded-2xl border border-foreground/10 shadow-inner">
-                        {['FR', 'EN'].map(l => (
+                        {['FR', 'EN', 'SO', 'PE', 'MA'].map(l => (
                             <button
                                 key={l}
-                                onClick={() => setLanguage(l)}
+                                onClick={() => changeLanguage(l)}
                                 className={cn(
-                                    "px-6 py-2.5 text-[11px] font-black rounded-xl transition-all duration-700 uppercase tracking-widest",
+                                    "px-4 py-2.5 text-[11px] font-black rounded-xl transition-all duration-700 uppercase tracking-widest",
                                     lang === l ? "bg-primary text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                                 )}
                             >

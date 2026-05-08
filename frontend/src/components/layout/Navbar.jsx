@@ -40,14 +40,14 @@ function getDashboardLink(user) {
 }
 
 // ─── Role badge ───────────────────────────────────────────────────────────────
-function RoleBadge({ role }) {
+function RoleBadge({ role, t }) {
     const map = {
-        [ROLES.ADMIN]: { label: 'Admin', color: 'bg-rose-500' },
-        [ROLES.FOURNISSEUR]: { label: 'Fournisseur', color: 'bg-blue-500' },
-        [ROLES.TRANSPORTEUR]: { label: 'Transporteur', color: 'bg-amber-500' },
-        [ROLES.BANQUE]: { label: 'Banque', color: 'bg-emerald-600' },
+        [ROLES.ADMIN]: { label: t('roleAdmin') || 'Admin', color: 'bg-rose-500' },
+        [ROLES.FOURNISSEUR]: { label: t('roleSeller') || 'Fournisseur', color: 'bg-blue-500' },
+        [ROLES.TRANSPORTEUR]: { label: t('roleCarrier') || 'Transporteur', color: 'bg-amber-500' },
+        [ROLES.BANQUE]: { label: t('roleBank') || 'Banque', color: 'bg-emerald-600' },
     };
-    const cfg = map[role] || { label: 'Client', color: 'bg-slate-400' };
+    const cfg = map[role] || { label: t('roleBuyer') || 'Client', color: 'bg-slate-400' };
     return (
         <span className={`${cfg.color} text-white text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full`}>
             {cfg.label}
@@ -120,7 +120,7 @@ const Navbar = () => {
     const megaMenuTimeoutRef = useRef(null);
 
 
-    const { lang, changeLanguage } = useLanguage();
+    const { lang, changeLanguage, t } = useLanguage();
     const { theme, toggleTheme } = useTheme();
     const isDark = theme === 'dark';
     const userMenuRef = useRef(null);
@@ -144,6 +144,19 @@ const Navbar = () => {
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
+    // ── Network Status ───────────────────────────────────────────────────
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
+    useEffect(() => {
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
+
     // ── Close mobile menu on route change ─────────────────────────────────
     useEffect(() => { setIsMenuOpen(false); }, [location.pathname]);
 
@@ -163,18 +176,36 @@ const Navbar = () => {
             return;
         }
         const recognition = new SpeechRecognition();
-        recognition.lang = lang === 'FR' ? 'fr-FR' : 'en-US';
+        
+        // Configuration de la langue de reconnaissance
+        const langMap = {
+            'FR': 'fr-FR',
+            'EN': 'en-US',
+            'SO': 'fr-FR', // On utilise le français comme base pour les langues locales si non supportées
+            'PE': 'fr-FR',
+            'MA': 'fr-FR'
+        };
+        
+        recognition.lang = langMap[lang] || 'fr-FR';
+        recognition.interimResults = true;
         recognition.start();
         setIsListening(true);
+        
         recognition.onresult = (event) => {
             const transcript = event.results[0][0].transcript;
             setSearchQuery(transcript);
-            setIsListening(false);
-            navigate(`/search?q=${encodeURIComponent(transcript)}`);
+            if (event.results[0].isFinal) {
+                setIsListening(false);
+                navigate(`/search?q=${encodeURIComponent(transcript.trim())}`);
+            }
         };
-        recognition.onerror = () => {
+
+        recognition.onerror = (e) => {
+            console.error("Voice search error:", e.error);
             setIsListening(false);
-            toast.error("Erreur lors de la capture vocale.");
+            if (e.error !== 'no-speech') {
+                toast.error("Erreur lors de la capture vocale : " + e.error);
+            }
         };
         recognition.onend = () => setIsListening(false);
     };
@@ -232,10 +263,12 @@ const Navbar = () => {
 
     const topLevelCategories = categories.filter(c => !c.parent_id).slice(0, 10);
     const activeCategory = activeCategoryId === 'for-you' 
-        ? { id: 'for-you', nom_categorie: 'Catégories pour vous' }
+        ? { id: 'for-you', nom_categorie: t('catForYou') || 'Catégories pour vous', sous_categories: [] }
         : (categories.find(c => c.id === activeCategoryId) || topLevelCategories[0]);
         
-    const subItems = getSubSectionsForCategory(activeCategory?.nom_categorie || 'default');
+    const subItems = activeCategory?.sous_categories?.length > 0 
+        ? activeCategory.sous_categories.map(sc => ({ name: sc.nom_categorie, icon: sc.image_url, badge: null }))
+        : getSubSectionsForCategory(activeCategory?.nom_categorie || 'default');
 
 
 
@@ -250,19 +283,19 @@ const Navbar = () => {
                 <div className="flex items-center gap-4 z-10 relative text-white">
                     <span className="font-extrabold text-sm">BCA Work</span>
                     <span className="opacity-40 hidden sm:block">|</span>
-                    <span className="text-sm hidden sm:block">🤖 Une équipe d'agents IA à votre service, 24/7</span>
+                    <span className="text-sm hidden sm:block">🤖 {t('aiTeamBanner') || "Une équipe d'agents IA à votre service, 24/7"}</span>
                     <Link
                         to="/register"
                         className="ml-3 underline font-bold text-sm hover:opacity-80 transition-opacity"
                     >
-                        Essai gratuit →
+                        {t('freeTrial') || "Essai gratuit"} →
                     </Link>
                 </div>
                 <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-[#0050b3] skew-x-12 translate-x-12 z-0 opacity-40" />
             </div>
 
             {/* ── Main Header Row ──────────────────────────────────────────── */}
-            <div className="container mx-auto px-4 lg:px-8 py-4 lg:py-5 flex items-center gap-4 lg:gap-6">
+            <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-12 py-4 lg:py-5 flex items-center gap-4 lg:gap-5">
 
                 {/* Logo */}
                 <Link to="/" className="flex-shrink-0">
@@ -270,11 +303,11 @@ const Navbar = () => {
                 </Link>
 
                 {/* Search Bar */}
-                <div className="hidden md:flex flex-1 min-w-0 max-w-2xl items-center gap-4">
+                <div className="hidden md:flex flex-1 min-w-0 max-w-none items-center gap-4">
                     <form onSubmit={handleSearch} className="flex-1 flex items-center rounded-full border-2 border-[#FF6600] bg-background transition-shadow hover:shadow-md focus-within:shadow-md h-12 overflow-hidden">
                         <input
                             type="text"
-                            placeholder="Que recherchez-vous ?"
+                            placeholder={t('searchPlaceholder')}
                             className="flex-1 h-full pl-5 pr-2 text-sm text-foreground bg-transparent outline-none placeholder:text-muted-foreground min-w-0"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -302,7 +335,7 @@ const Navbar = () => {
                             </label>
                         </div>
                         <button type="submit" className="shrink-0 h-10 px-6 mx-1 bg-[#FF6600] text-white font-bold text-sm rounded-full hover:bg-[#e65c00] transition-colors whitespace-nowrap">
-                            Rechercher
+                            {t('explore')}
                         </button>
                     </form>
 
@@ -323,30 +356,60 @@ const Navbar = () => {
 
                     {/* Delivery Location */}
                     <div className="hidden xl:flex flex-col cursor-default group">
-                        <span className="text-[11px] text-muted-foreground">Livraison vers :</span>
+                        <span className="text-[11px] text-muted-foreground">{t('deliveryTo') || "Livraison vers :"}</span>
                         <div className="flex items-center gap-1.5 font-bold text-sm text-foreground group-hover:text-[#FF6600] transition-colors">
                             <span className="text-base leading-none">🇬🇳</span>
-                            Guinée
+                            {t('guinea') || "Guinée"}
                         </div>
                     </div>
 
-                    {/* Language Toggle */}
-                    <button
-                        onClick={() => changeLanguage(lang === 'FR' ? 'EN' : 'FR')}
-                        className="hidden lg:flex items-center gap-2 group"
-                        title="Changer de langue"
-                    >
-                        <Globe className="size-5 text-foreground/70 group-hover:text-[#FF6600] transition-colors" />
-                        <span className="font-bold text-sm text-foreground group-hover:text-[#FF6600] transition-colors">
-                            {lang === 'FR' ? 'FR · GNF' : 'EN · GNF'}
-                        </span>
-                    </button>
+                    {/* Language Dropdown */}
+                    <div className="hidden lg:relative lg:block group">
+                        <button className="flex items-center gap-2 py-2 px-3 hover:bg-foreground/5 rounded-xl transition-all cursor-pointer">
+                            <Globe className="size-5 text-foreground/70 group-hover:text-[#FF6600]" />
+                            <span className="font-bold text-sm text-foreground group-hover:text-[#FF6600]">
+                                {lang} · GNF
+                            </span>
+                        </button>
+                        
+                        <div className="absolute top-full right-0 mt-1 w-44 bg-card border border-border rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-1">
+                            {[
+                                { id: 'FR', label: 'Français', flag: '🇫🇷' },
+                                { id: 'EN', label: 'English', flag: '🇺🇸' },
+                                { id: 'SO', label: 'Soussou', flag: '🇬🇳' },
+                                { id: 'PE', label: 'Pular', flag: '🇬🇳' },
+                                { id: 'MA', label: 'Maninka', flag: '🇬🇳' },
+                            ].map(l => (
+                                <button
+                                    key={l.id}
+                                    onClick={() => changeLanguage(l.id)}
+                                    className={cn(
+                                        "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-bold transition-all",
+                                        lang === l.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
+                                    )}
+                                >
+                                    <span className="text-base">{l.flag}</span>
+                                    {l.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Network Status Badge (Offline only) */}
+                    {!isOnline && (
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 rounded-full animate-pulse">
+                            <div className="size-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
+                            <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">
+                                Mode Résilience
+                            </span>
+                        </div>
+                    )}
 
                     {/* Theme Toggle */}
                     <button
                         onClick={toggleTheme}
                         className="p-2 rounded-full text-foreground/70 hover:text-[#FF6600] hover:bg-foreground/5 transition-all"
-                        title={isDark ? "Passer au mode clair" : "Passer au mode sombre"}
+                        title={isDark ? (t('lightMode') || "Passer au mode clair") : (t('darkMode') || "Passer au mode sombre")}
                     >
                         {isDark ? <Sun className="size-5" /> : <Moon className="size-5" />}
                     </button>
@@ -408,8 +471,8 @@ const Navbar = () => {
                                     </div>
                                 )}
                                 <div className="hidden lg:block text-left">
-                                    <span className="block text-[11px] text-muted-foreground">Bonjour, {user.nom_complet?.split(' ')[0]}</span>
-                                    <span className="block font-bold text-sm text-foreground group-hover:text-[#FF6600] transition-colors">Mon Compte</span>
+                                    <span className="block text-[11px] text-muted-foreground">{t('hello') || "Bonjour"}, {user.nom_complet?.split(' ')[0]}</span>
+                                    <span className="block font-bold text-sm text-foreground group-hover:text-[#FF6600] transition-colors">{t('myAccount') || "Mon Compte"}</span>
                                 </div>
                             </button>
 
@@ -436,7 +499,7 @@ const Navbar = () => {
                                                     <p className="font-bold text-white truncate">{user.nom_complet}</p>
                                                     <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
                                                     <div className="mt-1">
-                                                        <RoleBadge role={user.role} />
+                                                        <RoleBadge role={user.role} t={t} />
                                                     </div>
                                                 </div>
                                             </div>
@@ -453,8 +516,8 @@ const Navbar = () => {
                                                     <Wallet className="size-5 text-emerald-600" />
                                                 </div>
                                                 <div className="flex-1">
-                                                    <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">Solde Wallet</p>
-                                                    <p className="text-base font-black text-emerald-800 tabular-nums">{walletBalance.toLocaleString()} GNF</p>
+                                                    <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">{t('walletBalanceLabel') || "Solde Wallet"}</p>
+                                                    <p className="text-base font-black text-emerald-800 tabular-nums">{walletBalance.toLocaleString(lang === 'FR' ? 'fr-GN' : 'en-US')} GNF</p>
                                                 </div>
                                                 <ChevronRight className="size-4 text-emerald-400 group-hover:translate-x-1 transition-transform" />
                                             </Link>
@@ -463,12 +526,12 @@ const Navbar = () => {
                                         {/* Nav Links */}
                                         <div className="p-3 space-y-0.5">
                                             {[
-                                                { to: dashboardLink, icon: LayoutDashboard, label: 'Tableau de bord' },
-                                                { to: '/orders', icon: Package, label: 'Mes commandes' },
-                                                { to: '/wallet', icon: CreditCard, label: 'Mon portefeuille' },
-                                                { to: '/notifications', icon: Bell, label: 'Notifications', badge: notificationCount },
-                                                { to: '/profile', icon: Settings, label: 'Paramètres du compte' },
-                                                { to: '/help', icon: HelpCircle, label: "Centre d'assistance" },
+                                                { to: dashboardLink, icon: LayoutDashboard, label: t('dashboard') },
+                                                { to: '/orders', icon: Package, label: t('myOrders') || 'Mes commandes' },
+                                                { to: '/wallet', icon: CreditCard, label: t('myWallet') || 'Mon portefeuille' },
+                                                { to: '/notifications', icon: Bell, label: t('notifications') || 'Notifications', badge: notificationCount },
+                                                { to: '/profile', icon: Settings, label: t('accountSettings') || 'Paramètres du compte' },
+                                                { to: '/help', icon: HelpCircle, label: t('helpCenter') || "Centre d'assistance" },
                                             ].map(item => (
                                                 <Link
                                                     key={item.to}
@@ -494,7 +557,7 @@ const Navbar = () => {
                                                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-600 hover:bg-red-50 transition-all group"
                                             >
                                                 <LogOut className="size-4 group-hover:scale-110 transition-transform" />
-                                                <span className="text-sm font-bold">Déconnexion</span>
+                                                <span className="text-sm font-bold">{t('logout') || "Déconnexion"}</span>
                                             </button>
                                         </div>
                                     </motion.div>
@@ -506,7 +569,7 @@ const Navbar = () => {
                             <Link to="/login" className="flex items-center gap-1.5 group whitespace-nowrap">
                                 <User className="size-5 text-foreground/70 group-hover:text-[#FF6600] transition-colors shrink-0" />
                                 <span className="hidden md:block font-bold text-sm text-foreground group-hover:text-[#FF6600] transition-colors">
-                                    Se connecter
+                                    {t('login')}
                                 </span>
                             </Link>
                             <Link
@@ -514,8 +577,8 @@ const Navbar = () => {
                                 className="flex items-center bg-[#FF6600] text-white px-4 py-2 rounded-full font-bold text-sm hover:bg-[#e65c00] transition-colors shadow-md whitespace-nowrap shrink-0 gap-2"
                             >
                                 <Zap className="size-4" />
-                                <span className="hidden sm:inline">Créer un compte</span>
-                                <span className="sm:hidden">S'inscrire</span>
+                                <span className="hidden sm:inline">{t('register')}</span>
+                                <span className="sm:hidden">{t('register')}</span>
                             </Link>
                         </div>
                     )}
@@ -533,7 +596,7 @@ const Navbar = () => {
 
             {/* ── Bottom Nav Row ────────────────────────────────────────────── */}
             <div className="hidden md:flex border-t border-border/5">
-                <div className="container mx-auto px-4 lg:px-8 flex items-center h-12 gap-6 lg:gap-8">
+                <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-12 flex items-center justify-center h-12 gap-8 lg:gap-12">
                     <div 
                         className="relative h-full flex items-center"
                         onMouseEnter={handleMegaMenuOpen}
@@ -542,7 +605,7 @@ const Navbar = () => {
                         <div className="flex items-center gap-2 cursor-pointer group pr-4 border-r border-border/10 h-full">
                             <Menu className="size-5 text-foreground group-hover:text-[#FF6600] transition-colors" />
                             <span className="font-bold text-sm text-foreground group-hover:text-[#FF6600] transition-colors whitespace-nowrap">
-                                Toutes les catégories
+                                {t('allCategories') || "Toutes les catégories"}
                             </span>
                         </div>
 
@@ -569,7 +632,7 @@ const Navbar = () => {
                                             )}
                                         >
                                             <Star className={cn("size-5", activeCategoryId === 'for-you' ? "fill-slate-900 text-slate-900" : "text-slate-400")} />
-                                            <span className="text-[15px]">Catégories pour vous</span>
+                                            <span className="text-[15px]">{t('catForYou') || "Catégories pour vous"}</span>
                                         </div>
 
                                         {/* Dynamic Categories */}
@@ -660,40 +723,32 @@ const Navbar = () => {
                     </div>
 
 
-                    <nav className="flex items-center gap-6 lg:gap-8 flex-1">
-                        <button
-                            onClick={() => setIsAiModalOpen(true)}
-                            className="text-sm font-black text-slate-900 dark:text-white hover:text-orange-500 whitespace-nowrap transition-colors flex items-center gap-2 group relative"
-                        >
-                            <Sparkles className="size-4 text-orange-500 group-hover:animate-bounce" />
-                            Mode IA
-                            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 group-hover:w-full transition-all duration-300" />
-                        </button>
+                    <nav className="flex items-center gap-6 lg:gap-8">
                         <PrefetchLink
                             to="/vendors"
                             queryKey={['products']}
                             queryFn={() => productService.getAll()}
                             className="text-sm font-semibold text-muted-foreground hover:text-[#FF6600] hover:underline whitespace-nowrap transition-colors"
                         >
-                            Fabricants Vérifiés
+                            {t('vendors')}
                         </PrefetchLink>
                         <Link
                             to="/help"
                             className="text-sm font-semibold text-muted-foreground hover:text-[#FF6600] hover:underline whitespace-nowrap transition-colors"
                         >
-                            Protection des commandes
+                            {t('orderProtection') || "Protection des commandes"}
                         </Link>
                         <Link
                             to="/tracking"
                             className="text-sm font-semibold text-muted-foreground hover:text-[#FF6600] hover:underline whitespace-nowrap transition-colors"
                         >
-                            Suivi Logistique
+                            {t('tracking')}
                         </Link>
                         <Link
                             to="/marketplace?filter=flash"
                             className="text-sm font-semibold text-muted-foreground hover:text-[#FF6600] hover:underline whitespace-nowrap transition-colors relative"
                         >
-                            Meilleures Offres
+                            {t('hotDeals') || "Meilleures Offres"}
                             <span className="absolute -top-3 text-[10px] text-[#FF6600] font-black animate-pulse">Hot</span>
                         </Link>
                         {user && (
@@ -701,29 +756,31 @@ const Navbar = () => {
                                 to={dashboardLink}
                                 className="text-sm font-semibold text-muted-foreground hover:text-[#FF6600] hover:underline whitespace-nowrap transition-colors"
                             >
-                                Mon Espace
+                                {t('myDashboard') || "Mon Espace"}
                             </Link>
                         )}
                         <Link
                             to="/contact"
                             className="text-sm font-semibold text-muted-foreground hover:text-[#FF6600] hover:underline whitespace-nowrap transition-colors"
                         >
-                            Contactez-nous
+                            {t('contactUs') || "Contactez-nous"}
                         </Link>
                         <Link
                             to="/about"
                             className="text-sm font-semibold text-muted-foreground hover:text-[#FF6600] hover:underline whitespace-nowrap transition-colors"
                         >
-                            À propos
+                            {t('about')}
                         </Link>
                     </nav>
 
-                    <div className="flex items-center pl-4 border-l border-border/10 shrink-0">
+                    <div className="flex items-center shrink-0">
                         <Link
                             to="/register?role=fournisseur"
-                            className="text-sm font-bold text-[#FF6600] hover:underline whitespace-nowrap transition-colors"
+                            className="text-sm font-bold text-[#FF6600] hover:underline whitespace-nowrap transition-colors flex items-center gap-1"
                         >
-                            Devenir Fournisseur sur BCA Connect
+                            <span className="hidden lg:inline xl:hidden">{t('becomeVendor') || "Devenir Fournisseur"}</span>
+                            <span className="hidden xl:inline">{(t('becomeVendor') || "Devenir Fournisseur") + (t('onBcaConnect') || " sur BCA Connect")}</span>
+                            <span className="lg:hidden">{t('sellOnBca') || "Vendre sur BCA"}</span>
                         </Link>
                     </div>
                 </div>
@@ -734,7 +791,7 @@ const Navbar = () => {
                 <form onSubmit={handleSearch} className="w-full flex items-center rounded-full border border-[#FF6600] bg-background h-10 overflow-hidden">
                     <input
                         type="text"
-                        placeholder="Rechercher..."
+                        placeholder={t('searchDots') || "Rechercher..."}
                         className="flex-1 h-full px-4 text-sm outline-none bg-transparent text-foreground"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}

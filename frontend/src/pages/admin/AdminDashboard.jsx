@@ -7,11 +7,12 @@ import {
     Activity, Zap, RefreshCcw, ShoppingBag,
     ArrowUpRight, ArrowDownRight, ShieldCheck, Satellite
 } from 'lucide-react';
-import statService from '../../services/statService';
+import { useAdminStats } from '../../hooks/useStats';
 import socketService from '../../services/socketService';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
+import { useLanguage } from '../../context/LanguageContext';
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -60,27 +61,15 @@ const StatCard = ({ title, value, icon: Icon, color, growth, subtitle }) => (
 );
 
 const AdminDashboard = () => {
+    const { t } = useLanguage();
     const navigate = useNavigate();
-    const [isLoading, setIsLoading] = useState(true);
-    const [dashboardData, setDashboardData] = useState(null);
-
-    const fetchGlobalStats = useCallback(async () => {
-        try {
-            const data = await statService.getAdminStats();
-            setDashboardData(data);
-        } catch (err) {
-            toast.error("Erreur de synchronisation Satellite.");
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+    const { data: dashboardData, isLoading, error, refetch } = useAdminStats();
 
     useEffect(() => {
-        fetchGlobalStats();
         socketService.connect();
         const handleUpdate = () => {
-            fetchGlobalStats();
-            toast.info("Données synchronisées en temps réel.");
+            refetch();
+            toast.info(t('adSyncRealtime'));
         };
 
         socketService.on('order_placed', handleUpdate);
@@ -90,7 +79,8 @@ const AdminDashboard = () => {
             socketService.off('order_placed', handleUpdate);
             socketService.off('transaction_updated', handleUpdate);
         };
-    }, [fetchGlobalStats]);
+    }, [refetch]);
+
 
     const apiStats = dashboardData?.stats || [];
     const overview = dashboardData?.overview || {};
@@ -106,42 +96,42 @@ const AdminDashboard = () => {
 
     const displayStats = [
         { 
-            title: "Réseau Utilisateurs", 
+            title: t('adNetworkUsers'), 
             value: formatValue(apiStats.find(s => s.title.includes('Utilisateurs'))?.value || 0, "Membres"), 
             icon: Users, 
             color: "text-primary",
             growth: 12.5,
-            subtitle: "Global Active Nodes"
+            subtitle: t('adActiveNodes')
         },
         { 
-            title: "Volume d'Affaires", 
+            title: t('adBusinessVolume'), 
             value: formatValue(apiStats.find(s => s.title.includes('Transactions'))?.value || 0, "Volume"), 
             icon: TrendingUp, 
             color: "text-blue-500",
             growth: 8.2,
-            subtitle: "System GMV (GNF)"
+            subtitle: t('adSystemGMV')
         },
         { 
-            title: "Partenaires Boutiques", 
+            title: t('adPartnerStores'), 
             value: formatValue(overview.storesCount || 0, "Boutiques"), 
             icon: Store, 
             color: "text-emerald-500",
             growth: 5.4,
-            subtitle: "Verified Entities"
+            subtitle: t('adVerifiedEntities')
         },
         { 
-            title: "Index Intégrité", 
-            value: "99.8%", 
+            title: t('adIntegrityIndex'), 
+            value: (overview.satisfaction_rate || "99.8") + "%", 
             icon: ShieldCheck, 
             color: "text-amber-500",
-            subtitle: "Operational Pulse"
+            subtitle: t('adOperationalPulse')
         }
     ];
 
     const transactions = dashboardData?.recentTransactions || [];
 
     return (
-        <DashboardLayout title="ADMIN COMMAND CENTER" noPadding>
+        <DashboardLayout title={t('adCommandCenter')} noPadding>
             <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8 space-y-8 custom-scrollbar">
                 
                 {/* HUD Header */}
@@ -157,7 +147,7 @@ const AdminDashboard = () => {
                             <div className="flex items-center gap-2">
                                 <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
-                                    Flux temps réel • Sync Satellite Active
+                                    {t('adFluxRealtime')}
                                 </p>
                             </div>
                         </div>
@@ -169,10 +159,10 @@ const AdminDashboard = () => {
                             className="h-12 px-6 bg-white border border-slate-100 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:bg-slate-50 transition-all shadow-sm"
                         >
                             <Satellite className="size-4 text-primary" />
-                            IA Predictive
+                            {t('adAiPredictive')}
                         </button>
                         <button 
-                            onClick={fetchGlobalStats}
+                            onClick={() => refetch()}
                             className="size-12 rounded-2xl bg-primary text-foreground flex items-center justify-center shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
                         >
                             <RefreshCcw className={cn("size-5", isLoading && "animate-spin")} />
@@ -183,12 +173,12 @@ const AdminDashboard = () => {
                 {/* Navigation Pill Deck */}
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2">
                     {[
-                        { label: 'Synthèse', path: '/admin/dashboard', active: true },
-                        { label: 'Flux Finance', path: '/admin/transactions' },
-                        { label: 'Litiges Hub', path: '/admin/disputes' },
-                        { label: 'Taxonomie', path: '/admin/categories' },
-                        { label: 'Catalogue', path: '/admin/products' },
-                        { label: 'Gouvernance', path: '/admin/users' }
+                        { label: t('adSynthesis'), path: '/admin/dashboard', active: true },
+                        { label: t('adFinanceFlux'), path: '/admin/transactions' },
+                        { label: t('adDisputeHub'), path: '/admin/disputes' },
+                        { label: t('adTaxonomy'), path: '/admin/categories' },
+                        { label: t('adCatalog'), path: '/admin/products' },
+                        { label: t('adGovernance'), path: '/admin/users' }
                     ].map((nav, i) => (
                         <button
                             key={i}
@@ -216,8 +206,8 @@ const AdminDashboard = () => {
                     <div className="lg:col-span-8 flex flex-col gap-6">
                         <div className="flex items-center justify-between px-2">
                             <div className="space-y-1">
-                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>Performance Marché</h3>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Analyse des flux sur les 7 derniers cycles</p>
+                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>{t('adMarketPerf')}</h3>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('adFluxAnalysis')}</p>
                             </div>
                             <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-xl border border-slate-100">
                                 <div className="flex items-center gap-2">
@@ -267,8 +257,8 @@ const AdminDashboard = () => {
                     {/* Activity Feed */}
                     <div className="lg:col-span-4 flex flex-col gap-6">
                         <div className="flex items-center justify-between px-2">
-                            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>Derniers Flux</h3>
-                            <button onClick={() => navigate('/admin/transactions')} className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline px-3 py-1 bg-primary/5 rounded-lg">Historique</button>
+                            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>{t('adLatestFlux')}</h3>
+                            <button onClick={() => navigate('/admin/transactions')} className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline px-3 py-1 bg-primary/5 rounded-lg">{t('adHistory')}</button>
                         </div>
 
                         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 overflow-hidden">
@@ -298,7 +288,7 @@ const AdminDashboard = () => {
                                 {transactions.length === 0 && (
                                     <div className="py-24 text-center opacity-40 flex flex-col items-center gap-4 text-slate-300">
                                         <Activity className="size-14" />
-                                        <p className="text-[10px] font-black uppercase tracking-widest">Aucun flux détecté</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest">{t('adNoFluxDetected')}</p>
                                     </div>
                                 )}
                             </div>

@@ -424,7 +424,7 @@ const AiMode = () => {
 
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-8 md:p-12 pb-40">
-                    <div className="max-w-[1600px] mx-auto w-full space-y-10">
+                    <div className="container w-full space-y-10">
                         {/* Empty State */}
                         {!hasSearched && (
                             <div className="flex flex-col items-center justify-center py-20 text-center space-y-8">

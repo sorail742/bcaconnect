@@ -8,22 +8,16 @@ import {
 import useCart from '../../hooks/useCart';
 import useWishlistStore from '../../store/wishlistStore';
 import useAuthStore from '../../store/authStore';
-import { cn } from '../../lib/utils';
+import { cn, getImageUrl } from '../../lib/utils';
 import { toast } from 'sonner';
 import LazyImage from '../ui/LazyImage';
+import { useLanguage } from '../../context/LanguageContext';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1523275319145-80b01958f7a2?auto=format&fit=crop&q=80&w=400';
 
-// ── Shared Helper: Image URL ─────────────────────────────────
-export const getImageUrl = (url) => {
-    if (!url) return FALLBACK_IMAGE;
-    if (url.startsWith('http')) return url;
-    const serverUrl = 'http://localhost:5000';
-    return `${serverUrl}${url.startsWith('/') ? '' : '/'}${url}`;
-};
-
 // ── Shared UI: Price ───────────────────────────────────────────
 export const ProductPrice = ({ price, oldPrice, size = 'md' }) => {
+    const { t } = useLanguage();
     const priceStr = parseFloat(price || 0).toLocaleString();
     const isLong = priceStr.length > 8;
     const isVeryLong = priceStr.length > 11;
@@ -41,7 +35,7 @@ export const ProductPrice = ({ price, oldPrice, size = 'md' }) => {
                     "font-black text-primary uppercase shrink-0",
                     size === 'sm' ? "text-[7px]" : "text-[9px]"
                 )}>
-                    GNF
+                    {t('gnf')}
                 </span>
             </div>
             {oldPrice && (
@@ -55,6 +49,7 @@ export const ProductPrice = ({ price, oldPrice, size = 'md' }) => {
 
 // ── Shared UI: Rating ──────────────────────────────────────────
 export const ProductRating = ({ avis = [], showCount = true }) => {
+    const { t } = useLanguage();
     const count = avis.length;
     const rating = count > 0 
         ? avis.reduce((sum, a) => sum + (parseFloat(a.note) || 0), 0) / count 
@@ -73,7 +68,7 @@ export const ProductRating = ({ avis = [], showCount = true }) => {
                     />
                 ))}
             </div>
-            <span className="text-xs font-bold text-slate-700">{rating > 0 ? rating.toFixed(1) : 'NEW'}</span>
+            <span className="text-xs font-bold text-slate-700">{rating > 0 ? rating.toFixed(1) : t('new') || 'NEW'}</span>
             {showCount && count > 0 && (
                 <span className="text-[10px] text-slate-400">({count})</span>
             )}
@@ -83,15 +78,16 @@ export const ProductRating = ({ avis = [], showCount = true }) => {
 
 // ── Shared UI: Stock Badge ─────────────────────────────────────
 export const ProductStockBadge = ({ qty }) => {
+    const { t } = useLanguage();
     const q = parseInt(qty || 0);
     if (q === 0) return (
-        <span className="text-[10px] font-bold text-rose-500 uppercase">Rupture</span>
+        <span className="text-[10px] font-bold text-rose-500 uppercase">{t('invStatusOut')}</span>
     );
     if (q <= 5) return (
-        <span className="text-[10px] font-bold text-amber-500 uppercase">Faible stock</span>
+        <span className="text-[10px] font-bold text-amber-500 uppercase">{t('invStatusLow')}</span>
     );
     return (
-        <span className="text-[10px] font-bold text-emerald-600 uppercase">En stock</span>
+        <span className="text-[10px] font-bold text-emerald-600 uppercase">{t('invStatusInStock')}</span>
     );
 };
 
@@ -100,8 +96,10 @@ const ProductCard = ({
     variant = 'grid', 
     onDelete, 
     onEdit,
-    onUpdateStock 
+    onUpdateStock,
+    customStockEditor 
 }) => {
+    const { t } = useLanguage();
     const navigate = useNavigate();
     const { addToCart } = useCart();
     const { toggleItem, isInWishlist } = useWishlistStore();
@@ -117,24 +115,24 @@ const ProductCard = ({
         e.preventDefault();
         e.stopPropagation();
         if (isOwner) {
-            toast.error("Action impossible", { description: "Vous ne pouvez pas acheter vos propres produits." });
+            toast.error(t('pdOwnerAction'), { description: t('pdOwnerDesc') });
             return;
         }
         if (!inStock) {
-            toast.error(`"${product.nom_produit}" est en rupture de stock.`);
+            toast.error(t('pdOutOfStockMsg', { name: product.nom_produit }));
             return;
         }
         addToCart(product);
         setIsAdded(true);
         setTimeout(() => setIsAdded(false), 2000);
-        toast.success("Ajouté au panier !");
+        toast.success(t('pdAddedToCart'));
     };
 
     const handleWishlist = (e) => {
         e.preventDefault();
         e.stopPropagation();
         const added = toggleItem(product);
-        added ? toast.success("Ajouté aux favoris") : toast.info("Retiré des favoris");
+        added ? toast.success(t('pdAddedToWishlist')) : toast.info(t('pdRemovedFromWishlist'));
     };
 
     // ── Variant: TABLE ROW (Dashboard) ─────────────────────────
@@ -146,16 +144,30 @@ const ProductCard = ({
                         <img src={getImageUrl(product.image_url)} className="w-full h-full object-cover" alt="" />
                     </div>
                 </td>
-                <td className="p-4 font-bold text-slate-900">{product.nom_produit}</td>
-                <td className="p-4">
+                <td className="px-6 py-4 font-black text-slate-900 dark:text-white uppercase tracking-tight text-xs">{product.nom_produit}</td>
+                <td className="px-6 py-4">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 dark:bg-white/5 px-2.5 py-1 rounded-lg">
+                        {product.categorie?.nom_categorie || 'N/A'}
+                    </span>
+                </td>
+                <td className="px-6 py-4">
                     <ProductPrice price={product.prix_unitaire} size="sm" />
                 </td>
-                <td className="p-4">
-                    <ProductStockBadge qty={product.stock_quantite} />
+                <td className="px-6 py-4">
+                    {customStockEditor ? customStockEditor : <ProductStockBadge qty={product.stock_quantite} />}
                 </td>
-                <td className="p-4 text-right">
-                    <button onClick={() => onEdit?.(product)} className="text-slate-500 hover:text-blue-600 mr-3">Modifier</button>
-                    <button onClick={() => onDelete?.(product)} className="text-rose-500 hover:text-rose-600">Supprimer</button>
+                <td className="px-6 py-4">
+                    <ProductRating avis={product.avis} showCount={false} />
+                </td>
+                <td className="px-6 py-4 text-right">
+                   <div className="flex items-center justify-end gap-2">
+                        <button onClick={(e) => { e.preventDefault(); onEdit?.(product); }} className="size-9 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-primary transition-all border-none">
+                            <Edit3 className="size-4" />
+                        </button>
+                        <button onClick={(e) => { e.preventDefault(); onDelete?.(product); }} className="size-9 rounded-xl bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center text-rose-500 hover:bg-rose-500 hover:text-white transition-all border-none">
+                            <Trash2 className="size-4" />
+                        </button>
+                   </div>
                 </td>
             </tr>
         );
@@ -201,24 +213,24 @@ const ProductCard = ({
                             e.stopPropagation();
                             const vendorId = product.boutique?.proprietaire_id || product.vendeur_id;
                             if (vendorId) navigate(`/messages?recipient=${vendorId}`);
-                            else toast.error("Fournisseur non trouvé");
+                            else toast.error(t('pdVendorNotFound'));
                         }}
-                        className="flex items-center justify-center gap-2 h-9 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition-colors"
+                        className="flex items-center justify-center gap-2 h-11 rounded-2xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all"
                     >
                         <MessageCircle className="size-4" />
-                        Chat
+                        {t('pdChat')}
                     </button>
                     
                     <button 
                         onClick={handleAddToCart}
                         disabled={!inStock || isOwner}
                         className={cn(
-                            "flex items-center justify-center gap-2 h-9 rounded-lg text-xs font-bold transition-all active:scale-95",
-                            isOwner ? "bg-slate-100 text-slate-400" : (isAdded ? "bg-emerald-600 text-white" : "bg-slate-900 text-white hover:bg-slate-800")
+                            "flex items-center justify-center gap-2 h-11 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 border-none",
+                            isOwner ? "bg-slate-100 dark:bg-white/5 text-slate-400" : (isAdded ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 shadow-xl")
                         )}
                     >
                         {isAdded ? <CheckCircle2 className="size-4" /> : <ShoppingCart className="size-4" />}
-                        {isAdded ? "Ajouté" : "Acheter"}
+                        {isAdded ? t('pdAdded') : t('pdAcquire')}
                     </button>
                 </div>
             </div>

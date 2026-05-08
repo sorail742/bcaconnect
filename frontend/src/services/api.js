@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
+    timeout: 30000, // 🕒 30 secondes par défaut pour éviter les hangs
     headers: {
         'Content-Type': 'application/json',
     },

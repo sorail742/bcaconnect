@@ -12,7 +12,7 @@ import { cn } from '../../lib/utils';
 import { ALIBABA_ICONS, ALIBABA_CATEGORIES } from '../../lib/categoryConstants';
 
 export const CategorySection = () => {
-    const { lang } = useLanguage();
+    const { lang, t } = useLanguage();
     const navigate = useNavigate();
     const { addToCart } = useCart();
 
@@ -32,14 +32,14 @@ export const CategorySection = () => {
                     // Try to map backend categories to our static Alibaba list to get valid IDs for fetching products
                     const mappedCategories = ALIBABA_CATEGORIES.map((alibabaCat, i) => {
                         const backendMatch = raw.find(c => {
-                            const name = (c.nom || c.name || '').toLowerCase();
+                            const name = (c.nom_categorie || c.nom || c.name || '').toLowerCase();
                             // Attempt loose matching based on keywords in filter
                             const filterWords = alibabaCat.filter.toLowerCase().split(' ');
                             return filterWords.some(w => name.includes(w));
                         });
                         return {
                             ...alibabaCat,
-                            id: backendMatch?.id || raw[i % raw.length]?.id || alibabaCat.id,
+                            id: backendMatch?.id || `static-${alibabaCat.id}`,
                         };
                     });
                     setCategories(mappedCategories);
@@ -58,7 +58,8 @@ export const CategorySection = () => {
         if (!catId) return;
         setIsLoadingProds(true);
         try {
-            const res = await productService.getAll({ category_id: catId, limit: 5 });
+            // The backend expects categorie_id, not category_id
+            const res = await productService.getAll({ categorie_id: catId, limit: 5 });
             const items = Array.isArray(res) ? res : (res?.products || res?.data || []);
             setProducts(items.slice(0, 5));
         } catch { setProducts([]); }
@@ -76,18 +77,18 @@ export const CategorySection = () => {
 
     return (
         <section className="bg-slate-50 py-8 sm:py-12 border-t border-slate-100">
-            <div className="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8">
+            <div className="w-full max-w-none px-4 lg:px-12">
 
                 {/* ── Header ─────────────────────────────────────────────── */}
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
                         <div className="w-1 h-8 bg-[#FF6600] rounded-full" />
                         <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                            Parcourir par Catégorie
+                            {t('browseByCategory')}
                         </h2>
                     </div>
                     <Link to="/marketplace" className="flex items-center gap-1 text-[#FF6600] font-bold text-sm hover:underline shrink-0">
-                        Tout voir <ArrowRight className="size-4" />
+                        {t('viewAll')} <ArrowRight className="size-4" />
                     </Link>
                 </div>
 
@@ -101,7 +102,7 @@ export const CategorySection = () => {
                                 {/* Alibaba specific header */}
                                 <div className="hidden md:flex items-center gap-3 px-4 py-3.5 bg-[#f5f5f5] text-slate-800 shrink-0">
                                     {ALIBABA_ICONS.star()}
-                                    <span className="text-[15px] font-bold">Catégories pour vous</span>
+                                    <span className="text-[15px] font-bold">{t('categoriesForYou')}</span>
                                 </div>
                                 {(isLoadingCats ? ALIBABA_CATEGORIES : categories).map((cat, idx) => (
                                     <button
@@ -137,10 +138,10 @@ export const CategorySection = () => {
                                     <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                                         className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-3">
                                         <Package className="size-10 opacity-30" />
-                                        <p className="text-sm font-bold">Aucun produit dans cette catégorie</p>
+                                        <p className="text-sm font-bold">{t('noProductsInCategory')}</p>
                                         <button onClick={() => navigate('/marketplace')}
                                             className="text-[#FF6600] text-xs font-bold hover:underline">
-                                            Explorer le marché →
+                                            {t('explore')} →
                                         </button>
                                     </motion.div>
                                 ) : (
@@ -161,7 +162,7 @@ export const CategorySection = () => {
                                             >
                                                 <ArrowRight className="size-6 text-slate-300 group-hover:text-[#FF6600] transition-colors" />
                                                 <span className="text-xs font-bold text-slate-400 group-hover:text-[#FF6600] transition-colors text-center px-2">
-                                                    Voir tout dans cette catégorie
+                                                    {t('viewAllInCategory')}
                                                 </span>
                                             </button>
                                         </motion.div>
@@ -188,7 +189,7 @@ export const CategorySection = () => {
                         onClick={() => navigate('/marketplace')}
                         className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-full bg-[#FF6600] text-white text-xs font-bold hover:bg-orange-600 transition-colors"
                     >
-                        <ArrowRight className="size-3" /> Plus
+                        <ArrowRight className="size-3" /> {t('moreCategories')}
                     </button>
                 </div>
             </div>

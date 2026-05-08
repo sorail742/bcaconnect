@@ -34,7 +34,7 @@ export function SolutionSection() {
         },
         {
             icon: Smartphone,
-            title: "AGRI-SUCCESS",
+            title: t('featAgri') || "AGRI-SUCCESS",
             description: t('solAgriculture') || "ACCÉLÉRER LA CHAINE DE VALEUR AGRICOLE",
             image: imgAgriculture
         }
@@ -61,7 +61,7 @@ export function SolutionSection() {
                             whileInView={{ opacity: 1, x: 0 }}
                             className="inline-flex items-center gap-3 px-8 py-3 rounded-2xl bg-primary/10 border border-primary/20 text-[11px] font-black text-primary uppercase tracking-[0.4em] shadow-sm"
                         >
-                            <ZapIcon className="size-5" /> {t('solBadge') || "SYSTEM_ADVANTAGES v4.5"}
+                            <ZapIcon className="size-5" /> {t('solBadge') || "AVANTAGES SYSTÈME v4.5"}
                         </motion.div>
                         
                         <motion.h2

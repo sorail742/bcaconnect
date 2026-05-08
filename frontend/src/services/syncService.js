@@ -1,56 +1,94 @@
 import { offlineStorage } from '../lib/db';
-import axios from 'axios';
+import orderService from './orderService';
+import productService from './productService';
+import categoryService from './categoryService';
 import { toast } from 'sonner';
-import { API_BASE_URL } from '../constants/api';
 
-export const syncService = {
-    // Vérifie si le navigateur est en ligne
-    isOnline: () => navigator.onLine,
+class SyncService {
+    constructor() {
+        this.isSyncing = false;
+        this.syncInterval = null;
+    }
 
-    // Synchronise les commandes en attente
-    syncOrders: async (token) => {
-        if (!navigator.onLine) return;
+    init() {
+        // Surveiller le retour au mode en ligne
+        window.addEventListener('online', () => {
+            toast.info("Connexion rétablie. Synchronisation des données...");
+            this.syncAll();
+        });
 
-        const pendingOrders = await offlineStorage.getQueuedOrders();
-        if (pendingOrders.length === 0) return;
+        // Surveiller le passage hors ligne
+        window.addEventListener('offline', () => {
+            toast.warning("Vous êtes maintenant hors ligne. Mode résilience activé.");
+        });
 
-        for (const order of pendingOrders) {
+        // Lancer une synchro initiale si on est en ligne
+        if (navigator.onLine) {
+            this.syncAll();
+        }
+
+        // Configurer une synchro périodique toutes les 5 minutes si en ligne
+        this.syncInterval = setInterval(() => {
+            if (navigator.onLine && !this.isSyncing) {
+                this.syncAll();
+            }
+        }, 5 * 60 * 1000);
+    }
+
+    async syncAll() {
+        if (this.isSyncing) return;
+        this.isSyncing = true;
+
+        try {
+            console.log("🔄 Début de la synchronisation globale...");
+            
+            // 1. Synchroniser les commandes en attente
+            await this.syncOrders();
+            
+            // 2. Mettre à jour le cache (en arrière-plan, ne bloque pas l'utilisateur)
+            this.refreshCache();
+
+            console.log("✅ Synchronisation terminée.");
+        } catch (error) {
+            console.error("❌ Erreur de synchronisation:", error);
+        } finally {
+            this.isSyncing = false;
+        }
+    }
+
+    async syncOrders() {
+        const queuedOrders = await offlineStorage.getQueuedOrders();
+        if (queuedOrders.length === 0) return;
+
+        console.log(`📦 Synchro de ${queuedOrders.length} commandes en attente...`);
+        
+        for (const order of queuedOrders) {
             try {
-                const response = await axios.post(`${API_BASE_URL}/orders`, {
-                    items: order.items,
-                    isOfflineSync: true // Flag pour le backend si besoin
-                }, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-
-                if (response.status === 201) {
-                    await offlineStorage.markOrderSynced(order.id);
-                    toast.success("Votre commande hors-ligne a été synchronisée avec succès !");
-                }
+                // On retire les champs internes de Dexie avant l'envoi
+                const { id, status, timestamp, ...apiData } = order;
+                await orderService.create(apiData);
+                await offlineStorage.markOrderSynced(id);
+                toast.success(`Commande #${id} synchronisée !`);
             } catch (error) {
-                console.error(`❌ Échec de synchro pour la commande ${order.id}:`, error.message);
-                
-                // Interception des erreurs de stock (400) ou validation (422) depuis le backend
-                if (error.response && (error.response.status === 400 || error.response.status === 422)) {
-                    const messageErreur = error.response.data?.message || "Erreur de validation système.";
-                    
-                    // On modifie l'état local pour empêcher la boucle infinie. 
-                    await offlineStorage.markOrderFailed(order.id, messageErreur);
-                    
-                    // Notification UX claire pour l'utilisateur
-                    toast.error("Produit indisponible. Votre commande n'a pas pu être finalisée.", { 
-                        duration: 8000, 
-                        description: messageErreur 
-                    });
-                }
-                // Si l'erreur est une perte de connexion réseau (503, timeout...), la commande reste simplement en 'pending' pour une future tentative.
+                console.error(`Erreur synchro commande ${order.id}:`, error);
+                await offlineStorage.markOrderFailed(order.id, error.message);
             }
         }
-    },
-
-    // Écouteurs d'événements réseau
-    init: (onStatusChange) => {
-        window.addEventListener('online', () => onStatusChange(true));
-        window.addEventListener('offline', () => onStatusChange(false));
     }
-};
+
+    async refreshCache() {
+        try {
+            // Force le rafraîchissement des produits et catégories pour le cache local
+            await productService.getAll();
+            await categoryService.getAll();
+        } catch (error) {
+            console.warn("Échec du rafraîchissement du cache:", error);
+        }
+    }
+
+    destroy() {
+        if (this.syncInterval) clearInterval(this.syncInterval);
+    }
+}
+
+export const syncService = new SyncService();

@@ -29,7 +29,7 @@ export function CTASection() {
 
     return (
         <section className="bg-slate-900 py-12 sm:py-16 lg:py-20">
-            <div className="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8">
+            <div className="container px-3 sm:px-6 lg:px-8">
 
                 {/* Main content */}
                 <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
@@ -39,23 +39,23 @@ export function CTASection() {
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-[#FF6600] text-[11px] font-black uppercase tracking-widest">
                             <span className="size-2 rounded-full bg-[#FF6600] animate-pulse" />
                             {isAuthenticated
-                                ? `Espace de ${user?.nom_complet?.split(' ')[0] || 'Membre'}`
-                                : 'Rejoignez BCA Connect'}
+                                ? `${t('memberSpace') || "Espace de"} ${user?.nom_complet?.split(' ')[0] || 'Membre'}`
+                                : t('joinBCA') || 'Rejoignez BCA Connect'}
                         </div>
-
+ 
                         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
                             {isAuthenticated
-                                ? <>Bienvenue sur <span className="text-[#FF6600]">BCA Connect</span></>
-                                : <>La plateforme de commerce <span className="text-[#FF6600]">la plus avancée</span> d'Afrique de l'Ouest</>
+                                ? <>{t('welcome') || "Bienvenue sur"} <span className="text-[#FF6600]">BCA Connect</span></>
+                                : t('ctaMostAdvanced') || <>La plateforme de commerce <span className="text-[#FF6600]">la plus avancée</span> d'Afrique de l'Ouest</>
                             }
                         </h2>
-
+ 
                         <p className="text-slate-400 text-base sm:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0">
                             {isAuthenticated
-                                ? "Continuez à gérer votre activité depuis votre espace personnel dédié."
-                                : "Acheteurs, fournisseurs, transporteurs — une plateforme unique pour connecter tous les acteurs du commerce guinéen."}
+                                ? t('ctaContinueActivity') || "Continuez à gérer votre activité depuis votre espace personnel dédié."
+                                : t('ctaConnectedActors') || "Acheteurs, fournisseurs, transporteurs — une plateforme unique pour connecter tous les acteurs du commerce guinéen."}
                         </p>
-
+ 
                         <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
                             {isAuthenticated ? (
                                 <>
@@ -64,14 +64,14 @@ export function CTASection() {
                                         className="flex items-center gap-3 h-14 px-8 bg-[#FF6600] text-white font-black text-sm rounded-2xl shadow-lg hover:shadow-orange-500/25 hover:-translate-y-0.5 transition-all group"
                                     >
                                         <LayoutDashboard className="size-5" />
-                                        Mon Espace
+                                        {t('myDashboard') || "Mon Espace"}
                                         <ArrowRight className="size-5 group-hover:translate-x-1 transition-transform" />
                                     </button>
                                     <button
                                         onClick={() => navigate('/marketplace')}
                                         className="flex items-center gap-3 h-14 px-8 bg-white/10 border border-white/20 text-white font-bold text-sm rounded-2xl hover:bg-white/20 transition-all"
                                     >
-                                        Explorer le marché
+                                        {t('explore') || "Explorer le marché"}
                                     </button>
                                 </>
                             ) : (
@@ -80,23 +80,28 @@ export function CTASection() {
                                         onClick={() => navigate('/register')}
                                         className="flex items-center gap-3 h-14 px-8 bg-[#FF6600] text-white font-black text-sm rounded-2xl shadow-lg hover:shadow-orange-500/25 hover:-translate-y-0.5 transition-all group"
                                     >
-                                        Créer un compte gratuit
+                                        {t('register') || "Créer un compte gratuit"}
                                         <ArrowRight className="size-5 group-hover:translate-x-1 transition-transform" />
                                     </button>
                                     <button
                                         onClick={() => navigate('/marketplace')}
                                         className="flex items-center gap-3 h-14 px-8 bg-white/10 border border-white/20 text-white font-bold text-sm rounded-2xl hover:bg-white/20 transition-all"
                                     >
-                                        Explorer le marché
+                                        {t('explore') || "Explorer le marché"}
                                     </button>
                                 </>
                             )}
                         </div>
                     </div>
-
+ 
                     {/* Right — feature grid */}
                     <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full max-w-sm lg:max-w-xs shrink-0">
-                        {features.map((item, i) => (
+                        {[
+                            { icon: ShieldCheck, label: t('footerSecureTitle') || 'Paiements Sécurisés', desc: t('footerSecureDesc') || 'Protection Escrow' },
+                            { icon: Globe, label: t('footerCoverageTitle') || 'Couverture Nationale', desc: t('footerCoverageDesc') || 'Toute la Guinée' },
+                            { icon: Store, label: t('ctaUnifiedPlatform') || 'Plateforme Unifiée', desc: t('ctaUnifiedDesc') || 'Tout en un' },
+                            { icon: Zap, label: t('footerSyncTitle') || 'Synchronisation Live', desc: t('footerSyncDesc') || 'Données temps réel' },
+                        ].map((item, i) => (
                             <motion.button
                                 key={i}
                                 onClick={() => navigate('/marketplace')}
@@ -115,15 +120,20 @@ export function CTASection() {
                         ))}
                     </div>
                 </div>
-
+ 
                 {/* Bottom divider + links */}
                 <div className="mt-12 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <p className="text-slate-500 text-sm">© 2025 BCA Connect · Guinée · Tous droits réservés</p>
+                    <p className="text-slate-500 text-sm">© 2025 BCA Connect · {t('guinea') || "Guinée"} · {t('rightsReserved') || (t('ctaAllRightsReserved') || "Tous droits réservés")}</p>
                     <div className="flex items-center gap-6">
-                        {['Confidentialité', 'Conditions', 'Contact', 'À propos'].map(link => (
-                            <button key={link} onClick={() => navigate(`/${link.toLowerCase()}`)}
+                        {[
+                            { name: t('privacy') || 'Confidentialité', path: '/privacy' },
+                            { name: t('terms') || 'Conditions', path: '/terms' },
+                            { name: t('contact') || 'Contact', path: '/contact' },
+                            { name: t('about') || 'À propos', path: '/about' }
+                        ].map(link => (
+                            <button key={link.name} onClick={() => navigate(link.path)}
                                 className="text-slate-500 hover:text-white text-xs transition-colors">
-                                {link}
+                                {link.name}
                             </button>
                         ))}
                     </div>

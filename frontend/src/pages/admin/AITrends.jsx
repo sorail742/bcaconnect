@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { useTrends } from '../../hooks/useDomainData';
+import { useTrends, useAiLogs } from '../../hooks/useDomainData';
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
     AreaChart, Area, PieChart, Pie, Cell 
@@ -69,22 +69,13 @@ const AITrends = () => {
     const [selectedPeriod, setSelectedPeriod] = useState('30D');
     const [selectedRegion, setSelectedRegion] = useState('CONAKRY');
     const { data, loading, refetch } = useTrends({ period: selectedPeriod, region: selectedRegion });
+    const { data: logsData } = useAiLogs();
     const [isUpdating, setIsUpdating] = useState(false);
-    const [logs, setLogs] = useState([
+    
+    const logs = logsData?.logs || [
         "Moteur BCA-Predict v4.2 opérationnel...",
-        "Analyse des vecteurs régionaux...",
-        "Flux sécurisé via Data Hub.",
-    ]);
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const messages = [
-                "Scan Zone Nord terminé.", "Révision certitude (+0.1%).", "Pic de demande en cours...", "Synchro registre...",
-            ];
-            setLogs(prev => [messages[Math.floor(Math.random() * messages.length)], ...prev.slice(0, 3)]);
-        }, 4000);
-        return () => clearInterval(interval);
-    }, []);
+        "Attente de synchronisation..."
+    ];
 
     const handleFilterChange = async (type, val) => {
         setIsUpdating(true);
@@ -93,7 +84,6 @@ const AITrends = () => {
         await new Promise(r => setTimeout(r, 600));
         await refetch();
         setIsUpdating(false);
-        setLogs(prev => [`Révision pour ${val}...`, ...prev.slice(0, 3)]);
     };
 
     if (loading) return (

@@ -16,8 +16,15 @@ export const LanguageProvider = ({ children }) => {
         setLang(newLang);
     };
 
-    const t = (key) => {
-        return translations[lang][key] || key;
+    const t = (key, params = {}) => {
+        let text = translations[lang]?.[key] || translations['FR']?.[key] || key;
+        
+        // Handle placeholders like {name}
+        Object.keys(params).forEach(p => {
+            text = text.replace(`{${p}}`, params[p]);
+        });
+        
+        return text;
     };
 
     return (

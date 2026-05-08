@@ -75,27 +75,24 @@ export function Hero() {
         <section className="relative min-h-[110vh] flex items-center pt-32 pb-32 overflow-hidden bg-background">
             <GeometricBackground />
             
-            {/* Immersive Backgrounds & Depth Layers */}
             <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-gradient-to-t from-background via-background/90 to-transparent z-10" />
             <HeroCarousel />
 
-            <div className="container mx-auto px-6 md:px-12 relative z-20">
+            <div className="w-full max-w-none px-6 md:px-12 relative z-20">
                 <motion.div 
                     variants={containerVariants}
                     initial="hidden"
                     animate="visible"
                     className="flex flex-col items-center text-center"
                 >
-                    {/* Floating Tech Badge - Quantum Signature */}
                     <motion.div
                         variants={itemVariants}
                         className="inline-flex items-center gap-3 px-8 py-3 rounded-[2rem] bg-white/5 backdrop-blur-3xl border border-white/10 text-primary mb-16 shadow-[0_20px_50px_rgba(0,0,0,0.1)] group hover:border-primary/40 transition-all cursor-default"
                     >
                         <div className="size-2 rounded-full bg-primary animate-ping" />
-                        <span className="text-[11px] font-black uppercase tracking-[0.4em] font-jakarta">{t('badgeText') || "Ecosysteme Industriel v5.0"}</span>
+                        <span className="text-[11px] font-black uppercase tracking-[0.4em] font-jakarta">{t('badgeText')}</span>
                     </motion.div>
 
-                    {/* Master Narrative - Ultra High Density Typography */}
                     <motion.h1 
                         variants={itemVariants}
                         className="text-4xl sm:text-6xl md:text-8xl lg:text-[8rem] font-black tracking-[-0.07em] leading-[1.0] text-foreground dark:text-white max-w-[90rem] uppercase mb-12 text-center"
@@ -114,17 +111,16 @@ export function Hero() {
                         <span className="text-foreground dark:text-white drop-shadow-2xl">{t('heroTitle3')}</span>
                     </motion.h1>
 
-                    {/* Description Architecture - Precision Narrative */}
                     <motion.div variants={itemVariants} className="max-w-4xl mx-auto space-y-12 mb-20">
                         <p className="text-2xl md:text-3xl text-foreground/60 dark:text-white/70 font-medium leading-[1.3] tracking-tight max-w-2xl mx-auto">
-                            {t('heroDesc') || "L'infrastructure technologique ultime fusionnant logistique prédictive, finance inclusive et commerce global."}
+                            {t('heroDesc')}
                         </p>
                         
                         <div className="flex flex-wrap justify-center gap-6">
                             {[
-                                { label: "Performance IA", icon: Cpu, color: "text-blue-500" },
-                                { label: "Sécurité Militaire", icon: Shield, color: "text-emerald-500" },
-                                { label: "Sync Temps Réel", icon: Activity, color: "text-rose-500" },
+                                { label: t('featIA'), icon: Cpu, color: "text-blue-500" },
+                                { label: t('featSecurity'), icon: Shield, color: "text-emerald-500" },
+                                { label: t('featRealTime'), icon: Activity, color: "text-rose-500" },
                             ].map((tag, i) => (
                                 <motion.div 
                                     key={i} 
@@ -138,14 +134,13 @@ export function Hero() {
                         </div>
                     </motion.div>
 
-                    {/* Action Hub - High Contrast Decision Matrix */}
                     <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-20 w-full">
                         <button
                             onClick={() => navigate('/marketplace')}
                             className="w-full sm:w-auto h-16 sm:h-24 px-12 sm:px-16 bg-primary text-primary-foreground font-black text-sm uppercase tracking-[0.4em] rounded-[1.5rem] sm:rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(255,102,0,0.5)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4 border border-white/20 group"
                         >
-                            EXPLORER LE MARCHÉ
-                            <ArrowRight className="size-5 sm:size-6 group-hover:translate-x-2 transition-transform" />
+                            {t('exploreMarket')}
+                            <ArrowRight className="size-5 sm:size-6 group-hover:translate-x-2 transition-transition" />
                         </button>
                         {isAuthenticated ? (
                             <button
@@ -157,7 +152,7 @@ export function Hero() {
                                 className="w-full sm:w-auto h-16 sm:h-24 px-12 sm:px-16 bg-white/5 border-2 border-white/10 backdrop-blur-3xl text-foreground font-black text-sm uppercase tracking-[0.4em] rounded-[1.5rem] sm:rounded-[2.5rem] hover:bg-white/10 hover:border-primary/30 transition-all flex items-center justify-center gap-4 group"
                             >
                                 <LayoutDashboard className="size-5 sm:size-6 text-primary group-hover:scale-110 transition-transform" />
-                                MON ESPACE
+                                {t('myDashboard')}
                             </button>
                         ) : (
                             <button
@@ -165,21 +160,20 @@ export function Hero() {
                                 className="w-full sm:w-auto h-16 sm:h-24 px-12 sm:px-16 bg-white/5 border-2 border-white/10 backdrop-blur-3xl text-foreground font-black text-sm uppercase tracking-[0.4em] rounded-[1.5rem] sm:rounded-[2.5rem] hover:bg-white/10 hover:border-primary/30 transition-all flex items-center justify-center gap-4 group"
                             >
                                 <Rocket className="size-5 sm:size-6 text-primary group-hover:-translate-y-1 transition-transform" />
-                                CRÉER UN COMPTE
+                                {t('register')}
                             </button>
                         )}
                     </motion.div>
 
-                    {/* Bento Performance Hub - Real-Time Validation */}
                     <motion.div 
                         variants={itemVariants}
                         className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10 w-full max-w-7xl"
                     >
                         {[
-                            { label: t('users') || "Utilisateurs Actifs", val: stats.users, icon: Users, sub: "Guinée & Diaspora", trend: "+12%" },
-                            { label: t('merchants') || "Fournisseurs Pro", val: stats.vendors, icon: StoreSVG, sub: "Fournisseurs Certifiés", trend: "Premium" },
-                            { label: t('transactions') || "Flux de Commandes", val: stats.transactions, icon: CreditCard, sub: "Volume Hebdomadaire", trend: "Secure" },
-                            { label: t('satisfaction') || "Confiance Client", val: stats.satisfaction, icon: Target, sub: "SLA Garanti", highlight: true },
+                            { label: t('users'), val: stats.users, icon: Users, sub: "Guinée & Diaspora", trend: "+12%" },
+                            { label: t('merchants'), val: stats.vendors, icon: StoreSVG, sub: "Fournisseurs Certifiés", trend: "Premium" },
+                            { label: t('transactions'), val: stats.transactions, icon: CreditCard, sub: "Volume Hebdomadaire", trend: "Secure" },
+                            { label: t('satisfaction'), val: stats.satisfaction, icon: Target, sub: "SLA Garanti", highlight: true },
                         ].map((stat, i) => (
                             <motion.div 
                                 key={i}
@@ -191,7 +185,6 @@ export function Hero() {
                                         : "bg-white/5 backdrop-blur-3xl border-white/10 hover:border-primary/40 shadow-black/5"
                                 )}
                             >
-                                {/* Static Ambient glow */}
                                 <div className="absolute -right-6 -top-6 size-24 bg-primary/5 blur-3xl rounded-full" />
                                 
                                 <div className={cn(

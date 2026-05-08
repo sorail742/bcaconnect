@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import { ThemeProvider } from './context/ThemeContext'
 import { LanguageProvider } from './context/LanguageContext'
-import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './App.jsx'
 
@@ -34,13 +33,20 @@ createRoot(document.getElementById('root')).render(
   </StrictMode>
 )
 
+import { syncService } from './services/syncService'
+import { registerSW } from 'virtual:pwa-register'
+
+// Initialisation de la synchronisation intelligente
+syncService.init();
+
+// Enregistrement du Service Worker pour le mode PWA/Offline
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  const updateSW = registerSW({
+  registerSW({
     onNeedRefresh() {
-      // Prompt user to update
+      console.log('Nouveau contenu disponible. Veuillez rafraîchir.');
     },
     onOfflineReady() {
-      // App is ready to work offline
+      console.log('L\'application est prête pour le mode hors ligne.');
     },
-  })
+  });
 }

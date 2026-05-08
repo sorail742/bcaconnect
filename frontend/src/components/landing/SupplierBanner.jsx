@@ -3,24 +3,26 @@ import { motion } from 'framer-motion';
 import { ArrowRight, ShieldCheck, Globe, Zap, BadgeCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useLanguage } from '../../context/LanguageContext';
 import { ROLES } from '../../constants/roles';
 
 // Alibaba-style "Start Selling" / supplier onboarding promotional banner
 export function SupplierBanner() {
     const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
+    const { t } = useLanguage();
     const isVendor = isAuthenticated && user?.role === ROLES.FOURNISSEUR;
 
     const stats = [
-        { val: '10K+', label: 'Acheteurs actifs' },
-        { val: '180+', label: 'Villes couvertes' },
-        { val: '99%', label: 'Satisfaction fournisseurs' },
-        { val: '0 GNF', label: 'Inscription gratuite' },
+        { val: '10K+', label: t('statsActiveBuyers') },
+        { val: '180+', label: t('statsCities') },
+        { val: '99%', label: t('statsSatisfaction') },
+        { val: '0 GNF', label: t('statsFreeReg') },
     ];
 
     return (
         <section className="bg-white border-t border-slate-100 py-8 sm:py-10">
-            <div className="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8">
+            <div className="container px-3 sm:px-6 lg:px-8">
 
                 {/* Main banner — orange gradient like Alibaba's "Start Selling" */}
                 <motion.div
@@ -41,24 +43,20 @@ export function SupplierBanner() {
                         <div className="flex-1 min-w-0 text-center lg:text-left">
                             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/20 rounded-full text-white text-xs font-bold uppercase tracking-widest mb-4">
                                 <BadgeCheck className="size-4" />
-                                Devenez Fournisseur Certifié BCA
+                                {t('vendorJoinBadge')}
                             </div>
                             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white leading-tight mb-3" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                {isVendor
-                                    ? 'Gérez Votre Boutique BCA Connect'
-                                    : 'Développez Votre Activité\nen Ligne'}
+                                {isVendor ? t('vendorDashboardTitle') : t('vendorJoinTitle')}
                             </h2>
                             <p className="text-white/80 text-sm sm:text-base font-medium max-w-lg mx-auto lg:mx-0 mb-6">
-                                {isVendor
-                                    ? 'Accédez à votre tableau de bord fournisseur pour gérer vos produits, commandes et finances.'
-                                    : 'Rejoignez des milliers de fournisseurs guinéens sur la première plateforme B2B de l\'Afrique de l\'Ouest. Inscription gratuite, paiements sécurisés.'}
+                                {isVendor ? t('vendorDashboardDesc') : t('vendorJoinDesc')}
                             </p>
                             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
                                 <button
                                     onClick={() => navigate(isVendor ? '/vendor/dashboard' : '/register?role=fournisseur')}
                                     className="flex items-center gap-2 h-12 sm:h-14 px-6 sm:px-8 bg-white text-[#FF6600] font-black text-sm rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all group"
                                 >
-                                    {isVendor ? 'Mon tableau de bord' : 'Commencer à vendre'}
+                                    {isVendor ? t('myDashboard') : t('startSelling')}
                                     <ArrowRight className="size-5 group-hover:translate-x-1 transition-transform" />
                                 </button>
                                 {!isVendor && (
@@ -66,7 +64,7 @@ export function SupplierBanner() {
                                         onClick={() => navigate('/help')}
                                         className="flex items-center gap-2 h-12 sm:h-14 px-6 sm:px-8 bg-white/10 border border-white/30 text-white font-bold text-sm rounded-xl sm:rounded-2xl hover:bg-white/20 transition-all"
                                     >
-                                        En savoir plus
+                                        {t('learnMore')}
                                     </button>
                                 )}
                             </div>
@@ -87,10 +85,10 @@ export function SupplierBanner() {
                 {/* Trust badges row — Alibaba-style icon strip */}
                 <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
-                        { icon: ShieldCheck, title: 'Protection Acheteur', desc: 'Escrow jusqu\'à livraison' },
-                        { icon: Zap, title: 'Paiement Instantané', desc: 'Fournisseurs payés sous 24h' },
-                        { icon: Globe, title: 'Réseau National', desc: 'Toutes les régions de Guinée' },
-                        { icon: BadgeCheck, title: 'Fournisseurs Vérifiés', desc: 'Certifiés par BCA Connect' },
+                        { icon: ShieldCheck, title: t('buyerProtection'), desc: t('escrowUntilDelivery') },
+                        { icon: Zap, title: t('instantPayment'), desc: t('paidWithin24h') },
+                        { icon: Globe, title: t('footerCoverageTitle'), desc: t('footerCoverageDesc') },
+                        { icon: BadgeCheck, title: t('verifiedSuppliers'), desc: t('certifiedByBca') },
                     ].map((item, i) => (
                         <motion.div
                             key={i}

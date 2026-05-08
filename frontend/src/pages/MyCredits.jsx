@@ -9,19 +9,21 @@ import creditService from '../services/creditService';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 import { LoadingState, ErrorState, EmptyState } from '../components/ui/DataStates';
-
-const statusMap = {
-    en_attente: { label: 'En attente', color: 'text-amber-500', bg: 'bg-amber-500/10', icon: Clock },
-    approuve: { label: 'Approuvé', color: 'text-blue-500', bg: 'bg-blue-500/10', icon: CheckCircle2 },
-    rembourse: { label: 'Remboursé', color: 'text-emerald-500', bg: 'bg-emerald-500/10', icon: CheckCircle2 },
-    refuse: { label: 'Refusé', color: 'text-rose-500', bg: 'bg-rose-500/10', icon: AlertCircle },
-};
+import { useLanguage } from '../context/LanguageContext';
 
 export default function MyCredits() {
+    const { t, lang } = useLanguage();
     const [credits, setCredits] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [payingId, setPayingId] = useState(null);
+
+    const statusMap = {
+        en_attente: { label: t('statusWaiting') || 'En attente', color: 'text-amber-500', bg: 'bg-amber-500/10', icon: Clock },
+        approuve: { label: t('statusApproved') || 'Approuvé', color: 'text-blue-500', bg: 'bg-blue-500/10', icon: CheckCircle2 },
+        rembourse: { label: t('statusRefunded') || 'Remboursé', color: 'text-emerald-500', bg: 'bg-emerald-500/10', icon: CheckCircle2 },
+        refuse: { label: t('statusRejected') || 'Refusé', color: 'text-rose-500', bg: 'bg-rose-500/10', icon: AlertCircle },
+    };
 
     const fetchCredits = useCallback(async () => {
         setIsLoading(true);
@@ -30,11 +32,11 @@ export default function MyCredits() {
             const data = await creditService.getMyCredits();
             setCredits(Array.isArray(data) ? data : []);
         } catch (err) {
-            setError("Échec du chargement des crédits.");
+            setError(t('errorLoadingCredits') || "Échec du chargement des crédits.");
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         fetchCredits();
@@ -44,10 +46,10 @@ export default function MyCredits() {
         setPayingId(echeanceId);
         try {
             await creditService.payInstallment(echeanceId);
-            toast.success("Échéance payée avec succès !");
+            toast.success(t('paymentSuccess') || "Échéance payée avec succès !");
             fetchCredits();
         } catch (err) {
-            toast.error(err.response?.data?.message || "Erreur lors du paiement.");
+            toast.error(err.response?.data?.message || t('paymentError') || "Erreur lors du paiement.");
         } finally {
             setPayingId(null);
         }
@@ -64,13 +66,13 @@ export default function MyCredits() {
                         animate={{ opacity: 1, y: 0 }}
                         className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-xs font-black text-primary uppercase tracking-widest"
                     >
-                        <Landmark className="size-3" /> MES FINANCEMENTS
+                        <Landmark className="size-3" /> {t('myFinancing') || "MES FINANCEMENTS"}
                     </motion.div>
                     <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tight">
-                        Historique <span className="text-primary">Crédits</span>
+                        {t('creditHistory')?.split(' ').slice(0, -1).join(' ') || "Historique"} <span className="text-primary">{t('creditHistory')?.split(' ').slice(-1) || "Crédits"}</span>
                     </h1>
                     <p className="text-muted-foreground text-lg max-w-2xl mx-auto font-medium">
-                        Suivi de vos demandes de financement et échéanciers de remboursement.
+                        {t('creditHistoryDesc') || "Suivi de vos demandes de financement et échéanciers de remboursement."}
                     </p>
                 </div>
 
@@ -80,18 +82,18 @@ export default function MyCredits() {
                         to="/credits/simulate"
                         className="h-10 px-6 bg-primary text-primary-foreground rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-primary/90 transition-all flex items-center gap-2 shadow-lg shadow-primary/20"
                     >
-                        <Sparkles className="size-4" /> Nouvelle Simulation
+                        <Sparkles className="size-4" /> {t('newSimulation') || "Nouvelle Simulation"}
                     </Link>
                 </div>
 
                 {/* Content */}
                 <div className="max-w-5xl mx-auto space-y-6">
                     {isLoading ? (
-                        <LoadingState message="Chargement de vos financements..." />
+                        <LoadingState message={t('loadingCredits') || "Chargement de vos financements..."} />
                     ) : error ? (
                         <ErrorState error={error} />
                     ) : credits.length === 0 ? (
-                        <EmptyState message="Aucun crédit en cours. Lancez une simulation pour commencer." />
+                        <EmptyState message={t('noCredits') || "Aucun crédit en cours. Lancez une simulation pour commencer."} />
                     ) : (
                         credits.map((credit, idx) => {
                             const status = statusMap[credit.statut] || statusMap.en_attente;
@@ -126,17 +128,17 @@ export default function MyCredits() {
                                                         </div>
                                                     </div>
                                                     <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
-                                                        Soumis le {new Date(credit.created_at || credit.createdAt).toLocaleDateString('fr-FR')}
+                                                        Soumis le {new Date(credit.created_at || credit.createdAt).toLocaleDateString(lang === 'FR' ? 'fr-FR' : 'en-US')}
                                                         {credit.ia_score_solvabilite && ` • Score IA : ${(credit.ia_score_solvabilite * 100).toFixed(0)}%`}
                                                     </p>
                                                 </div>
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-xl font-black text-primary tabular-nums">
-                                                    {parseFloat(credit.montant_principal).toLocaleString('fr-GN')} <span className="text-xs">GNF</span>
+                                                    {parseFloat(credit.montant_principal).toLocaleString(lang === 'FR' ? 'fr-GN' : 'en-US')} <span className="text-xs">GNF</span>
                                                 </p>
                                                 <p className="text-[10px] text-muted-foreground font-bold uppercase">
-                                                    {credit.duree_mois} mois • {credit.taux_interet}% taux
+                                                    {credit.duree_mois} {lang === 'FR' ? 'mois' : 'months'} • {credit.taux_interet}% taux
                                                 </p>
                                             </div>
                                         </div>
@@ -145,8 +147,8 @@ export default function MyCredits() {
                                         {credit.statut === 'approuve' && echeances.length > 0 && (
                                             <div className="mt-4 space-y-2">
                                                 <div className="flex justify-between text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                                                    <span>Remboursement</span>
-                                                    <span>{paidCount}/{echeances.length} échéances ({progress.toFixed(0)}%)</span>
+                                                    <span>{t('repayment') || "Remboursement"}</span>
+                                                    <span>{paidCount}/{echeances.length} {lang === 'FR' ? 'échéances' : 'installments'} ({progress.toFixed(0)}%)</span>
                                                 </div>
                                                 <div className="h-2 bg-muted rounded-full overflow-hidden">
                                                     <motion.div
@@ -177,7 +179,7 @@ export default function MyCredits() {
                                                             <div className="flex items-center gap-2">
                                                                 <Calendar className="size-3 text-muted-foreground" />
                                                                 <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                                                                    {new Date(ech.date_echeance).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+                                                                    {new Date(ech.date_echeance).toLocaleDateString(lang === 'FR' ? 'fr-FR' : 'en-US', { month: 'short', year: 'numeric' })}
                                                                 </span>
                                                             </div>
                                                             {ech.statut === 'paye' ? (
@@ -187,7 +189,7 @@ export default function MyCredits() {
                                                             )}
                                                         </div>
                                                         <p className="text-sm font-black text-foreground tabular-nums mb-2">
-                                                            {parseFloat(ech.montant_du).toLocaleString('fr-GN')} GNF
+                                                            {parseFloat(ech.montant_du).toLocaleString(lang === 'FR' ? 'fr-GN' : 'en-US')} GNF
                                                         </p>
                                                         {ech.statut !== 'paye' && (
                                                             <button
@@ -200,7 +202,7 @@ export default function MyCredits() {
                                                                 ) : (
                                                                     <CreditCard className="size-3" />
                                                                 )}
-                                                                {payingId === ech.id ? 'PAIEMENT...' : 'PAYER'}
+                                                                {payingId === ech.id ? (t('paying') || 'PAIEMENT...') : (t('pay') || 'PAYER')}
                                                             </button>
                                                         )}
                                                         {ech.statut === 'paye' && ech.reference_paiement && (

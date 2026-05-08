@@ -47,3 +47,13 @@ export const useFinancialStats = () => {
     });
     return { data, loading, error: error?.message || null, isFetching };
 };
+
+export const useAiLogs = () => {
+    const { data, isLoading: loading, error, refetch, isFetching } = useQuery({
+        queryKey: ['ai-logs'],
+        queryFn: () => statService.getAiLogs(),
+        refetchInterval: 10_000, // rafraîchissement auto des logs
+        staleTime: 5_000,
+    });
+    return { data, loading, error: error?.message || null, refetch, isFetching };
+};

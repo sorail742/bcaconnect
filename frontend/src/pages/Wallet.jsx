@@ -86,7 +86,7 @@ const Wallet = () => {
     return (
         <DashboardLayout title="Portefeuille BCA" noPadding>
             <div className="min-h-screen bg-[#f7f7f7] pb-16">
-                <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-8">
+                <div className="container px-4 md:px-8 py-8">
                     
                     {/* Header */}
                     <div className="flex items-end justify-between gap-6 mb-8">

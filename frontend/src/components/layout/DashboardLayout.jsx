@@ -203,7 +203,7 @@ const DashboardLayout = ({ children, title, noPadding }) => {
                         animate={{ opacity: 1, y: 0 }}
                         className={cn(
                             "relative z-10 w-full",
-                            !noPadding && "max-w-[1700px] mx-auto"
+                            !noPadding && "container"
                         )}
                     >
                         {children}

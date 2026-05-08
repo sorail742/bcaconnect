@@ -1,9 +1,20 @@
 import api from './api';
+import { offlineStorage } from '../lib/db';
 
 const orderService = {
     getAll: async () => {
-        const response = await api.get('/orders/me');
-        return response.data;
+        if (!navigator.onLine) {
+            return await offlineStorage.getTransactions(); // Note: we can use transactions or a dedicated store
+        }
+        try {
+            const response = await api.get('/orders/me');
+            const orders = response.data;
+            // Cache pour la consultation offline
+            offlineStorage.saveTransactions(orders).catch(e => console.warn("Erreur cache orders:", e));
+            return orders;
+        } catch (error) {
+            return await offlineStorage.getTransactions();
+        }
     },
 
     getVendorOrders: async () => {
@@ -17,6 +28,15 @@ const orderService = {
     },
 
     create: async (orderData) => {
+        if (!navigator.onLine) {
+            const id = await offlineStorage.queueOrder(orderData);
+            return {
+                id,
+                offline: true,
+                message: "Commande enregistrée en local. Elle sera synchronisée dès le retour d'Internet.",
+                ...orderData
+            };
+        }
         const response = await api.post('/orders', orderData);
         return response.data;
     },

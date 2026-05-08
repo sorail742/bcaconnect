@@ -144,6 +144,8 @@ export const useAuth = () => {
         updateUser,
         updateProfile,
         deleteAccount,
-        refreshUser
+        refreshUser,
+        setAuth,       // Exposé pour Google Auth et autres flows OAuth
+        clearAuth,
     };
 };

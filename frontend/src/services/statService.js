@@ -40,6 +40,14 @@ const statService = {
         } catch (error) {
             throw error;
         }
+    },
+    getAiLogs: async () => {
+        try {
+            const response = await api.get('/stats/ai-logs');
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
     }
 };
 

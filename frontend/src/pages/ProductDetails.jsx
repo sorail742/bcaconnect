@@ -7,7 +7,7 @@ import {
     User, MessageSquare, Quote
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
-import { cn } from '../lib/utils';
+import { cn, getImageUrl } from '../lib/utils';
 import productService from '../services/productService';
 import useCart from '../hooks/useCart';
 import { toast } from 'sonner';
@@ -16,7 +16,7 @@ import useAuthStore from '../store/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedCounter from '../components/ui/AnimatedCounter';
 import { PageLoader } from '../components/ui/Loader';
-import { ProductRating, ProductPrice, getImageUrl } from '../components/produits/ProductCard';
+import { ProductRating, ProductPrice } from '../components/produits/ProductCard';
 import messageService from '../services/messageService';
 
 const FALLBACK = 'https://images.unsplash.com/photo-1523275319145-80b01958f7a2?auto=format&fit=crop&q=80&w=800';

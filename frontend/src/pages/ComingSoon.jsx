@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Rocket, ArrowLeft, Zap, Bell, CheckCircle2, Loader2, Sparkles, LayoutDashboard, Activity } from 'lucide-react';
+import { Rocket, ArrowLeft, Zap, Bell, CheckCircle2, Loader2, Sparkles, LayoutDashboard, Activity, RefreshCcw } from 'lucide-react';
 import BcaLogo from '../components/ui/BcaLogo';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
@@ -18,7 +18,8 @@ const PAGE_LABELS = {
     '/logistics':   { title: 'BCA Logistique',         desc: 'Gérez vos flottes, optimisez les trajets et garantissez vos SLAs.', icon: CheckCircle2, color: 'from-blue-500 to-cyan-400' },
     '/carrier-join':{ title: 'Rejoindre le Réseau',    desc: 'Devenez transporteur agréé et rentabilisez tous vos déplacements.', icon: Activity, color: 'from-emerald-500 to-teal-400' },
     '/download':    { title: 'App Mobile BCA',         desc: 'Achetez, Vendez, Gérez. Tout BCA dans votre poche.', icon: Rocket, color: 'from-[#FF6600] to-[#FF9033]' },
-    '/returns':     { title: 'Centre de Résolution',   desc: 'Gestion des litiges, retours et remboursements automatisés par IA Escrow.', icon: CheckCircle2, color: 'from-slate-500 to-slate-400' },
+    '/returns':     { title: 'Retours & Remboursements', desc: 'Gestion simplifiée de vos retours.', icon: RefreshCcw, color: 'from-amber-500 to-amber-400' },
+    '/admin/returns': { title: 'Gestion des Retours', desc: 'Interface administrateur pour les retours.', icon: RefreshCcw, color: 'from-amber-500 to-amber-400' },
 };
 
 const DEFAULT_LABEL = {

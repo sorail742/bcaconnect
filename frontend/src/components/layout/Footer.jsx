@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
     Share2, Globe, Mail, ShieldCheck, Send, Zap, Satellite, Activity, 
     Truck, CreditCard, Headphones, Shield, Smartphone, ArrowRight
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../lib/utils';
 import BcaLogo from '../ui/BcaLogo';
 import mtnLogo from '../../assets/mtn_mobile_money.png';
@@ -14,87 +15,84 @@ import areerbaLogo from '../../assets/areeba.png';
 import { toast } from 'sonner';
 
 const Footer = () => {
-    const { lang } = useLanguage();
+    const navigate = useNavigate();
+    const { isAuthenticated } = useAuth();
+    const { lang, t } = useLanguage();
     const currentYear = new Date().getFullYear();
     const [newsletterEmail, setNewsletterEmail] = useState('');
 
     const handleNewsletterSubmit = (e) => {
         e.preventDefault();
         if (!newsletterEmail) {
-            toast.error(lang === 'FR' ? "Veuillez entrer une adresse email." : "Please enter an email address.");
+            toast.error(t('toastEnterEmail') || 'Veuillez entrer votre email');
             return;
         }
         
-        // Simuler un appel API
-        toast.success(lang === 'FR' 
-            ? "Merci ! Vous êtes maintenant inscrit à notre newsletter." 
-            : "Thank you! You are now subscribed to our newsletter."
-        );
+        toast.success(t('toastNewsletterSuccess') || 'Inscription réussie');
         setNewsletterEmail('');
     };
 
     const handleSocialClick = (name) => {
-        toast.info(lang === 'FR' 
-            ? `${name} sera bientôt disponible !` 
-            : `${name} will be available soon!`
-        );
+        toast.info(`${name} ${t('soonAvailable') || 'sera bientôt disponible'}`);
     };
 
     const handleLanguageClick = () => {
-        toast.info(lang === 'FR'
-            ? "Le sélecteur de langue sera bientôt disponible. Actuellement en Français."
-            : "Language selector will be available soon. Currently in English."
-        );
+        toast.info(t('soonAvailable') || 'Bientôt disponible');
     };
 
-    const footerSections = [
+    const footerSections = useMemo(() => [
         {
-            title: lang === 'FR' ? "BESOIN D'AIDE ?" : "NEED HELP?",
+            title: t('footerHelpTitle') || "Centre d'Aide",
             links: [
-                { label: lang === 'FR' ? "Centre d'assistance" : "Help Center", href: "/help" },
-                { label: lang === 'FR' ? "Suivre ma commande" : "Track Order", href: "/tracking" },
-                { label: lang === 'FR' ? "Retours & Remboursements" : "Returns & Refunds", href: "/returns" },
-                { label: lang === 'FR' ? "Signaler un produit" : "Report a Product", href: "/report" },
-                { label: lang === 'FR' ? "Foire Aux Questions" : "FAQ", href: "/faq" },
+                { label: t('helpCenter') || "Aide", href: "/help" },
+                { label: t('trackOrder') || "Suivi", href: "/tracking" },
+                { label: t('returnsRefunds') || "Retours", href: "/returns" },
+                { label: t('reportProduct') || "Signaler", href: "/report" },
+                { label: t('faq') || "FAQ", href: "/faq" },
             ]
         },
         {
-            title: lang === 'FR' ? "À PROPOS" : "ABOUT US",
+            title: t('footerAboutTitle') || "À Propos",
             links: [
-                { label: lang === 'FR' ? "Qui sommes-nous" : "Who we are", href: "/about" },
-                { label: lang === 'FR' ? "BCA Connect Careers" : "Careers", href: "/careers" },
-                { label: lang === 'FR' ? "Actualités & Blog" : "News & Blog", href: "/blog" },
-                { label: lang === 'FR' ? "Relations Investisseurs" : "Investors", href: "/investors" },
-                { label: lang === 'FR' ? "Contactez-nous" : "Contact Us", href: "/contact" },
+                { label: t('whoWeAre') || "Qui sommes-nous", href: "/about" },
+                { label: t('careers') || "Carrières", href: "/careers" },
+                { label: t('newsBlog') || "Blog", href: "/blog" },
+                { label: t('investors') || "Investisseurs", href: "/investors" },
+                { label: t('contactUs') || "Contact", href: "/contact" },
             ]
         },
         {
-            title: lang === 'FR' ? "OPPORTUNITÉS" : "BUSINESS",
+            title: t('footerOpportunityTitle') || "Opportunités",
             links: [
-                { label: lang === 'FR' ? "Vendez sur BCA" : "Sell on BCA", href: "/vendors" },
-                { label: lang === 'FR' ? "Devenir Transporteur" : "Become a Carrier", href: "/carrier-join" },
-                { label: lang === 'FR' ? "Devenir Consultant" : "Become a Consultant", href: "/consultant" },
-                { label: lang === 'FR' ? "Logistique BCA" : "BCA Logistics", href: "/logistics" },
+                { label: t('sellOnBca') || "Vendre sur BCA", href: "/vendors" },
+                { label: t('becomeCarrier') || "Devenir Transporteur", href: "/carrier-join" },
+                { label: t('becomeConsultant') || "Devenir Consultant", href: "/consultant" },
+                { label: t('bcaLogistics') || "BCA Logistique", href: "/logistics" },
             ]
         },
         {
-            title: lang === 'FR' ? "ÉCOSYSTÈME" : "ECOSYSTEM",
+            title: t('footerEcosystemTitle') || "Écosystème",
             links: [
-                { label: "BCA Wallet (Portefeuille)", href: "/wallet" },
+                { label: "BCA Wallet", href: "/wallet" },
                 { label: "BCA Ads", href: "/ads" },
                 { label: "BCA Insights", href: "/insights" },
                 { label: "BCA AI Engine", href: "/ai-trends" }
             ]
         }
-    ];
+    ], [t]);
 
-    const topCategories = lang === 'FR' ? [
-        "Électronique", "Mode & Beauté", "Maison & Bureau", "Supermarché", 
-        "Agriculture", "Pièces Auto", "Informatique", "Jeux Vidéo"
-    ] : [
-        "Electronics", "Fashion & Beauty", "Home & Office", "Supermarket",
-        "Agriculture", "Auto Parts", "Computers", "Video Games"
-    ];
+    const topCategories = useMemo(() => {
+        return [
+            t('catElectronics') || "Électronique",
+            t('catFashion') || "Mode & Beauté",
+            t('catHome') || "Maison & Bureau",
+            t('catSupermarket') || "Supermarché",
+            t('catAgriculture') || "Agriculture",
+            t('catAuto') || "Pièces Auto",
+            t('catComputing') || "Informatique",
+            t('catGames') || "Jeux Vidéo"
+        ];
+    }, [t]);
 
     return (
         <footer className="relative bg-background text-foreground overflow-hidden pt-20 border-t-4 border-primary">
@@ -104,10 +102,10 @@ const Footer = () => {
             <div className="container mx-auto px-6 mb-20">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     {[
-                        { icon: ShieldCheck, title: lang === 'FR' ? "Paiement 100% Sécurisé" : "100% Secure Payment", desc: lang === 'FR' ? "Transactions cryptées et garanties." : "Encrypted and guaranteed transactions." },
-                        { icon: Truck, title: lang === 'FR' ? "Livraison Rapide" : "Fast Delivery", desc: lang === 'FR' ? "Couverture nationale en Guinée." : "National coverage across Guinea." },
-                        { icon: Headphones, title: lang === 'FR' ? "Support 24/7" : "24/7 Support", desc: lang === 'FR' ? "Une équipe dédiée à votre écoute." : "A dedicated team at your service." },
-                        { icon: Globe, title: lang === 'FR' ? "E-commerce Unifié" : "Unified E-commerce", desc: lang === 'FR' ? "Le meilleur de l'Afrique en un clic." : "The best of Africa in one click." }
+                        { icon: ShieldCheck, title: t('footerSecureTitle') || 'Paiement Sécurisé', desc: t('footerSecureDesc') || 'Protection Escrow' },
+                        { icon: Truck, title: t('footerFastTitle') || 'Livraison Rapide', desc: t('footerFastDesc') || 'Partout en Guinée' },
+                        { icon: Headphones, title: t('footerSupportTitle') || 'Support 24/7', desc: t('footerSupportDesc') || 'À votre écoute' },
+                        { icon: Globe, title: t('footerUnifiedTitle') || 'Réseau National', desc: t('footerUnifiedDesc') || 'Toutes les régions' }
                     ].map((prop, i) => (
                         <div key={i} className="flex items-center gap-5 group">
                             <div className="size-16 rounded-2xl bg-muted border border-border flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 shadow-md">
@@ -136,7 +134,7 @@ const Footer = () => {
                             <form onSubmit={handleNewsletterSubmit} className="relative group max-w-sm">
                                 <input 
                                     type="email" 
-                                    placeholder={lang === 'FR' ? "votre@email.com" : "your@email.com"}
+                                    placeholder={t('formEmail') || (lang === 'FR' ? "votre@email.com" : "your@email.com")}
                                     value={newsletterEmail}
                                     onChange={(e) => setNewsletterEmail(e.target.value)}
                                     className="w-full h-14 bg-muted border border-border rounded-2xl text-base px-6 pr-14 outline-none focus:border-primary transition-all text-foreground placeholder:text-muted-foreground/60" 
@@ -200,21 +198,21 @@ const Footer = () => {
                             </Link>
                         ))}
                     </div>
-                  {/* Bottom Trust Bar & Payment Hub */}
+                </div>
+
+                {/* Bottom Trust Bar & Payment Hub */}
                 <div className="py-10 border-t border-border flex flex-col items-center justify-between gap-10">
-                    {/* Unified Payment Hub - High Visibility */}
-                    <div className="w-full bg-muted/50 backdrop-blur-md border border-border rounded-[2rem] p-8 flex flex-col md:flex-row items-center justify-between gap-8 shadow-sm">
+                    <div className="w-full bg-muted/50 backdrop-blur-md border border-border rounded-[2rem] px-12 py-10 flex flex-col md:flex-row items-center justify-between gap-12 shadow-sm">
                         <div className="space-y-1 text-center md:text-left">
-                            <h5 className="text-sm font-black uppercase tracking-[0.2em] text-primary">{lang === 'FR' ? "Partenaires Certifiés" : "Certified Partners"}</h5>
-                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{lang === 'FR' ? "Paiement 100% sécurisé en Guinée" : "100% secure payment in Guinea"}</p>
+                            <h5 className="text-sm font-black uppercase tracking-[0.2em] text-primary">{t('footerCertifiedPartners') || 'Partenaires Certifiés'}</h5>
+                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{t('footerSecurePaymentGN') || 'Paiement Sécurisé en Guinée'}</p>
                         </div>
                         
                         <div className="flex flex-wrap items-center justify-center gap-4">
                              {[
                                 { src: mtnLogo, alt: "MTN MoMo", bg: "bg-white", label: "MTN Money" },
                                 { src: orangeLogo, alt: "Orange Money", bg: "bg-white", label: "Orange Money" },
-                                { src: paycardLogo, alt: "PayCard", bg: "bg-white", label: "PayCard" },
-                                { src: areerbaLogo, alt: "Areeba", bg: "bg-white", label: "Areeba" }
+                                { src: paycardLogo, alt: "PayCard", bg: "bg-white", label: "PayCard" }
                              ].map((op, i) => (
                                 <div key={i} className="group relative">
                                     <div className={cn(
@@ -239,25 +237,24 @@ const Footer = () => {
                             className="flex items-center gap-3 px-6 py-3 bg-muted border border-border rounded-2xl cursor-pointer hover:bg-muted/80 transition-colors"
                         >
                             <Globe className="size-5 text-primary" />
-                            <span className="text-xs font-black uppercase tracking-widest text-foreground">{lang === 'FR' ? 'FR | GNF' : 'EN | GNF'}</span>
+                            <span className="text-xs font-black uppercase tracking-widest text-foreground">{lang === 'FR' ? 'FR | GNF' : lang + ' | GNF'}</span>
                         </button>
                     </div>
 
                     <div className="w-full flex flex-col lg:flex-row items-center justify-between gap-6 opacity-60 hover:opacity-100 transition-opacity">
                         <div className="flex flex-col items-center lg:items-start gap-4">
                             <div className="flex items-center gap-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
-                                <Link to="/privacy" className="hover:text-primary transition-colors">{lang === 'FR' ? "Confidentialité" : "Privacy"}</Link>
+                                <Link to="/privacy" className="hover:text-primary transition-colors">{t('privacy') || "Confidentialité"}</Link>
                                 <div className="size-1 rounded-full bg-slate-700" />
-                                <Link to="/terms" className="hover:text-primary transition-colors">{lang === 'FR' ? "Conditions" : "Terms"}</Link>
+                                <Link to="/terms" className="hover:text-primary transition-colors">{t('terms') || "Conditions"}</Link>
                                 <div className="size-1 rounded-full bg-slate-700" />
-                                <Link to="/legal" className="hover:text-primary transition-colors">{lang === 'FR' ? "Mentions Légales" : "Legal Notice"}</Link>
+                                <Link to="/legal" className="hover:text-primary transition-colors">{t('legalNotice') || "Mentions Légales"}</Link>
                             </div>
                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                                © {currentYear} BCA Connect Ecosystem. {lang === 'FR' ? "Propulsé par la Technologie 224." : "Powered by 224 Technology."}
+                                © {currentYear} BCA Connect Ecosystem. {t('poweredBy') || "Propulsé par la Technologie 224."}
                             </p>
                         </div>
                     </div>
-                </div>
                 </div>
             </div>
         </footer>

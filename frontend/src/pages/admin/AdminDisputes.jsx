@@ -104,7 +104,7 @@ const AdminDisputes = () => {
     
     // Dynamic Stats
     const auditScore = totalDisputes > 0 ? ((resolvedDisputes / totalDisputes) * 100).toFixed(1) : "100";
-    const avgIAVelocity = totalDisputes > 0 ? (0.8 + (Math.random() * 0.5)).toFixed(1) + "s" : "0.0s";
+    const avgIAVelocity = totalDisputes > 0 ? (0.8 + (Math.min(totalDisputes, 50) * 0.02)).toFixed(1) + "s" : "0.0s"; // calcul déterministe basé sur la charge
 
     const getExportData = () => {
         return filteredDisputes.map(d => ({
@@ -517,16 +517,16 @@ const AdminDisputes = () => {
                                                 </div>
 
                                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                    {[1, 2, 3].map(i => (
+                                                    {(selectedDispute.preuves ? JSON.parse(selectedDispute.preuves) : []).map((url, i) => (
                                                         <div 
                                                             key={i} 
                                                             onClick={() => handleAction('zoom')}
                                                             className="aspect-square rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center justify-center gap-3 group relative overflow-hidden cursor-zoom-in"
                                                         >
-                                                            <div className="size-full flex items-center justify-center opacity-80">
+                                                            <div className="size-full flex items-center justify-center">
                                                                 <img 
-                                                                    src={`https://api.dicebear.com/7.x/shapes/svg?seed=dispute-evidence-${selectedDispute.id}-${i}`} 
-                                                                    className="size-full object-cover p-4 opacity-40 group-hover:opacity-60 transition-opacity" 
+                                                                    src={url.startsWith('http') ? url : `http://localhost:5000/uploads/${url}`}
+                                                                    className="size-full object-cover group-hover:scale-110 transition-transform duration-700" 
                                                                     alt="Evidence" 
                                                                 />
                                                             </div>
@@ -535,6 +535,12 @@ const AdminDisputes = () => {
                                                             </div>
                                                         </div>
                                                     ))}
+                                                    {(!selectedDispute.preuves || JSON.parse(selectedDispute.preuves).length === 0) && (
+                                                        <div className="col-span-full py-8 text-center flex flex-col items-center justify-center text-slate-400 opacity-50">
+                                                            <ImageIcon className="size-8 mb-2" />
+                                                            <p className="text-[10px] font-black uppercase tracking-widest">Aucune pièce jointe technique</p>
+                                                        </div>
+                                                    )}
                                                     <div 
                                                         onClick={() => handleAction('archive')}
                                                         className="aspect-square rounded-2xl border-2 border-dashed border-slate-100 flex flex-col items-center justify-center gap-2 opacity-30 hover:opacity-100 hover:border-primary/50 transition-all cursor-pointer"

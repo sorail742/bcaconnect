@@ -3,23 +3,27 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Cpu, Terminal, Zap, Search, MessageSquare, Database, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useLanguage } from '../../context/LanguageContext';
 
-const LOG_MESSAGES = [
-    "Initialisation du moteur IA BCA-V3...",
-    "Analyse des tendances du marché Kaloum...",
-    "Optimisation des flux logistiques : 0.4ms",
-    "Vérification des signatures Escrow...",
-    "Recherche par image : Textile Bazin indexé.",
-    "Synchronisation base de données sécurisée.",
-    "Agent conversationnel en attente : Prêt.",
-    "Détection d'opportunités import-export...",
-];
+
 
 export const AISection = () => {
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
+    const { t } = useLanguage();
     const [logs, setLogs] = useState([]);
     const [metrics, setMetrics] = useState({ latency: 0, sync: 99.9 });
+
+    const LOG_MESSAGES = [
+        t('aiLog1'),
+        t('aiLog2'),
+        t('aiLog3'),
+        t('aiLog4'),
+        t('aiLog5'),
+        t('aiLog6'),
+        t('aiLog7'),
+        t('aiLog8'),
+    ];
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -33,30 +37,30 @@ export const AISection = () => {
             });
         }, 2500);
         return () => clearInterval(interval);
-    }, []);
+    }, [t]);
 
     const features = [
-        { icon: Search, title: "Recherche Visuelle", desc: "Trouvez un produit à partir d'une simple photo." },
-        { icon: MessageSquare, title: "Assistance IA", desc: "Conseils de prix et négociation automatisée." },
-        { icon: Cpu, title: "Market Analysis", desc: "Prédisez la demande pour vos prochains stocks." },
+        { icon: Search, title: t('aiVisualSearch'), desc: t('aiVisualSearchDesc') },
+        { icon: MessageSquare, title: t('aiChatbot'), desc: t('aiChatbotDesc') },
+        { icon: Cpu, title: t('aiAnalysis'), desc: t('aiAnalysisDesc') },
     ];
 
     return (
         <section className="bg-slate-950 py-12 sm:py-16 overflow-hidden">
-            <div className="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8">
+            <div className="container px-3 sm:px-6 lg:px-8">
                 <div className="grid lg:grid-cols-2 gap-10 items-center">
                     
                     {/* Left: Capability Cards */}
                     <div className="space-y-8">
                         <div className="space-y-4">
                             <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#FF6600]/10 border border-[#FF6600]/20 rounded-full text-[#FF6600] text-[10px] font-black uppercase tracking-widest">
-                                <Sparkles className="size-3" /> BCA INTELLIGENCE v3.1
+                                <Sparkles className="size-3" /> {t('aiBadge')}
                             </div>
                             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                Le commerce piloté par <span className="text-[#FF6600]">l'IA</span>
+                                {t('aiTitle')}
                             </h2>
                             <p className="text-slate-400 text-sm sm:text-base max-w-lg mb-6">
-                                Notre intelligence artificielle de pointe aide les acheteurs à trouver le meilleur prix et les vendeurs à optimiser leurs stocks en temps réel.
+                                {t('aiDesc')}
                             </p>
                         </div>
 
@@ -78,7 +82,7 @@ export const AISection = () => {
                             onClick={() => navigate(isAuthenticated ? '/marketplace' : '/register')}
                             className="flex items-center gap-3 h-12 px-8 bg-[#FF6600] text-white font-black text-sm rounded-xl hover:shadow-orange-500/25 transition-all group"
                         >
-                            Tester l'IA <ArrowRight className="size-5 group-hover:translate-x-1 transition-transform" />
+                            {t('ctaStart')} <ArrowRight className="size-5 group-hover:translate-x-1 transition-transform" />
                         </button>
                     </div>
 
@@ -93,15 +97,15 @@ export const AISection = () => {
                                         <div className="size-2.5 rounded-full bg-amber-500" />
                                         <div className="size-2.5 rounded-full bg-emerald-500" />
                                     </div>
-                                    <span className="text-[10px] text-slate-500 font-bold ml-2 uppercase tracking-widest">Core Engine Live</span>
+                                    <span className="text-[10px] text-slate-500 font-bold ml-2 uppercase tracking-widest">{t('aiEngineStatus')}</span>
                                 </div>
                                 <div className="flex gap-4">
                                     <div className="flex flex-col items-end">
-                                        <span className="text-[8px] text-slate-500 uppercase">Latency</span>
+                                        <span className="text-[8px] text-slate-500 uppercase">{t('aiLatency')}</span>
                                         <span className="text-xs font-black text-emerald-400 tabular-nums">{metrics.latency}ms</span>
                                     </div>
                                     <div className="flex flex-col items-end">
-                                        <span className="text-[8px] text-slate-500 uppercase">DB Sync</span>
+                                        <span className="text-[8px] text-slate-500 uppercase">{t('aiDBSync')}</span>
                                         <span className="text-xs font-black text-blue-400 tabular-nums">{metrics.sync}%</span>
                                     </div>
                                 </div>

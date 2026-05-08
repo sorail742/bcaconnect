@@ -199,7 +199,7 @@ const UserProfile = () => {
     const getInitials = (name) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'BC';
 
     return (
-        <DashboardLayout title={activeTab === 'profile' ? "Mon Profil" : "Paramètres"}>
+        <DashboardLayout title={activeTab === 'profile' ? t('profTitle') : t('profSettings')}>
             <div className="space-y-6 pb-10">
 
                 {/* Hidden File Input */}
@@ -219,7 +219,7 @@ const UserProfile = () => {
                                 <UserIcon className="size-6" />
                             </div>
                             <div>
-                                <h2 className="text-lg font-bold text-foreground">Gestion du compte</h2>
+                                <h2 className="text-lg font-bold text-foreground">{t('profAccountMgmt')}</h2>
                                 <p className="text-xs text-muted-foreground">ID: {user?.id?.slice(0, 8).toUpperCase()}</p>
                             </div>
                         </div>
@@ -230,13 +230,13 @@ const UserProfile = () => {
                                     onClick={() => handleTabChange('profile')}
                                     className={cn("px-4 h-8 rounded-lg text-xs font-semibold transition-all", activeTab === 'profile' ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
                                 >
-                                    Profil
+                                    {t('profTitle')}
                                 </button>
                                 <button
                                     onClick={() => handleTabChange('settings')}
                                     className={cn("px-4 h-8 rounded-lg text-xs font-semibold transition-all", activeTab === 'settings' ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
                                 >
-                                    Paramètres
+                                    {t('profSettings')}
                                 </button>
                             </div>
                             <button
@@ -245,7 +245,7 @@ const UserProfile = () => {
                                 className="h-9 px-5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 disabled:opacity-60"
                             >
                                 {isUpdating ? <RefreshCw className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
-                                {isUpdating ? 'Enregistrement...' : 'Enregistrer'}
+                                {isUpdating ? t('profSaving') : t('profSave')}
                             </button>
                         </div>
                     </div>
@@ -276,7 +276,7 @@ const UserProfile = () => {
                                         onClick={handleAvatarClick}
                                         disabled={isUploading}
                                         className="absolute -bottom-1 -right-1 size-7 bg-primary text-primary-foreground rounded-lg shadow-sm flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
-                                        title="Changer la photo"
+                                        title={t('profAvatarUpdate')}
                                     >
                                         <Camera className="size-3.5" />
                                     </button>
@@ -286,28 +286,28 @@ const UserProfile = () => {
                                     <div className="flex items-center gap-1.5">
                                         <BadgeCheck className="size-3.5 text-primary" />
                                         <span className="text-xs text-primary font-medium">
-                                            {user?.role === 'fournisseur' ? 'Marchand certifié' : 'Membre vérifié'}
+                                            {user?.role === 'fournisseur' ? t('profCertifiedMerchant') : t('profVerifiedMember')}
                                         </span>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 mt-4">
                                     <div className="bg-muted rounded-xl p-3 text-center border border-border">
                                         <p className="text-lg font-bold text-primary tabular-nums">{user?.points_fidelite || 0}</p>
-                                        <p className="text-xs text-muted-foreground">Points</p>
+                                        <p className="text-xs text-muted-foreground">{t('profLoyaltyPoints')}</p>
                                     </div>
                                     <div className="bg-muted rounded-xl p-3 text-center border border-border">
                                         <p className="text-lg font-bold text-foreground tabular-nums">
                                             {user?.createdAt ? new Date(user.createdAt).getFullYear() : new Date().getFullYear()}
                                         </p>
-                                        <p className="text-xs text-muted-foreground">Membre depuis</p>
+                                        <p className="text-xs text-muted-foreground">{t('profMemberSince')}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
                                     <CalendarDays className="size-3.5 text-primary/60" />
                                     <span>
-                                        Inscrit le : {user?.createdAt 
+                                        {t('profRegisteredOn')} : {user?.createdAt 
                                             ? new Date(user.createdAt).toLocaleDateString('fr-GN', { day: 'numeric', month: 'long', year: 'numeric' }) 
-                                            : 'Compte récent'}
+                                            : t('profRecentAccount')}
                                     </span>
                                 </div>
                             </div>
@@ -316,7 +316,7 @@ const UserProfile = () => {
                         <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex gap-3">
                             <Shield className="size-5 text-primary shrink-0 mt-0.5" />
                             <p className="text-xs text-primary/80 leading-relaxed">
-                                Votre identité est chiffrée et sécurisée sur le réseau BCA Connect.
+                                {t('profIdentityEncrypted')}
                             </p>
                         </div>
                     </div>
@@ -339,23 +339,23 @@ const UserProfile = () => {
                                                 <UserIcon className="size-4 text-primary" />
                                             </div>
                                             <div>
-                                                <h3 className="text-sm font-bold text-foreground">Informations personnelles</h3>
-                                                <p className="text-xs text-muted-foreground">Mettez à jour vos informations de profil</p>
+                                                <h3 className="text-sm font-bold text-foreground">{t('profPersonalInfo')}</h3>
+                                                <p className="text-xs text-muted-foreground">{t('profUpdateInfoDesc')}</p>
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <FormField label="Nom complet" icon={UserIcon} value={nomComplet} onChange={e => setNomComplet(e.target.value)} placeholder="Votre nom complet" />
-                                            <FormField label="Téléphone" icon={Globe} type="tel" value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="+224 ..." />
+                                            <FormField label="{t('profFullName')}" icon={UserIcon} value={nomComplet} onChange={e => setNomComplet(e.target.value)} placeholder="{t('profFullNamePlaceholder')}" />
+                                            <FormField label="{t('profPhone')}" icon={Globe} type="tel" value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="+224 ..." />
                                         </div>
-                                        <FormField label="Adresse email" icon={Mail} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="votre@email.com" />
+                                        <FormField label="{t('profEmail')}" icon={Mail} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="votre@email.com" />
                                     </div>
 
                                     {/* Trust score */}
                                     <div className="bg-primary rounded-2xl p-5 flex items-center justify-between shadow-sm">
                                         <div className="space-y-1">
-                                            <h4 className="text-sm font-bold text-primary-foreground">Score de confiance réseau</h4>
+                                            <h4 className="text-sm font-bold text-primary-foreground">{t('profTrustScore')}</h4>
                                             <p className="text-xs text-primary-foreground/70">
-                                                Stabilité : <span className="font-semibold text-primary-foreground">
+                                                {t('profStability')} : <span className="font-semibold text-primary-foreground">
                                                 {user?.score_confiance || 100}% — {user?.score_confiance >= 90 ? 'Optimal' : user?.score_confiance >= 70 ? 'Stable' : 'Vigilance'}
                                             </span>
                                             </p>
@@ -380,17 +380,17 @@ const UserProfile = () => {
                                                 <Lock className="size-4 text-primary" />
                                             </div>
                                             <div>
-                                                <h3 className="text-sm font-bold text-foreground">Sécurité du compte</h3>
-                                                <p className="text-xs text-muted-foreground">Modifiez votre mot de passe</p>
+                                                <h3 className="text-sm font-bold text-foreground">{t('profAccountSecurity')}</h3>
+                                                <p className="text-xs text-muted-foreground">{t('profChangePassword')}</p>
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <FormField label="Nouveau mot de passe" type="password" value={motDePasse} onChange={e => setMotDePasse(e.target.value)} placeholder="••••••••" />
-                                            <FormField label="Confirmer le mot de passe" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" />
+                                            <FormField label="{t('profNewPassword')}" type="password" value={motDePasse} onChange={e => setMotDePasse(e.target.value)} placeholder="••••••••" />
+                                            <FormField label="{t('profConfirmPassword')}" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" />
                                         </div>
                                         <div className="flex items-center gap-3 p-3 bg-muted rounded-xl border border-border">
                                             <Clock className="size-4 text-muted-foreground shrink-0" />
-                                            <p className="text-xs text-muted-foreground">Laissez vide pour conserver le mot de passe actuel.</p>
+                                            <p className="text-xs text-muted-foreground">{t('profPasswordHint')}</p>
                                         </div>
                                     </div>
 
@@ -403,8 +403,8 @@ const UserProfile = () => {
                                                 <QrCode className="size-4 text-primary" />
                                             </div>
                                             <div>
-                                                <h3 className="text-sm font-bold text-foreground">Double Authentification (2FA)</h3>
-                                                <p className="text-xs text-muted-foreground">Sécurisez votre compte avec un deuxième facteur</p>
+                                                <h3 className="text-sm font-bold text-foreground">{t('prof2FA')}</h3>
+                                                <p className="text-xs text-muted-foreground">{t('prof2FADesc')}</p>
                                             </div>
                                         </div>
 
@@ -412,7 +412,7 @@ const UserProfile = () => {
                                             <div className="flex items-center gap-4">
                                                 <div className={cn("size-2 rounded-full", user?.two_factor_enabled ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-muted-foreground")} />
                                                 <div>
-                                                    <p className="text-sm font-semibold text-foreground">Status : {user?.two_factor_enabled ? 'Activé' : 'Désactivé'}</p>
+                                                    <p className="text-sm font-semibold text-foreground">{t('prof2FAStatus')} : {user?.two_factor_enabled ? '{t('prof2FAEnabled')}' : '{t('prof2FADisabled')}'}</p>
                                                     <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mt-0.5">Technologie TOTP (Google Authenticator, etc.)</p>
                                                 </div>
                                             </div>
@@ -426,25 +426,25 @@ const UserProfile = () => {
                                                         : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20"
                                                 )}
                                             >
-                                                {user?.two_factor_enabled ? 'SÉCURISÉ' : 'CONFIGURER'}
+                                                {user?.two_factor_enabled ? '{t('prof2FASecure')}' : '{t('prof2FASetup')}'}
                                             </button>
                                         </div>
                                     </div>
 
-                                    {/* Notifications */}
+                                    {/* {t('profNotifications')} */}
                                     <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4">
                                         <div className="flex items-center gap-3 pb-4 border-b border-border">
                                             <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
                                                 <Bell className="size-4 text-primary" />
                                             </div>
                                             <div>
-                                                <h3 className="text-sm font-bold text-foreground">Notifications</h3>
-                                                <p className="text-xs text-muted-foreground">Gérez vos préférences de notification</p>
+                                                <h3 className="text-sm font-bold text-foreground">{t('profNotifications')}</h3>
+                                                <p className="text-xs text-muted-foreground">{t('profNotifDesc')}</p>
                                             </div>
                                         </div>
                                         {[
-                                            { id: 'email', label: 'Alertes email', desc: 'Recevez un résumé de vos transactions par email', value: emailAlerts, onChange: setEmailAlerts },
-                                            { id: 'push', label: 'Notifications push', desc: 'Notifications en temps réel sur vos commandes', value: pushNotifs, onChange: setPushNotifs },
+                                            { id: 'email', label: '{t('profEmailAlerts')}', desc: '{t('profEmailAlertsDesc')}', value: emailAlerts, onChange: setEmailAlerts },
+                                            { id: 'push', label: '{t('profNotifications')} push', desc: '{t('profNotifications')} en temps réel sur vos commandes', value: pushNotifs, onChange: setPushNotifs },
                                         ].map(item => (
                                             <div key={item.id} className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border hover:border-primary/30 transition-colors">
                                                 <div>
@@ -462,9 +462,9 @@ const UserProfile = () => {
                                             <div className="flex items-start gap-3 border-l-4 border-rose-500 pl-4">
                                                 <ShieldAlert className="size-5 text-rose-500 shrink-0 mt-0.5" />
                                                 <div>
-                                                    <h4 className="text-sm font-bold text-foreground">Zone dangereuse</h4>
+                                                    <h4 className="text-sm font-bold text-foreground">{t('profDangerZone')}</h4>
                                                     <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                                                        La suppression de votre compte est définitive. Toutes vos données seront effacées.
+                                                        {t('profDeleteDesc')}
                                                     </p>
                                                 </div>
                                             </div>
@@ -473,7 +473,7 @@ const UserProfile = () => {
                                                 className="flex items-center gap-2 h-9 px-5 bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 hover:bg-rose-500 hover:text-white rounded-xl font-semibold text-sm transition-all shrink-0"
                                             >
                                                 <Trash2 className="size-4" />
-                                                Supprimer le compte
+                                                {t('profDeleteAccount')}
                                             </button>
                                         </div>
                                     </div>
@@ -484,7 +484,7 @@ const UserProfile = () => {
                 </div>
             </div>
 
-            {/* ── Modal Configuration 2FA ── */}
+            {/* ── Modal {t('prof2FAConfigTitle')} ── */}
             <AnimatePresence>
                 {show2FASetup && (
                     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
@@ -507,8 +507,8 @@ const UserProfile = () => {
                                         <QrCode className="size-5 text-primary" />
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-bold text-foreground uppercase tracking-tight">Configuration 2FA</h3>
-                                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">Niveau de sécurité : Maximum</p>
+                                        <h3 className="text-sm font-bold text-foreground uppercase tracking-tight">{t('prof2FAConfigTitle')}</h3>
+                                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('prof2FASecurityLevel')}</p>
                                     </div>
                                 </div>
                                 <button onClick={() => setShow2FASetup(false)} className="size-8 rounded-lg bg-muted hover:bg-rose-500/10 hover:text-rose-500 flex items-center justify-center transition-colors">
@@ -519,7 +519,7 @@ const UserProfile = () => {
                             <div className="p-8 space-y-8 text-center">
                                 <div className="space-y-3">
                                     <p className="text-xs text-muted-foreground leading-relaxed uppercase font-bold px-4">
-                                        Scannez ce QR Code avec votre application d'authentification (Google, Authy, Microsoft).
+                                        {t('prof2FAScanQR')}
                                     </p>
                                 </div>
 
@@ -535,12 +535,12 @@ const UserProfile = () => {
 
                                 <div className="space-y-4">
                                     <div className="p-3 bg-muted rounded-xl border border-border">
-                                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">Code Secret (Fallback)</p>
+                                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">{t('prof2FASecretFallback')}</p>
                                         <p className="text-xs font-mono font-bold text-primary tracking-[0.2em]">{twoFactorData?.secret}</p>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-xs font-black text-foreground uppercase tracking-widest">Entrez le code à 6 chiffres</label>
+                                        <label className="text-xs font-black text-foreground uppercase tracking-widest">{t('prof2FAEnterCode')}</label>
                                         <input
                                             type="text"
                                             maxLength={6}
@@ -558,7 +558,7 @@ const UserProfile = () => {
                                     className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl font-bold text-sm transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-40"
                                 >
                                     {isConfiguring2FA ? <RefreshIcon className="size-5 animate-spin" /> : <Shield className="size-5" />}
-                                    ACTIVER LA SÉCURITÉ ALPHA
+                                    {t('prof2FAActivate')}
                                 </button>
                             </div>
                         </motion.div>

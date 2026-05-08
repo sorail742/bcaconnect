@@ -10,10 +10,17 @@ export const loginSchema = z.object({
 });
 
 export const registerBaseSchema = z.object({
-    nom_complet: z.string().min(3, "Nom complet requis (min 3 caractères)"),
+    nom_complet: z.string()
+        .min(3, "Nom complet requis (min 3 caractères)")
+        .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, "Le nom ne peut contenir que des lettres, espaces, tirets et apostrophes"),
     email: z.string().email("Format d'email invalide"),
-    password: z.string().min(8, "Le mot de passe doit faire au moins 8 caractères"),
+    password: z.string()
+        .min(8, "Le mot de passe doit faire au moins 8 caractères")
+        .regex(/[a-z]/, "Le mot de passe doit contenir au moins une minuscule")
+        .regex(/[A-Z]/, "Le mot de passe doit contenir au moins une majuscule")
+        .regex(/\d/, "Le mot de passe doit contenir au moins un chiffre"),
     role: z.enum(['client', 'fournisseur', 'transporteur', 'banque']).default('client'),
+    telephone: z.string().min(8, "Le numéro de téléphone est trop court").max(20, "Le numéro de téléphone est trop long"),
 });
 
 export const registerClientSchema = registerBaseSchema.extend({

@@ -71,10 +71,15 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box; /* SÉCURITÉ : Standardisation du box-model */
   }
   body {
     @apply bg-background text-foreground transition-colors duration-300;
     font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased; /* Lissage police pour macOS/Chrome */
+    -moz-osx-font-smoothing: grayscale; /* Lissage police pour macOS/Firefox */
+    text-rendering: optimizeLegibility;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   }
 }
 
@@ -98,7 +103,14 @@
   @apply bg-black/40 backdrop-blur-xl border border-white/5;
 }
 
-/* ── HUD Custom Scrollbar ────────────────────────────────────────── */
+/* ── HUD Custom Scrollbar (Cross-Browser Harmonization) ────────── */
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+/* Webkit (Chrome, Safari, Edge, Linux Chromium) */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -142,6 +154,11 @@
   @apply shadow-md border-slate-200/60;
 }
 
+.custom-scrollbar {
+  scrollbar-width: auto;
+  scrollbar-color: #e2e8f0 #f8fafc;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 10px;
 }
@@ -157,10 +174,16 @@
   background: #f97316;
 }
 
+.no-scrollbar {
+  scrollbar-width: none;
+}
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
 
 html {
   scroll-behavior: smooth;
+  /* Correction Windows Font Scaling */
+  -webkit-text-size-adjust: 100%;
 }
+

@@ -5,41 +5,43 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../hooks/useAuth';
 
-const STEPS = [
-    {
-        number: "01", icon: UserPlus,
-        title: "Créez votre compte",
-        description: "Inscription gratuite en 2 minutes. Choisissez Acheteur, Fournisseur ou Transporteur.",
-        color: "text-blue-600", bg: "bg-blue-50", link: "/register"
-    },
-    {
-        number: "02", icon: PackageSearch,
-        title: "Explorez le Marché",
-        description: "Parcourez des milliers de produits vérifiés. Filtrez par catégorie ou fournisseur certifié.",
-        color: "text-[#FF6600]", bg: "bg-orange-50", link: "/marketplace"
-    },
-    {
-        number: "03", icon: CreditCard,
-        title: "Paiement Sécurisé",
-        description: "Réglez via Orange Money, Areeba ou virement. Fonds bloqués en séquestre jusqu'à réception.",
-        color: "text-emerald-600", bg: "bg-emerald-50", link: "/help"
-    },
-    {
-        number: "04", icon: Truck,
-        title: "Livraison & Confirmation",
-        description: "Suivez votre commande en temps réel. Le fournisseur est payé uniquement à votre confirmation.",
-        color: "text-amber-600", bg: "bg-amber-50", link: "/tracking"
-    },
-];
+
 
 export function HowItWorks() {
     const { t } = useLanguage();
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
 
+    const STEPS = [
+        {
+            number: "01", icon: UserPlus,
+            title: t('howStep1Title'),
+            description: t('howStep1Desc'),
+            color: "text-blue-600", bg: "bg-blue-50", link: "/register"
+        },
+        {
+            number: "02", icon: PackageSearch,
+            title: t('howStep2Title'),
+            description: t('howStep2Desc'),
+            color: "text-[#FF6600]", bg: "bg-orange-50", link: "/marketplace"
+        },
+        {
+            number: "03", icon: CreditCard,
+            title: t('howStep3Title'),
+            description: t('howStep3Desc'),
+            color: "text-emerald-600", bg: "bg-emerald-50", link: "/help"
+        },
+        {
+            number: "04", icon: Truck,
+            title: t('howStep4Title'),
+            description: t('howStep4Desc'),
+            color: "text-amber-600", bg: "bg-amber-50", link: "/tracking"
+        },
+    ];
+
     return (
         <section className="bg-white border-t border-slate-100 py-10 sm:py-16">
-            <div className="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8">
+            <div className="container px-3 sm:px-6 lg:px-8">
 
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 sm:mb-10">
@@ -47,18 +49,18 @@ export function HowItWorks() {
                         <div className="flex items-center gap-3 mb-2">
                             <div className="w-1 h-8 bg-[#FF6600] rounded-full" />
                             <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                                Comment ça marche ?
+                                {t('howTitle')}
                             </h2>
                         </div>
                         <p className="text-slate-500 text-sm pl-4 ml-1 border-l-2 border-slate-100">
-                            De l'inscription à la livraison — chaque étape sécurisée et transparente
+                            {t('howDesc')}
                         </p>
                     </div>
                     <button
                         onClick={() => navigate(isAuthenticated ? '/dashboard' : '/register')}
                         className="flex items-center gap-2 h-10 px-5 bg-[#FF6600] text-white font-bold text-sm rounded-xl hover:bg-orange-600 transition-colors shrink-0 self-start sm:self-auto"
                     >
-                        {isAuthenticated ? 'Mon Espace' : 'Commencer gratuitement'}
+                        {isAuthenticated ? t('myDashboard') : t('ctaStart')}
                         <ArrowRight className="size-4" />
                     </button>
                 </div>
@@ -103,7 +105,7 @@ export function HowItWorks() {
                             )}
 
                             <div className={`mt-4 flex items-center gap-1.5 text-xs font-bold ${step.color} opacity-0 group-hover:opacity-100 transition-opacity`}>
-                                <CheckCircle2 className="size-3.5" /> En savoir plus
+                                <CheckCircle2 className="size-3.5" /> {t('learnMore')}
                             </div>
                         </motion.button>
                     ))}
@@ -112,20 +114,20 @@ export function HowItWorks() {
                 {/* Mini CTA strip */}
                 <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 p-5 sm:p-6 bg-slate-50 rounded-2xl border border-slate-100">
                     <p className="text-sm font-bold text-slate-700">
-                        Prêt à commencer votre première transaction sécurisée ?
+                        {t('ctaDescLanding')}
                     </p>
                     <div className="flex gap-2">
                         <button
                             onClick={() => navigate('/register')}
                             className="h-9 px-5 bg-[#FF6600] text-white font-bold text-xs rounded-xl hover:bg-orange-600 transition-colors"
                         >
-                            Créer un compte
+                            {t('register')}
                         </button>
                         <button
                             onClick={() => navigate('/marketplace')}
                             className="h-9 px-5 bg-white border border-slate-200 text-slate-700 font-bold text-xs rounded-xl hover:border-[#FF6600] hover:text-[#FF6600] transition-colors"
                         >
-                            Explorer
+                            {t('explore')}
                         </button>
                     </div>
                 </div>

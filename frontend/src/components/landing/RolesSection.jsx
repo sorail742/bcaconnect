@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingBag, Store, ArrowRight, ShieldCheck, Zap, Star, LayoutDashboard, Truck, Landmark } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -24,39 +24,51 @@ export function RolesSection() {
         return '/dashboard'; // Fallback
     };
 
-    const roles = [
+    const roles = useMemo(() => [
         {
             id: 'client',
-            title: "Acheteur Certifié",
-            desc: "Accédez au marché avec protection Escrow et suivi logistique.",
+            title: t('roleBuyerTitle') || "Acheteur Certifié",
+            desc: t('roleBuyerDesc') || "Accédez au marché avec protection Escrow et suivi logistique.",
             icon: ShoppingBag,
             color: "text-blue-600",
             bg: "bg-blue-50",
-            features: ["Paiements sécurisés", "Suivi temps réel", "Support 24/7"]
+            features: [
+                t('roleBuyerFeat1') || "Paiements sécurisés",
+                t('roleBuyerFeat2') || "Suivi temps réel",
+                t('roleBuyerFeat3') || "Support 24/7"
+            ]
         },
         {
             id: 'fournisseur',
-            title: "Fournisseur Pro",
-            desc: "Ouvrez votre espace fournisseur, gérez vos stocks et boostez vos ventes.",
+            title: t('roleVendorTitle') || "Fournisseur Pro",
+            desc: t('roleVendorDesc') || "Ouvrez votre espace fournisseur, gérez vos stocks et boostez vos ventes.",
             icon: Store,
             color: "text-[#FF6600]",
             bg: "bg-orange-50",
-            features: ["Tableau de bord IA", "Gestion de stock", "Règlements rapides"]
+            features: [
+                t('roleVendorFeat1') || "Tableau de bord IA",
+                t('roleVendorFeat2') || "Gestion de stock",
+                t('roleVendorFeat3') || "Règlements rapides"
+            ]
         },
         {
             id: 'transporteur',
-            title: "Transporteur",
-            desc: "Optimisez vos trajets et livrez les commandes du réseau BCA.",
+            title: t('roleCarrierTitle') || "Transporteur",
+            desc: t('roleCarrierDesc') || "Optimisez vos trajets et livrez les commandes du réseau BCA.",
             icon: Truck,
             color: "text-emerald-600",
             bg: "bg-emerald-50",
-            features: ["Gestion de flotte", "Preuve de livraison", "Paiements garantis"]
+            features: [
+                t('roleCarrierFeat1') || "Gestion de flotte",
+                t('roleCarrierFeat2') || "Preuve de livraison",
+                t('roleCarrierFeat3') || "Paiements garantis"
+            ]
         }
-    ];
+    ], [t]);
 
     return (
         <section className="bg-white py-10 sm:py-16 border-t border-slate-100">
-            <div className="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8">
+            <div className="container px-3 sm:px-6 lg:px-8">
                 
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
@@ -64,11 +76,11 @@ export function RolesSection() {
                         <div className="flex items-center gap-3">
                             <div className="w-1 h-8 bg-[#FF6600] rounded-full" />
                             <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase">
-                                Un Écosystème Unifié
+                                {t('rolesUnifiedEcosystem') || "Un Écosystème Unifié"}
                             </h2>
                         </div>
                         <p className="text-slate-500 text-sm pl-4 ml-1 border-l-2 border-slate-100 italic">
-                            Choisissez votre rôle et commencez à transformer le commerce en Guinée.
+                            {t('rolesUnifiedEcosystemDesc') || "Choisissez votre rôle et commencez à transformer le commerce en Guinée."}
                         </p>
                     </div>
                 </div>
@@ -118,8 +130,8 @@ export function RolesSection() {
                                 )}
                             >
                                 {isAuthenticated && user?.role === (role.id === 'fournisseur' ? ROLES.FOURNISSEUR : role.id === 'transporteur' ? ROLES.TRANSPORTEUR : role.id === 'banque' ? ROLES.BANQUE : ROLES.CLIENT)
-                                    ? "Mon Dashboard"
-                                    : "Rejoindre"}
+                                    ? (t('myDashboard') || "Mon Dashboard")
+                                    : (t('join') || "Rejoindre")}
                                 <ArrowRight className="size-4" />
                             </button>
 

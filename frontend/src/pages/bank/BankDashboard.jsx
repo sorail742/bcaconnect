@@ -7,28 +7,11 @@ import statService from '../../services/statService';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
 
+import { useFinancialStats } from '../../hooks/useStats';
+
 const BankDashboard = () => {
-    const [isLoading, setIsLoading] = useState(true);
-    const [hasError, setHasError] = useState(false);
-    const [dashboardData, setDashboardData] = useState(null);
+    const { data: dashboardData, isLoading, error, refetch } = useFinancialStats();
 
-    const fetchStats = useCallback(async () => {
-        try {
-            setIsLoading(true);
-            const data = await statService.getFinancialStats();
-            setDashboardData(data);
-        } catch (err) {
-            console.error("Erreur stats financières:", err);
-            setHasError(true);
-            toast.error("ÉCHEC DE LA SYNCHRONISATION FINANCIÈRE.");
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchStats();
-    }, [fetchStats]);
 
     const stats = [
         { title: 'Dépôts Cumulés', value: dashboardData?.stats?.[0]?.value || '0 GNF', icon: Landmark, trend: 'up', trendValue: 'Optimal' },
@@ -154,7 +137,7 @@ const BankDashboard = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-4 relative z-10">
-                        <button onClick={fetchStats} className="size-6 rounded-xl bg-slate-50 dark:bg-foreground/5 border border-slate-100 dark:border-foreground/5 flex items-center justify-center text-muted-foreground/80 hover:text-[#FF6600] transition-all shadow-sm">
+                        <button onClick={() => refetch()} className="size-6 rounded-xl bg-slate-50 dark:bg-foreground/5 border border-slate-100 dark:border-foreground/5 flex items-center justify-center text-muted-foreground/80 hover:text-[#FF6600] transition-all shadow-sm">
                             <RefreshCcw className={cn("size-5", isLoading && "animate-spin")} />
                         </button>
                         <div className="flex items-center gap-3 px-5 h-10 bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
@@ -199,17 +182,18 @@ const BankDashboard = () => {
                     <div className="p-4 h-[300px] w-full group/graph pt-10">
                          {/* Simulation de graphique architectural */}
                          <div className="h-full w-full flex items-end gap-3 px-4">
-                             {[40, 20, 60, 45, 90, 70, 55, 80, 40, 65, 30, 85, 50, 75].map((h, i) => (
-                                <div key={i} className="flex-1 bg-slate-100 dark:bg-foreground/5 rounded-t-lg relative group/bar hover:bg-[#FF6600]/20 transition-all" style={{ height: `${h}%` }}>
+                             {(dashboardData?.chartData?.timeseries || []).map((t, i, arr) => {
+                                 const maxVal = Math.max(...arr.map(x => x.val)) || 1;
+                                 const h = (t.val / maxVal) * 100;
+                                 return (
+                                <div key={i} className="flex-1 bg-slate-100 dark:bg-foreground/5 rounded-t-lg relative group/bar hover:bg-[#FF6600]/20 transition-all" style={{ height: `${Math.max(10, h)}%` }}>
                                     <div 
                                         className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#FF6600]/40 to-[#FF6600]/80 rounded-t-lg opacity-0 group-hover/bar:opacity-100 transition-opacity" 
                                         style={{ height: '30%' }} 
                                     />
-                                    {i % 2 === 0 && (
-                                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[7px] font-black text-muted-foreground/80 uppercase tracking-widest">D_{i+1}</div>
-                                    )}
+                                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[7px] font-black text-muted-foreground/80 uppercase tracking-widest whitespace-nowrap">{t.day}</div>
                                 </div>
-                             ))}
+                             )})}
                          </div>
                     </div>
                 </div>

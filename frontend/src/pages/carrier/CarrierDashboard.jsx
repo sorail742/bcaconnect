@@ -1,119 +1,91 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import DashboardCard from '../../components/ui/DashboardCard';
 import DataTable from '../../components/ui/DataTable';
 import {
-    Headset,
-    BookOpen,
-    LifeBuoy,
-    CheckCircle2,
     ClipboardList,
     Truck,
+    CheckCircle2,
     Hourglass,
-    Navigation,
     Activity,
-    Zap,
-    Box,
     RefreshCcw,
     Shield,
     Globe,
-    MapPin,
+    Box,
     PackageSearch,
     UserCheck,
     Play,
     Flag
 } from 'lucide-react';
-import deliveryService from '../../services/deliveryService';
 import useSocket from '../../hooks/useSocket';
 import OtpVerificationModal from '../../components/carrier/OtpVerificationModal';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
+import { 
+    useAvailableDeliveries, 
+    useMyDeliveries, 
+    useAssignDelivery, 
+    useUpdateTracking 
+} from '../../hooks/data/useCarrierData';
+
+import { useLanguage } from '../../context/LanguageContext';
 
 const CarrierDashboard = () => {
-    // États de données
-    const [availableDeliveries, setAvailableDeliveries] = useState([]);
-    const [myDeliveries, setMyDeliveries] = useState([]);
-    const [stats, setStats] = useState({ 
-        assigned: '0', 
-        inProgress: '0', 
-        completed: '0', 
-        available: '0' 
-    });
-    
+    const { t } = useLanguage();
     // États UI
-    const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('AVAILABLE'); // AVAILABLE | MINE
     const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
     const [selectedOrderId, setSelectedOrderId] = useState(null);
 
+    // React Query Hooks
+    const { data: availableDeliveries = [], isLoading: loadingAvailable, refetch: refetchAvailable } = useAvailableDeliveries();
+    const { data: myDeliveries = [], isLoading: loadingMine, refetch: refetchMine } = useMyDeliveries();
+    
+    const assignMutation = useAssignDelivery();
+    const trackingMutation = useUpdateTracking();
+
     const { on, off } = useSocket();
 
-    // Récupération des données
-    const fetchData = useCallback(async () => {
-        try {
-            setIsLoading(true);
-            const [available, mine] = await Promise.all([
-                deliveryService.getAvailableOrders(),
-                deliveryService.getMyDeliveries()
-            ]);
-            
-            setAvailableDeliveries(available || []);
-            setMyDeliveries(mine || []);
+    const isLoading = loadingAvailable || loadingMine;
 
-            setStats({
-                assigned: (mine || []).length.toString(),
-                inProgress: (mine || []).filter(d => d.statut_livraison === 'en_route').length.toString(),
-                completed: '0', // Nécessiterait un endpoint history propre
-                available: (available || []).length.toString(),
-            });
-        } catch (error) {
-            console.error("Erreur chargement logistique:", error);
-            toast.error("ERREUR DE SYNCHRONISATION RÉSEAU.");
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+    const stats = {
+        assigned: myDeliveries.length.toString(),
+        inProgress: myDeliveries.filter(d => d.statut_livraison === 'en_route').length.toString(),
+        completed: '0', // Nécessiterait un endpoint history complet
+        available: availableDeliveries.length.toString(),
+    };
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
-
-    // Temps réel
+    // Temps réel via Socket.io
     useEffect(() => {
         if (!on) return;
         
         const handleUpdate = () => {
-            fetchData();
+            refetchAvailable();
+            refetchMine();
         };
 
         on('notification_received', handleUpdate);
-        return () => off('notification_received', handleUpdate);
-    }, [on, off, fetchData]);
+        on('order_status_updated', handleUpdate);
+        
+        return () => {
+            off('notification_received', handleUpdate);
+            off('order_status_updated', handleUpdate);
+        };
+    }, [on, off, refetchAvailable, refetchMine]);
 
     // Actions
     const handleAssign = async (orderId) => {
-        try {
-            await deliveryService.assignOrder(orderId);
-            toast.success("MISSION ASSIGNÉE. VEUILLEZ RAMASSER LE COLIS.");
-            fetchData();
-            setActiveTab('MINE');
-        } catch (err) {
-            toast.error("ERREUR D'ASSIGNATION TACTIQUE.");
-        }
+        assignMutation.mutate(orderId, {
+            onSuccess: () => setActiveTab('MINE')
+        });
     };
 
     const handleStartJourney = async (orderId) => {
-        try {
-            await deliveryService.updateTracking({
-                orderId,
-                status: 'en_route',
-                commentaire: 'Transporteur en route vers la destination'
-            });
-            toast.success("MISSION EN COURS : SIGNAL GPS ACTIVÉ.");
-            fetchData();
-        } catch (err) {
-            toast.error("ERREUR DE DÉMARRAGE DU FLUX.");
-        }
+        trackingMutation.mutate({
+            orderId,
+            status: 'en_route',
+            commentaire: 'Transporteur en route vers la destination'
+        });
     };
 
     const openOtpModal = (orderId) => {
@@ -124,26 +96,26 @@ const CarrierDashboard = () => {
     // Colonnes pour "DISPONIBLES"
     const availableColumns = [
         {
-            label: 'UNITÉ SOURCE',
+            label: t('carSourceUnit'),
             render: (row) => (
-                <span className="font-black text-[#FF6600] uppercase text-[9px] tracking-widest bg-[#FF6600]/5 px-2 py-1 rounded-lg border border-[#FF6600]/10">
+                <span className="font-black text-[#FF6600] uppercase text-[9px] tracking-wide bg-[#FF6600]/5 px-2 py-1 rounded-lg border border-[#FF6600]/10">
                     #{row.id.slice(0, 8).toUpperCase()}
                 </span>
             )
         },
         {
-            label: 'ZONE DE RAMASSAGE',
+            label: t('carPickupZone'),
             render: (row) => (
                 <div className="flex flex-col gap-1">
-                    <span className="font-black text-slate-800 dark:text-foreground text-[10px] uppercase">BOUTIQUE SOURCE</span>
+                    <span className="font-black text-slate-800 dark:text-foreground text-[10px] uppercase">{t('carSourceShop')}</span>
                     <span className="text-[8px] text-muted-foreground font-black uppercase tracking-widest truncate max-w-[150px]">
-                        CONAKRY / {row.adresse_livraison.split(',')[0]}
+                        CONAKRY / {row.adresse_livraison?.split(',')[0] || 'ZONE N/A'}
                     </span>
                 </div>
             )
         },
         {
-            label: 'PÉRIMÈTRE CIBLE',
+            label: t('carTargetPerimeter'),
             render: (row) => (
                 <div className="max-w-[200px] truncate font-black text-muted-foreground text-[9px] uppercase tracking-widest" title={row.adresse_livraison}>
                     {row.adresse_livraison}
@@ -151,14 +123,16 @@ const CarrierDashboard = () => {
             )
         },
         {
-            label: 'ACTION',
+            label: t('actions') || 'ACTION',
             render: (row) => (
                 <div className="text-right">
                     <button
                         onClick={() => handleAssign(row.id)}
-                        className="h-8 px-4 bg-[#FF6600] text-foreground text-[9px] font-black rounded-lg transition-all shadow-md active:scale-95 uppercase tracking-widest hover:brightness-110 flex items-center gap-2 ml-auto"
+                        disabled={assignMutation.isPending}
+                        className="h-8 px-4 bg-[#FF6600] text-foreground text-[9px] font-black rounded-lg transition-all shadow-md active:scale-95 uppercase tracking-widest hover:brightness-110 flex items-center gap-2 ml-auto disabled:opacity-50"
                     >
-                        <UserCheck className="size-3" /> ACCEPTER
+                        {assignMutation.isPending ? <RefreshCcw className="size-3 animate-spin" /> : <UserCheck className="size-3" />} 
+                        {t('carAccept')}
                     </button>
                 </div>
             )
@@ -168,15 +142,15 @@ const CarrierDashboard = () => {
     // Colonnes pour "MES MISSIONS"
     const myMissionsColumns = [
         {
-            label: 'ID MISSION',
+            label: t('id') || 'ID MISSION',
             render: (row) => (
-                <span className="font-black text-emerald-500 uppercase text-[9px] tracking-widest bg-emerald-500/5 px-2 py-1 rounded-lg border border-emerald-500/10">
+                <span className="font-black text-emerald-500 uppercase text-[9px] tracking-wide bg-emerald-500/5 px-2 py-1 rounded-lg border border-emerald-500/10">
                     #{row.id.slice(0, 8).toUpperCase()}
                 </span>
             )
         },
         {
-            label: 'STATUT OPÉRATIONNEL',
+            label: t('carOperationTracking'),
             render: (row) => {
                 const status = row.statut_livraison;
                 return (
@@ -191,32 +165,34 @@ const CarrierDashboard = () => {
                             status === 'livre' ? "text-emerald-500" :
                             status === 'en_route' ? "text-amber-500" : "text-blue-500"
                         )}>
-                            {status === 'ramasse' ? 'COLIS RÉCUPÉRÉ' : status === 'en_route' ? 'EN TRANSIT' : status?.toUpperCase() || 'ASSIGNÉ'}
+                            {status === 'ramasse' ? t('carPackagePicked') : status === 'en_route' ? t('carTransit') : t(`car${status?.charAt(0).toUpperCase() + status?.slice(1)}`) || status?.toUpperCase() || t('carAssigned')}
                         </span>
                     </div>
                 );
             }
         },
         {
-            label: 'GOUVERNANCE',
+            label: t('governance') || 'GOUVERNANCE',
             render: (row) => (
                 <div className="flex justify-end gap-2">
                     {row.statut_livraison !== 'en_route' && row.statut_livraison !== 'livre' ? (
                         <button
                             onClick={() => handleStartJourney(row.id)}
+                            disabled={trackingMutation.isPending}
                             className="h-8 px-4 bg-slate-900 dark:bg-white text-foreground dark:text-slate-900 text-[9px] font-black rounded-lg transition-all uppercase tracking-widest flex items-center gap-2"
                         >
-                            <Play className="size-3" /> DÉMARRER
+                            {trackingMutation.isPending ? <RefreshCcw className="size-3 animate-spin" /> : <Play className="size-3" />} 
+                            {t('carStart')}
                         </button>
                     ) : row.statut_livraison === 'en_route' ? (
                         <button
                             onClick={() => openOtpModal(row.id)}
                             className="h-8 px-4 bg-emerald-500 text-slate-900 text-[9px] font-black rounded-lg transition-all uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-emerald-500/10"
                         >
-                            <Flag className="size-3" /> TERMINER
+                            <Flag className="size-3" /> {t('carFinish')}
                         </button>
                     ) : (
-                        <span className="text-emerald-500 text-[8px] font-black uppercase tracking-widest">FLUX TERMINÉ</span>
+                        <span className="text-emerald-500 text-[8px] font-black uppercase tracking-widest">{t('carFlowFinished')}</span>
                     )}
                 </div>
             )
@@ -224,15 +200,15 @@ const CarrierDashboard = () => {
     ];
 
     return (
-        <DashboardLayout title="CENTRE LOGISTIQUE">
+        <DashboardLayout title={t('carLogCenter')}>
             <div className="space-y-8 animate-in fade-in duration-700 pb-24">
 
                 {/* KPI Area */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <DashboardCard title="MY ASSIGNATIONS" value={stats.assigned} icon={ClipboardList} className="h-32 border-[#FF6600]/10" />
-                    <DashboardCard title="EN TRANSIT" value={stats.inProgress} icon={Truck} className="h-32" />
-                    <DashboardCard title="HISTORIQUE" value={stats.completed} icon={CheckCircle2} className="h-32" />
-                    <DashboardCard title="OFFRES LIBRES" value={stats.available} icon={Hourglass} className="h-32" />
+                    <DashboardCard title={t('carMyAssignments')} value={stats.assigned} icon={ClipboardList} className="h-32 border-[#FF6600]/10" />
+                    <DashboardCard title={t('carInTransit')} value={stats.inProgress} icon={Truck} className="h-32" />
+                    <DashboardCard title={t('carHistory')} value={stats.completed} icon={CheckCircle2} className="h-32" />
+                    <DashboardCard title={t('carFreeOffers')} value={stats.available} icon={Hourglass} className="h-32" />
                 </div>
 
                 {/* Main Control Panel */}
@@ -251,7 +227,7 @@ const CarrierDashboard = () => {
                                         : "text-muted-foreground hover:bg-slate-50 dark:hover:bg-foreground/5"
                                 )}
                             >
-                                <PackageSearch className="size-4" /> MISSIONS DISPONIBLES
+                                <PackageSearch className="size-4" /> {t('carAvailableMissions')}
                             </button>
                             <button
                                 onClick={() => setActiveTab('MINE')}
@@ -262,7 +238,7 @@ const CarrierDashboard = () => {
                                         : "text-muted-foreground hover:bg-slate-50 dark:hover:bg-foreground/5"
                                 )}
                             >
-                                <UserCheck className="size-4" /> MON JOURNAL DE BORD
+                                <UserCheck className="size-4" /> {t('carMyLogbook')}
                             </button>
                         </div>
 
@@ -272,10 +248,13 @@ const CarrierDashboard = () => {
                                 <div className="flex items-center gap-3">
                                     <Activity className="size-4 text-primary" />
                                     <span className="text-[10px] font-black uppercase tracking-widest">
-                                        {activeTab === 'AVAILABLE' ? 'MARCHÉ DES FLUX LOGISTIQUES' : 'SUIVI DES OPÉRATIONS'}
+                                        {activeTab === 'AVAILABLE' ? t('carLogisticMarket') : t('carOperationTracking')}
                                     </span>
                                 </div>
-                                <button onClick={fetchData} className="size-8 rounded-lg bg-slate-50 dark:bg-foreground/5 flex items-center justify-center text-muted-foreground hover:text-primary transition-all">
+                                <button 
+                                    onClick={() => { refetchAvailable(); refetchMine(); }} 
+                                    className="size-8 rounded-lg bg-slate-50 dark:bg-foreground/5 flex items-center justify-center text-muted-foreground hover:text-primary transition-all"
+                                >
                                     <RefreshCcw className={cn("size-4", isLoading && "animate-spin")} />
                                 </button>
                             </div>
@@ -291,8 +270,8 @@ const CarrierDashboard = () => {
                                     <div className="py-24 text-center opacity-30 flex flex-col items-center gap-6">
                                          <Box className="size-12" />
                                          <div className="space-y-2">
-                                             <p className="text-[10px] font-black uppercase tracking-widest">TERMINAL VIDE</p>
-                                             <p className="text-[8px] font-black opacity-60">AUCUNE DONNÉE RÉPERTORIÉE DANS CE CANAL</p>
+                                             <p className="text-[10px] font-black uppercase tracking-widest">{t('carEmptyTerminal')}</p>
+                                             <p className="text-[8px] font-black opacity-60">{t('carNoDataChannel')}</p>
                                          </div>
                                     </div>
                                 )}
@@ -307,12 +286,12 @@ const CarrierDashboard = () => {
                             <div className="flex items-center justify-between relative z-10">
                                 <Globe className="size-6 text-emerald-500" />
                                 <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                                     <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest animate-pulse">GPS ACTIVE</span>
+                                     <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest animate-pulse">{t('carGpsActive')}</span>
                                 </div>
                             </div>
                             <div className="space-y-1 relative z-10">
-                                <h4 className="text-sm font-black text-white uppercase">ZONE CONAKRY ALPHA</h4>
-                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60">STATION TERMINAL 01</p>
+                                <h4 className="text-sm font-black text-white uppercase">{t('carZoneConakry')}</h4>
+                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60">{t('carTerminal01')}</p>
                             </div>
                             <div className="aspect-[4/3] bg-black rounded-2xl border border-white/5 opacity-50 grayscale hover:grayscale-0 transition-all duration-500 hover:opacity-80">
                                 <div className="w-full h-full bg-[url('https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Guinea_Map.png/800px-Guinea_Map.png')] bg-cover bg-center" />
@@ -323,14 +302,14 @@ const CarrierDashboard = () => {
                         <div className="bg-[#FF6600]/5 border border-[#FF6600]/20 rounded-3xl p-6 space-y-4">
                             <div className="flex items-center gap-3">
                                 <Shield className="size-5 text-[#FF6600]" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-[#FF6600]">STATUT CARRIER</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-[#FF6600]">{t('carCarrierStatus')}</span>
                             </div>
                             <p className="text-[9px] font-black leading-relaxed text-muted-foreground uppercase opacity-80">
-                                VOTRE COMPTE EST ACTUELLEMENT EN RÈGLE. VOUS POUVEZ ACCEPTER JUSQU'À 5 MISSIONS SIMULTANÉES.
+                                {t('carAccountInOrder')}
                             </p>
                             <div className="pt-2">
                                 <button className="w-full h-12 bg-slate-900 dark:bg-white text-foreground dark:text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#FF6600] hover:text-foreground">
-                                    CONTACTER LE HUB
+                                    {t('carContactHub')}
                                 </button>
                             </div>
                         </div>
@@ -343,7 +322,7 @@ const CarrierDashboard = () => {
                 isOpen={isOtpModalOpen}
                 onClose={() => setIsOtpModalOpen(false)}
                 orderId={selectedOrderId}
-                onSuccess={fetchData}
+                onSuccess={() => { refetchAvailable(); refetchMine(); }}
             />
         </DashboardLayout>
     );

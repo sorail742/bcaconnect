@@ -111,7 +111,7 @@ const ProductCatalogue = () => {
                     </motion.div>
                 </AnimatePresence>
 
-                <div className="max-w-[1600px] mx-auto px-6 md:px-12 relative z-10 w-full pt-20">
+                <div className="container px-6 md:px-12 relative z-10 w-full pt-20">
                     <motion.div 
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -140,19 +140,19 @@ const ProductCatalogue = () => {
 
             {/* ══ TRUST BAR ══ */}
             <div className="border-b border-border bg-white dark:bg-slate-900 hidden md:block relative z-20 shadow-sm">
-                <div className="max-w-[1600px] mx-auto px-6 md:px-12 h-16 flex items-center gap-8 text-sm font-semibold text-slate-600 dark:text-slate-400">
-                    <span className="flex items-center gap-2 text-slate-900 dark:text-white"><ShieldCheck className="size-5 text-[#FF6600]"/> Achat Protégé</span>
+                <div className="container px-6 md:px-12 h-16 flex items-center gap-8 text-sm font-semibold text-slate-600 dark:text-slate-400">
+                    <span className="flex items-center gap-2 text-slate-900 dark:text-white"><ShieldCheck className="size-5 text-[#FF6600]"/> {t('pdAuthenticity') || "Achat Protégé"}</span>
                     <span className="w-px h-4 bg-border" />
-                    <span>Fournisseurs Certifiés</span>
+                    <span>{t('catCertifiedVendors') || "Fournisseurs Certifiés"}</span>
                     <span className="w-px h-4 bg-border" />
-                    <span>Paiements Sécurisés (Escrow)</span>
+                    <span>{t('cartEscrowDesc') ? "Paiement Sécurisé (Escrow)" : "Paiement Sécurisé"}</span>
                     <span className="w-px h-4 bg-border" />
-                    <span>Support Client B2B 24/7</span>
+                    <span>{t('contactDesc') || "Support Client B2B 24/7"}</span>
                 </div>
             </div>
 
             {/* ══ MAIN CATALOGUE ══ */}
-            <section className="max-w-[1600px] mx-auto px-4 md:px-12 py-12 flex flex-col lg:flex-row gap-8">
+            <section className="container px-4 md:px-12 py-12 flex flex-col lg:flex-row gap-8">
                 
                 {/* Advanced Filtering Sidebar */}
                 <aside className="lg:w-72 shrink-0 space-y-6">
@@ -162,13 +162,13 @@ const ProductCatalogue = () => {
                         <div>
                             <div className="flex items-center gap-2 mb-4 text-slate-900 dark:text-white">
                                 <Filter className="size-5" />
-                                <h3 className="text-base font-bold">Filtres de recherche</h3>
+                                <h3 className="text-base font-bold">{t('catSmartFiltering') || "Filtres de recherche"}</h3>
                             </div>
                             <div className="relative">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400" />
                                 <input
                                     className="h-12 w-full pl-12 pr-4 bg-slate-50 dark:bg-slate-700/50 border border-border focus:border-[#FF6600] rounded-xl text-sm font-medium outline-none transition-all text-slate-900 dark:text-white"
-                                    placeholder="Mot-clé, produit..."
+                                    placeholder={t('searchPlaceholder') || "Mot-clé, produit..."}
                                     value={searchQuery}
                                     onChange={e => { setSearchQuery(e.target.value); setPage(1); }}
                                 />
@@ -187,7 +187,7 @@ const ProductCatalogue = () => {
                                     )}
                                 >
                                     <LayoutGrid className="size-4" />
-                                    Toutes les catégories
+                                    {t('catFullDirectory') || "Toutes les catégories"}
                                 </button>
                                 {!categoriesLoading && categories.map(cat => (
                                     <button 
@@ -208,7 +208,7 @@ const ProductCatalogue = () => {
                         {/* Price Range */}
                         <div className="space-y-4">
                             <div className="flex justify-between items-center">
-                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Budget Max</h4>
+                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('catMaxPrice') || "Budget Max"}</h4>
                                 <span className="text-sm font-bold text-slate-900 dark:text-white">{priceRange[1].toLocaleString()} GNF</span>
                             </div>
                             <input 
@@ -259,7 +259,7 @@ const ProductCatalogue = () => {
                                 <span className={cn(
                                     "text-xs font-bold transition-colors",
                                     isVerified ? "text-emerald-500" : "text-slate-600 dark:text-slate-400 group-hover:text-primary"
-                                )}>Fournisseurs Vérifiés</span>
+                                )}>{t('catCertifiedVendors') || "Fournisseurs Vérifiés"}</span>
                             </label>
                         </div>
 
@@ -289,8 +289,8 @@ const ProductCatalogue = () => {
                                 <LayoutGrid className="size-5" />
                             </div>
                             <div>
-                                <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">Catalogue Produit</h2>
-                                <p className="text-sm text-slate-500 font-medium">{productsData?.total || 0} produits correspondants</p>
+                                <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{t('catalog') || "Catalogue Produit"}</h2>
+                                <p className="text-sm text-slate-500 font-medium">{productsData?.total || 0} {t('catResultsFiltered') || "produits correspondants"}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 p-1 rounded-xl">

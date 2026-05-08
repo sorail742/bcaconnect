@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 import { useMyStore } from '../../hooks/useDomainData';
 import useApiMutation from '../../hooks/useApiMutation';
+import { useLanguage } from '../../context/LanguageContext';
 
 const Toggle = ({ enabled, onChange, label, sublabel }) => (
     <div className="flex items-center justify-between group p-4 bg-white/[0.02] border border-foreground/5 rounded-2xl hover:border-[#FFB703]/20 transition-all duration-700 shadow-inner">
@@ -40,6 +41,7 @@ const Toggle = ({ enabled, onChange, label, sublabel }) => (
 );
 
 const StoreSettings = () => {
+    const { t } = useLanguage();
     const fileInputRef = useRef(null);
     const bannerInputRef = useRef(null);
     
@@ -82,7 +84,7 @@ const StoreSettings = () => {
         if (!files.length) return;
 
         if (type === 'banner' && shopData.use_carousel && (shopData.banner_images.length + files.length > 5)) {
-            return toast.error("Limite de 5 images atteinte.");
+            return toast.error(t('stoLimitReached'));
         }
 
         const validFiles = files.filter(file => {
@@ -92,7 +94,7 @@ const StoreSettings = () => {
         });
 
         if (validFiles.length < files.length) {
-            toast.warning("Images rejetées.");
+            toast.warning(t('profFormatError'));
         }
 
         if (!validFiles.length) return;
@@ -113,21 +115,21 @@ const StoreSettings = () => {
 
             if (type === 'logo') {
                 setShopData(prev => ({ ...prev, logo_url: uploadedUrls[0] }));
-                toast.success("Logo enregistré.");
+                toast.success(t('stoLogoSaved'));
             } else {
                 if (shopData.use_carousel) {
                     setShopData(prev => ({ 
                         ...prev, 
                         banner_images: [...prev.banner_images, ...uploadedUrls].slice(0, 5) 
                     }));
-                    toast.success("Carousel mis à jour.");
+                    toast.success(t('stoCarouselUpdated'));
                 } else {
                     setShopData(prev => ({ ...prev, banner_images: [uploadedUrls[0]] }));
-                    toast.success("Bannière enregistrée.");
+                    toast.success(t('stoBannerSaved'));
                 }
             }
         } catch (error) {
-            toast.error("Échec du téléchargement de l'image.");
+            toast.error(t('stoUploadError'));
         } finally {
             setIsUploading(false);
             setIsUploadingBanner(false);
@@ -145,8 +147,8 @@ const StoreSettings = () => {
         (payload) => isNew ? storeService.createStore(payload) : storeService.updateStore(payload),
         {
             invalidateKeys: [['my-store']],
-            successMessage: isNew ? "Boutique créée." : "Paramètres enregistrés.",
-            errorMessage: "Échec de l'enregistrement.",
+            successMessage: isNew ? t('stoStoreCreated') : t('stoSettingsSaved'),
+            errorMessage: t('stoSaveError'),
             onSuccess: (data) => {
                 if (data?.slug) setShopData(prev => ({ ...prev, url: data.slug }));
             }
@@ -159,7 +161,7 @@ const StoreSettings = () => {
     };
 
     const handleSave = () => {
-        if (!shopData.name.trim()) return toast.error("Nom de boutique requis.");
+        if (!shopData.name.trim()) return toast.error(t('stoShopNameReq'));
         
         const payload = {
             nom_boutique: shopData.name.trim(),
@@ -176,17 +178,17 @@ const StoreSettings = () => {
 
     if (isLoading) {
         return (
-            <DashboardLayout title="Configuration de la Boutique">
+            <DashboardLayout title={t('stoConfigTitle')}>
                 <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
                     <div className="size-6 rounded-2xl border-4 border-[#FFB703]/10 border-t-[#FFB703] animate-spin shadow-2xl shadow-[#FFB703]/20" />
-                    <p className="text-[10px] font-black text-muted-foreground uppercase  animate-pulse">Chargement...</p>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase  animate-pulse">{t('finLoading')}</p>
                 </div>
             </DashboardLayout>
         );
     }
 
     return (
-        <DashboardLayout title="Boutique & Vitrine" noPadding>
+        <DashboardLayout title={t('stoShopShowcase')} noPadding>
             <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8 space-y-8 custom-scrollbar">
 
                 {/* Executive Command Bar — Master Directive */}
@@ -198,12 +200,12 @@ const StoreSettings = () => {
                             </div>
                             <div className="space-y-1">
                                 <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                    Configuration <span className="text-primary">Boutique</span>.
+                                    {t('stoConfigBoutique')} <span className="text-primary">Boutique</span>.
                                 </h2>
                                 <div className="flex items-center gap-2">
                                     <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
-                                        Instance Active — {new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
+                                        {t('stoInstanceActive')} — {new Date().toLocaleTimeString('fr-GN', { hour: '2-digit', minute: '2-digit' })}
                                     </p>
                                 </div>
                             </div>
@@ -214,7 +216,7 @@ const StoreSettings = () => {
                                 className="hidden sm:flex h-11 px-6 bg-slate-50 border border-slate-100 rounded-2xl items-center gap-3 text-slate-500 hover:text-primary transition-all font-black text-[10px] uppercase tracking-widest shadow-sm"
                             >
                                 <Globe className="size-4" />
-                                <span>Ma Vitrine</span>
+                                <span>{t('stoMyShowcase')}</span>
                             </Link>
                             <button
                                 id="btn-save-store-settings"
@@ -223,7 +225,7 @@ const StoreSettings = () => {
                                 className="h-11 px-8 bg-slate-900 text-white hover:bg-slate-800 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-slate-200 flex items-center gap-3 group/save border-0"
                             >
                                 {isSaving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4 transition-transform group-hover/save:scale-125" />}
-                                <span>{isSaving ? 'SYNC...' : 'SAUVEGARDER'}</span>
+                                <span>{isSaving ? t('stoSaving') : t('stoSave')}</span>
                             </button>
                         </div>
                     </div>
@@ -234,14 +236,14 @@ const StoreSettings = () => {
                         {/* Branding Station — High Density HUD */}
                         <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-8 group/branding">
                              <div className="flex items-center gap-3 text-slate-900">
-                                <Zap className="size-5 text-amber-500 animate-pulse" />
-                                <h3 className="text-sm font-black uppercase tracking-tight leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>Identité Visuelle</h3>
-                             </div>
+                                 <Zap className="size-5 text-amber-500 animate-pulse" />
+                                 <h3 className="text-sm font-black uppercase tracking-tight leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>{t('stoVisualIdentity')}</h3>
+                              </div>
 
                              <div className="grid grid-cols-1 gap-6">
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Nom Commercial</label>
-                                    <input
+                                 <div className="space-y-3">
+                                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">{t('stoTradeName')}</label>
+                                     <input
                                         name="name"
                                         value={shopData.name}
                                         onChange={handleChange}
@@ -250,9 +252,9 @@ const StoreSettings = () => {
                                     />
                                 </div>
 
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Lien Permanent (URL)</label>
-                                    <div className="flex items-center h-12 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden">
+                                 <div className="space-y-3">
+                                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">{t('stoPermanentLink')}</label>
+                                     <div className="flex items-center h-12 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden">
                                         <div className="h-full px-6 border-r border-slate-100 flex items-center bg-slate-100/50">
                                             <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">/STORE/</span>
                                         </div>
@@ -264,19 +266,19 @@ const StoreSettings = () => {
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Logo Officiel (PNG, WEBP)</label>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                 <div className="space-y-4">
+                                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">{t('stoLogoLabel')}</label>
+                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="relative group/upload h-48 rounded-2xl bg-slate-50 border border-dashed border-slate-200 hover:border-primary/40 transition-all duration-500 flex flex-col items-center justify-center gap-4 overflow-hidden">
                                             {isUploading ? (
                                                 <Loader2 className="size-6 text-primary animate-spin" />
                                             ) : (
                                                 <>
-                                                    <div className="size-12 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover/upload:text-primary group-hover/upload:rotate-12 transition-all">
-                                                        <Upload className="size-5" />
-                                                    </div>
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">TELEVERSER LOGO</p>
-                                                    <input
+                                                     <div className="size-12 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover/upload:text-primary group-hover/upload:rotate-12 transition-all">
+                                                         <Upload className="size-5" />
+                                                     </div>
+                                                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('stoUploadLogo')}</p>
+                                                     <input
                                                         type="file"
                                                         ref={fileInputRef}
                                                         onChange={(e) => handleFileUpload(e, 'logo')}
@@ -311,18 +313,18 @@ const StoreSettings = () => {
                              <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3 text-slate-900 border-none">
                                     <Layout className="size-5 text-amber-500" />
-                                    <h3 className="text-sm font-black uppercase tracking-tight leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>Visuels Publicitaires</h3>
+                                    <h3 className="text-sm font-black uppercase tracking-tight leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>{t('stoAdVisuals')}</h3>
                                 </div>
                                 <div className="flex items-center gap-3 px-4 py-2 bg-slate-100 border border-slate-100 rounded-xl">
                                      <Monitor className="size-4 text-slate-400" />
-                                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pt-0.5">Format Desktop & Mobile</span>
+                                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pt-0.5">{t('stoFormatDesc')}</span>
                                 </div>
                              </div>
 
                              <div className="space-y-6">
                                 <Toggle 
-                                    label="Activer les images défilantes (Carrousel)" 
-                                    sublabel="Jusqu'à 5 images d'en-tête" 
+                                    label={t('stoEnableCarousel')} 
+                                    sublabel={t('stoCarouselDesc')} 
                                     enabled={shopData.use_carousel}
                                     onChange={(val) => setShopData(prev => ({ ...prev, use_carousel: val }))}
                                 />
@@ -330,7 +332,7 @@ const StoreSettings = () => {
                                 <div className="space-y-4">
                                      <div className="flex items-center justify-between border-b border-foreground/5 pb-8">
                                          <label className="text-[10px] font-black uppercase  text-muted-foreground ml-2">
-                                             {shopData.use_carousel ? `Images ( ${shopData.banner_images.length}/5 )` : 'Image de Bannière'}
+                                             {shopData.use_carousel ? `Images ( ${shopData.banner_images.length}/5 )` : t('stoBannerImage')}
                                          </label>
                                          <button 
                                             onClick={() => bannerInputRef.current?.click()}
@@ -338,7 +340,7 @@ const StoreSettings = () => {
                                             className="h-11 px-8 bg-white/[0.03] border border-foreground/10 rounded-2xl text-[10px] font-black text-[#FFB703] uppercase  flex items-center gap-4 hover:bg-[#FFB703] hover:text-background transition-all group disabled:opacity-20 "
                                          >
                                             <ImagePlus className="size-5" />
-                                            <span>Ajouter</span>
+                                            <span>{t('stoAdd')}</span>
                                          </button>
                                          <input 
                                             type="file" 
@@ -378,7 +380,7 @@ const StoreSettings = () => {
                                                  ) : (
                                                      <>
                                                         <Images className="size-6 text-slate-800 group-hover:text-[#FFB703] transition-all group-hover:scale-110" />
-                                                        <p className="text-[10px] font-black text-slate-600 uppercase  group-hover:text-foreground transition-colors">Ajouter une image</p>
+                                                        <p className="text-[10px] font-black text-slate-600 uppercase  group-hover:text-foreground transition-colors">{t('stoAddImage')}</p>
                                                      </>
                                                  )}
                                              </button>
@@ -390,15 +392,15 @@ const StoreSettings = () => {
 
                         {/* Communications Hub — Secure Signals */}
                         <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-8 group/comm">
-                            <div className="flex items-center gap-3 text-slate-900 border-none">
-                                <Phone className="size-5 text-emerald-500 group-hover/comm:rotate-12 transition-transform duration-700" />
-                                <h3 className="text-sm font-black uppercase tracking-tight leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>Canaux de Contact</h3>
-                            </div>
+                             <div className="flex items-center gap-3 text-slate-900 border-none">
+                                 <Phone className="size-5 text-emerald-500 group-hover/comm:rotate-12 transition-transform duration-700" />
+                                 <h3 className="text-sm font-black uppercase tracking-tight leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>{t('stoContactChannels')}</h3>
+                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">E-mail Professionnel</label>
-                                    <div className="relative group/input">
+                                 <div className="space-y-3">
+                                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">{t('stoProEmail')}</label>
+                                     <div className="relative group/input">
                                         <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 size-4 group-focus-within/input:text-primary transition-colors" />
                                         <input
                                             name="email"
@@ -410,9 +412,9 @@ const StoreSettings = () => {
                                         />
                                     </div>
                                 </div>
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Ligne Directe</label>
-                                    <div className="relative group/input">
+                                 <div className="space-y-3">
+                                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">{t('stoDirectLine')}</label>
+                                     <div className="relative group/input">
                                         <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 size-4 group-focus-within/input:text-primary transition-colors" />
                                         <input
                                             name="phone"
@@ -426,17 +428,17 @@ const StoreSettings = () => {
                                 </div>
                             </div>
 
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Manifeste de la Boutique</label>
-                                <textarea
-                                    name="description"
-                                    value={shopData.description}
-                                    onChange={handleChange}
-                                    rows={5}
-                                    placeholder="DECRIRE VOTRE HISTOIRE ET VOS PRODUITS..."
-                                    className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold tracking-tight focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none text-slate-900 leading-relaxed uppercase shadow-inner"
-                                />
-                            </div>
+                             <div className="space-y-3">
+                                 <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">{t('stoManifesto')}</label>
+                                 <textarea
+                                     name="description"
+                                     value={shopData.description}
+                                     onChange={handleChange}
+                                     rows={5}
+                                     placeholder={t('stoManifestoPlaceholder')}
+                                     className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold tracking-tight focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none text-slate-900 leading-relaxed uppercase shadow-inner"
+                                 />
+                             </div>
                         </div>
                     </div>
 
@@ -445,7 +447,7 @@ const StoreSettings = () => {
                         <div className="sticky top-40 space-y-4">
                              <div className="flex items-center justify-center gap-2 mb-2">
                                 <div className="h-1 w-8 bg-slate-200 rounded-full" />
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Mobile Preview</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('stoMobilePreview')}</p>
                                 <div className="h-1 w-8 bg-slate-200 rounded-full" />
                              </div>
                             
@@ -469,24 +471,24 @@ const StoreSettings = () => {
                                     
                                     <div className="mt-8 px-5 py-4 space-y-4 flex-1 overflow-y-auto custom-scrollbar">
                                         <div className="text-center space-y-2">
-                                            <h4 className="text-xs font-black text-slate-900 uppercase truncate tracking-tight">{shopData.name || 'MA BOUTIQUE'}</h4>
+                                            <h4 className="text-xs font-black text-slate-900 uppercase truncate tracking-tight">{shopData.name || t('stoMyStore')}</h4>
                                             <p className="text-[9px] text-primary font-bold uppercase tracking-widest">{shopData.url || 'INSTANCE'}.BCA</p>
                                         </div>
 
                                         <div className="h-px bg-slate-100 w-full" />
 
                                         <p className="text-[10px] text-slate-500 font-bold leading-relaxed uppercase opacity-70">
-                                            {shopData.description || 'AUCUNE DESCRIPTION DISPONIBLE.'}
+                                            {shopData.description || t('stoNoDesc')}
                                         </p>
 
                                         <div className="flex flex-col gap-2 pt-2">
                                             <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-widest py-2 border-y border-slate-50">
-                                                <span className="text-slate-400">Statut</span>
-                                                <span className="text-emerald-500">En ligne</span>
+                                                <span className="text-slate-400">{t('status')}</span>
+                                                <span className="text-emerald-500">{t('stoStatusOnline')}</span>
                                             </div>
                                             <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-widest py-2 border-b border-slate-50">
-                                                <span className="text-slate-400">Localisation</span>
-                                                <span className="text-slate-600">Guinée</span>
+                                                <span className="text-slate-400">{t('catLocation')}</span>
+                                                <span className="text-slate-600">{t('stoLocationGuinee')}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -496,7 +498,7 @@ const StoreSettings = () => {
                                             to={`/shop/${shopData.url || 'preview'}`} 
                                             className="w-full h-10 bg-primary text-white rounded-xl flex items-center justify-center font-black text-[9px] uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
                                         >
-                                            Visiter la Vitrine
+                                            {t('stoVisitShowcase')}
                                         </Link>
                                     </div>
                                 </div>
@@ -506,7 +508,7 @@ const StoreSettings = () => {
                             <div className="bg-amber-50 p-6 rounded-3xl border border-amber-100 flex gap-4 items-start group/info shadow-sm">
                                 <Info className="text-amber-500 size-5 shrink-0 mt-0.5 transition-transform group-hover/info:scale-110" />
                                 <p className="text-[10px] font-bold text-amber-900/60 uppercase tracking-widest leading-relaxed">
-                                    Les modifications seront propagées en temps réel sur le réseau BCA Connect.
+                                    {t('stoRealTimeProp')}
                                 </p>
                             </div>
                         </div>

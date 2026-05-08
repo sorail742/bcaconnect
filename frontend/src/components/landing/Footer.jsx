@@ -12,52 +12,52 @@ export function Footer() {
     const handleNewsletterSubmit = (e) => {
         e.preventDefault();
         if (!newsletterEmail) {
-            toast.error(lang === 'FR' ? "Veuillez entrer une adresse email." : "Please enter an email address.");
+            toast.error(t('newsletterEmailReq') || (lang === 'FR' ? "Veuillez entrer une adresse email." : "Please enter an email address."));
             return;
         }
         
         // Simuler un appel API
-        toast.success(lang === 'FR' 
+        toast.success(t('newsletterSuccess') || (lang === 'FR' 
             ? "Merci ! Vous êtes maintenant inscrit à notre newsletter." 
-            : "Thank you! You are now subscribed to our newsletter."
+            : "Thank you! You are now subscribed to our newsletter.")
         );
         setNewsletterEmail('');
     };
 
     const handleSocialClick = (name) => {
-        toast.info(lang === 'FR' 
+        toast.info(t('socialSoon') || (lang === 'FR' 
             ? `${name} sera bientôt disponible !` 
-            : `${name} will be available soon!`
+            : `${name} will be available soon!`)
         );
     };
 
     const footerLinks = [
         {
-            title: t('marketplace') || "Marché",
+            title: t('marketplace'),
             links: [
-                { to: "/marketplace", label: t('catalog') || "Catalogue" },
-                { to: "/vendors", label: t('vendors') || "Fournisseurs" },
-                { to: "/tracking", label: t('tracking') || "Suivi" },
+                { to: "/marketplace", label: t('catalog') },
+                { to: "/vendors", label: t('vendors') },
+                { to: "/tracking", label: t('tracking') },
             ]
         },
         {
-            title: t('help') || "Aide",
+            title: t('help'),
             links: [
-                { to: "/faq", label: t('faq') || "FAQ" },
-                { to: "/help", label: t('guide') || "Guide" },
-                { to: "/contact", label: t('contact') || "Contact" },
+                { to: "/faq", label: t('faq') },
+                { to: "/help", label: t('guide') },
+                { to: "/contact", label: t('contact') },
             ]
         },
         {
-            title: t('company') || "Entreprise",
+            title: t('company'),
             links: [
-                { to: "/about", label: t('about') || "À propos" },
-                { to: "/terms", label: t('terms') || "CGU" },
-                { to: "/privacy", label: t('privacy') || "Confidentialité" },
+                { to: "/about", label: t('about') },
+                { to: "/terms", label: t('terms') },
+                { to: "/privacy", label: t('privacy') },
             ]
         },
         {
-            title: "Réseaux",
+            title: t('socials'),
             links: [
                 { to: "https://linkedin.com", label: "LinkedIn", external: true },
                 { to: "https://instagram.com", label: "Instagram", external: true },
@@ -85,9 +85,7 @@ export function Footer() {
                         </Link>
 
                         <p className="text-sm text-muted-foreground leading-relaxed max-w-xs border-l-4 border-primary/30 pl-4">
-                            {lang === 'FR'
-                                ? "La passerelle moderne du commerce africain. Connectez acheteurs, fournisseurs et prestataires en un seul écosystème."
-                                : "The modern gateway for African commerce. Connect buyers, sellers and service providers in one ecosystem."}
+                            {t('footerBrandDesc')}
                         </p>
 
                         <div className="flex items-center gap-3">
@@ -105,10 +103,10 @@ export function Footer() {
                             </button>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                             {[
-                                lang === 'FR' ? 'Sécurisé' : 'Secure', 
-                                lang === 'FR' ? 'Rapide' : 'Fast', 
+                                t('secure') || (lang === 'FR' ? 'Sécurisé' : 'Secure'), 
+                                t('fast') || (lang === 'FR' ? 'Rapide' : 'Fast'), 
                                 '99%'
                             ].map((text, i) => (
                                 <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted border border-border rounded-lg">
@@ -153,13 +151,13 @@ export function Footer() {
                     <div className="lg:col-span-3 space-y-5">
                         <div className="bg-muted/50 border border-border rounded-2xl p-5 space-y-4">
                             <div>
-                                <h5 className="text-xs font-bold text-primary uppercase tracking-wide">Newsletter</h5>
-                                <p className="text-xs text-muted-foreground mt-1">{lang === 'FR' ? "Restez informé des dernières actualités." : "Stay informed with the latest news."}</p>
+                                <h5 className="text-xs font-bold text-primary uppercase tracking-wide">{t('newsletterTitle')}</h5>
+                                <p className="text-xs text-muted-foreground mt-1">{t('newsletterDesc')}</p>
                             </div>
                             <form onSubmit={handleNewsletterSubmit} className="relative">
                                 <input
                                     type="email"
-                                    placeholder={lang === 'FR' ? "votre@email.com" : "your@email.com"}
+                                    placeholder={t('newsletterPlaceholder')}
                                     value={newsletterEmail}
                                     onChange={(e) => setNewsletterEmail(e.target.value)}
                                     className="w-full bg-muted border border-border/50 rounded-xl text-sm px-4 py-3 outline-none focus:border-primary transition-all pr-12 text-foreground placeholder:text-foreground/30"
@@ -172,7 +170,7 @@ export function Footer() {
                                 </button>
                             </form>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <Activity className="size-3 text-emerald-500 animate-pulse" /> {lang === 'FR' ? "Système actif 100%" : "System 100% active"}
+                                <Activity className="size-3 text-emerald-500 animate-pulse" /> {t('operational')}
                             </div>
                         </div>
 
@@ -201,7 +199,7 @@ export function Footer() {
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
                         <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         <span className="text-xs font-semibold text-emerald-400">
-                            {lang === 'FR' ? 'Opérationnel' : 'Operational'}
+                            {t('operationalStatus')}
                         </span>
                     </div>
                 </div>

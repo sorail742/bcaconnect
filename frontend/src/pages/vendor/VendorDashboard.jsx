@@ -36,7 +36,10 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMyStore, useVendorOrders, useVendorStats, useTrustScore } from '../../hooks/useDomainData';
 import socketService from '../../services/socketService';
+import { useLanguage } from '../../context/LanguageContext';
+
 const VendorDashboard = () => {
+    const { t } = useLanguage();
     const { user } = useAuth();
     const navigate = useNavigate();
     const [isAuditing, setIsAuditing] = useState(false);
@@ -51,7 +54,7 @@ const VendorDashboard = () => {
         const handleUpdate = () => {
             refetchOrders();
             refetchStats();
-            toast.info("Mise à jour des flux en cours...");
+            toast.info(t('vdFluxUpdate'));
         };
 
         socketService.on('order_placed', handleUpdate);
@@ -77,10 +80,10 @@ const VendorDashboard = () => {
     const productsCount = store?.produits?.length || 0;
 
     const kpis = [
-        { title: "Chiffre d'Affaires", value: `${totalRevenue.toLocaleString('fr-GN')} GNF`, trend: 'up', trendValue: statsData?.growth || '--', icon: CreditCard, color: 'primary' },
-        { title: 'Commandes Reçues', value: totalOrders.toString(), trend: 'up', trendValue: pendingOrders > 0 ? `${pendingOrders} en attente` : 'Optimal', icon: ShoppingBasket, color: 'emerald-500' },
-        { title: 'Produits en Stock', value: productsCount.toString(), trend: 'up', trendValue: lowStockItems > 0 ? `${lowStockItems} stock bas` : 'Stock nominal', icon: Package, color: 'amber-500' },
-        { title: 'Score de Confiance', value: user?.score_confiance ? `${user.score_confiance}%` : '100%', trend: 'up', trendValue: 'Fournisseur élite', icon: ShieldCheck, color: 'primary' },
+        { title: t('vdRevenue'), value: `${totalRevenue.toLocaleString('fr-GN')} GNF`, trend: 'up', trendValue: statsData?.growth || '--', icon: CreditCard, color: 'primary' },
+        { title: t('vdOrdersReceived'), value: totalOrders.toString(), trend: 'up', trendValue: pendingOrders > 0 ? `${pendingOrders} ${t('vdPending')}` : 'Optimal', icon: ShoppingBasket, color: 'emerald-500' },
+        { title: t('vdProductsInStock'), value: productsCount.toString(), trend: 'up', trendValue: lowStockItems > 0 ? `${lowStockItems} ${t('vdLowStock')}` : t('vdNominalStock'), icon: Package, color: 'amber-500' },
+        { title: t('vdTrustScore'), value: user?.score_confiance ? `${user.score_confiance}%` : '100%', trend: 'up', trendValue: t('vdEliteSupplier'), icon: ShieldCheck, color: 'primary' },
     ];
 
     const recentOrders = orders.slice(0, 5).map(item => ({
@@ -88,19 +91,21 @@ const VendorDashboard = () => {
         displayId: `#ORD-${(item.commande_id || item.id).slice(0, 8).toUpperCase()}`,
         time: new Date(item.createdAt).toLocaleDateString('fr-GN'),
         amount: `${(parseFloat(item.prix_unitaire_achat || 0) * (item.quantite || 0)).toLocaleString('fr-GN')} GNF`,
-        status: item.statut === 'payé' ? 'Payé' : item.statut === 'en_attente' ? 'En attente' : 'Terminé'
+        status: item.statut === 'payé' ? t('vdPaid') : item.statut === 'en_attente' ? t('vdPending') : t('vdCompleted')
     }));
+
+    const [aiRecommendation, setAiRecommendation] = useState(null);
 
     const handleAudit = async () => {
         setIsAuditing(true);
-        toast.info("INITIATION_AUDIT_ALPHA_IA...", { icon: <Satellite className="size-4 animate-spin" /> });
+        toast.info(t('vdAuditInit'), { icon: <Satellite className="size-4 animate-spin" /> });
         try {
             const insights = await aiService.getVendorInsights();
-            // Optionnel : Mettre à jour manuellement si nécessaire, ou laisser le refetch automatique s'occuper du reste
-            toast.success("AUDIT_SCELLÉ_TERMINÉ.", { description: insights.recommendation || "Optimisation du catalogue suggérée." });
+            setAiRecommendation(insights.recommendation || t('vdAiDefaultRec'));
+            toast.success(t('vdAuditDone'));
             refetchStats();
         } catch (error) {
-            toast.error("ERREUR_AUDIT_IA.");
+            toast.error(t('vdAuditError'));
         } finally {
             setIsAuditing(false);
         }
@@ -108,7 +113,7 @@ const VendorDashboard = () => {
 
     const orderColumns = [
         { 
-            label: 'Référence', 
+            label: t('vdReference'), 
             render: (row) => (
                 <div className="flex items-center gap-4 py-3">
                     <div className="size-2 rounded-full bg-primary/40" />
@@ -117,7 +122,7 @@ const VendorDashboard = () => {
             ) 
         },
         { 
-            label: 'Montant', 
+            label: t('vdAmount'), 
             render: (row) => (
                 <div className="flex items-baseline gap-2">
                     <span className="font-black text-[13px] text-foreground tabular-nums tracking-tighter uppercase">{row.amount.split(' ')[0]}</span>
@@ -126,7 +131,7 @@ const VendorDashboard = () => {
             ) 
         },
         { 
-            label: 'Statut', 
+            label: t('vdStatus'), 
             render: (row) => (
                 <div className="flex items-center justify-end pr-6">
                     <StatusBadge status={row.status} className="text-[9px] font-black uppercase  border shadow-2xl py-2 px-5 rounded-xl bg-white/[0.02]" />
@@ -152,7 +157,7 @@ const VendorDashboard = () => {
     };
 
     return (
-        <DashboardLayout title="Tableau de Bord Fournisseur" noPadding>
+        <DashboardLayout title={t('vdDashTitle')} noPadding>
             <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8 space-y-8 custom-scrollbar">
 
                 {/* Executive Welcome Station — Signal Header */}
@@ -164,12 +169,12 @@ const VendorDashboard = () => {
                             </div>
                             <div className="space-y-1">
                                 <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                    Bonjour, <span className="text-primary">{user?.nom_complet?.split(' ')[0] || 'Partenaire'}</span>
+                                    {t('vdGreeting')}, <span className="text-primary">{user?.nom_complet?.split(' ')[0] || t('vdPartner')}</span>
                                 </h2>
                                 <div className="flex items-center gap-2">
                                     <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
-                                        Terminal: {store?.nom_boutique?.toUpperCase() || "MA BOUTIQUE"}
+                                        Terminal: {store?.nom_boutique?.toUpperCase() || t('stoMyStore')}
                                     </p>
                                 </div>
                             </div>
@@ -182,7 +187,7 @@ const VendorDashboard = () => {
                                     className="h-11 px-8 bg-slate-900 text-white hover:bg-slate-800 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-slate-200 flex items-center gap-3 group/btn border-none"
                                 >
                                     <Plus className="size-4 transition-transform group-hover/btn:rotate-90" />
-                                    <span>Ajouter Article</span>
+                                    <span>{t('vdAddArticle')}</span>
                                 </button>
                             ) : (
                                 <button
@@ -191,7 +196,7 @@ const VendorDashboard = () => {
                                     className="h-11 px-8 bg-primary text-white hover:bg-primary/90 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-primary/20 flex items-center gap-3 border-none"
                                 >
                                     <Store className="size-4" />
-                                    <span>Configurer Boutique</span>
+                                    <span>{t('vdConfigStore')}</span>
                                 </button>
                             )}
                         </div>
@@ -231,12 +236,12 @@ const VendorDashboard = () => {
                                         <TrendingUp className="size-5" />
                                     </div>
                                     <div className="space-y-1">
-                                        <h3 className="text-xs font-black uppercase tracking-tight text-slate-900" style={{ fontFamily: "'Outfit', sans-serif" }}>Moniteur de Flux</h3>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">30 Derniers Jours</p>
+                                        <h3 className="text-xs font-black uppercase tracking-tight text-slate-900" style={{ fontFamily: "'Outfit', sans-serif" }}>{t('vdFluxMonitor')}</h3>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">{t('vdLast30Days')}</p>
                                     </div>
                                 </div>
                                 <div className="px-4 py-2 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100">
-                                    Status: Optimal
+                                    {t('vdStatusOptimal')}
                                 </div>
                             </div>
 
@@ -264,12 +269,12 @@ const VendorDashboard = () => {
                                         <Activity className="size-5" />
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Tendance IA</p>
-                                        <p className="text-xs font-black text-slate-900 uppercase">"{statsData?.global_trend?.toUpperCase() || "Tendance Stable"}"</p>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">{t('vdAiTrend')}</p>
+                                        <p className="text-xs font-black text-slate-900 uppercase">"{statsData?.global_trend?.toUpperCase() || t('vdStableTrend')}"</p>
                                     </div>
                                 </div>
                                 <Link to="/vendor/products" className="h-10 px-6 rounded-xl bg-white border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 hover:border-slate-300 transition-all flex items-center gap-3 group/link shadow-sm">
-                                     Voir Produits
+                                     {t('vdViewProducts')}
                                      <ArrowRight className="size-4 group-hover/link:translate-x-1 transition-transform" />
                                 </Link>
                             </div>
@@ -278,11 +283,11 @@ const VendorDashboard = () => {
                         {/* Recent Order Ledger — Signal Registry */}
                         <div className="premium-card overflow-hidden group/ledger">
                             <DataTable
-                                title="Commandes Récentes"
+                                title={t('vdRecentOrders')}
                                 columns={orderColumns}
                                 data={recentOrders}
                                 className="border-0 bg-transparent"
-                                actions={<Link className="text-[10px] font-black text-primary uppercase tracking-widest hover:text-slate-900 transition-all px-6 py-4 flex items-center gap-2" to="/vendor/orders">Tout Voir <ChevronRight className="size-3" /></Link>}
+                                actions={<Link className="text-[10px] font-black text-primary uppercase tracking-widest hover:text-slate-900 transition-all px-6 py-4 flex items-center gap-2" to="/vendor/orders">{t('vdViewAll')} <ChevronRight className="size-3" /></Link>}
                             />
                         </div>
                     </div>
@@ -292,8 +297,8 @@ const VendorDashboard = () => {
                         <div className="premium-card p-6 flex flex-col h-fit group/supply relative overflow-hidden">
                             <div className="flex items-start justify-between mb-8">
                                 <div className="space-y-1">
-                                    <h3 className="text-xs font-black uppercase tracking-tight text-slate-900" style={{ fontFamily: "'Outfit', sans-serif" }}>Résilience Stock</h3>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Analyse de Disponibilité</p>
+                                    <h3 className="text-xs font-black uppercase tracking-tight text-slate-900" style={{ fontFamily: "'Outfit', sans-serif" }}>{t('vdStockResilience')}</h3>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">{t('vdAvailabilityAnalysis')}</p>
                                 </div>
                                 <div className="size-2 rounded-full bg-blue-500 animate-pulse shadow-glow shadow-blue-500/50" />
                             </div>
@@ -301,7 +306,7 @@ const VendorDashboard = () => {
                             <div className="space-y-6">
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
-                                        <span className="text-slate-400">Disponibilité</span>
+                                        <span className="text-slate-400">{t('vdAvailability')}</span>
                                         <span className="text-slate-900">{productsCount > 0 ? Math.round(((productsCount - lowStockItems) / productsCount) * 100) : 0}%</span>
                                     </div>
                                     <div className="h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
@@ -315,7 +320,7 @@ const VendorDashboard = () => {
                                 </div>
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
-                                        <span className="text-slate-400">Alerte Stock</span>
+                                        <span className="text-slate-400">{t('vdStockAlert')}</span>
                                         <span className="text-amber-500">{productsCount > 0 ? Math.round((lowStockItems / productsCount) * 100) : 0}%</span>
                                     </div>
                                     <div className="h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
@@ -343,10 +348,23 @@ const VendorDashboard = () => {
                                 ) : (
                                     <>
                                         <Satellite className="size-4 group-hover/btn:rotate-180 transition-transform duration-1000" />
-                                        <span>Lancer Audit IA</span>
+                                        <span>{t('vdLaunchAudit')}</span>
                                     </>
                                 )}
                             </button>
+                            {aiRecommendation && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 10 }} 
+                                    animate={{ opacity: 1, y: 0 }} 
+                                    className="mt-4 p-4 bg-emerald-50 border border-emerald-100 rounded-xl"
+                                >
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                        <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">{t('vdAiReport')}</span>
+                                    </div>
+                                    <p className="text-[10px] font-bold text-slate-600 uppercase leading-relaxed">{aiRecommendation}</p>
+                                </motion.div>
+                            )}
                         </div>
 
                         {/* Trust Node Monitor — Elite Clearance */}
@@ -357,14 +375,14 @@ const VendorDashboard = () => {
                                         <ShieldCheck className="size-5" />
                                     </div>
                                     <div className="space-y-1">
-                                        <h4 className="text-xs font-black uppercase tracking-tight text-slate-900" style={{ fontFamily: "'Outfit', sans-serif" }}>Score Confiance</h4>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Certification Fournisseur</p>
+                                        <h4 className="text-xs font-black uppercase tracking-tight text-slate-900" style={{ fontFamily: "'Outfit', sans-serif" }}>{t('vdTrustScore')}</h4>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">{t('vdSupplierCert')}</p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest">
-                                        <span className="text-slate-400">Intégrité</span>
+                                        <span className="text-slate-400">{t('vdIntegrity')}</span>
                                         <span className="text-primary font-black italic">{trustData?.percentage || user?.score_confiance || 98.2}%</span>
                                     </div>
                                     <div className="h-3 bg-slate-50 rounded-full overflow-hidden border border-slate-100 p-0.5">
@@ -379,7 +397,7 @@ const VendorDashboard = () => {
                             </div>
 
                             <div className="mt-8 py-3 px-4 bg-emerald-50 text-[10px] font-black text-emerald-600 uppercase tracking-widest rounded-xl text-center border border-emerald-100">
-                                Terminal Sécurisé
+                                {t('vdSecureTerminal')}
                             </div>
                         </div>
                     </div>

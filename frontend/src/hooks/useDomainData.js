@@ -12,3 +12,4 @@ export * from './data/useWalletData';
 export * from './data/useSupportData';
 export * from './data/useAdminData';
 export * from './data/useMarketingData';
+export * from './data/useCreditData';

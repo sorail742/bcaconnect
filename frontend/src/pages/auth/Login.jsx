@@ -30,53 +30,68 @@ const Login = () => {
     const [verificationCode, setVerificationCode] = useState('');
     const [twoFactorUserId, setTwoFactorUserId] = useState(null);
     
-    const { login, verify2FA, isAuthenticated, user, loading: authLoading, error: authError, setIsSubmitting, setAuth } = useAuth();
+    const { login, verify2FA, isAuthenticated, user, loading: authLoading, error: authError, setAuth } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-    // 🌐 GOOGLE OAUTH CONFIG
     useEffect(() => {
         const handleGoogleResponse = async (response) => {
             try {
-                setIsSubmitting(true);
+                setIsGoogleLoading(true);
                 const data = await authService.googleLogin(response.credential);
                 setAuth(data.user, data.accessToken);
                 toast.success('Connexion Google réussie !');
                 const dashboardRoute = getDashboardRoute(data.user.role);
                 navigate(dashboardRoute);
             } catch (error) {
-                console.error(error);
-                toast.error("Échec de la connexion Google. Vérifiez vos identifiants.");
+                const errorMsg = error?.response?.data?.message || error?.message || 'Erreur inconnue';
+                console.error('❌ Google Auth Error:', error?.response?.data || error?.message);
+                toast.error(`Échec de la connexion Google : ${errorMsg}`);
             } finally {
-                setIsSubmitting(false);
+                setIsGoogleLoading(false);
             }
         };
 
+        // Supprimer le script existant s'il y en a un pour éviter les doublons
+        const existingScript = document.getElementById('google-gsi-script');
+        if (existingScript) existingScript.remove();
+
         const script = document.createElement('script');
+        script.id = 'google-gsi-script';
         script.src = 'https://accounts.google.com/gsi/client';
         script.async = true;
         script.defer = true;
         script.onload = () => {
             if (window.google) {
                 window.google.accounts.id.initialize({
-                    client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '1047805179043-4o6u66j8m5l9b6g8q3e6k2p9f7j2l8m.apps.googleusercontent.com',
-                    callback: handleGoogleResponse
+                    client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+                    callback: handleGoogleResponse,
+                    auto_select: false,
+                    cancel_on_tap_outside: true
                 });
+
+                // Rendu du bouton officiel dans le conteneur dédié
+                const buttonDiv = document.getElementById('google-button-container');
+                if (buttonDiv) {
+                    window.google.accounts.id.renderButton(buttonDiv, {
+                        theme: 'outline',
+                        size: 'large',
+                        width: buttonDiv.offsetWidth,
+                        text: 'continue_with',
+                        shape: 'rectangular',
+                        logo_alignment: 'left'
+                    });
+                }
             }
         };
         document.body.appendChild(script);
         
-        return () => { document.body.removeChild(script); };
-    }, [navigate, setAuth, setIsSubmitting]);
-
-    const handleGoogleClick = () => {
-        if (window.google) {
-            window.google.accounts.id.prompt();
-        } else {
-            toast.error("Le service Google n'est pas encore chargé.");
-        }
-    };
+        return () => { 
+            const s = document.getElementById('google-gsi-script');
+            if (s) document.body.removeChild(s); 
+        };
+    }, [navigate, setAuth]);
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -164,11 +179,11 @@ const Login = () => {
                     {/* Header */}
                     <div className="space-y-3">
                         <h1 className="text-3xl font-bold text-foreground">
-                            {step === 'LOGIN' ? 'Se connecter' : 'Vérification 2FA'}
+                            {step === 'LOGIN' ? t('loginTitle') : 'Vérification 2FA'}
                         </h1>
                         <p className="text-sm text-muted-foreground">
                             {step === 'LOGIN' 
-                                ? 'Accédez à votre compte BCA Connect' 
+                                ? t('loginSub')
                                 : 'Veuillez entrer le code généré par votre application d\'authentification.'}
                         </p>
                     </div>
@@ -211,8 +226,8 @@ const Login = () => {
 
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">
-                                        <label className="text-sm font-bold text-foreground">Mot de passe</label>
-                                        <Link to="/forgot-password" className="text-xs font-bold text-primary hover:text-primary/80">Oublié?</Link>
+                                        <label className="text-sm font-bold text-foreground">{t('registerPassword') || "Mot de passe"}</label>
+                                        <Link to="/forgot-password" className="text-xs font-bold text-primary hover:text-primary/80">{t('loginForgot') || "Mot de passe oublié ?"}</Link>
                                     </div>
                                     <div className="relative group">
                                         <div className="absolute left-4 top-1/2 -translate-y-1/2 size-10 flex items-center justify-center">
@@ -276,14 +291,14 @@ const Login = () => {
 
                         <button
                             type="submit"
-                            disabled={isSubmitting || (step === '2FA' && verificationCode.length < 6)}
+                            disabled={isSubmitting || isGoogleLoading || (step === '2FA' && verificationCode.length < 6)}
                             className="w-full h-14 rounded-xl bg-primary text-primary-foreground font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:shadow-xl hover:translate-y-[-2px] hover:bg-primary/90 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                         >
-                            {isSubmitting ? (
+                            {isSubmitting || isGoogleLoading ? (
                                 <div className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : (
                                 <>
-                                    <span>{step === 'LOGIN' ? 'IDENTIFICATION' : 'VALIDER LE CODE'}</span>
+                                    <span>{step === 'LOGIN' ? (t('loginSecure') || 'IDENTIFICATION') : 'VALIDER LE CODE'}</span>
                                     <ArrowRight className="size-4" />
                                 </>
                             )}
@@ -293,44 +308,24 @@ const Login = () => {
                     {/* Divider */}
                     <div className="relative flex items-center">
                         <div className="flex-1 border-t border-border"></div>
-                        <span className="px-3 text-xs text-muted-foreground">Ou continuer avec</span>
+                        <span className="px-3 text-xs text-muted-foreground">{t('loginOr') || "Ou continuer avec"}</span>
                         <div className="flex-1 border-t border-border"></div>
                     </div>
 
                     {/* Social Buttons */}
                     <div className="grid grid-cols-1 gap-3">
-                        <button 
-                            type="button"
-                            onClick={handleGoogleClick}
-                            className="h-12 rounded-xl border border-border bg-background hover:bg-accent transition-all font-bold text-sm flex items-center justify-center gap-3 active:scale-95 shadow-sm"
-                        >
-                            <svg className="size-5" viewBox="0 0 24 24">
-                                <path
-                                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                                    fill="#4285F4"
-                                />
-                                <path
-                                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                                    fill="#34A853"
-                                />
-                                <path
-                                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                                    fill="#FBBC05"
-                                />
-                                <path
-                                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                                    fill="#EA4335"
-                                />
-                            </svg>
-                            <span>Continuer avec Google</span>
-                        </button>
+                        {/* Conteneur pour le bouton Google officiel */}
+                        <div 
+                            id="google-button-container" 
+                            className="w-full h-[50px] overflow-hidden rounded-xl flex justify-center"
+                        />
                     </div>
 
                     {/* Sign Up Link */}
                     <p className="text-center text-sm text-muted-foreground">
-                        Pas de compte?{' '}
+                        {t('loginNoAccount') ? t('loginNoAccount').split('?')[0] + '?' : "Pas de compte?"}{' '}
                         <Link to="/register" className="text-primary hover:text-primary/80 font-semibold">
-                            S'inscrire
+                            {t('register') || "S'inscrire"}
                         </Link>
                     </p>
                 </motion.div>

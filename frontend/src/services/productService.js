@@ -1,7 +1,10 @@
 import api from './api';
 import { offlineStorage } from '../lib/db';
+import categoryService from './categoryService';
 
 const productService = {
+    getCategories: () => categoryService.getAll(),
+
     getAll: async (params = {}) => {
         if (!navigator.onLine && Object.keys(params).length === 0) {
             return await offlineStorage.getProducts();
@@ -10,7 +13,11 @@ const productService = {
             const response = await api.get('/products', { params });
             const data = response.data;
             
-            // On retourne soit le tableau de produits, soit l'objet paginé complet
+            // On cache les produits si on récupère la liste complète sans filtres complexes
+            if (Object.keys(params).length === 0 && Array.isArray(data)) {
+                offlineStorage.saveProducts(data).catch(err => console.error("Erreur cache produits:", err));
+            }
+
             return data;
         } catch (error) {
             if (Object.keys(params).length === 0) {

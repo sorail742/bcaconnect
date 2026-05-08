@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Calculator, TrendingUp, ShieldCheck, Zap, ArrowRight, Info, 
@@ -8,62 +8,32 @@ import { useNavigate } from 'react-router-dom';
 
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import creditService from '../services/creditService';
 import { toast } from 'sonner';
 import { creditRequestSchema } from '../lib/validation';
 import { cn } from '../lib/utils';
+import { useCreditSimulation, useCreditScore, useRequestCredit } from '../hooks/data/useCreditData';
 
 export default function CreditSimulator() {
     const [amount, setAmount] = useState(5000000); // 5M GNF
     const [duration, setDuration] = useState(12);   // 12 mois
-    const [simulation, setSimulation] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [aiScore, setAiScore] = useState(null);
+    const [debouncedParams, setDebouncedParams] = useState({ montant: amount, duree_mois: duration, type_credit: 'personnel' });
 
-    const performSimulation = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const data = await creditService.simulate({
-                montant: amount,
-                duree_mois: duration,
-                type_credit: 'personnel'
-            });
-            setSimulation(data);
-        } catch (err) {
-            setError("Échec de la simulation. Veuillez vérifier les paramètres.");
-            console.error(err);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [amount, duration]);
-
-    // Charger le score IA réel de l'utilisateur au montage
-    useEffect(() => {
-        const fetchScore = async () => {
-            try {
-                const data = await creditService.getScore();
-                setAiScore(data);
-            } catch (err) {
-                console.error("Impossible de charger le score IA", err);
-            }
-        };
-        fetchScore();
-    }, []);
-
-    // Débouncing de la simulation
+    // Debouncing simulation params
     useEffect(() => {
         const timer = setTimeout(() => {
-            performSimulation();
+            setDebouncedParams({ montant: amount, duree_mois: duration, type_credit: 'personnel' });
         }, 500);
         return () => clearTimeout(timer);
-    }, [amount, duration, performSimulation]);
+    }, [amount, duration]);
+
+    // React Query Hooks
+    const { data: simulation, isLoading: isSimulating } = useCreditSimulation(debouncedParams);
+    const { data: aiScore, isLoading: isScoreLoading } = useCreditScore();
+    const requestCreditMutation = useRequestCredit();
 
     const [motif, setMotif] = useState('');
     const [garanties, setGaranties] = useState('');
     const [showConfirm, setShowConfirm] = useState(false);
-    const [isRequesting, setIsRequesting] = useState(false);
     const navigate = useNavigate();
 
     const handleRequest = async () => {
@@ -79,23 +49,18 @@ export default function CreditSimulator() {
             return;
         }
         
-        setIsRequesting(true);
-        try {
-            await creditService.request({
-                montant_principal: amount,
-                duree_mois: duration,
-                taux_interet: simulation?.taux || 0,
-                motif: motif,
-                garanties: garanties
-            });
-            toast.success("Demande de crédit soumise avec succès !");
-            navigate('/credits');
-        } catch (err) {
-            toast.error(err.response?.data?.message || "Erreur lors de la soumission.");
-        } finally {
-            setIsRequesting(false);
-            setShowConfirm(false);
-        }
+        requestCreditMutation.mutate({
+            montant_principal: amount,
+            duree_mois: duration,
+            taux_interet: simulation?.taux || 0,
+            motif: motif,
+            garanties: garanties
+        }, {
+            onSuccess: () => {
+                setShowConfirm(false);
+                navigate('/credits');
+            }
+        });
     };
 
     return (
@@ -206,7 +171,7 @@ export default function CreditSimulator() {
                                 </div>
 
                                 <AnimatePresence mode="wait">
-                                    {isLoading ? (
+                                    {isSimulating ? (
                                         <motion.div 
                                             key="loading"
                                             initial={{ opacity: 0 }}
@@ -291,11 +256,11 @@ export default function CreditSimulator() {
 
                                 <Button 
                                     onClick={() => setShowConfirm(true)}
-                                    disabled={!aiScore || aiScore?.score < 50}
+                                    disabled={isScoreLoading || !aiScore || aiScore?.score < 50}
                                     className="w-full h-14 bg-primary text-primary-foreground font-black text-xs uppercase tracking-widest border-none shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 >
-                                    {!aiScore ? 'ANALYSE EN COURS...' : aiScore.score < 50 ? 'SCORE INSUFFISANT POUR LE CRÉDIT' : 'DEMANDER CE FINANCEMENT'} 
-                                    {aiScore?.score >= 50 && <ArrowRight className="size-5 ml-2" />}
+                                    {isScoreLoading || !aiScore ? 'ANALYSE EN COURS...' : aiScore.score < 50 ? 'SCORE INSUFFISANT POUR LE CRÉDIT' : 'DEMANDER CE FINANCEMENT'} 
+                                    {(aiScore?.score >= 50 && !isScoreLoading) && <ArrowRight className="size-5 ml-2" />}
                                 </Button>
                             </div>
                         </Card>
@@ -357,7 +322,7 @@ export default function CreditSimulator() {
                                 <div className="space-y-2">
                                     <label className="text-xs font-black text-foreground uppercase tracking-widest">Motif du Financement *</label>
                                     <textarea
-                                        className="w-full h-24 bg-background border border-border rounded-xl p-3 text-sm focus:border-primary transition-all outline-none resize-none"
+                                        className="w-full h-24 bg-background border border-border rounded-xl p-3 text-sm focus:border-primary transition-all outline-none resize-none text-foreground"
                                         placeholder="Ex: Achat de stock, Développement boutique..."
                                         value={motif}
                                         onChange={e => setMotif(e.target.value)}
@@ -366,7 +331,7 @@ export default function CreditSimulator() {
                                 <div className="space-y-2">
                                     <label className="text-xs font-black text-foreground uppercase tracking-widest">Garanties ou Références</label>
                                     <input
-                                        className="w-full h-10 bg-background border border-border rounded-xl px-3 text-sm focus:border-primary transition-all outline-none"
+                                        className="w-full h-10 bg-background border border-border rounded-xl px-3 text-sm focus:border-primary transition-all outline-none text-foreground"
                                         placeholder="Ex: Titre foncier, Caution solidaire..."
                                         value={garanties}
                                         onChange={e => setGaranties(e.target.value)}
@@ -383,11 +348,11 @@ export default function CreditSimulator() {
 
                             <button
                                 onClick={handleRequest}
-                                disabled={isRequesting || !motif}
-                                className="w-full h-14 bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-40"
+                                disabled={requestCreditMutation.isPending || !motif}
+                                className="w-full h-14 bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-40 border-none"
                             >
-                                {isRequesting ? <RefreshCcw className="size-5 animate-spin" /> : <ShieldCheck className="size-5" />}
-                                {isRequesting ? 'ANALYSE IA EN COURS...' : 'CONFIRMER LA DEMANDE'}
+                                {requestCreditMutation.isPending ? <RefreshCcw className="size-5 animate-spin" /> : <ShieldCheck className="size-5" />}
+                                {requestCreditMutation.isPending ? 'ANALYSE IA EN COURS...' : 'CONFIRMER LA DEMANDE'}
                             </button>
                         </div>
                     </motion.div>

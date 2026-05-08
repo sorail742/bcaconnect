@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useLanguage } from '../context/LanguageContext';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import {
     Search, Send, Phone, Video, MoreHorizontal,
@@ -12,7 +13,7 @@ import messageService from '../services/messageService';
 import userService from '../services/userService';
 import socketService from '../services/socketService';
 import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enUS } from 'date-fns/locale';
 
 // ── Composant avatar ──────────────────────────────────────────────────────────
 const Avatar = ({ seed, size = 'md', online = false }) => {
@@ -34,7 +35,7 @@ const Avatar = ({ seed, size = 'md', online = false }) => {
 };
 
 // ── Composant bulle de message ────────────────────────────────────────────────
-const MessageBubble = ({ msg, isMe }) => (
+const MessageBubble = ({ msg, isMe, locale }) => (
     <div className={cn("flex flex-col gap-1 max-w-[70%] animate-in fade-in slide-in-from-bottom-2 duration-300", isMe ? "ml-auto items-end" : "items-start")}>
         <div className={cn(
             "px-4 py-2.5 rounded-2xl text-sm leading-relaxed",
@@ -46,7 +47,7 @@ const MessageBubble = ({ msg, isMe }) => (
         </div>
         <div className="flex items-center gap-1 px-1">
             <span className="text-[10px] text-muted-foreground">
-                {formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true, locale: fr })}
+                {formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true, locale })}
             </span>
             {isMe && <CheckCheck className="size-3 text-primary" />}
         </div>
@@ -54,7 +55,7 @@ const MessageBubble = ({ msg, isMe }) => (
 );
 
 // ── Composant item conversation ───────────────────────────────────────────────
-const ConvItem = ({ conv, isActive, onClick }) => {
+const ConvItem = ({ conv, isActive, onClick, t, locale }) => {
     const partner = conv.participants?.[0];
     const lastDate = conv.date_dernier_message ? new Date(conv.date_dernier_message) : null;
     return (
@@ -69,16 +70,16 @@ const ConvItem = ({ conv, isActive, onClick }) => {
             <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
                     <p className={cn("text-sm font-semibold truncate", isActive ? "text-primary" : "text-foreground")}>
-                        {partner?.nom_complet || 'Utilisateur'}
+                        {partner?.nom_complet || t('user')}
                     </p>
                     {lastDate && (
                         <span className="text-[10px] text-muted-foreground shrink-0">
-                            {formatDistanceToNow(lastDate, { locale: fr })}
+                            {formatDistanceToNow(lastDate, { locale })}
                         </span>
                     )}
                 </div>
                 <p className="text-xs text-muted-foreground truncate mt-0.5">
-                    {conv.dernier_message || 'Démarrer la conversation'}
+                    {conv.dernier_message || t('msgNoConvTitle')}
                 </p>
             </div>
             {conv.unread_count > 0 && (
@@ -93,6 +94,7 @@ const ConvItem = ({ conv, isActive, onClick }) => {
 // ── Page principale ───────────────────────────────────────────────────────────
 const Messages = () => {
     const { user } = useAuth();
+    const { lang, t } = useLanguage();
     const [conversations, setConversations] = useState([]);
     const [selectedConv, setSelectedConv] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -111,6 +113,9 @@ const Messages = () => {
     const messagesEndRef = useRef(null);
     const typingTimeoutRef = useRef(null);
     const inputRef = useRef(null);
+
+    // Get date-fns locale based on app language
+    const dateLocale = lang === 'EN' ? enUS : fr;
 
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -271,9 +276,7 @@ const Messages = () => {
     const loadUsers = useCallback(async (search = '') => {
         setIsLoadingUsers(true);
         try {
-            // Utiliser le nouveau endpoint de recherche publique (évite le 403 Forbidden pour les clients)
             const data = await userService.getPublicSearch(search);
-            // Le nouvel endpoint renvoie directement un tableau
             const list = Array.isArray(data) ? data : (data?.users || []);
             setUsers(list.filter(u => u.id !== user?.id));
         } catch (err) {
@@ -357,7 +360,7 @@ const Messages = () => {
     const totalUnread = conversations.reduce((acc, c) => acc + (c.unread_count || 0), 0);
 
     return (
-        <DashboardLayout title="Messages" noPadding>
+        <DashboardLayout title={t('msgTitle')} noPadding>
             <div className="flex h-[calc(100vh-56px)] overflow-hidden bg-background">
 
                 {/* ── Sidebar conversations ─────────────────────────────────── */}
@@ -371,7 +374,7 @@ const Messages = () => {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <MessageSquare className="size-5 text-primary" />
-                                <h2 className="text-sm font-bold text-foreground">Messages</h2>
+                                <h2 className="text-sm font-bold text-foreground">{t('msgTitle')}</h2>
                                 {totalUnread > 0 && (
                                     <span className="size-5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
                                         {totalUnread > 9 ? '9+' : totalUnread}
@@ -381,7 +384,7 @@ const Messages = () => {
                             <button
                                 onClick={() => setShowNewConv(true)}
                                 className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all"
-                                title="Nouvelle conversation"
+                                title={t('msgNewMessage')}
                             >
                                 <Plus className="size-4" />
                             </button>
@@ -390,7 +393,7 @@ const Messages = () => {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                             <input
                                 className="w-full h-9 pl-9 pr-3 bg-background border border-border rounded-xl text-sm outline-none focus:border-primary/50 transition-all text-foreground placeholder:text-muted-foreground"
-                                placeholder="Rechercher une conversation..."
+                                placeholder={t('msgSearchPlaceholder')}
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                             />
@@ -402,20 +405,20 @@ const Messages = () => {
                         {isLoading ? (
                             <div className="py-12 flex flex-col items-center gap-3">
                                 <Loader2 className="size-6 text-primary animate-spin" />
-                                <p className="text-xs text-muted-foreground">Chargement...</p>
+                                <p className="text-xs text-muted-foreground">{t('loading')}...</p>
                             </div>
                         ) : filteredConvs.length === 0 ? (
                             <div className="py-12 flex flex-col items-center gap-3 text-center px-4">
                                 <MessageSquare className="size-8 text-muted-foreground/30" />
                                 <div>
-                                    <p className="text-sm font-semibold text-foreground">Aucune conversation</p>
-                                    <p className="text-xs text-muted-foreground mt-1">Démarrez une nouvelle conversation.</p>
+                                    <p className="text-sm font-semibold text-foreground">{t('msgNoConvTitle')}</p>
+                                    <p className="text-xs text-muted-foreground mt-1">{t('msgNoConvDesc')}</p>
                                 </div>
                                 <button
                                     onClick={() => setShowNewConv(true)}
                                     className="h-8 px-4 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 transition-colors flex items-center gap-1.5"
                                 >
-                                    <Plus className="size-3.5" /> Nouveau message
+                                    <Plus className="size-3.5" /> {t('msgNewMessage')}
                                 </button>
                             </div>
                         ) : filteredConvs.map(conv => (
@@ -424,6 +427,8 @@ const Messages = () => {
                                 conv={conv}
                                 isActive={selectedConv?.id === conv.id}
                                 onClick={() => handleSelectConv(conv)}
+                                t={t}
+                                locale={dateLocale}
                             />
                         ))}
                     </div>
@@ -450,23 +455,17 @@ const Messages = () => {
                                         <p className="text-sm font-bold text-foreground">{partner?.nom_complet}</p>
                                         <div className="flex items-center gap-1.5">
                                             {isTyping ? (
-                                                <span className="text-xs text-primary animate-pulse">En train d'écrire...</span>
+                                                <span className="text-xs text-primary animate-pulse">{t('msgTyping')}</span>
                                             ) : (
                                                 <>
                                                     <div className="size-1.5 rounded-full bg-emerald-500" />
-                                                    <span className="text-xs text-muted-foreground">En ligne</span>
+                                                    <span className="text-xs text-muted-foreground">{t('msgOnline')}</span>
                                                 </>
                                             )}
                                         </div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <button className="size-8 rounded-lg bg-muted border border-border text-muted-foreground hover:text-primary hover:border-primary/40 flex items-center justify-center transition-all">
-                                        <Phone className="size-4" />
-                                    </button>
-                                    <button className="size-8 rounded-lg bg-muted border border-border text-muted-foreground hover:text-primary hover:border-primary/40 flex items-center justify-center transition-all">
-                                        <Video className="size-4" />
-                                    </button>
                                     <button className="size-8 rounded-lg bg-muted border border-border text-muted-foreground hover:text-foreground flex items-center justify-center transition-all">
                                         <MoreHorizontal className="size-4" />
                                     </button>
@@ -481,8 +480,10 @@ const Messages = () => {
                                             <MessageSquare className="size-7 text-primary" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-semibold text-foreground">Démarrez la conversation</p>
-                                            <p className="text-xs text-muted-foreground mt-1">Envoyez votre premier message à {partner?.nom_complet}.</p>
+                                            <p className="text-sm font-semibold text-foreground">{t('msgNoConvTitle')}</p>
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                {t('msgStartWith', { name: partner?.nom_complet })}
+                                            </p>
                                         </div>
                                     </div>
                                 ) : (
@@ -491,10 +492,10 @@ const Messages = () => {
                                             key={msg.id}
                                             msg={msg}
                                             isMe={msg.expediteur_id === user?.id}
+                                            locale={dateLocale}
                                         />
                                     ))
                                 )}
-                                {/* Indicateur de frappe */}
                                 {isTyping && (
                                     <div className="flex items-center gap-2 animate-in fade-in duration-300">
                                         <Avatar seed={partner?.id} size="sm" />
@@ -517,7 +518,7 @@ const Messages = () => {
                                     <input
                                         ref={inputRef}
                                         className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-                                        placeholder={`Message à ${partner?.nom_complet}...`}
+                                        placeholder={t('msgInputPlaceholder', { name: partner?.nom_complet })}
                                         value={messageInput}
                                         onChange={handleTypingInput}
                                         onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) handleSend(e); }}
@@ -534,7 +535,7 @@ const Messages = () => {
                                     </button>
                                 </div>
                                 <p className="text-[10px] text-muted-foreground text-center mt-1.5">
-                                    Entrée pour envoyer • Chiffrement de bout en bout
+                                    {t('msgEnterToSend')}
                                 </p>
                             </form>
                         </>
@@ -545,16 +546,16 @@ const Messages = () => {
                                 <MessageSquare className="size-10 text-primary" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-foreground">Vos messages</h3>
+                                <h3 className="text-lg font-bold text-foreground">{t('msgTitle')}</h3>
                                 <p className="text-sm text-muted-foreground mt-1 max-w-xs">
-                                    Sélectionnez une conversation ou démarrez-en une nouvelle.
+                                    {t('msgSelectConv')}
                                 </p>
                             </div>
                             <button
                                 onClick={() => setShowNewConv(true)}
                                 className="h-10 px-6 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors flex items-center gap-2"
                             >
-                                <Plus className="size-4" /> Nouveau message
+                                <Plus className="size-4" /> {t('msgNewMessage')}
                             </button>
                         </div>
                     )}
@@ -571,7 +572,7 @@ const Messages = () => {
                                 <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
                                     <Users className="size-4 text-primary" />
                                 </div>
-                                <h3 className="text-sm font-bold text-foreground">Nouveau message</h3>
+                                <h3 className="text-sm font-bold text-foreground">{t('msgNewMessage')}</h3>
                             </div>
                             <button onClick={() => setShowNewConv(false)}
                                 className="size-7 rounded-lg bg-muted hover:bg-rose-500/10 hover:text-rose-500 flex items-center justify-center text-muted-foreground transition-colors">
@@ -584,7 +585,7 @@ const Messages = () => {
                                 <input
                                     autoFocus
                                     className="w-full h-10 pl-9 pr-3 bg-background border border-border rounded-xl text-sm outline-none focus:border-primary/50 transition-all text-foreground placeholder:text-muted-foreground"
-                                    placeholder="Rechercher un utilisateur..."
+                                    placeholder={t('msgSearchUser')}
                                     value={userSearch}
                                     onChange={e => setUserSearch(e.target.value)}
                                 />
@@ -596,7 +597,7 @@ const Messages = () => {
                                     </div>
                                 ) : users.length === 0 ? (
                                     <div className="py-8 text-center">
-                                        <p className="text-sm text-muted-foreground">Aucun utilisateur trouvé.</p>
+                                        <p className="text-sm text-muted-foreground">{t('noResults')}</p>
                                     </div>
                                 ) : users.map(u => (
                                     <button

@@ -7,7 +7,7 @@ import {
     ArrowUpRight, Info, Mail, Phone, HelpCircle
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
-import { cn } from '../lib/utils';
+import { cn, getImageUrl } from '../lib/utils';
 import { useVendors } from '../hooks/useDomainData';
 import LazyImage from '../components/ui/LazyImage';
 import AnimatedCounter from '../components/ui/AnimatedCounter';
@@ -17,13 +17,6 @@ import { Link } from 'react-router-dom';
 
 const FALLBACK_LOGO = 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&q=80&w=200';
 const FALLBACK_PRODUCT = 'https://images.unsplash.com/photo-1523275319145-80b01958f7a2?auto=format&fit=crop&q=80&w=300';
-
-const getImageUrl = (url) => {
-    if (!url) return null;
-    if (url.startsWith('http')) return url;
-    const serverUrl = 'http://localhost:5000';
-    return `${serverUrl}${url.startsWith('/') ? '' : '/'}${url}`;
-};
 
 const VendorsList = () => {
     const { t } = useLanguage();
@@ -66,7 +59,7 @@ const VendorsList = () => {
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
                 <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/20 to-transparent" />
                 
-                <div className="max-w-[1400px] mx-auto px-6 relative z-10">
+                <div className="container px-6 relative z-10">
                     <div className="flex flex-col lg:flex-row items-end justify-between gap-8">
                         <div className="space-y-6 max-w-2xl">
                             <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-primary">
@@ -122,7 +115,7 @@ const VendorsList = () => {
             </div>
 
             {/* 2. Main Layout */}
-            <div className="max-w-[1400px] mx-auto px-6 -mt-10 relative z-20">
+            <div className="container px-6 -mt-10 relative z-20">
                 <div className="flex flex-col lg:flex-row gap-8">
                     
                     {/* Left Sidebar — Filters */}

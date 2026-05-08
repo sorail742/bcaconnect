@@ -3,10 +3,12 @@ import { motion } from 'framer-motion';
 import { LayoutDashboard, TrendingUp, Users, Package, ShoppingCart, ArrowRight, Zap, MoreHorizontal, Wallet } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useLanguage } from '../../context/LanguageContext';
 import statService from '../../services/statService';
 import { ROLES } from '../../constants/roles';
 
 export const DashboardPreview = () => {
+    const { t } = useLanguage();
     const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
     const [stats, setStats] = useState({
@@ -47,7 +49,7 @@ export const DashboardPreview = () => {
 
     return (
         <section className="bg-slate-50 py-12 sm:py-16 border-t border-slate-100 mb-[-1px]">
-            <div className="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8">
+            <div className="container px-3 sm:px-6 lg:px-8">
                 
                 {/* Layout Container */}
                 <div className="bg-slate-900 rounded-[2.5rem] sm:rounded-[3.5rem] overflow-hidden border border-white/5 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)]">
@@ -56,19 +58,19 @@ export const DashboardPreview = () => {
                         {/* Left: Interactive Preview */}
                         <div className="flex-1 p-6 sm:p-10 lg:p-12 space-y-8">
                             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-white text-[10px] font-black uppercase tracking-widest">
-                                <LayoutDashboard className="size-3.5" /> Système de gestion prédictive
+                                <LayoutDashboard className="size-3.5" /> {t('predictiveSystem') || "Système de gestion prédictive"}
                             </div>
                             
                             <h2 className="text-3xl sm:text-4xl font-black text-white leading-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                Contrôlez chaque aspect <br /> de votre <span className="text-[#FF6600]">business live.</span>
+                                {t('controlBusiness') || "Contrôlez chaque aspect de votre business live."}
                             </h2>
                             
                             <div className="grid grid-cols-2 gap-4">
                                 {[
-                                    { label: 'Volume (GNF)', val: `${stats.revenue}`, icon: TrendingUp, color: 'text-emerald-400' },
-                                    { label: 'Commandes', val: stats.orders, icon: ShoppingCart, color: 'text-blue-400' },
-                                    { label: 'Acheteurs', val: stats.activeUsers, icon: Users, color: 'text-orange-400' },
-                                    { label: 'Référencés', val: stats.listings, icon: Package, color: 'text-violet-400' },
+                                    { label: t('revenue') || 'Volume (GNF)', val: `${stats.revenue}`, icon: TrendingUp, color: 'text-emerald-400' },
+                                    { label: t('orders') || 'Commandes', val: stats.orders, icon: ShoppingCart, color: 'text-blue-400' },
+                                    { label: t('buyers') || 'Acheteurs', val: stats.activeUsers, icon: Users, color: 'text-orange-400' },
+                                    { label: t('referenced') || 'Référencés', val: stats.listings, icon: Package, color: 'text-violet-400' },
                                 ].map((s, i) => (
                                     <div key={i} className="bg-white/5 border border-white/10 p-4 rounded-2xl">
                                         <div className="flex items-center justify-between mb-2">
@@ -85,7 +87,7 @@ export const DashboardPreview = () => {
                                 onClick={() => navigate(getDashboardLink())}
                                 className="flex items-center gap-3 h-14 px-8 bg-white text-slate-900 font-black text-sm rounded-2xl hover:scale-105 transition-all group shadow-xl"
                             >
-                                Accéder à mon espace
+                                {t('accessSpace') || "Accéder à mon espace"}
                                 <ArrowRight className="size-5 group-hover:translate-x-1 transition-transform" />
                             </button>
                         </div>
@@ -108,7 +110,7 @@ export const DashboardPreview = () => {
                                         </div>
                                         <MoreHorizontal className="size-5 text-slate-500" />
                                     </div>
-                                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Solde de Compte</p>
+                                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">{t('accountBalance') || "Solde de Compte"}</p>
                                     <p className="text-2xl font-black text-white mb-2">42.580.000 GNF</p>
                                     <div className="flex items-center gap-2">
                                         <div className="h-1.5 flex-1 bg-white/10 rounded-full overflow-hidden">

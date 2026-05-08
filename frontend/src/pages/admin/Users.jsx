@@ -74,9 +74,9 @@ const AdminUsers = () => {
     const totalPages = data?.pages || 1;
     
     const stats = [
-        { title: "Membres de l'écosystème", value: data?.total || 0, icon: UsersIcon, color: "text-primary", growth: 12 },
-        { title: "Sécurité & Accès", value: "Actif", icon: ShieldCheck, color: "text-emerald-500" },
-        { title: "Nouv. Accréditations", value: "24", icon: UserPlus, color: "text-blue-500", growth: 5 }
+        { title: "Membres de l'écosystème", value: data?.total || 0, icon: UsersIcon, color: "text-primary", growth: data?.stats?.growth || 0 },
+        { title: "Sécurité & Accès", value: data?.stats?.status || "Actif", icon: ShieldCheck, color: "text-emerald-500" },
+        { title: "Nouv. Accréditations", value: data?.stats?.newLast7Days || "0", icon: UserPlus, color: "text-blue-500", growth: data?.stats?.growth > 0 ? 5 : 0 }
     ];
 
     const { mutate: deleteMutation } = useApiMutation(

@@ -3,7 +3,10 @@ import { motion } from 'framer-motion';
 import { Zap } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
+import { useLanguage } from '../../context/LanguageContext';
+
 const BcaLogo = ({ className, size = "h-10", variant = "color", hideText = false }) => {
+    const { t } = useLanguage();
     // Brand colors from screenshot
     const orangeBrand = "#FF6600";
     
@@ -29,7 +32,7 @@ const BcaLogo = ({ className, size = "h-10", variant = "color", hideText = false
                         <span style={{ color: orangeBrand }} className="ml-1 uppercase">CONNECT</span>
                     </span>
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mt-0.5">
-                        Premier Hub de Guinée
+                        {t('logoSubtitle') || "Premier Hub de Guinée"}
                     </span>
                 </div>
             )}
