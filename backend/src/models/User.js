@@ -100,7 +100,8 @@ const User = sequelize.define('User', {
         type: DataTypes.INTEGER,
         defaultValue: 0,
         comment: 'Points de fidélité accumulés par l\'utilisateur',
-    }
+    },
+
 }, {
     tableName: 'utilisateurs',
     hooks: {

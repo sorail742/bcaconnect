@@ -124,7 +124,7 @@ const Dashboard = () => {
             <div className="space-y-4 animate-in fade-in duration-700 pb-24">
 
                 {/* Compact Command Bar — Modernized v2.7 */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#0F1219] p-5 rounded-3xl border border-slate-200 dark:border-foreground/5 shadow-xl shadow-black/[0.02] overflow-hidden relative group">
+                <div className="sticky top-0 z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#FF6600]/[0.05] to-[#0F1219] p-5 rounded-3xl border border-slate-200 dark:border-foreground/5 shadow-xl shadow-black/[0.02] overflow-hidden relative group">
                     <div className="absolute inset-0 bg-gradient-to-r from-[#FF6600]/[0.03] to-transparent pointer-events-none" />
                     
                     <div className="flex items-center gap-5 relative z-10">

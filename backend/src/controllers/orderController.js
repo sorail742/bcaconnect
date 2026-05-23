@@ -341,18 +341,51 @@ const orderController = {
             }
 
             item.statut = newStatus;
-            await item.save();
+            await item.save({ transaction: t });
+
+            // 🛡️ LIBÉRATION DES FONDS SI LIVRÉ
+            if (newStatus === 'livre') {
+                const vendorWallet = await Wallet.findOne({ 
+                    where: { user_id: item.fournisseur_id }, 
+                    transaction: t,
+                    lock: t.LOCK.UPDATE 
+                });
+                
+                if (vendorWallet) {
+                    const amount = parseFloat(item.prix_unitaire_achat) * item.quantite;
+                    
+                    // Sécurité : Ne libérer que ce qui est disponible en séquestre
+                    const currentSequestre = parseFloat(vendorWallet.solde_sequestre);
+                    const releaseAmount = Math.min(currentSequestre, amount);
+
+                    vendorWallet.solde_sequestre = currentSequestre - releaseAmount;
+                    vendorWallet.solde_virtuel = parseFloat(vendorWallet.solde_virtuel) + releaseAmount;
+                    await vendorWallet.save({ transaction: t });
+
+                    await Transaction.create({
+                        portefeuille_id: vendorWallet.id,
+                        commande_id: item.commande_id,
+                        montant: releaseAmount,
+                        type_transaction: 'depot',
+                        statut: 'complete',
+                        reference_externe: `REL-MAN-${item.id.slice(0, 8)}`,
+                        metadata: { type: 'release_escrow_manual', description: 'Libération manuelle des fonds après livraison' }
+                    }, { transaction: t });
+                }
+            }
 
             // Vérifier si tous les articles de la commande sont préparés pour notifier le transporteur
-            const allItems = await OrderItem.findAll({ where: { commande_id: item.commande_id } });
-            const allPrepared = allItems.every(i => i.statut === 'prepare');
+            const allItems = await OrderItem.findAll({ where: { commande_id: item.commande_id }, transaction: t });
+            const allPrepared = allItems.every(i => i.statut === 'prepare' || i.statut === 'livre');
 
             if (allPrepared) {
                 await Order.update(
-                    { statut_livraison: 'pret' },
-                    { where: { id: item.commande_id } }
+                    { statut_livraison: allItems.every(i => i.statut === 'livre') ? 'livre' : 'pret' },
+                    { where: { id: item.commande_id }, transaction: t }
                 );
             }
+
+            await t.commit();
 
             // ⚡ NOTIFICATION POUR LE CLIENT
             const io = req.app.get('socketio');
@@ -380,6 +413,7 @@ const orderController = {
                 orderPrepared: allPrepared
             });
         } catch (error) {
+            if (t) await t.rollback();
             next(error);
         }
     },
@@ -432,17 +466,43 @@ const orderController = {
 
             // Si annulation d'une commande payée ou en attente -> Remboursement
             if (statut === 'annulé' && (order.statut === 'payé' || order.statut === 'en_attente_paiement')) {
-                const wallet = await Wallet.findOne({ where: { user_id: order.utilisateur_id }, transaction: t });
-                if (wallet) {
+                const buyerWallet = await Wallet.findOne({ where: { user_id: order.utilisateur_id }, transaction: t, lock: t.LOCK.UPDATE });
+                
+                if (buyerWallet && order.statut === 'payé') {
+                    // 1. Créditer l'acheteur
+                    buyerWallet.solde_virtuel = parseFloat(buyerWallet.solde_virtuel) + parseFloat(order.total_ttc);
+                    await buyerWallet.save({ transaction: t });
+
                     await Transaction.create({
-                        portefeuille_id: wallet.id,
+                        portefeuille_id: buyerWallet.id,
                         commande_id: order.id,
                         montant: order.total_ttc,
                         type_transaction: 'remboursement',
                         statut: 'complete',
-                        reference_externe: `REFUND-${order.id.slice(0, 8)}`
+                        reference_externe: `REFUND-CL-${order.id.slice(0, 8)}`
                     }, { transaction: t });
+
+                    // 2. Débiter le séquestre des vendeurs
+                    for (const item of order.details) {
+                        const vendorWallet = await Wallet.findOne({ where: { user_id: item.fournisseur_id }, transaction: t, lock: t.LOCK.UPDATE });
+                        if (vendorWallet) {
+                            const amountToRefund = parseFloat(item.prix_unitaire_achat) * item.quantite;
+                            vendorWallet.solde_sequestre = Math.max(0, parseFloat(vendorWallet.solde_sequestre) - amountToRefund);
+                            await vendorWallet.save({ transaction: t });
+
+                            // Log de l'annulation du séquestre
+                            await Transaction.create({
+                                portefeuille_id: vendorWallet.id,
+                                commande_id: order.id,
+                                montant: amountToRefund,
+                                type_transaction: 'retrait',
+                                statut: 'complete',
+                                metadata: { type: 'escrow_reversal', description: 'Annulation du séquestre suite à un remboursement client' }
+                            }, { transaction: t });
+                        }
+                    }
                 }
+
                 // Restaurer stocks
                 for (const item of order.details) {
                     await Product.increment('stock_quantite', { by: item.quantite, where: { id: item.produit_id }, transaction: t });

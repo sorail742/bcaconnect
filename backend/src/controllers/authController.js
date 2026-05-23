@@ -190,6 +190,13 @@ const authController = {
     googleLogin: async (req, res, next) => {
         const t = await sequelize.transaction();
         try {
+           for (const key of Object.keys(req.params)) {
+                // On ne valide que si le nom du paramètre se termine par 'id' (ex: id, user_id, product_id)
+                // et non s'il contient juste 'id' (ex: identity, provider)
+                if (/(^id$|_id$)/.test(key) && req.params[key] && !uuidRegex.test(req.params[key])) {
+                    return sendValidationError(res, key, `${key} doit être un UUID valide`, 'params');
+                }
+            }
             const { credential } = req.body;
             if (!credential) {
                 await t.rollback();
@@ -358,16 +365,19 @@ const authController = {
 
     refreshToken: async (req, res, next) => {
         try {
-            const { userId } = req.body;
-            // Extraction asynchrone du HttpOnly cookie
+            // SÉCURITÉ : On extrait l'identité depuis le cookie HttpOnly uniquement
             const refreshToken = req.cookies?.bca_refresh_token; 
             
             if (!refreshToken) {
-                console.warn('⚠️ Refresh Token Manquant dans les cookies.');
                 return res.status(401).json({ message: "Session expirée ou cookie introuvable." });
             }
 
-            console.log(`🔄 Refresh Token pour userId: ${userId}`);
+            // Décoder le token pour obtenir l'ID utilisateur (Standard BCA v2.6)
+            const jwtService = require('../services/jwtService');
+            const decoded = jwtService.verifyToken(refreshToken);
+            const userId = decoded.id;
+
+            console.log(`🔄 Refresh Token sécurisé pour userId: ${userId}`);
 
             const user = await User.findByPk(userId);
             if (!user) {

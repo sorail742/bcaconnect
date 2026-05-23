@@ -59,6 +59,11 @@ const Store = sequelize.define('Store', {
             this.setDataValue('banner_images', val ? JSON.stringify(val) : null);
         }
     },
+    /* location: {
+        type: DataTypes.GEOMETRY('POINT'),
+        allowNull: true,
+        comment: 'Geospatial coordinates of the store',
+    }, */
 }, {
     tableName: 'boutiques',
     underscored: true,

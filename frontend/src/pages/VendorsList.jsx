@@ -101,12 +101,12 @@ const VendorsList = () => {
                                 { label: 'Confiance', val: stats.verifiedPct + '%', sub: 'Certifiés' },
                                 { label: 'Logistique', val: '24h', sub: 'Livraison' },
                             ].map((s, i) => (
-                                <div key={i} className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-[2rem] min-w-[160px]">
+                                <div key={i} className="glass-card border border-white/20 p-6 rounded-[2rem] min-w-[160px] flex flex-col items-center justify-center">
                                     <p className="text-3xl font-black text-white tracking-tighter">
                                         <AnimatedCounter value={s.val} />
                                     </p>
                                     <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-1">{s.label}</p>
-                                    <p className="text-[9px] font-bold text-slate-500 uppercase mt-0.5">{s.sub}</p>
+                                    <p className="text-[9px] font-bold text-slate-300 uppercase mt-0.5">{s.sub}</p>
                                 </div>
                             ))}
                         </div>
@@ -120,7 +120,7 @@ const VendorsList = () => {
                     
                     {/* Left Sidebar — Filters */}
                     <aside className="w-full lg:w-72 shrink-0 space-y-6">
-                        <div className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 dark:shadow-none sticky top-28">
+                        <div className="glass-card border border-white/20 rounded-[2.5rem] p-8 shadow-xl sticky top-28">
                             <div className="flex items-center justify-between mb-8">
                                 <h3 className="font-black text-xs uppercase tracking-widest text-slate-900 dark:text-white">Exploration</h3>
                                 <Filter className="size-4 text-primary" />
@@ -186,7 +186,7 @@ const VendorsList = () => {
                     <div className="flex-1 space-y-6">
                         
                         {/* Toolbar */}
-                        <div className="flex items-center justify-between bg-white dark:bg-card border border-slate-200 dark:border-border px-8 py-5 rounded-[2.5rem] shadow-sm">
+                        <div className="flex items-center justify-between glass-card border border-white/20 px-8 py-5 rounded-[2.5rem] shadow-sm">
                             <div className="flex items-center gap-3">
                                 <div className="size-2 bg-emerald-500 rounded-full animate-pulse" />
                                 <p className="text-xs font-bold text-slate-500">
@@ -212,7 +212,7 @@ const VendorsList = () => {
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, scale: 0.95 }}
                                             transition={{ delay: idx * 0.05 }}
-                                            className="group bg-white dark:bg-card border border-slate-200 dark:border-border rounded-[2.5rem] overflow-hidden hover:shadow-2xl hover:border-primary/40 transition-all duration-500"
+                                            className="group glass-card border border-white/20 rounded-[2.5rem] overflow-hidden hover:shadow-2xl hover:border-primary/40 transition-all duration-500"
                                         >
                                             <div className="flex flex-col xl:flex-row min-h-[320px]">
                                                 {/* 1. Vendor Identity (Left) */}
@@ -317,7 +317,7 @@ const VendorsList = () => {
                                         </motion.div>
                                     ))
                                 ) : (
-                                    <div className="py-32 text-center bg-white dark:bg-card border border-slate-200 rounded-[3rem] shadow-sm">
+                                    <div className="py-32 text-center glass-card border border-white/20 rounded-[3rem] shadow-sm">
                                         <Globe className="size-20 text-slate-200 mx-auto mb-8 animate-pulse" />
                                         <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Aucun Partenaire Trouvé</h3>
                                         <p className="text-slate-400 text-sm mt-3 max-w-sm mx-auto">Nous n'avons pas trouvé de fournisseur correspondant à vos critères de recherche.</p>

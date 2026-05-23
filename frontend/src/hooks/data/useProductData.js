@@ -13,6 +13,8 @@ export const useProducts = (params = {}) => {
         queryKey: ['products', paramsKey],
         queryFn: () => productService.getAll(params),
         staleTime: 2 * 60_000,
+        refetchInterval: 30_000,
+        refetchIntervalInBackground: true,
     });
     return { data, loading, error: error?.message || null, isFetching, refetch, mutate: refetch };
 };

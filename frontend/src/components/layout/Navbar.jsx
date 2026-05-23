@@ -274,12 +274,11 @@ const Navbar = () => {
 
     return (
         <header className={cn(
-            "w-full font-sans bg-background border-b border-border/10 sticky top-0 z-50 transition-shadow duration-300",
+            "w-full font-sans bg-white/10 backdrop-blur-md border border-white/20 sticky top-0 z-50 transition-shadow duration-300 overflow-x-hidden",
             isScrolled && "shadow-[0_4px_30px_rgba(0,0,0,0.06)]"
         )}>
-            
             {/* ── Promotional Banner ───────────────────────────────────────── */}
-            <div className="bg-gradient-to-r from-[#b5f5ec] via-[#36cfc9] to-[#0050b3] h-10 flex items-center justify-center relative overflow-hidden">
+            <div className="banner-gradient glass h-10 flex items-center justify-center relative overflow-hidden animate-pulse">
                 <div className="flex items-center gap-4 z-10 relative text-white">
                     <span className="font-extrabold text-sm">BCA Work</span>
                     <span className="opacity-40 hidden sm:block">|</span>
@@ -295,7 +294,7 @@ const Navbar = () => {
             </div>
 
             {/* ── Main Header Row ──────────────────────────────────────────── */}
-            <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-12 py-4 lg:py-5 flex items-center gap-4 lg:gap-5">
+            <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-12 flex flex-wrap items-center gap-4 lg:gap-5">
 
                 {/* Logo */}
                 <Link to="/" className="flex-shrink-0">
@@ -516,6 +515,43 @@ const Navbar = () => {
                                                     <Wallet className="size-5 text-emerald-600" />
                                                 </div>
                                                 <div className="flex-1">
+                                                    {(() => {
+                                                        const navItems = [
+                                                            { to: dashboardLink, icon: LayoutDashboard, label: t('dashboard') },
+                                                            { to: '/orders', icon: Package, label: t('myOrders') || 'Mes commandes' },
+                                                            { to: '/wallet', icon: CreditCard, label: t('myWallet') || 'Mon portefeuille' },
+                                                            { to: '/notifications', icon: Bell, label: t('notifications') || 'Notifications', badge: notificationCount },
+                                                            { to: '/profile', icon: Settings, label: t('accountSettings') || 'Paramètres du compte' },
+                                                            { to: '/help', icon: HelpCircle, label: t('helpCenter') || "Centre d'assistance" },
+                                                        ];
+
+                                                        return (
+                                                            <div className="p-3 space-y-0.5">
+                                                                {navItems.map(item => {
+                                                                    const isActive = location.pathname === item.to;
+                                                                    return (
+                                                                        <Link
+                                                                            key={item.to}
+                                                                            to={item.to}
+                                                                            onClick={() => setIsUserMenuOpen(false)}
+                                                                            className={cn(
+                                                                                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all",
+                                                                                isActive ? "bg-foreground/10 text-[#FF6600]" : "text-foreground hover:bg-foreground/5 hover:text-[#FF6600]"
+                                                                            )}
+                                                                        >
+                                                                            <item.icon className={cn("size-4", isActive ? "text-[#FF6600]" : "text-muted-foreground group-hover:text-[#FF6600]")} />
+                                                                            <span className="text-sm font-semibold flex-1">{item.label}</span>
+                                                                            {item.badge && item.badge > 0 && (
+                                                                                <span className="bg-[#FF6600] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full tabular-nums">
+                                                                                    {item.badge}
+                                                                                </span>
+                                                                            )}
+                                                                        </Link>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        );
+                                                    })()}
                                                     <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">{t('walletBalanceLabel') || "Solde Wallet"}</p>
                                                     <p className="text-base font-black text-emerald-800 tabular-nums">{walletBalance.toLocaleString(lang === 'FR' ? 'fr-GN' : 'en-US')} GNF</p>
                                                 </div>
@@ -595,8 +631,8 @@ const Navbar = () => {
             </div>
 
             {/* ── Bottom Nav Row ────────────────────────────────────────────── */}
-            <div className="hidden md:flex border-t border-border/5">
-                <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-12 flex items-center justify-center h-12 gap-8 lg:gap-12">
+            <div className="hidden md:flex flex-wrap border-t border-border/5 overflow-x-hidden">
+                <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-12 flex flex-wrap items-center justify-center h-12 gap-4 lg:gap-12 overflow-x-auto">
                     <div 
                         className="relative h-full flex items-center"
                         onMouseEnter={handleMegaMenuOpen}
@@ -617,10 +653,10 @@ const Navbar = () => {
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 5, scale: 0.98 }}
                                     transition={{ duration: 0.2, ease: "easeOut" }}
-                                    className="absolute top-full left-0 w-[1150px] bg-white border border-slate-200 rounded-b-2xl shadow-[0_30px_90px_rgba(0,0,0,0.15)] z-50 flex overflow-hidden"
+                                    className="absolute top-full left-0 w-[calc(100vw-2rem)] max-w-[1150px] glass-card border border-white/20 rounded-b-2xl shadow-[0_30px_90px_rgba(0,0,0,0.15)] z-50 flex overflow-hidden"
                                 >
                                     {/* Left Sidebar: Exact Alibaba Reproduction */}
-                                    <div className="w-[280px] bg-white border-r border-slate-100 py-2 overflow-y-auto max-h-[650px] no-scrollbar">
+                                    <div className="w-[220px] lg:w-[280px] shrink-0 bg-white/50 border-r border-white/10 py-2 overflow-y-auto max-h-[650px] no-scrollbar">
                                         {/* For You Section */}
                                         <div
                                             onMouseEnter={() => setActiveCategoryId('for-you')}
@@ -660,7 +696,7 @@ const Navbar = () => {
                                     </div>
 
                                     {/* Right Content: Alibaba Grid Style */}
-                                    <div className="flex-1 p-10 bg-white overflow-y-auto max-h-[650px] no-scrollbar">
+                                    <div className="flex-1 p-4 lg:p-10 bg-white/50 overflow-y-auto max-h-[650px] no-scrollbar">
                                         {activeCategory && (
                                             <motion.div
                                                 key={activeCategory.id}

@@ -12,6 +12,8 @@ export const useOrders = () => {
         queryKey: ['orders', user?.id, isAdmin],
         queryFn: () => isAdmin ? orderService.getAllAdmin() : orderService.getAll(),
         staleTime: 30_000,
+        refetchInterval: 30_000,
+        refetchIntervalInBackground: true,
         enabled: !!token && isAuthenticated,
     });
     return { data, loading, error: error?.message || null, isFetching, refetch, mutate: refetch };
@@ -23,6 +25,8 @@ export const useOrderById = (id) => {
         queryKey: ['order', id],
         queryFn: () => orderService.getById(id),
         staleTime: 30_000,
+        refetchInterval: 30_000,
+        refetchIntervalInBackground: true,
         enabled: !!id && !!token && isAuthenticated,
     });
     return { data, loading, error: error?.message || null, isFetching, refetch, mutate: refetch };

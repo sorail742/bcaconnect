@@ -59,6 +59,8 @@ export const productSchema = z.object({
     prix_unitaire: z.number().positive("La cotation doit être un nombre positif."),
     stock_quantite: z.number().int().nonnegative("Le stock ne peut être négatif."),
     categorie_id: z.string().min(1, "Catégorie d'indexation requise."),
+    unite_mesure: z.string().min(1, "Unité de mesure requise (ex: Kg, Litre)."),
+    mots_cles: z.string().optional(),
 });
 
 export const ticketSchema = z.object({

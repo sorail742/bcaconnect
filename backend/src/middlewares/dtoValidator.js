@@ -188,7 +188,13 @@ const validateCreateProduct = [
         .toInt(),
     body('categorie_id')
         .notEmpty().withMessage('Catégorie requise.')
-        .isUUID().withMessage('ID catégorie invalide.'),
+        .custom(value => {
+            const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+            const staticRegex = /^static-cat-\d+$/;
+            if (uuidRegex.test(value) || staticRegex.test(value)) return true;
+            throw new Error('ID catégorie invalide. Doit être UUID ou static-cat-<num>.');
+        })
+        .withMessage('ID catégorie invalide.'),
     body('images')
         .optional()
         .isArray().withMessage('Les images doivent être un tableau.'),
@@ -541,7 +547,13 @@ const validateSearch = [
         .toInt(),
     query('categorie_id')
         .optional()
-        .isUUID().withMessage('ID catégorie invalide.'),
+        .custom(value => {
+            const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+            const staticRegex = /^static-cat-\d+$/;
+            if (uuidRegex.test(value) || staticRegex.test(value)) return true;
+            throw new Error('ID catégorie invalide. Doit être UUID ou static-cat-<num>.');
+        })
+        .withMessage('ID catégorie invalide.'),
     query('prix_min')
         .optional()
         .isFloat({ min: 0 }).withMessage('Le prix minimum doit être positif.')

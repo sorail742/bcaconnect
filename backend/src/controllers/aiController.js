@@ -232,7 +232,7 @@ Réponds toujours en français, de manière concise et très professionnelle.`;
                 return res.status(400).json({ message: "Image requise." });
             }
 
-            const VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
+            const VISION_MODEL = 'llama-3.2-11b-vision-preview';
             const imageBase64 = req.file.buffer.toString('base64');
 
             let parsed = null;

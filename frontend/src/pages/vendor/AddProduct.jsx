@@ -16,6 +16,7 @@ import aiService from '../../services/aiService';
 import { cn } from '../../lib/utils';
 import { productSchema } from '../../lib/validation';
 import { getCategoryIconComponent } from '../../lib/categoryConstants';
+import { offlineStorage } from '../../lib/db';
 const FormField = ({ label, required, children, error }) => (
     <div className="space-y-2.5">
         <label className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground/80 ml-1 flex items-center gap-2">
@@ -330,20 +331,35 @@ const AddProduct = () => {
         }
 
         setIsLoading(true);
-        try {
-            const payload = {
-                nom_produit: formData.nom_produit.trim(),
-                description: formData.description.trim(),
-                prix_unitaire: parseFloat(formData.prix_unitaire),
-                prix_ancien: formData.prix_ancien ? parseFloat(formData.prix_ancien) : null,
-                stock_quantite: parseInt(formData.stock_quantite),
-                image_url: formData.image_url.trim() || null,
-                categorie_id: formData.categorie_id || null,
-                est_local: formData.est_local,
-                unite_mesure: formData.unite_mesure || 'Pièce',
-                mots_cles: formData.mots_cles.split(',').map(k => k.trim()).filter(k => k),
-            };
+        const payload = {
+            nom_produit: formData.nom_produit.trim(),
+            description: formData.description.trim(),
+            prix_unitaire: parseFloat(formData.prix_unitaire),
+            prix_ancien: formData.prix_ancien ? parseFloat(formData.prix_ancien) : null,
+            stock_quantite: parseInt(formData.stock_quantite),
+            image_url: formData.image_url.trim() || null,
+            categorie_id: formData.categorie_id || null,
+            est_local: formData.est_local,
+            unite_mesure: formData.unite_mesure || 'Pièce',
+            mots_cles: formData.mots_cles.split(',').map(k => k.trim()).filter(k => k),
+        };
 
+        // GESTION HORS-LIGNE PROACTIVE
+        if (!navigator.onLine) {
+            try {
+                await offlineStorage.queueProduct(payload);
+                toast.success("MODE HORS-LIGNE : PRODUIT MIS EN FILE D'ATTENTE.");
+                navigate('/vendor/products');
+                return;
+            } catch (err) {
+                toast.error("ERREUR DE STOCKAGE LOCAL.");
+                return;
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        try {
             if (isEditMode) {
                 await productService.update(id, payload);
                 toast.success("ACTIF MIS À JOUR.");
@@ -353,9 +369,17 @@ const AddProduct = () => {
             }
             navigate('/vendor/products');
         } catch (err) {
-            console.error('Submission error:', err.response?.data);
-            const backendMsg = err.response?.data?.errors?.[0]?.message || err.response?.data?.message || "ERREUR LORS DE L'ÉCRITURE RÉSEAU.";
-            toast.error(backendMsg);
+            console.error('Submission error:', err);
+            
+            // FALLBACK RÉACTIF : Si erreur réseau pendant l'envoi
+            if (!err.response || err.code === 'ERR_NETWORK') {
+                await offlineStorage.queueProduct(payload);
+                toast.warning("RÉSEAU INSTABLE : PRODUIT SAUVEGARDÉ LOCALEMENT.");
+                navigate('/vendor/products');
+            } else {
+                const backendMsg = err.response?.data?.errors?.[0]?.message || err.response?.data?.message || "ERREUR LORS DE L'ÉCRITURE RÉSEAU.";
+                toast.error(backendMsg);
+            }
         } finally {
             setIsLoading(false);
         }

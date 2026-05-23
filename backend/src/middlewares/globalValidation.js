@@ -123,7 +123,7 @@ const validateUUIDParams = (req, res, next) => {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     
     for (const key of Object.keys(req.params)) {
-        if (key.includes('id') && req.params[key] && !uuidRegex.test(req.params[key])) {
+        if (/(^id$|_id$)/.test(key) && req.params[key] && !uuidRegex.test(req.params[key])) {
             return sendValidationError(res, key, `${key} doit être un UUID valide`, 'params');
         }
     }

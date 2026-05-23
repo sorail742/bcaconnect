@@ -21,8 +21,12 @@ import {
     LineChart,
     ChevronRight,
     Globe,
-    RefreshCcw
+    RefreshCcw,
+    Wifi,
+    WifiOff,
+    CloudSync
 } from 'lucide-react';
+import { offlineStorage } from '../../lib/db';
 import { CardSkeleton, TableRowSkeleton } from '../../components/ui/Loader';
 import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'sonner';
@@ -48,6 +52,30 @@ const VendorDashboard = () => {
     const { data: orderData, loading: ordersLoading, refetch: refetchOrders } = useVendorOrders();
     const { data: statsData, loading: statsLoading, refetch: refetchStats } = useVendorStats();
     const { data: trustData, loading: trustLoading } = useTrustScore();
+    
+    const [syncQueueCount, setSyncQueueCount] = useState(0);
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+    const checkSyncQueue = useCallback(async () => {
+        const products = await offlineStorage.getQueuedProducts();
+        const orders = await offlineStorage.getQueuedOrders();
+        setSyncQueueCount(products.length + orders.length);
+    }, []);
+
+    useEffect(() => {
+        const handleStatusChange = () => setIsOnline(navigator.onLine);
+        window.addEventListener('online', handleStatusChange);
+        window.addEventListener('offline', handleStatusChange);
+        
+        const interval = setInterval(checkSyncQueue, 3000);
+        checkSyncQueue();
+
+        return () => {
+            window.removeEventListener('online', handleStatusChange);
+            window.removeEventListener('offline', handleStatusChange);
+            clearInterval(interval);
+        };
+    }, [checkSyncQueue]);
 
     useEffect(() => {
         socketService.connect();
@@ -101,7 +129,7 @@ const VendorDashboard = () => {
         toast.info(t('vdAuditInit'), { icon: <Satellite className="size-4 animate-spin" /> });
         try {
             const insights = await aiService.getVendorInsights();
-            setAiRecommendation(insights.recommendation || t('vdAiDefaultRec'));
+            setAiRecommendation(insights.ia_conseil || t('vdAiDefaultRec'));
             toast.success(t('vdAuditDone'));
             refetchStats();
         } catch (error) {
@@ -159,6 +187,36 @@ const VendorDashboard = () => {
     return (
         <DashboardLayout title={t('vdDashTitle')} noPadding>
             <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8 space-y-8 custom-scrollbar">
+                
+                {/* STATUS BAR - WOW FACTOR */}
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className={cn(
+                            "px-4 h-9 rounded-xl flex items-center gap-2 border text-[10px] font-black uppercase tracking-widest transition-all",
+                            isOnline 
+                                ? "bg-emerald-50/50 border-emerald-100 text-emerald-600" 
+                                : "bg-amber-50/50 border-amber-100 text-amber-600"
+                        )}>
+                            {isOnline ? <Wifi className="size-3.5" /> : <WifiOff className="size-3.5" />}
+                            {isOnline ? "Réseau Opérationnel" : "Mode Résilience Activé"}
+                        </div>
+
+                        {syncQueueCount > 0 && (
+                            <motion.div 
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                className="px-4 h-9 rounded-xl flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest"
+                            >
+                                <RefreshCcw className="size-3.5 animate-spin" />
+                                {syncQueueCount} {syncQueueCount > 1 ? "Éléments" : "Élément"} en attente de synchro
+                            </motion.div>
+                        )}
+                    </div>
+                    
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest hidden sm:block">
+                        BCA Connect Core v2.4.0 — Labé / Conakry
+                    </div>
+                </div>
 
                 {/* Executive Welcome Station — Signal Header */}
                 <div className="premium-card p-6 relative overflow-hidden group/header">

@@ -16,7 +16,7 @@ const generateSlug = (name) => {
 const storeController = {
     create: async (req, res, next) => {
         try {
-            const { nom_boutique, description, email_boutique, telephone_boutique, logo_url, use_carousel, banner_images } = req.body;
+            const { nom_boutique, description, email_boutique, telephone_boutique, logo_url, use_carousel, banner_images, latitude, longitude } = req.body;
             const proprietaire_id = req.user.id;
 
             // Validation du nom
@@ -35,6 +35,11 @@ const storeController = {
 
             const slug = generateSlug(nom_boutique);
 
+            let location = null;
+            if (latitude && longitude) {
+                location = { type: 'Point', coordinates: [parseFloat(longitude), parseFloat(latitude)] };
+            }
+
             const store = await Store.create({
                 nom_boutique: nom_boutique.trim(),
                 description: description || null,
@@ -43,6 +48,7 @@ const storeController = {
                 logo_url: logo_url || null,
                 use_carousel: use_carousel || false,
                 banner_images: banner_images || [],
+                location,
                 proprietaire_id,
                 slug
             });
@@ -168,11 +174,16 @@ const storeController = {
 
     updateMyStore: async (req, res, next) => {
         try {
-            const { nom_boutique, description, email_boutique, telephone_boutique, logo_url, use_carousel, banner_images } = req.body;
+            const { nom_boutique, description, email_boutique, telephone_boutique, logo_url, use_carousel, banner_images, latitude, longitude } = req.body;
             const proprietaire_id = req.user.id;
 
             const store = await Store.findOne({ where: { proprietaire_id } });
             if (!store) return res.status(404).json({ message: "Boutique non trouvée." });
+
+            let location = store.location;
+            if (latitude && longitude) {
+                location = { type: 'Point', coordinates: [parseFloat(longitude), parseFloat(latitude)] };
+            }
 
             const updatedStore = await store.update({
                 nom_boutique,
@@ -181,7 +192,8 @@ const storeController = {
                 telephone_boutique,
                 logo_url,
                 use_carousel: use_carousel !== undefined ? use_carousel : store.use_carousel,
-                banner_images: banner_images !== undefined ? banner_images : store.banner_images
+                banner_images: banner_images !== undefined ? banner_images : store.banner_images,
+                location
             });
 
             res.json(updatedStore);

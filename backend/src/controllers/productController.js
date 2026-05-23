@@ -45,7 +45,11 @@ const productController = {
             categorie_id: categorie_id || null,
             boutique_id: store.id,
             image_url: image_url?.trim() || null,
-            est_local: est_local !== undefined ? est_local : true
+            est_local: est_local !== undefined ? est_local : true,
+            unite_mesure: req.body.unite_mesure || 'Pièce',
+            mots_cles: typeof req.body.mots_cles === 'string' 
+                ? req.body.mots_cles.split(',').map(m => m.trim()).filter(m => m)
+                : (req.body.mots_cles || [])
         });
 
         // Recharger avec les associations pour la réponse complète
@@ -204,7 +208,13 @@ const productController = {
             prix_ancien: prix_ancien ?? product.prix_ancien,
             stock_quantite: stock_quantite !== undefined ? stock_quantite : product.stock_quantite,
             categorie_id: categorie_id ?? product.categorie_id,
-            image_url: image_url ?? product.image_url
+            image_url: image_url ?? product.image_url,
+            unite_mesure: req.body.unite_mesure ?? product.unite_mesure,
+            mots_cles: req.body.mots_cles !== undefined
+                ? (typeof req.body.mots_cles === 'string' 
+                    ? req.body.mots_cles.split(',').map(m => m.trim()).filter(m => m)
+                    : req.body.mots_cles)
+                : product.mots_cles
         });
 
         res.json({ message: 'Produit mis à jour.', product });

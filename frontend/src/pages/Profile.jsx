@@ -212,7 +212,7 @@ const UserProfile = () => {
                 />
 
                 {/* Header card */}
-                <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+                <div className="glass-card border border-white/20 rounded-2xl p-5 shadow-sm">
                     <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5">
                         <div className="flex items-center gap-4">
                             <div className="size-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
@@ -254,7 +254,7 @@ const UserProfile = () => {
                 <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
                     {/* Left — Avatar card */}
                     <div className="xl:col-span-1 space-y-4">
-                        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                        <div className="glass-card border border-white/20 rounded-2xl overflow-hidden shadow-sm">
                             {/* Avatar area */}
                             <div className="h-24 bg-gradient-to-br from-primary/10 to-muted relative">
                                 <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, hsl(var(--primary)) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
@@ -333,7 +333,7 @@ const UserProfile = () => {
                                     className="space-y-5"
                                 >
                                     {/* Personal info */}
-                                    <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-5">
+                                    <div className="glass-card border border-white/20 rounded-2xl p-5 shadow-sm space-y-5">
                                         <div className="flex items-center gap-3 pb-4 border-b border-border">
                                             <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
                                                 <UserIcon className="size-4 text-primary" />
@@ -374,7 +374,7 @@ const UserProfile = () => {
                                     className="space-y-5"
                                 >
                                     {/* Password */}
-                                    <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-5">
+                                    <div className="glass-card border border-white/20 rounded-2xl p-5 shadow-sm space-y-5">
                                         <div className="flex items-center gap-3 pb-4 border-b border-border">
                                             <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
                                                 <Lock className="size-4 text-primary" />
@@ -395,7 +395,7 @@ const UserProfile = () => {
                                     </div>
 
                                     {/* Two-Factor Authentication (2FA) */}
-                                    <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 relative overflow-hidden group">
+                                    <div className="glass-card border border-white/20 rounded-2xl p-5 shadow-sm space-y-4 relative overflow-hidden group">
                                         <div className="absolute top-0 right-0 size-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
                                         
                                         <div className="flex items-center gap-3 pb-4 border-b border-border relative z-10">
@@ -412,7 +412,7 @@ const UserProfile = () => {
                                             <div className="flex items-center gap-4">
                                                 <div className={cn("size-2 rounded-full", user?.two_factor_enabled ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-muted-foreground")} />
                                                 <div>
-                                                    <p className="text-sm font-semibold text-foreground">{t('prof2FAStatus')} : {user?.two_factor_enabled ? '{t('prof2FAEnabled')}' : '{t('prof2FADisabled')}'}</p>
+                                                    <p className="text-sm font-semibold text-foreground">{t('prof2FAStatus')} : {user?.two_factor_enabled ? t('prof2FAEnabled') : t('prof2FADisabled')}</p>
                                                     <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mt-0.5">Technologie TOTP (Google Authenticator, etc.)</p>
                                                 </div>
                                             </div>
@@ -426,13 +426,13 @@ const UserProfile = () => {
                                                         : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20"
                                                 )}
                                             >
-                                                {user?.two_factor_enabled ? '{t('prof2FASecure')}' : '{t('prof2FASetup')}'}
+                                                {user?.two_factor_enabled ? t('prof2FASecure') : t('prof2FASetup')}
                                             </button>
                                         </div>
                                     </div>
 
                                     {/* {t('profNotifications')} */}
-                                    <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4">
+                                    <div className="glass-card border border-white/20 rounded-2xl p-5 shadow-sm space-y-4">
                                         <div className="flex items-center gap-3 pb-4 border-b border-border">
                                             <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
                                                 <Bell className="size-4 text-primary" />
@@ -443,8 +443,8 @@ const UserProfile = () => {
                                             </div>
                                         </div>
                                         {[
-                                            { id: 'email', label: '{t('profEmailAlerts')}', desc: '{t('profEmailAlertsDesc')}', value: emailAlerts, onChange: setEmailAlerts },
-                                            { id: 'push', label: '{t('profNotifications')} push', desc: '{t('profNotifications')} en temps réel sur vos commandes', value: pushNotifs, onChange: setPushNotifs },
+                                            { id: 'email', label: t('profEmailAlerts'), desc: t('profEmailAlertsDesc'), value: emailAlerts, onChange: setEmailAlerts },
+                                            { id: 'push', label: `${t('profNotifications')} push`, desc: `${t('profNotifications')} en temps réel sur vos commandes`, value: pushNotifs, onChange: setPushNotifs },
                                         ].map(item => (
                                             <div key={item.id} className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border hover:border-primary/30 transition-colors">
                                                 <div>

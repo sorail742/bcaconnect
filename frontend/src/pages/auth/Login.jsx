@@ -14,6 +14,8 @@ import marketImg from '../../assets/auth/market.png';
 import logisticsImg from '../../assets/auth/logistics.png';
 import entrepreneurImg from '../../assets/auth/entrepreneur.png';
 import authService from '../../services/authService';
+import { initGoogleSSO } from '../../utils/googleInit';
+
 
 const SHOWCASE_IMAGES = [marketImg, logisticsImg, entrepreneurImg];
 
@@ -53,45 +55,28 @@ const Login = () => {
             }
         };
 
-        // Supprimer le script existant s'il y en a un pour éviter les doublons
-        const existingScript = document.getElementById('google-gsi-script');
-        if (existingScript) existingScript.remove();
-
-        const script = document.createElement('script');
-        script.id = 'google-gsi-script';
-        script.src = 'https://accounts.google.com/gsi/client';
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-            if (window.google) {
-                window.google.accounts.id.initialize({
-                    client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-                    callback: handleGoogleResponse,
-                    auto_select: false,
-                    cancel_on_tap_outside: true
-                });
-
-                // Rendu du bouton officiel dans le conteneur dédié
+        // Utilisation de l'utilitaire centralisé pour éviter les initialisations multiples
+        const cleanup = initGoogleSSO((response) => {
+            handleGoogleResponse(response);
+            // Rendu du bouton officiel après initialisation
+            setTimeout(() => {
                 const buttonDiv = document.getElementById('google-button-container');
-                if (buttonDiv) {
+                if (buttonDiv && window.google) {
                     window.google.accounts.id.renderButton(buttonDiv, {
                         theme: 'outline',
                         size: 'large',
-                        width: buttonDiv.offsetWidth,
+                        width: buttonDiv.offsetWidth || 400,
                         text: 'continue_with',
                         shape: 'rectangular',
                         logo_alignment: 'left'
                     });
                 }
-            }
-        };
-        document.body.appendChild(script);
-        
-        return () => { 
-            const s = document.getElementById('google-gsi-script');
-            if (s) document.body.removeChild(s); 
-        };
+            }, 100);
+        });
+
+        return cleanup;
     }, [navigate, setAuth]);
+
 
     useEffect(() => {
         const timer = setInterval(() => {

@@ -7,6 +7,7 @@ db.version(1).stores({
     products: 'id, nom, prix_unitaire, categorie_id, store_id', // Cache catalogue
     categories: 'id, nom_categorie', // Cache catégories
     orders_queue: '++id, status, items, total_ttc, timestamp', // File d'attente des commandes offline
+    products_queue: '++id, status, nom_produit, prix_unitaire, timestamp', // File d'attente des produits offline
     transactions: '++id, type, montant, date', // Cache historique financier
     user_prefs: 'key, value', // Préférences et thèmes offline
 });
@@ -20,6 +21,24 @@ export const offlineStorage = {
     },
     getProducts: async () => {
         return await db.products.toArray();
+    },
+
+    // File d'attente Produits
+    queueProduct: async (productData) => {
+        return await db.products_queue.add({
+            ...productData,
+            status: 'pending',
+            timestamp: Date.now(),
+        });
+    },
+    getQueuedProducts: async () => {
+        return await db.products_queue.where('status').equals('pending').toArray();
+    },
+    markProductSynced: async (id) => {
+        return await db.products_queue.update(id, { status: 'synced' });
+    },
+    markProductFailed: async (id, reason) => {
+        return await db.products_queue.update(id, { status: 'failed', reason, updated_at: Date.now() });
     },
 
     // Commandes
@@ -42,6 +61,7 @@ export const offlineStorage = {
 
     // Transactions
     saveTransactions: async (transactions) => {
+        if (!Array.isArray(transactions)) return null;
         return await db.transactions.bulkPut(transactions);
     },
     getTransactions: async () => {

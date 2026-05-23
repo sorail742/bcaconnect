@@ -44,8 +44,11 @@ class SyncService {
             
             // 1. Synchroniser les commandes en attente
             await this.syncOrders();
+
+            // 2. Synchroniser les produits en attente
+            await this.syncProducts();
             
-            // 2. Mettre à jour le cache (en arrière-plan, ne bloque pas l'utilisateur)
+            // 3. Mettre à jour le cache (en arrière-plan, ne bloque pas l'utilisateur)
             this.refreshCache();
 
             console.log("✅ Synchronisation terminée.");
@@ -72,6 +75,25 @@ class SyncService {
             } catch (error) {
                 console.error(`Erreur synchro commande ${order.id}:`, error);
                 await offlineStorage.markOrderFailed(order.id, error.message);
+            }
+        }
+    }
+
+    async syncProducts() {
+        const queuedProducts = await offlineStorage.getQueuedProducts();
+        if (queuedProducts.length === 0) return;
+
+        console.log(`🍎 Synchro de ${queuedProducts.length} produits en attente...`);
+        
+        for (const product of queuedProducts) {
+            try {
+                const { id, status, timestamp, ...apiData } = product;
+                await productService.create(apiData);
+                await offlineStorage.markProductSynced(id);
+                toast.success(`Produit "${apiData.nom_produit}" publié automatiquement !`);
+            } catch (error) {
+                console.error(`Erreur synchro produit ${product.id}:`, error);
+                await offlineStorage.markProductFailed(product.id, error.message);
             }
         }
     }

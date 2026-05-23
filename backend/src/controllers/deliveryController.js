@@ -63,6 +63,15 @@ const deliveryController = {
             await Order.update({ statut_livraison: status }, { where: { id: orderId } });
         }
 
+        // UPDATE: Spatial tracking for the transport asset (carrier)
+        if (req.user && latitude && longitude) {
+            const point = { type: 'Point', coordinates: [parseFloat(longitude), parseFloat(latitude)] };
+            await User.update(
+                { location: point },
+                { where: { id: req.user.id } }
+            );
+        }
+
         res.json({ message: "Position et statut mis à jour", log });
     }),
 
