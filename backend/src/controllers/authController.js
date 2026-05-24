@@ -146,7 +146,8 @@ const authController = {
             }
 
             // 🛡️ SÉCURITÉ RENFORCÉE : 2FA obligatoire pour les admins (Audit P1)
-            if (user.role === 'admin' && !user.two_factor_enabled) {
+            // Désactivé en développement pour faciliter les tests locaux
+            if (user.role === 'admin' && !user.two_factor_enabled && process.env.NODE_ENV === 'production') {
                 console.warn(`🚨 Accès refusé : L'admin ${user.email} n'a pas activé le 2FA.`);
                 return res.status(403).json({
                     message: "Accès refusé. L'authentification à deux facteurs (2FA) est obligatoire pour les administrateurs.",

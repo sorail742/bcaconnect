@@ -344,10 +344,10 @@ const UserProfile = () => {
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <FormField label="{t('profFullName')}" icon={UserIcon} value={nomComplet} onChange={e => setNomComplet(e.target.value)} placeholder="{t('profFullNamePlaceholder')}" />
-                                            <FormField label="{t('profPhone')}" icon={Globe} type="tel" value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="+224 ..." />
+                                            <FormField label={t('profFullName')} icon={UserIcon} value={nomComplet} onChange={e => setNomComplet(e.target.value)} placeholder={t('profFullNamePlaceholder')} />
+                                            <FormField label={t('profPhone')} icon={Globe} type="tel" value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="+224 ..." />
                                         </div>
-                                        <FormField label="{t('profEmail')}" icon={Mail} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="votre@email.com" />
+                                        <FormField label={t('profEmail')} icon={Mail} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="votre@email.com" />
                                     </div>
 
                                     {/* Trust score */}
@@ -385,8 +385,8 @@ const UserProfile = () => {
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <FormField label="{t('profNewPassword')}" type="password" value={motDePasse} onChange={e => setMotDePasse(e.target.value)} placeholder="••••••••" />
-                                            <FormField label="{t('profConfirmPassword')}" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" />
+                                            <FormField label={t('profNewPassword')} type="password" value={motDePasse} onChange={e => setMotDePasse(e.target.value)} placeholder="••••••••" />
+                                            <FormField label={t('profConfirmPassword')} type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" />
                                         </div>
                                         <div className="flex items-center gap-3 p-3 bg-muted rounded-xl border border-border">
                                             <Clock className="size-4 text-muted-foreground shrink-0" />

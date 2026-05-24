@@ -278,14 +278,6 @@ const AppRoutes = () => {
                 </Suspense>
             } />
 
-            <Route path="/tracking" element={
-                <Suspense fallback={<LazyFallback />}>
-                    <ProtectedRoute>
-                        <Tracking />
-                    </ProtectedRoute>
-                </Suspense>
-            } />
-
             <Route path="/dispute/:orderId" element={
                 <Suspense fallback={<LazyFallback />}>
                     <ProtectedRoute>

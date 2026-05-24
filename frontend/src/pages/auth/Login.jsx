@@ -197,6 +197,7 @@ const Login = () => {
                                         <input
                                             type="email"
                                             required
+                                            autoComplete="username"
                                             value={email}
                                             onChange={(e) => handleChange('email', e.target.value)}
                                             placeholder="votre@email.com"
@@ -221,6 +222,7 @@ const Login = () => {
                                         <input
                                             type={showPassword ? 'text' : 'password'}
                                             required
+                                            autoComplete="current-password"
                                             value={password}
                                             onChange={(e) => handleChange('password', e.target.value)}
                                             placeholder="••••••••"

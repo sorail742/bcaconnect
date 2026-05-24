@@ -36,6 +36,12 @@ const deliveryService = {
     getHistory: async (orderId) => {
         const response = await api.get(`/delivery/history/${orderId}`);
         return response.data;
+    },
+
+    // 🌐 Suivi PUBLIC (sans authentification, données masquées RGPD)
+    trackOrder: async (trackingNumber) => {
+        const response = await api.get(`/delivery/track/${encodeURIComponent(trackingNumber)}`);
+        return response.data;
     }
 };
 

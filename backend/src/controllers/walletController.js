@@ -142,7 +142,10 @@ const walletController = {
     transfer: async (req, res, next) => {
         const t = await sequelize.transaction();
         try {
-            const { destinataireId, montant, motif, reference_externe } = req.body;
+            const destinataireId = req.body.destinataire_id || req.body.destinataireId || req.body.recipientId;
+            const montant = req.body.montant || req.body.amount;
+            const motif = req.body.motif || req.body.description;
+            const reference_externe = req.body.reference_externe;
             
             // Validation Métier & Limite Overflow
             if (!montant || isNaN(montant) || Number(montant) <= 0 || Number(montant) > 10000000000) {

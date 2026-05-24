@@ -17,6 +17,8 @@ import { cn } from '../../lib/utils';
 import { productSchema } from '../../lib/validation';
 import { getCategoryIconComponent } from '../../lib/categoryConstants';
 import { offlineStorage } from '../../lib/db';
+import { getAttributesForCategory, ATTRIBUTE_COLOR_MAP } from '../../lib/categoryAttributes';
+import { Settings2 } from 'lucide-react';
 const FormField = ({ label, required, children, error }) => (
     <div className="space-y-2.5">
         <label className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground/80 ml-1 flex items-center gap-2">
@@ -132,6 +134,7 @@ const AddProduct = () => {
         est_local: true,
         unite_mesure: 'Pièce',
         mots_cles: '',
+        attributs: {},
     });
 
     const [categories, setCategories] = useState([]);
@@ -211,6 +214,7 @@ const AddProduct = () => {
                         est_local: p.est_local ?? true,
                         unite_mesure: p.unite_mesure || 'Pièce',
                         mots_cles: Array.isArray(p.mots_cles) ? p.mots_cles.join(', ') : (p.mots_cles || ''),
+                        attributs: p.preferences_ia || {},
                     });
                 }
             } catch (err) {
@@ -342,6 +346,7 @@ const AddProduct = () => {
             est_local: formData.est_local,
             unite_mesure: formData.unite_mesure || 'Pièce',
             mots_cles: formData.mots_cles.split(',').map(k => k.trim()).filter(k => k),
+            preferences_ia: formData.attributs || {},
         };
 
         // GESTION HORS-LIGNE PROACTIVE
@@ -617,6 +622,69 @@ const AddProduct = () => {
                                         />
                                     </div>
                                 </FormField>
+
+                                {/* ✨ DYNAMIC ATTRIBUTES SECTION */}
+                                {(() => {
+                                    const selectedCat = categories.find(c => c.id === formData.categorie_id);
+                                    const attrConfig = getAttributesForCategory(selectedCat?.nom_categorie);
+                                    if (!attrConfig) return null;
+                                    const colors = ATTRIBUTE_COLOR_MAP[attrConfig.color] || ATTRIBUTE_COLOR_MAP.blue;
+                                    return (
+                                        <div className={cn('rounded-3xl border p-6 space-y-6 transition-all duration-500 animate-in fade-in slide-in-from-top-4', colors.bg, colors.border)}>
+                                            {/* Header */}
+                                            <div className="flex items-center gap-3">
+                                                <div className={cn('size-10 rounded-2xl flex items-center justify-center border', colors.bg, colors.border)}>
+                                                    <Settings2 className={cn('size-5', colors.text)} />
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{attrConfig.label}</h4>
+                                                    <p className={cn('text-[10px] font-bold uppercase tracking-widest', colors.label)}>
+                                                        {attrConfig.fields.length} caractéristiques spécifiques à renseigner
+                                                    </p>
+                                                </div>
+                                                <span className={cn('ml-auto px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest', colors.badge)}>
+                                                    {selectedCat?.nom_categorie}
+                                                </span>
+                                            </div>
+
+                                            {/* Fields Grid */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {attrConfig.fields.map(field => (
+                                                    <div key={field.key} className="space-y-2">
+                                                        <label className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-500 ml-1 flex items-center gap-1">
+                                                            {field.label}
+                                                            {field.unit && <span className={cn('text-[8px] px-1.5 py-0.5 rounded font-black uppercase', colors.badge)}>{field.unit}</span>}
+                                                        </label>
+                                                        {field.type === 'select' ? (
+                                                            <select
+                                                                value={formData.attributs?.[field.key] || ''}
+                                                                onChange={e => setFormData(prev => ({ ...prev, attributs: { ...prev.attributs, [field.key]: e.target.value } }))}
+                                                                className="w-full h-11 px-4 bg-white border border-slate-100 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                                                            >
+                                                                <option value="">-- Sélectionner --</option>
+                                                                {field.options.map(opt => (
+                                                                    <option key={opt} value={opt}>{opt}</option>
+                                                                ))}
+                                                            </select>
+                                                        ) : (
+                                                            <div className="relative">
+                                                                <input
+                                                                    type={field.type === 'number' || field.type === 'year' ? 'number' : 'text'}
+                                                                    value={formData.attributs?.[field.key] || ''}
+                                                                    onChange={e => setFormData(prev => ({ ...prev, attributs: { ...prev.attributs, [field.key]: e.target.value } }))}
+                                                                    placeholder={field.placeholder}
+                                                                    min={field.type === 'year' ? 1950 : undefined}
+                                                                    max={field.type === 'year' ? new Date().getFullYear() + 1 : undefined}
+                                                                    className="w-full h-11 pl-4 pr-4 bg-white border border-slate-100 rounded-2xl text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-primary/20 transition-all text-slate-900 placeholder:normal-case placeholder:font-medium"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
 
                                 <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-between group/local transition-all">
                                     <div className="flex items-center gap-3">

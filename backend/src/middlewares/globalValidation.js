@@ -212,7 +212,18 @@ const validateDates = (req, res, next) => {
 const validateEnums = (req, res, next) => {
     const enums = {
         role: ['client', 'fournisseur', 'transporteur', 'admin', 'banque'],
-        statut: ['actif', 'inactif', 'bloque', 'supprime', 'en_attente', 'ouvert', 'resolu', 'rejete', 'suspendu'],
+        statut: [
+            // Statuts utilisateur génériques
+            'actif', 'inactif', 'bloque', 'supprime', 'suspendu',
+            // Statuts commandes & articles (flux Vendeur)
+            'en_attente', 'confirme', 'prepare', 'expedie', 'livre', 'annule', 'retourne',
+            // Statuts livraison (flux Transporteur)
+            'pret', 'ramasse', 'en_route',
+            // Statuts litiges & support
+            'ouvert', 'resolu', 'rejete', 'en_cours', 'ferme',
+            // Statuts paiement
+            'complete', 'echoue', 'terminé'
+        ],
         statut_commande: ['en_attente', 'confirmee', 'expediee', 'livree', 'annulee'],
         statut_paiement: ['en_attente', 'complete', 'echouee', 'remboursee'],
         methode_paiement: ['mobile_money', 'carte_bancaire', 'portefeuille', 'crypto', 'virement'],

@@ -1,5 +1,6 @@
-const { Transaction, Wallet, Notification, sequelize } = require('../models');
+const { Transaction, Wallet, Notification, sequelize, User } = require('../models');
 const { v4: uuidv4 } = require('uuid');
+const paymentProviderService = require('../services/paymentProviderService');
 
 const paymentController = {
     // Simulation de détection de fraude par IA
@@ -61,9 +62,16 @@ const paymentController = {
                 metadata: { moyen_paiement }
             });
 
+            const payment_url = await paymentProviderService.generatePaymentUrl(
+                transaction.id, 
+                parseFloat(montant), 
+                "Recharge Portefeuille BCA", 
+                req.user.telephone
+            );
+
             res.status(201).json({
                 message: isSuspect ? "Transaction initiée (Vérification de sécurité en cours)" : "Transaction initiée",
-                payment_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment/simulate/${transaction.id}`,
+                payment_url: payment_url,
                 transaction_id: transaction.id,
                 is_suspect: isSuspect
             });
@@ -75,9 +83,18 @@ const paymentController = {
 
     // 2. Webhook de confirmation (Appelé par l'agrégateur)
     handleWebhook: async (req, res, next) => {
+        // Vérification de sécurité du Webhook
+        if (!paymentProviderService.verifyWebhookSignature(req)) {
+            console.error('🔴 [WEBHOOK] Signature invalide.');
+            return res.status(403).json({ message: "Signature non autorisée." });
+        }
+
         const t = await sequelize.transaction();
         try {
-            const { transaction_id, status } = req.body;
+            // Selon le provider, les champs peuvent varier (ex: cpm_trans_id, cpm_result)
+            // On gère un format générique + CinetPay
+            const transaction_id = req.body.transaction_id || req.body.cpm_trans_id;
+            const status = req.body.status || (req.body.cpm_result === '00' ? 'success' : 'failed');
 
             const transaction = await Transaction.findByPk(transaction_id, { transaction: t });
 

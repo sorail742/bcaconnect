@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { useWallet } from '../hooks/useDomainData';
 import { WalletSkeleton } from '../components/ui/Loader';
@@ -24,6 +25,7 @@ const Wallet = () => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [amount, setAmount] = useState('');
     const [isSearching, setIsSearching] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const { scoreData, loading: scoreLoading } = useAIScore();
     const { on, off } = useSocket();
@@ -36,8 +38,18 @@ const Wallet = () => {
             mutate();
         };
         on('wallet_updated', handleWalletUpdate);
+
+        // Gestion du retour depuis le paiement externe
+        const status = searchParams.get('status');
+        if (status === 'success') {
+            toast.success('Paiement initié avec succès ! Votre solde sera mis à jour dès la confirmation de l\'opérateur.');
+            searchParams.delete('status');
+            searchParams.delete('tx');
+            setSearchParams(searchParams);
+        }
+
         return () => off('wallet_updated', handleWalletUpdate);
-    }, [on, off, mutate]);
+    }, [on, off, mutate, searchParams, setSearchParams]);
 
     const transactions = wallet?.transactions || [];
     const balance = wallet?.solde_virtuel || 0;
@@ -76,7 +88,7 @@ const Wallet = () => {
         if (parseFloat(amount) > balance) { toast.error("Solde insuffisant."); return; }
         try {
             setIsTransferring(true);
-            await walletService.transfer({ recipientId: selectedUser.id, amount: parseFloat(amount), description: `Transfert P2P vers ${selectedUser.nom_complet}` });
+            await walletService.transfer({ destinataire_id: selectedUser.id, montant: parseFloat(amount), description: `Transfert P2P vers ${selectedUser.nom_complet}` });
             toast.success("Transfert réussi !");
             setIsTransferModalOpen(false); setSelectedUser(null); setAmount(''); mutate();
         } catch (err) { toast.error(err.response?.data?.message || "Erreur lors du transfert."); }

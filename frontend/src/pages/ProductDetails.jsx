@@ -118,6 +118,16 @@ const ProductDetail = () => {
         { label: 'Garantie BCA', value: 'Protection Premium (12 mois)' },
     ];
 
+    if (product.preferences_ia && typeof product.preferences_ia === 'object' && Object.keys(product.preferences_ia).length > 0) {
+        Object.entries(product.preferences_ia).forEach(([key, value]) => {
+            if (value) {
+                // Format the key to be more readable (e.g., 'boite_vitesse' -> 'Boite Vitesse')
+                const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                specs.push({ label, value: String(value) });
+            }
+        });
+    }
+
     return (
         <div className="bg-background text-foreground min-h-screen pt-32 pb-24 font-jakarta">
             <div className="max-w-7xl mx-auto px-6 lg:px-12">

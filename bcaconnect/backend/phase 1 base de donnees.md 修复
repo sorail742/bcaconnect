@@ -1,0 +1,145 @@
+-- ==========================================================
+-- ARCHITECTURE BASE DE DONNÉES BCA CONNECT - PHASE 1 (V2.1 OPTIMISÉE)
+-- Améliorations : UUID Automatiques & Index de Performance
+-- ==========================================================
+
+-- 1. EXTENSION
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- 2. TABLE DES UTILISATEURS
+CREATE TABLE utilisateurs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), 
+    nom_complet VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    telephone VARCHAR(20) UNIQUE NOT NULL,
+    mot_de_passe VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'fournisseur', 'transporteur', 'client', 'banque')),
+    score_confiance INT DEFAULT 100,
+    est_approuve BOOLEAN DEFAULT FALSE,
+    statut VARCHAR(20) DEFAULT 'actif',
+    derniere_synchro TIMESTAMP,
+    metadata_securite JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. TABLE DES PORTEFEUILLES
+CREATE TABLE portefeuilles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID UNIQUE REFERENCES utilisateurs(id) ON DELETE CASCADE,
+    solde_virtuel DECIMAL(15, 2) DEFAULT 0.00,
+    solde_sequestre DECIMAL(15, 2) DEFAULT 0.00,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4. TABLE DES CATEGORIES
+CREATE TABLE categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nom_categorie VARCHAR(50) UNIQUE NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 5. TABLE DES BOUTIQUES
+CREATE TABLE boutiques (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    proprietaire_id UUID UNIQUE REFERENCES utilisateurs(id) ON DELETE CASCADE,
+    nom_boutique VARCHAR(100) NOT NULL,
+    description TEXT,
+    slug VARCHAR(150) UNIQUE,
+    statut VARCHAR(20) DEFAULT 'actif',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 6. TABLE DES PRODUITS
+CREATE TABLE produits (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    boutique_id UUID REFERENCES boutiques(id) ON DELETE CASCADE,
+    categorie_id UUID REFERENCES categories(id),
+    nom_produit VARCHAR(150) NOT NULL,
+    description TEXT,
+    prix_unitaire DECIMAL(15, 2) NOT NULL,
+    stock_quantite INT DEFAULT 0,
+    preferences_ia JSONB, 
+    est_local BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 7. TABLE DES COMMANDES
+CREATE TABLE commandes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    utilisateur_id UUID REFERENCES utilisateurs(id),
+    total_ttc DECIMAL(15, 2) NOT NULL,
+    statut VARCHAR(30) DEFAULT 'en_attente',
+    mode_resilience BOOLEAN DEFAULT FALSE,
+    cle_idempotence UUID UNIQUE DEFAULT gen_random_uuid(), 
+    signature_offline TEXT, 
+    date_commande TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 8. TABLE DES DETAILS DE COMMANDES
+CREATE TABLE details_commandes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    commande_id UUID REFERENCES commandes(id) ON DELETE CASCADE,
+    produit_id UUID REFERENCES produits(id),
+    fournisseur_id UUID REFERENCES utilisateurs(id),
+    quantite INT NOT NULL,
+    prix_unitaire_achat DECIMAL(15, 2) NOT NULL
+);
+
+-- 9. TABLE DES TRANSACTIONS
+CREATE TABLE transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    portefeuille_id UUID REFERENCES portefeuilles(id),
+    commande_id UUID REFERENCES commandes(id),
+    montant DECIMAL(15, 2) NOT NULL,
+    type_transaction VARCHAR(50), 
+    reference_externe VARCHAR(100) UNIQUE, 
+    cle_idempotence UUID UNIQUE DEFAULT gen_random_uuid(), 
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 10. TABLE DES VERIFICATIONS OTP
+CREATE TABLE verifications_otp (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    telephone VARCHAR(20) NOT NULL,
+    code VARCHAR(10) NOT NULL,
+    type_action VARCHAR(50), 
+    expire_at TIMESTAMP NOT NULL,
+    est_utilise BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 11. AUDIT LOGS (Module Avancé)
+CREATE TABLE audit_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    utilisateur_id UUID REFERENCES utilisateurs(id),
+    action VARCHAR(100) NOT NULL,
+    description TEXT,
+    table_affectee VARCHAR(50),
+    id_enregistrement UUID,
+    adresse_ip VARCHAR(45),
+    agent_utilisateur TEXT, 
+    niveau_alerte VARCHAR(10) DEFAULT 'info',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 12. SYNC_QUEUE (Module Avancé)
+CREATE TABLE file_synchronisation (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    utilisateur_id UUID REFERENCES utilisateurs(id),
+    type_donnee VARCHAR(50),
+    payload JSONB NOT NULL,
+    tentatives INT DEFAULT 0,
+    statut_sync VARCHAR(20) DEFAULT 'en_attente',
+    erreur_log TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 13. INDEX DE PERFORMANCE (Crucial pour la rapidité)
+CREATE INDEX idx_produits_boutique ON produits(boutique_id);
+CREATE INDEX idx_produits_categorie ON produits(categorie_id);
+CREATE INDEX idx_commandes_user ON commandes(utilisateur_id);
+CREATE INDEX idx_details_commande ON details_commandes(commande_id);
+CREATE INDEX idx_transactions_wallet ON transactions(portefeuille_id);
+CREATE INDEX idx_audit_user ON audit_logs(utilisateur_id);
+CREATE INDEX idx_sync_user ON file_synchronisation(utilisateur_id);

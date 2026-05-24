@@ -1,0 +1,44 @@
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/database');
+
+const Transaction = sequelize.define('Transaction', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+    },
+    montant: {
+        type: DataTypes.DECIMAL(15, 2),
+        allowNull: false,
+    },
+    type_transaction: {
+        type: DataTypes.STRING(50),
+    },
+    reference_externe: {
+        type: DataTypes.STRING(100),
+        unique: true,
+    },
+    cle_idempotence: {
+        type: DataTypes.STRING(255),
+        defaultValue: DataTypes.UUIDV4,
+        unique: true,
+    },
+    statut: {
+        type: DataTypes.STRING(32),
+        defaultValue: 'en_attente'
+    },
+    ia_suspect: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    metadata: {
+        type: DataTypes.JSON,
+        defaultValue: {},
+    },
+}, {
+    tableName: 'transactions',
+    timestamps: true,
+    underscored: true,
+});
+
+module.exports = Transaction;

@@ -3,6 +3,28 @@ const { Op } = require('sequelize');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
 
+// ─── Utilitaire RGPD ─────────────────────────────────────────────────────────
+// Masque un nom pour l'affichage public : "Jean Dupont" → "J*** D***"
+const maskName = (name) => {
+    if (!name) return '*** ***';
+    return name.split(' ').map(part => {
+        if (part.length <= 1) return part;
+        return part[0] + '***';
+    }).join(' ');
+};
+
+// Masque une adresse : "123 Rue Kakimbo, Conakry" → "***, Conakry"
+const maskAddress = (address) => {
+    if (!address) return '***';
+    const parts = address.split(',');
+    if (parts.length > 1) {
+        return `***, ${parts.slice(1).join(',').trim()}`;
+    }
+    // Si pas de virgule, on garde seulement le dernier mot (ville presumée)
+    const words = address.trim().split(' ');
+    return `***, ${words[words.length - 1]}`;
+};
+
 const deliveryController = {
     // 1. Lister les commandes disponibles pour ramassage
     getAvailableOrders: catchAsync(async (req, res, next) => {
@@ -180,6 +202,50 @@ const deliveryController = {
             order: [['created_at', 'ASC']]
         });
         res.json(history);
+    }),
+
+    // 7. Suivi PUBLIC par numéro de commande (sans authentification, données masquées RGPD)
+    trackOrderPublic: catchAsync(async (req, res, next) => {
+        const { trackingNumber } = req.params;
+
+        // Normaliser : supprimer le préfixe "ORD-" si présent, et mettre en minuscules
+        const cleanId = trackingNumber.replace(/^ORD-/i, '').toLowerCase().trim();
+
+        if (!cleanId || cleanId.length < 6) {
+            return next(new AppError("Numéro de suivi invalide. Format attendu : ORD-XXXXXXXX ou les 8 premiers caractères de l'identifiant.", 400));
+        }
+
+        // Recherche par les premiers caractères de l'UUID
+        const order = await Order.findOne({
+            where: {
+                id: { [Op.like]: `${cleanId}%` }
+            }
+        });
+
+        if (!order) {
+            return next(new AppError("Aucune expédition trouvée pour ce numéro de suivi.", 404));
+        }
+
+        // Récupérer l'historique de livraison
+        const history = await DeliveryLog.findAll({
+            where: { order_id: order.id },
+            order: [['created_at', 'ASC']]
+        });
+
+        // ─── Masquage RGPD : protéger les données personnelles ─────────────────
+        const publicData = {
+            id: order.id,
+            trackingRef: `ORD-${order.id.slice(0, 8).toUpperCase()}`,
+            statut: order.statut,
+            statut_livraison: order.statut_livraison,
+            date_commande: order.date_commande,
+            // Données masquées conformément au RGPD
+            nom_destinataire: maskName(order.nom_destinataire),
+            adresse_livraison: maskAddress(order.adresse_livraison),
+            history
+        };
+
+        res.json(publicData);
     })
 };
 

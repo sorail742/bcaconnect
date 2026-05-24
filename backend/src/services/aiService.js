@@ -246,7 +246,19 @@ Réponds TOUJOURS en JSON valide avec la structure suivante:
 Donne les tendances de marché actuelles pour une marketplace en Guinée Conakry (BCA Connect).
 Inclut: Électronique, Mode/Textile, Alimentation, Mobilier, Agriculture, Santé/Beauté, Transport.`;
 
-        return await callGroq(systemPrompt, userMessage, 700);
+        try {
+            return await callGroq(systemPrompt, userMessage, 700);
+        } catch (error) {
+            console.warn('[AI Fallback] Groq failed for market trends. Returning local fallback.');
+            return {
+                trends: [
+                    { category: "Produits Locaux", demand_score: 85, insight: "Forte demande sur le marché", periode: "Actuel" },
+                    { category: "Électronique", demand_score: 65, insight: "Demande stable", periode: "Actuel" }
+                ],
+                confidence: 0.5,
+                resume: "Tendances générées localement (IA indisponible)"
+            };
+        }
     },
 
     /**

@@ -24,6 +24,12 @@ const VendorsList = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [filterVerified, setFilterVerified] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 5;
+
+    React.useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, selectedCategory, filterVerified]);
 
     const vendors = useMemo(() => Array.isArray(vendorsData) ? vendorsData : [], [vendorsData]);
 
@@ -46,6 +52,14 @@ const VendorsList = () => {
             return matchesSearch && matchesCategory && matchesVerified;
         });
     }, [vendors, searchQuery, selectedCategory, filterVerified]);
+
+    const paginatedVendors = useMemo(() => {
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        const end = start + ITEMS_PER_PAGE;
+        return filteredVendors.slice(start, end);
+    }, [filteredVendors, currentPage]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredVendors.length / ITEMS_PER_PAGE));
 
     const categories = useMemo(() => {
         const cats = vendors.map(v => v.categorie_principale).filter(Boolean);
@@ -82,8 +96,8 @@ const VendorsList = () => {
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-500 group-focus-within:text-primary transition-colors" />
                                     <input 
                                         type="text" 
-                                        placeholder="Rechercher un fournisseur ou un secteur..."
-                                        className="w-full h-14 pl-12 pr-6 bg-white/5 border border-white/10 rounded-2xl text-white font-bold focus:bg-white/10 focus:border-primary outline-none transition-all"
+                                        placeholder="Rechercher un nom ou un secteur..."
+                                        className="w-full h-14 pl-12 pr-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold focus:bg-white/10 focus:border-primary outline-none transition-all placeholder:text-slate-400"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                     />
@@ -97,7 +111,7 @@ const VendorsList = () => {
                         {/* Quick Stats Grid */}
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full lg:w-auto">
                             {[
-                                { label: 'Fournisseurs', val: stats.total, sub: 'Vérifiés' },
+                                { label: stats.total > 1 ? 'Fournisseurs' : 'Fournisseur', val: stats.total, sub: stats.total > 1 ? 'Vérifiés' : 'Vérifié' },
                                 { label: 'Confiance', val: stats.verifiedPct + '%', sub: 'Certifiés' },
                                 { label: 'Logistique', val: '24h', sub: 'Livraison' },
                             ].map((s, i) => (
@@ -190,7 +204,7 @@ const VendorsList = () => {
                             <div className="flex items-center gap-3">
                                 <div className="size-2 bg-emerald-500 rounded-full animate-pulse" />
                                 <p className="text-xs font-bold text-slate-500">
-                                    <span className="text-slate-900 dark:text-white">{filteredVendors.length}</span> fournisseurs disponibles actuellement
+                                    <span className="text-slate-900 dark:text-white">{filteredVendors.length}</span> fournisseur{filteredVendors.length !== 1 ? 's' : ''} disponible{filteredVendors.length !== 1 ? 's' : ''} actuellement
                                 </p>
                             </div>
                             <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
@@ -203,8 +217,8 @@ const VendorsList = () => {
                             <AnimatePresence mode="popLayout">
                                 {isLoading ? (
                                     [1,2,3].map(i => <Skeleton key={i} className="h-80 rounded-[2.5rem]" />)
-                                ) : filteredVendors.length > 0 ? (
-                                    filteredVendors.map((vendor, idx) => (
+                                ) : paginatedVendors.length > 0 ? (
+                                    paginatedVendors.map((vendor, idx) => (
                                         <motion.div
                                             key={vendor.id}
                                             layout
@@ -331,21 +345,50 @@ const VendorsList = () => {
                         {filteredVendors.length > 0 && (
                             <div className="flex flex-col sm:flex-row items-center justify-between gap-6 py-12 border-t border-slate-200">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                                    PAGE <span className="text-slate-900 dark:text-white">01</span> SUR <span className="text-slate-900 dark:text-white">12</span>
+                                    PAGE <span className="text-slate-900 dark:text-white">{currentPage < 10 ? `0${currentPage}` : currentPage}</span> SUR <span className="text-slate-900 dark:text-white">{totalPages < 10 ? `0${totalPages}` : totalPages}</span>
                                 </p>
                                 <div className="flex items-center gap-3">
-                                    <button className="h-12 px-6 rounded-2xl bg-white border border-slate-200 text-[10px] font-black uppercase tracking-widest hover:border-primary transition-all disabled:opacity-50">Précédent</button>
+                                    <button 
+                                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                        disabled={currentPage === 1}
+                                        className="h-12 px-6 rounded-2xl bg-white border border-slate-200 text-[10px] font-black uppercase tracking-widest hover:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Précédent
+                                    </button>
                                     <div className="flex items-center gap-2">
-                                        {[1,2,3].map(p => (
-                                            <div key={p} className={cn(
-                                                "size-12 rounded-2xl flex items-center justify-center text-xs font-black cursor-pointer transition-all",
-                                                p === 1 ? "bg-slate-900 text-white shadow-xl shadow-slate-900/20" : "bg-white border border-slate-200 text-slate-400 hover:border-primary hover:text-primary"
-                                            )}>
-                                                {p}
-                                            </div>
-                                        ))}
+                                        {Array.from({ length: Math.max(3, totalPages) }).map((_, idx) => {
+                                            const p = idx + 1;
+                                            if (totalPages > 5 && Math.abs(currentPage - p) > 1 && p !== 1 && p !== Math.max(3, totalPages)) {
+                                                if (Math.abs(currentPage - p) === 2) return <span key={p} className="text-slate-400 px-1">...</span>;
+                                                return null;
+                                            }
+                                            const isFakePage = p > totalPages;
+                                            return (
+                                                <button 
+                                                    key={p}
+                                                    onClick={() => !isFakePage && setCurrentPage(p)}
+                                                    disabled={isFakePage}
+                                                    className={cn(
+                                                        "size-12 rounded-2xl flex items-center justify-center text-xs font-black transition-all",
+                                                        p === currentPage 
+                                                            ? "bg-slate-900 text-white shadow-xl shadow-slate-900/20" 
+                                                            : isFakePage
+                                                                ? "bg-white border border-slate-100 text-slate-300 cursor-not-allowed"
+                                                                : "bg-white border border-slate-200 text-slate-400 hover:border-primary hover:text-primary cursor-pointer"
+                                                    )}
+                                                >
+                                                    {p}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
-                                    <button className="h-12 px-6 rounded-2xl bg-white border border-slate-200 text-[10px] font-black uppercase tracking-widest hover:border-primary transition-all">Suivant</button>
+                                    <button 
+                                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                        disabled={currentPage === totalPages}
+                                        className="h-12 px-6 rounded-2xl bg-white border border-slate-200 text-[10px] font-black uppercase tracking-widest hover:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Suivant
+                                    </button>
                                 </div>
                             </div>
                         )}

@@ -6,7 +6,7 @@ const { validate: isUuid } = require('uuid');
 
 const productController = {
     create: catchAsync(async (req, res, next) => {
-        const { nom_produit, description, prix_unitaire, prix_ancien, stock_quantite, categorie_id, image_url, est_local } = req.body;
+        const { nom_produit, description, prix_unitaire, prix_ancien, stock_quantite, categorie_id, image_url, est_local, unite_mesure, mots_cles, marque, preferences_ia } = req.body;
 
         // Validation minimale
         if (!nom_produit || nom_produit.trim().length < 3) {
@@ -46,10 +46,12 @@ const productController = {
             boutique_id: store.id,
             image_url: image_url?.trim() || null,
             est_local: est_local !== undefined ? est_local : true,
-            unite_mesure: req.body.unite_mesure || 'Pièce',
-            mots_cles: typeof req.body.mots_cles === 'string' 
-                ? req.body.mots_cles.split(',').map(m => m.trim()).filter(m => m)
-                : (req.body.mots_cles || [])
+            unite_mesure: unite_mesure || 'Pièce',
+            mots_cles: typeof mots_cles === 'string' 
+                ? mots_cles.split(',').map(m => m.trim()).filter(m => m)
+                : (mots_cles || []),
+            marque: marque?.trim() || null,
+            preferences_ia: preferences_ia || {}
         });
 
         // Recharger avec les associations pour la réponse complète
@@ -191,7 +193,7 @@ const productController = {
         if (!isUuid(req.params.id)) {
             return next(new AppError("Format d'identifiant invalide.", 400));
         }
-        const { nom_produit, description, prix_unitaire, prix_ancien, stock_quantite, categorie_id, image_url } = req.body;
+        const { nom_produit, description, prix_unitaire, prix_ancien, stock_quantite, categorie_id, image_url, est_local, unite_mesure, mots_cles, marque, preferences_ia } = req.body;
         const product = await Product.findByPk(req.params.id, {
             include: [{ model: Store, as: 'boutique' }]
         });
@@ -209,12 +211,15 @@ const productController = {
             stock_quantite: stock_quantite !== undefined ? stock_quantite : product.stock_quantite,
             categorie_id: categorie_id ?? product.categorie_id,
             image_url: image_url ?? product.image_url,
-            unite_mesure: req.body.unite_mesure ?? product.unite_mesure,
-            mots_cles: req.body.mots_cles !== undefined
-                ? (typeof req.body.mots_cles === 'string' 
-                    ? req.body.mots_cles.split(',').map(m => m.trim()).filter(m => m)
-                    : req.body.mots_cles)
-                : product.mots_cles
+            est_local: est_local !== undefined ? est_local : product.est_local,
+            unite_mesure: unite_mesure ?? product.unite_mesure,
+            mots_cles: mots_cles !== undefined
+                ? (typeof mots_cles === 'string' 
+                    ? mots_cles.split(',').map(m => m.trim()).filter(m => m)
+                    : mots_cles)
+                : product.mots_cles,
+            marque: marque !== undefined ? marque?.trim() || null : product.marque,
+            preferences_ia: preferences_ia !== undefined ? preferences_ia : product.preferences_ia
         });
 
         res.json({ message: 'Produit mis à jour.', product });

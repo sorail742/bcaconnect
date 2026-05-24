@@ -1,0 +1,35 @@
+name: 🛡️ Audit de Sécurité Automatisé
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: 🛡️ Audit des dépendances (NPM Audit)
+        cwd: backend
+        run: npm audit --audit-level=high
+
+      - name: 🧪 Tests de Sécurité (Jest + Supertest)
+        cwd: backend
+        run: |
+          npm ci
+          npm test
+        env:
+          NODE_ENV: test
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          DATABASE_URL: sqlite::memory:
