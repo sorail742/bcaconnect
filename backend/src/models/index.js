@@ -22,6 +22,11 @@ const Notification = require('./Notification');
 const Conversation = require('./Conversation');
 const Message = require('./Message');
 const ConversationParticipant = require('./ConversationParticipant');
+const Guarantee = require('./Guarantee');
+const Intervention = require('./Intervention');
+const EducationalResource = require('./EducationalResource');
+const IoTTrackingLog = require('./IoTTrackingLog');
+const BlockchainTransactionStub = require('./BlockchainTransactionStub');
 const sequelize = require('../config/database');
 
 // 1. Relations Utilisateur - Portefeuille
@@ -126,6 +131,35 @@ Review.belongsTo(User, { foreignKey: 'utilisateur_id' });
 User.hasMany(Notification, { foreignKey: 'utilisateur_id', as: 'notifications' });
 Notification.belongsTo(User, { foreignKey: 'utilisateur_id' });
 
+// 13. Relations SAV & Garanties
+User.hasMany(Guarantee, { foreignKey: 'acheteur_id', as: 'garanties' });
+Guarantee.belongsTo(User, { foreignKey: 'acheteur_id' });
+
+Product.hasMany(Guarantee, { foreignKey: 'produit_id' });
+Guarantee.belongsTo(Product, { foreignKey: 'produit_id', as: 'produit' });
+
+Order.hasMany(Guarantee, { foreignKey: 'commande_id' });
+Guarantee.belongsTo(Order, { foreignKey: 'commande_id' });
+
+Guarantee.hasMany(Intervention, { foreignKey: 'guarantee_id', as: 'interventions' });
+Intervention.belongsTo(Guarantee, { foreignKey: 'guarantee_id' });
+
+Product.hasMany(Intervention, { foreignKey: 'produit_id' });
+Intervention.belongsTo(Product, { foreignKey: 'produit_id' });
+
+User.hasMany(Intervention, { foreignKey: 'demandeur_id', as: 'demandes_intervention' });
+Intervention.belongsTo(User, { foreignKey: 'demandeur_id', as: 'demandeur' });
+
+User.hasMany(Intervention, { foreignKey: 'technicien_id', as: 'interventions_assignees' });
+Intervention.belongsTo(User, { foreignKey: 'technicien_id', as: 'technicien' });
+
+// 14. Relations IoT & Blockchain (Stubs)
+Order.hasMany(IoTTrackingLog, { foreignKey: 'commande_id', as: 'iot_logs' });
+IoTTrackingLog.belongsTo(Order, { foreignKey: 'commande_id' });
+
+Order.hasMany(BlockchainTransactionStub, { foreignKey: 'commande_id', as: 'smart_contracts' });
+BlockchainTransactionStub.belongsTo(Order, { foreignKey: 'commande_id' });
+
 // ── Relations Conversations & Messages ───────────────────────────────
 User.belongsToMany(Conversation, { through: ConversationParticipant, foreignKey: 'user_id', as: 'conversations' });
 Conversation.belongsToMany(User, { through: ConversationParticipant, foreignKey: 'conversation_id', as: 'participants' });
@@ -165,5 +199,10 @@ module.exports = {
     Conversation,
     Message,
     ConversationParticipant,
+    Guarantee,
+    Intervention,
+    EducationalResource,
+    IoTTrackingLog,
+    BlockchainTransactionStub,
     sequelize
 };

@@ -120,6 +120,9 @@ apiRouter.use('/upload', require('./routes/uploadRoutes'));
 apiRouter.use('/notifications', require('./routes/notificationRoutes'));
 apiRouter.use('/messages', require('./routes/messageRoutes'));
 apiRouter.use('/reviews', require('./routes/reviewRoutes'));
+apiRouter.use('/sav', require('./routes/savRoutes'));
+apiRouter.use('/education', require('./routes/educationRoutes'));
+apiRouter.use('/iot', require('./routes/iotRoutes'));
 
 // Montage du routeur sur le préfixe /api
 app.use('/api', apiRouter);

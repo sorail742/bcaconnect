@@ -33,6 +33,7 @@ const AboutPage = lazy(() => import('../pages/AboutPage'));
 const ContactPage = lazy(() => import('../pages/ContactPage'));
 const FaqPage = lazy(() => import('../pages/FaqPage'));
 const HelpCenter = lazy(() => import('../pages/HelpCenter'));
+const EducationCenter = lazy(() => import('../pages/EducationCenter'));
 const Unauthorized = lazy(() => import('../pages/auth/Unauthorized'));
 
 // Protected Pages - Lazy Loaded
@@ -47,6 +48,8 @@ const Tracking = lazy(() => import('../pages/Tracking'));
 const MyCredits = lazy(() => import('../pages/MyCredits'));
 const CreditSimulator = lazy(() => import('../pages/CreditSimulator'));
 const DisputeReport = lazy(() => import('../pages/DisputeReport'));
+const MyGuarantees = lazy(() => import('../pages/sav/MyGuarantees'));
+const MaintenanceRequest = lazy(() => import('../pages/sav/MaintenanceRequest'));
 
 // Vendor Pages - Lazy Loaded
 const VendorDashboard = lazy(() => import('../pages/vendor/VendorDashboard'));
@@ -54,6 +57,7 @@ const Products = lazy(() => import('../pages/vendor/Products'));
 const AddProduct = lazy(() => import('../pages/vendor/AddProduct'));
 const StoreSettings = lazy(() => import('../pages/vendor/StoreSettings'));
 const OrdersVendor = lazy(() => import('../pages/vendor/OrdersVendor'));
+const VendorReports = lazy(() => import('../pages/vendor/VendorReports'));
 
 // Carrier Pages - Lazy Loaded
 const CarrierDashboard = lazy(() => import('../pages/carrier/CarrierDashboard'));
@@ -183,6 +187,12 @@ const AppRoutes = () => {
                 </Suspense>
             } />
 
+            <Route path="/education" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <EducationCenter />
+                </Suspense>
+            } />
+
             <Route path="/tracking" element={
                 <Suspense fallback={<LazyFallback />}>
                     <Tracking />
@@ -294,6 +304,22 @@ const AppRoutes = () => {
                 </Suspense>
             } />
 
+            <Route path="/sav/guarantees" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MyGuarantees />
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/sav/maintenance/new" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute>
+                        <MaintenanceRequest />
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
             {/* Vendor Routes */}
             <Route path="/vendor/dashboard" element={
                 <Suspense fallback={<LazyFallback />}>
@@ -339,6 +365,14 @@ const AppRoutes = () => {
                 <Suspense fallback={<LazyFallback />}>
                     <ProtectedRoute allowedRoles={[ROLES.FOURNISSEUR]}>
                         <OrdersVendor />
+                    </ProtectedRoute>
+                </Suspense>
+            } />
+
+            <Route path="/vendor/reports" element={
+                <Suspense fallback={<LazyFallback />}>
+                    <ProtectedRoute allowedRoles={[ROLES.FOURNISSEUR]}>
+                        <VendorReports />
                     </ProtectedRoute>
                 </Suspense>
             } />
