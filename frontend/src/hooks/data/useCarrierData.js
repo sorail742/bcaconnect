@@ -3,18 +3,45 @@ import deliveryService from '../../services/deliveryService';
 import { toast } from 'sonner';
 
 export const useAvailableDeliveries = () => {
-    return useQuery({
+    const { data, isLoading, error, refetch, isFetching } = useQuery({
         queryKey: ['available-deliveries'],
         queryFn: () => deliveryService.getAvailableOrders(),
-        staleTime: 30_000, // 30 secondes pour les offres libres
+        staleTime: 30_000,
     });
+    return { data: data || [], isLoading, error: error?.message || null, refetch, isFetching };
 };
 
 export const useMyDeliveries = () => {
-    return useQuery({
+    const { data, isLoading, error, refetch, isFetching } = useQuery({
         queryKey: ['my-deliveries'],
         queryFn: () => deliveryService.getMyDeliveries(),
         staleTime: 60_000,
+    });
+    return { data: data || [], isLoading, error: error?.message || null, refetch, isFetching };
+};
+
+export const useMyGroups = () => {
+    const { data, isLoading, error, refetch, isFetching } = useQuery({
+        queryKey: ['my-groups'],
+        queryFn: () => deliveryService.getMyGroups(),
+        staleTime: 60_000,
+    });
+    return { data: data || [], isLoading, error: error?.message || null, refetch, isFetching };
+};
+
+export const useGroupOrders = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (orderIds) => deliveryService.groupOrders(orderIds),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['available-deliveries'] });
+            queryClient.invalidateQueries({ queryKey: ['my-deliveries'] });
+            queryClient.invalidateQueries({ queryKey: ['my-groups'] });
+            toast.success("LIVRAISONS REGROUPÉES AVEC SUCCÈS.");
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || "ERREUR LORS DU REGROUPEMENT.");
+        }
     });
 };
 
@@ -25,6 +52,7 @@ export const useAssignDelivery = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['available-deliveries'] });
             queryClient.invalidateQueries({ queryKey: ['my-deliveries'] });
+            queryClient.invalidateQueries({ queryKey: ['carrier-stats'] });
             toast.success("MISSION ASSIGNÉE. VEUILLEZ RAMASSER LE COLIS.");
         },
         onError: () => {
@@ -52,11 +80,21 @@ export const useVerifyDelivery = () => {
         mutationFn: ({ orderId, otp }) => deliveryService.verifyDelivery(orderId, otp),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['my-deliveries'] });
-            queryClient.invalidateQueries({ queryKey: ['wallet-balance'] }); // Pour le vendeur si concerné
+            queryClient.invalidateQueries({ queryKey: ['carrier-stats'] });
+            queryClient.invalidateQueries({ queryKey: ['wallet-balance'] });
             toast.success("LIVRAISON RÉUSSIE ET VALIDÉE !");
         },
         onError: (error) => {
             toast.error(error.response?.data?.message || "ERREUR DE VALIDATION OTP.");
         }
     });
+};
+
+export const useCarrierStats = () => {
+    const { data, isLoading, error, refetch, isFetching } = useQuery({
+        queryKey: ['carrier-stats'],
+        queryFn: () => deliveryService.getCarrierStats(),
+        staleTime: 60_000,
+    });
+    return { data, isLoading, error: error?.message || null, refetch, isFetching };
 };

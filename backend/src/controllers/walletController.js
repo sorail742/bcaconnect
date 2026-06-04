@@ -1,34 +1,30 @@
 const { Wallet, Transaction, User, sequelize } = require('../models');
 const crypto = require('crypto');
-const logger = require('../utils/logger'); // Utiliser le logger centralisé du projet
+const logger = require('../utils/logger');
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/AppError');
 
 const walletController = {
-    getMyWallet: async (req, res, next) => {
-        try {
-            const wallet = await Wallet.findOne({
-                where: { user_id: req.user.id },
-                include: [{
-                    model: Transaction,
-                    as: 'transactions',
-                    limit: 10,
-                    order: [['createdAt', 'DESC']]
-                }]
-            });
+    getMyWallet: catchAsync(async (req, res) => {
+        const wallet = await Wallet.findOne({
+            where: { user_id: req.user.id },
+            include: [{
+                model: Transaction,
+                as: 'transactions',
+                limit: 10,
+                order: [['createdAt', 'DESC']]
+            }]
+        });
 
-            if (!wallet) {
-                // Créer un portefeuille si inexistant
-                const newWallet = await Wallet.create({ user_id: req.user.id });
-                return res.json(newWallet);
-            }
-
-            res.json(wallet);
-        } catch (error) {
-            next(error);
+        if (!wallet) {
+            const newWallet = await Wallet.create({ user_id: req.user.id });
+            return res.json(newWallet);
         }
-    },
 
-    getTransactions: async (req, res, next) => {
-        try {
+        res.json(wallet);
+    }),
+
+    getTransactions: catchAsync(async (req, res) => {
             const { page = 1, limit = 20 } = req.query;
             const offset = (parseInt(page) - 1) * parseInt(limit);
 
@@ -48,13 +44,9 @@ const walletController = {
                 currentPage: parseInt(page),
                 transactions
             });
-        } catch (error) {
-            next(error);
-        }
-    },
+    }),
 
-    getAllTransactions: async (req, res, next) => {
-        try {
+    getAllTransactions: catchAsync(async (req, res) => {
             const { page = 1, limit = 20 } = req.query;
             const offset = (parseInt(page) - 1) * parseInt(limit);
 
@@ -74,34 +66,28 @@ const walletController = {
                 currentPage: parseInt(page),
                 transactions
             });
-        } catch (error) {
-            next(error);
-        }
-    },
+    }),
 
     // Charger son portefeuille
-    recharge: async (req, res, next) => {
+    recharge: catchAsync(async (req, res, next) => {
         const t = await sequelize.transaction();
         try {
             const { montant, mode_paiement, reference_externe } = req.body;
-            
-            // Validation Métier Stricte & Sécurité (Anti-Overflow DB - Max 10 Milliards GNF)
+
             if (!montant || isNaN(montant) || Number(montant) <= 0 || Number(montant) > 10000000000) {
                 await t.rollback();
-                return res.status(400).json({ message: "Montant invalide. Le montant doit être compris entre 1 et 10,000,000,000 GNF." });
+                return next(new AppError('Montant invalide. Le montant doit être compris entre 1 et 10,000,000,000 GNF.', 400));
             }
 
-            // Vérification de l'idempotence
             if (reference_externe) {
                 const existingTx = await Transaction.findOne({ where: { reference_externe }, transaction: t });
                 if (existingTx) {
                     await t.rollback();
-                    return res.status(200).json({ message: "La recharge a déjà été traitée.", transaction: existingTx });
+                    return res.status(200).json({ message: 'La recharge a déjà été traitée.', transaction: existingTx });
                 }
             }
 
-            // Lecture sécurisée avec VERROU (Évite les Race Conditions)
-            const wallet = await Wallet.findOne({ 
+            const wallet = await Wallet.findOne({
                 where: { user_id: req.user.id },
                 transaction: t,
                 lock: t.LOCK.UPDATE
@@ -109,17 +95,15 @@ const walletController = {
 
             if (!wallet) {
                 await t.rollback();
-                return res.status(404).json({ message: "Portefeuille non trouvé." });
+                return next(new AppError('Portefeuille non trouvé.', 404));
             }
 
-            // Math secured calculation (Math.round to avoid float drift issues like 0.1 + 0.2 = 0.3000004)
             const numericMontant = Math.round(Number(montant) * 100) / 100;
             const nouveauSolde = Math.round((Number(wallet.solde_virtuel) + numericMontant) * 100) / 100;
 
             wallet.solde_virtuel = nouveauSolde;
             await wallet.save({ transaction: t });
 
-            // Tracabilité (Ledger)
             const tx = await Transaction.create({
                 portefeuille_id: wallet.id,
                 type_transaction: 'depot',
@@ -130,77 +114,69 @@ const walletController = {
             }, { transaction: t });
 
             await t.commit();
-            res.json({ message: "Recharge réussie avec succès", solde: nouveauSolde, transaction: tx });
+            res.json({ message: 'Recharge réussie avec succès', solde: nouveauSolde, transaction: tx });
         } catch (error) {
             await t.rollback();
-            console.error('Erreur critique Recharge Wallet:', error);
-            next(error); // Express handle error nicely
+            next(error);
         }
-    },
+    }),
 
     // Transfert entre utilisateurs (ex: Client -> Vendeur)
-    transfer: async (req, res, next) => {
+    transfer: catchAsync(async (req, res, next) => {
         const t = await sequelize.transaction();
         try {
-            const { destinataireId, montant, motif, reference_externe } = req.body;
-            
-            // Validation Métier & Limite Overflow
+            const destinataireId = req.body.destinataire_id || req.body.destinataireId || req.body.recipientId;
+            const montant = req.body.montant || req.body.amount;
+            const motif = req.body.motif || req.body.description;
+            const reference_externe = req.body.reference_externe;
+
             if (!montant || isNaN(montant) || Number(montant) <= 0 || Number(montant) > 10000000000) {
                 await t.rollback();
-                return res.status(400).json({ message: "Montant invalide. Le montant spécifié doit être compris entre 1 et 10,000,000,000 GNF." });
+                return next(new AppError('Montant invalide. Le montant spécifié doit être compris entre 1 et 10,000,000,000 GNF.', 400));
             }
             if (String(req.user.id) === String(destinataireId)) {
                 await t.rollback();
-                return res.status(400).json({ message: "Opération frauduleuse : le destinataire est identique à l'expéditeur." });
+                return next(new AppError("Opération frauduleuse : le destinataire est identique à l'expéditeur.", 400));
             }
 
-            // Idempotence : Ne pas débiter/créditer deux fois la même référence
             if (reference_externe) {
                 const existingTx = await Transaction.findOne({ where: { reference_externe }, transaction: t });
                 if (existingTx) {
                     await t.rollback();
-                    return res.status(200).json({ message: "Ce transfert a déjà été traité avec succès.", transaction: existingTx });
+                    return res.status(200).json({ message: 'Ce transfert a déjà été traité avec succès.', transaction: existingTx });
                 }
             }
 
-            // ⚠️ ACQUISITION DES VERROUS DÉTERMINISTE ⚠️
-            // On trie les IDs pour toujours verrouiller dans le même ordre, empêchant les Deadlocks DB croisés.
             const walletsToLock = [req.user.id, destinataireId].sort();
 
             await Wallet.findAll({
                 where: { user_id: walletsToLock },
                 transaction: t,
                 lock: t.LOCK.UPDATE
-            }); 
+            });
 
-            // Récupération des instances maintenant verrouillées
             const sourceWallet = await Wallet.findOne({ where: { user_id: req.user.id }, transaction: t });
             const destWallet = await Wallet.findOne({ where: { user_id: destinataireId }, transaction: t });
 
             if (!sourceWallet || !destWallet) {
                 await t.rollback();
-                return res.status(404).json({ message: "L'un des portefeuilles est introuvable." });
+                return next(new AppError("L'un des portefeuilles est introuvable.", 404));
             }
 
-            // Calcul Arrondi sécurisé (pas de Float drift)
             const numericMontant = Math.round(Number(montant) * 100) / 100;
             const soldeSource = Math.round(Number(sourceWallet.solde_virtuel) * 100) / 100;
 
-            // Protection anti-solde négatif
             if (soldeSource < numericMontant) {
                 await t.rollback();
-                return res.status(400).json({ message: "Fonds insuffisants pour exécuter ce transfert." });
+                return next(new AppError('Fonds insuffisants pour exécuter ce transfert.', 400));
             }
 
-            // 1. Débit Atomique
             sourceWallet.solde_virtuel = Math.round((soldeSource - numericMontant) * 100) / 100;
             await sourceWallet.save({ transaction: t });
 
-            // 2. Crédit Atomique
             destWallet.solde_virtuel = Math.round((Number(destWallet.solde_virtuel) + numericMontant) * 100) / 100;
             await destWallet.save({ transaction: t });
 
-            // Ledger (Traçabilité stricte) — UUID v4 garanti unique (pas de collision possible)
             const refBase = reference_externe || `TRF-${crypto.randomUUID()}`;
 
             const txDebit = await Transaction.create({
@@ -221,14 +197,11 @@ const walletController = {
                 metadata: { type: 'transfert', expediteurId: req.user.id, motif }
             }, { transaction: t });
 
-            // 3. Validation Finale (Aucun crash n'a eu lieu)
             await t.commit();
-            res.json({ message: "Transfert sécurisé effectué avec succès.", transaction: txDebit });
+            res.json({ message: 'Transfert sécurisé effectué avec succès.', transaction: txDebit });
 
-            // 4. Notification Temps Réel via Socket.io
             const io = req.app.get('socketio');
             if (io) {
-                // Notifier le destinataire du crédit
                 io.to(String(destinataireId)).emit('notification_received', {
                     type: 'wallet',
                     subtype: 'credit',
@@ -236,18 +209,14 @@ const walletController = {
                     amount: numericMontant,
                     transactionId: txCredit.id
                 });
-                
-                // Optionnel : Forcer une actualisation du solde pour le destinataire
                 io.to(String(destinataireId)).emit('wallet_updated', { type: 'credit', amount: numericMontant });
             }
-            
         } catch (error) {
-            // Rollback d'urgence pour assurer l'intégrité du Ledger
             await t.rollback();
             logger.error('Erreur Critique Transfert Wallet:', error);
-            next(error); 
+            next(error);
         }
-    },
+    }),
 
     // 🛡️ SÉCURITÉ FINTECH : Traitement d'injection d'argent via Webhook
     rechargeWebhook: async (req, res, next) => {

@@ -219,9 +219,6 @@ Une interface utilisateur intuitive et personnalisable est essentielle pour gara
         ◦ Interface intuitive : Une navigation claire avec des icônes explicites, des menus simplifiés et des tutoriels intégrés pour guider les nouveaux utilisateurs.
         ◦ Multilingue : Disponibilité en plusieurs langues locales (français, soussou, peul, anglais, etc.) pour toucher un public diversifié.
 
-
-
-
     3. Accessibilité pour les Appareils à Faible Puissance
         ◦ Version allégée : Développer une version "light" de l'application, optimisée pour les téléphones basiques avec une faible consommation de données.
         ◦ Mode hors ligne : Permettre aux utilisateurs de consulter des catalogues, de créer des commandes ou de suivre des transactions sans connexion Internet, avec une synchronisation automatique dès qu'une connexion est disponible.
@@ -256,8 +253,6 @@ Pour garantir des transactions fluides et sécurisées, BCA Connect doit intégr
         ◦ Paiement échelonné : Intégrer des options de paiement en plusieurs tranches avec des rappels automatiques pour les échéances.
         ◦ Suivi des paiements : Tableau de bord dédié pour suivre l'historique des transactions et les paiements en attente.
 
-
-
 Gestion des Livraisons
 Un système de gestion des livraisons efficace est essentiel pour garantir la satisfaction des utilisateurs et optimiser les opérations logistiques.
     1. Suivi en Temps Réel
@@ -275,8 +270,6 @@ Une plateforme de gestion des litiges robuste renforce la confiance entre les ut
         ◦ Interface dédiée : Permettre aux utilisateurs de signaler facilement des problèmes liés aux commandes (retards, produits non conformes, etc.).
         ◦ Catégorisation des litiges : Classer les litiges par type (qualité, livraison, paiement) pour une gestion plus efficace.
 
-
-
     2. Médiation Automatisée
         ◦ Propositions de résolution : Utiliser l'intelligence artificielle pour suggérer des solutions basées sur des cas similaires.
         ◦ Communication intégrée : Fournir un espace de discussion entre les parties pour résoudre les conflits de manière collaborative.
@@ -286,20 +279,6 @@ Une plateforme de gestion des litiges robuste renforce la confiance entre les ut
     4. Tableau de Bord des Litiges
         ◦ Suivi des cas : Offrir un tableau de bord pour suivre l'état des litiges, les étapes de résolution, et les délais associés.
         ◦ Historique des litiges : Conserver un historique des conflits résolus pour améliorer la transparence et la confiance.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 4. Public Cible et Cas d'Usage
 Diversité des Utilisateurs
@@ -394,22 +373,6 @@ Pour illustrer comment BCA Connect répond aux besoins de ses utilisateurs, voic
             ▪ Après la réparation, il génère une facture électronique et reçoit son paiement directement sur son portefeuille électronique.
 Ces cas d'usage démontrent comment BCA Connect peut répondre aux besoins variés de ses utilisateurs tout en offrant une expérience fluide, personnalisée et efficace. L'application se positionne ainsi comme un outil indispensable pour moderniser les chaînes d'approvisionnement et améliorer la vie des acteurs économiques en Guinée et en Afrique.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 5. Architecture Technique et Sécurité
 Infrastructure et Scalabilité
 Pour garantir une performance optimale et une expérience utilisateur fluide, BCA Connect doit s'appuyer sur une architecture cloud évolutive et robuste, capable de gérer un grand volume d'utilisateurs et de transactions, tout en répondant aux défis spécifiques des zones rurales.
@@ -422,13 +385,7 @@ Pour garantir une performance optimale et une expérience utilisateur fluide, BC
             ▪ Scalabilité verticale : Augmenter les ressources (CPU, RAM) des serveurs existants pour améliorer les performances.
         ◦ Base de données distribuée : 
             ▪ Utiliser des bases de données distribuées comme MongoDB, Cassandra ou PostgreSQL pour gérer efficacement les données des utilisateurs et des transactions.
-            ▪ Répliquer les bases de données sur plusieurs régions pour garantir une disponibilité élevée et réduire la latence.
-
-
-
-
-
-
+            ▪ Répliquer les bases de données sur plusieurs régions pour garantir une disponibilité élevée et 
     2. Gestion des Performances
         ◦ Mise en cache : 
             ▪ Intégrer des systèmes de mise en cache comme Redis ou Memcached pour accélérer les requêtes fréquentes (ex. : recherche de produits, affichage des catalogues).
@@ -445,9 +402,6 @@ Pour garantir une performance optimale et une expérience utilisateur fluide, BC
             ▪ Utiliser des frameworks comme PouchDB ou Firebase pour gérer la synchronisation des données.
         ◦ Optimisation des données : 
             ▪ Compresser les données échangées entre l'application et le serveur pour réduire la consommation de bande passante, ce qui est crucial dans les zones rurales.
-
-
-
     4. Résilience et Disponibilité
         ◦ Tolérance aux pannes : 
             ▪ Répliquer les serveurs et les bases de données dans plusieurs zones géographiques pour garantir une disponibilité continue en cas de panne.
@@ -482,13 +436,7 @@ La sécurité des données est une priorité absolue pour BCA Connect, afin de p
         ◦ Surveillance des activités suspectes : 
             ▪ Mettre en place des outils de détection des intrusions (IDS) pour identifier et bloquer les activités malveillantes.
         ◦ Tests de sécurité réguliers : 
-            ▪ Effectuer des audits de sécurité et des tests de pénétration pour identifier et corriger les vulnérabilités.
-
-
-
-
-
-
+            ▪ Effectuer des audits de sécurité et des tests de pénétration pour identifier et corriger les 
     5. Gestion des Incidents
         ◦ Plan de réponse aux incidents : 
             ▪ Développer un plan détaillé pour répondre rapidement aux violations de données ou aux cyberattaques.
@@ -500,14 +448,6 @@ La sécurité des données est une priorité absolue pour BCA Connect, afin de p
         ◦ Formation des administrateurs : 
             ▪ Former les administrateurs système sur les dernières techniques de sécurité et les outils de protection des données.
 Cette architecture technique et ces mesures de sécurité garantissent que BCA Connect est non seulement performant et évolutif, mais également sécurisé et conforme aux normes internationales. Cela renforce la confiance des utilisateurs et assure une expérience fiable, même dans les environnements les plus exigeants.
-
-
-
-
-
-
-
-
 
 6. Gestion des Produits et Services
 Catalogue Dynamique
@@ -592,30 +532,6 @@ La personnalisation des offres est essentielle pour répondre aux besoins spéci
         ◦ ONG et Institutions : 
             ▪ Offrir des solutions d'achat groupé et des rapports détaillés pour garantir la transparence.
 Ces stratégies de gestion des produits et services permettent à BCA Connect de répondre efficacement aux besoins variés de ses utilisateurs tout en optimisant la gestion des stocks et en personnalisant les offres. Cela garantit une expérience utilisateur fluide et adaptée, renforçant ainsi la position de BCA Connect comme une plateforme incontournable pour les chaînes d'approvisionnement en Guinée et en Afrique.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 7. Paiements et Financements
 Crédit et Paiement Échelonné
 Pour répondre aux besoins variés des utilisateurs, notamment les TPE, PME, et ménages, BCA Connect doit intégrer un système de crédit et de paiement échelonné flexible et accessible. Voici les éléments clés pour développer cette fonctionnalité :
@@ -686,7 +602,9 @@ Un portefeuille électronique intégré est une solution clé pour gérer les cr
             ▪ Respecter les réglementations locales et internationales en matière de gestion des paiements et de protection des données (ex. : RGPD).
     4. Fonctionnalités Avancées
         ◦ Points de Fidélité : 
-            ▪ Mettre en place un système de points de fidélité pour récompenser les utilisateurs réguliers, qu'ils peuvent échanger contre des remises ou des services gratuits.
+            ▪ Mettre en place un système de points de fidélité pour récompenser les utilisateurs réguliers, qu'ils peuvent échanger contre des            netstat -ano | findstr :5001
+            tasklist /fi "PID eq <PID>"
+            taskkill /PID <PID> /F remises ou des services gratuits.
         ◦ Gestion des Dépenses : 
             ▪ Ajouter un module de gestion des dépenses pour aider les utilisateurs à suivre leurs habitudes de consommation et à mieux gérer leur budget.
         ◦ Intégration avec des Services Externes : 
@@ -697,31 +615,6 @@ Un portefeuille électronique intégré est une solution clé pour gérer les cr
         ◦ Multidevise : 
             ▪ Supporter plusieurs devises locales et internationales (GNF, FCFA, USD, EUR) pour faciliter les transactions transfrontalières.
 Ces fonctionnalités de crédit, paiement échelonné, et portefeuille électronique positionnent BCA Connect comme une plateforme innovante et inclusive, capable de répondre aux besoins financiers variés de ses utilisateurs. Elles renforcent également la confiance et l'engagement des utilisateurs en offrant des solutions flexibles, sécurisées, et adaptées aux réalités locales.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 8. Logistique et Livraison
 Suivi des Livraisons
 Un système de suivi des livraisons en temps réel est essentiel pour garantir la transparence, améliorer l'expérience utilisateur et renforcer la confiance entre les acheteurs et les fournisseurs. Voici comment intégrer un suivi GPS et des notifications en temps réel dans BCA Connect :

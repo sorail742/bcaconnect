@@ -63,6 +63,32 @@ const DisputeReport = () => {
     const { data: order, loading: orderLoading } = useOrderById(orderId);
     const [disputeData, setDisputeData] = useState({ type: 'qualite', description: '' });
     const [mediationResult, setMediationResult] = useState(null);
+    const [proofUrls, setProofUrls] = useState([]);
+    const [uploadingProof, setUploadingProof] = useState(false);
+
+    const handleProofUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (proofUrls.length >= 4) {
+            toast.error('Maximum 4 preuves par litige.');
+            return;
+        }
+        setUploadingProof(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await api.post('/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            setProofUrls(prev => [...prev, res.data.url]);
+            toast.success('Preuve ajoutée');
+        } catch {
+            toast.error('Échec du téléversement');
+        } finally {
+            setUploadingProof(false);
+            e.target.value = '';
+        }
+    };
 
     const { mutate: createDispute, isPending: loading } = useApiMutation(
         (data) => api.post('/disputes', { commande_id: orderId, ...data }),
@@ -90,7 +116,7 @@ const DisputeReport = () => {
             return;
         }
 
-        createDispute({ ...disputeData, defenseur_id: vendorId });
+        createDispute({ ...disputeData, defenseur_id: vendorId, preuves: proofUrls.length ? proofUrls : undefined });
     };
 
     const incidentTypes = [
@@ -214,15 +240,37 @@ const DisputeReport = () => {
                                             </div>
                                         </div>
 
-                                        {/* Mock Proof Upload */}
+                                        {/* Upload preuves */}
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                            <button className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2 text-slate-400 hover:border-orange-500 hover:text-orange-500 transition-all bg-slate-50/50">
-                                                <Camera className="size-6" />
-                                                <span className="text-[10px] font-black uppercase tracking-widest">Photo</span>
-                                            </button>
-                                            <div className="aspect-square rounded-2xl bg-slate-100 animate-pulse" />
-                                            <div className="aspect-square rounded-2xl bg-slate-50/30" />
-                                            <div className="aspect-square rounded-2xl bg-slate-50/30" />
+                                            <label className={cn(
+                                                "aspect-square rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all bg-slate-50/50 cursor-pointer",
+                                                uploadingProof ? "opacity-50 pointer-events-none border-slate-200 text-slate-400" : "border-slate-200 text-slate-400 hover:border-orange-500 hover:text-orange-500"
+                                            )}>
+                                                <input type="file" accept="image/*" className="hidden" onChange={handleProofUpload} disabled={uploadingProof} />
+                                                {uploadingProof ? (
+                                                    <div className="size-6 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin" />
+                                                ) : (
+                                                    <>
+                                                        <Camera className="size-6" />
+                                                        <span className="text-[10px] font-black uppercase tracking-widest">Photo</span>
+                                                    </>
+                                                )}
+                                            </label>
+                                            {proofUrls.map((url, i) => (
+                                                <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-slate-200 relative group">
+                                                    <img src={url} alt={`Preuve ${i + 1}`} className="w-full h-full object-cover" />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setProofUrls(prev => prev.filter((_, idx) => idx !== i))}
+                                                        className="absolute top-2 right-2 size-6 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            {Array.from({ length: Math.max(0, 3 - proofUrls.length) }).map((_, i) => (
+                                                <div key={`empty-${i}`} className="aspect-square rounded-2xl bg-slate-50/30 border border-slate-100" />
+                                            ))}
                                         </div>
                                     </div>
                                 </section>
@@ -300,7 +348,10 @@ const DisputeReport = () => {
                                                 <p className="text-xs text-white font-bold">Moins de 24 heures</p>
                                             </div>
                                         </div>
-                                        <button className="flex items-center gap-2 text-[10px] font-black text-orange-500 uppercase tracking-widest hover:underline">
+                                        <button
+                                            onClick={() => navigate('/disputes')}
+                                            className="flex items-center gap-2 text-[10px] font-black text-orange-500 uppercase tracking-widest hover:underline"
+                                        >
                                             Suivre le ticket <ChevronRight className="size-3" />
                                         </button>
                                     </div>

@@ -286,8 +286,8 @@ const Dashboard = () => {
                         <Link to="/marketplace" className="text-[9px] font-black text-[#FF6600] hover:text-slate-900 dark:text-foreground transition-colors uppercase  flex items-center gap-2">ACCÉDER AU MARCHÉ <ArrowRight className="size-3" /></Link>
                     </div>
                     
-                    <div className="bg-white dark:bg-[#0F1219] border border-slate-200 dark:border-foreground/5 rounded-2xl overflow-hidden shadow-sm">
-                        <table className="w-full text-left border-collapse">
+                    <div className="bg-white dark:bg-[#0F1219] border border-slate-200 dark:border-foreground/5 rounded-2xl overflow-x-auto shadow-sm">
+                        <table className="w-full text-left border-collapse min-w-[700px]">
                             <thead>
                                 <tr className="border-b border-slate-100 dark:border-white/5 bg-slate-50/30 dark:bg-white/[0.02]">
                                     <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Aperçu</th>
@@ -323,20 +323,27 @@ const Dashboard = () => {
                         </table>
                     </div>
 
-                    <div className="bg-white dark:bg-[#0F1219] border border-slate-200 dark:border-foreground/5 rounded-2xl shadow-sm overflow-hidden mt-12">
-                         <div className="p-4 border-b border-slate-100 dark:border-foreground/5 bg-slate-50/20 dark:bg-white/[0.01]">
+                    <div className="bg-white dark:bg-[#0F1219] border border-slate-200 dark:border-foreground/5 rounded-2xl shadow-sm overflow-x-auto mt-12">
+                         <div className="p-4 border-b border-slate-100 dark:border-foreground/5 bg-slate-50/20 dark:bg-white/[0.01] min-w-[500px]">
                              {isLoading ? (
                                  <div className="space-y-4">
                                      {[1, 2, 3].map(i => <TableRowSkeleton key={i} />)}
                                  </div>
                              ) : (
-                                 <DataTable
-                                    title="REGISTRE TRANSACTIONNEL"
-                                    columns={orderColumns}
-                                    data={orders.slice(0, 5)}
-                                    className="border-0 bg-transparent"
-                                    actions={<Link className="text-[9px] font-black text-[#FF6600] uppercase tracking-widest flex items-center gap-2" to="/orders">HISTORIQUE COMPLET <ChevronRight className="size-4" /></Link>}
-                                />
+                                 <>
+                                     <DataTable
+                                        title="REGISTRE TRANSACTIONNEL"
+                                        columns={orderColumns}
+                                        data={orders.slice(0, 5)}
+                                        className="border-0 bg-transparent"
+                                        actions={<Link className="text-[9px] font-black text-[#FF6600] uppercase tracking-widest flex items-center gap-2" to="/orders">HISTORIQUE COMPLET <ChevronRight className="size-4" /></Link>}
+                                    />
+                                    <div className="mt-4">
+                                        <Link className="text-[9px] font-black text-[#FF6600] uppercase tracking-widest flex items-center gap-2" to="/vendors">
+                                            FOURNISSEURS <ChevronRight className="size-4" />
+                                        </Link>
+                                    </div>
+                                 </>
                              )}
                          </div>
                     </div>

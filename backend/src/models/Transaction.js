@@ -11,6 +11,14 @@ const Transaction = sequelize.define('Transaction', {
         type: DataTypes.DECIMAL(15, 2),
         allowNull: false,
     },
+    portefeuille_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+    },
+    commande_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+    },
     type_transaction: {
         type: DataTypes.STRING(50),
     },

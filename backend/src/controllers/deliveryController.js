@@ -1,7 +1,30 @@
-const { Order, OrderItem, Product, Wallet, Transaction, User, DeliveryLog, sequelize } = require('../models');
+const { Order, OrderItem, Product, Wallet, Transaction, User, DeliveryLog, DeliveryGroup, Notification, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
+const escrowService = require('../services/escrowService');
+
+// ─── Utilitaire RGPD ─────────────────────────────────────────────────────────
+// Masque un nom pour l'affichage public : "Jean Dupont" → "J*** D***"
+const maskName = (name) => {
+    if (!name) return '*** ***';
+    return name.split(' ').map(part => {
+        if (part.length <= 1) return part;
+        return part[0] + '***';
+    }).join(' ');
+};
+
+// Masque une adresse : "123 Rue Kakimbo, Conakry" → "***, Conakry"
+const maskAddress = (address) => {
+    if (!address) return '***';
+    const parts = address.split(',');
+    if (parts.length > 1) {
+        return `***, ${parts.slice(1).join(',').trim()}`;
+    }
+    // Si pas de virgule, on garde seulement le dernier mot (ville presumée)
+    const words = address.trim().split(' ');
+    return `***, ${words[words.length - 1]}`;
+};
 
 const deliveryController = {
     // 1. Lister les commandes disponibles pour ramassage
@@ -41,9 +64,22 @@ const deliveryController = {
             commentaire: 'Colis récupéré chez le marchand'
         });
 
+        // Notifier le client avec le code OTP (canal in-app sécurisé)
+        const io = req.app.get('socketio');
+        const clientNotif = await Notification.create({
+            utilisateur_id: order.utilisateur_id,
+            titre: 'Code de livraison BCA',
+            message: `Votre livreur a récupéré votre colis. Code OTP à remettre à la livraison : <span class="font-black text-primary tracking-widest">${otp}</span>`,
+            type: 'delivery',
+            metadata: { order_id: orderId, otp_hint: otp.slice(0, 2) + '****' }
+        });
+        if (io) {
+            io.to(order.utilisateur_id).emit('notification_received', clientNotif);
+        }
+
         res.json({
             message: "Commande assignée. Le code OTP a été envoyé au client.",
-            order_otp: otp // Normalement envoyé par SMS/Notification, ici renvoyé pour test
+            order_otp: process.env.NODE_ENV === 'production' ? undefined : otp
         });
     }),
 
@@ -70,6 +106,19 @@ const deliveryController = {
                 { location: point },
                 { where: { id: req.user.id } }
             );
+        }
+
+        // Push temps réel aux clients qui suivent cette commande
+        const io = req.app.get('socketio');
+        const order = await Order.findByPk(orderId, { attributes: ['id', 'utilisateur_id'] });
+        if (io && order) {
+            io.to(order.utilisateur_id).emit('delivery_tracking_update', {
+                orderId,
+                latitude,
+                longitude,
+                status: status || log.statut,
+                timestamp: log.created_at
+            });
         }
 
         res.json({ message: "Position et statut mis à jour", log });
@@ -101,37 +150,8 @@ const deliveryController = {
             order.delivery_otp = null; // Clear OTP après usage
             await order.save({ transaction: t });
 
-            // LOGIQUE FINANCIÈRE : Libération des fonds du séquestre vers le solde virtuel
-            for (const item of order.details) {
-                const vendorWallet = await Wallet.findOne({ 
-                    where: { user_id: item.fournisseur_id }, 
-                    transaction: t,
-                    lock: t.LOCK.UPDATE 
-                });
-                
-                if (vendorWallet) {
-                    const amount = parseFloat(item.prix_unitaire_achat) * item.quantite;
-                    
-                    // Sécurité : Ne pas descendre en dessous de 0 pour le séquestre
-                    if (parseFloat(vendorWallet.solde_sequestre) < amount) {
-                        console.error(`⚠️ [ESCROW ERROR] Solde séquestre insuffisant pour le vendeur ${item.fournisseur_id}`);
-                    }
-
-                    vendorWallet.solde_sequestre = Math.max(0, parseFloat(vendorWallet.solde_sequestre) - amount);
-                    vendorWallet.solde_virtuel = parseFloat(vendorWallet.solde_virtuel) + amount;
-                    await vendorWallet.save({ transaction: t });
-
-                    await Transaction.create({
-                        portefeuille_id: vendorWallet.id,
-                        commande_id: order.id,
-                        montant: amount,
-                        type_transaction: 'depot',
-                        statut: 'complete',
-                        reference_externe: `REL-${order.id.slice(0, 8)}`,
-                        metadata: { type: 'release_escrow', description: 'Libération des fonds après livraison validée' }
-                    }, { transaction: t });
-                }
-            }
+            // LOGIQUE FINANCIÈRE : Libération idempotente via escrowService
+            await escrowService.releaseOrderEscrow(orderId, order.details, t, 'release_escrow');
 
             await DeliveryLog.create({
                 order_id: orderId,
@@ -180,6 +200,188 @@ const deliveryController = {
             order: [['created_at', 'ASC']]
         });
         res.json(history);
+    }),
+
+    // 7. Suivi PUBLIC par numéro de commande (sans authentification, données masquées RGPD)
+    trackOrderPublic: catchAsync(async (req, res, next) => {
+        const { trackingNumber } = req.params;
+
+        // Normaliser : supprimer le préfixe "ORD-" si présent, et mettre en minuscules
+        const cleanId = trackingNumber.replace(/^ORD-/i, '').toLowerCase().trim();
+
+        if (!cleanId || cleanId.length < 6) {
+            return next(new AppError("Numéro de suivi invalide. Format attendu : ORD-XXXXXXXX ou les 8 premiers caractères de l'identifiant.", 400));
+        }
+
+        // Recherche par les premiers caractères de l'UUID
+        const order = await Order.findOne({
+            where: {
+                id: { [Op.like]: `${cleanId}%` }
+            }
+        });
+
+        if (!order) {
+            return next(new AppError("Aucune expédition trouvée pour ce numéro de suivi.", 404));
+        }
+
+        // Récupérer l'historique de livraison
+        const history = await DeliveryLog.findAll({
+            where: { order_id: order.id },
+            order: [['created_at', 'ASC']]
+        });
+
+        // Dernière position GPS connue
+        const gpsLogs = history.filter(h => h.latitude != null && h.longitude != null);
+        const lastPosition = gpsLogs.length > 0
+            ? {
+                latitude: parseFloat(gpsLogs[gpsLogs.length - 1].latitude),
+                longitude: parseFloat(gpsLogs[gpsLogs.length - 1].longitude),
+                updated_at: gpsLogs[gpsLogs.length - 1].created_at
+            }
+            : null;
+
+        // ─── Masquage RGPD : protéger les données personnelles ─────────────────
+        const publicData = {
+            id: order.id,
+            trackingRef: `ORD-${order.id.slice(0, 8).toUpperCase()}`,
+            statut: order.statut,
+            statut_livraison: order.statut_livraison,
+            date_commande: order.date_commande,
+            // Données masquées conformément au RGPD
+            nom_destinataire: maskName(order.nom_destinataire),
+            adresse_livraison: maskAddress(order.adresse_livraison),
+            history,
+            lastPosition
+        };
+
+        res.json(publicData);
+    }),
+
+    // 8. Regrouper des livraisons (Livraisons Groupées)
+    groupOrders: catchAsync(async (req, res, next) => {
+        const { orderIds } = req.body;
+        const transporteur_id = req.user.id;
+
+        if (!orderIds || !Array.isArray(orderIds) || orderIds.length < 2) {
+            return next(new AppError("Vous devez sélectionner au moins 2 commandes pour créer un groupe.", 400));
+        }
+
+        const t = await sequelize.transaction();
+        try {
+            // Vérifier que toutes les commandes sont disponibles
+            const orders = await Order.findAll({
+                where: {
+                    id: { [Op.in]: orderIds },
+                    statut_livraison: 'pret'
+                },
+                transaction: t
+            });
+
+            if (orders.length !== orderIds.length) {
+                await t.rollback();
+                return next(new AppError("Certaines commandes sélectionnées ne sont plus disponibles.", 400));
+            }
+
+            // Calcul de l'empreinte carbone économisée : (N - 1) * 2.5 kg
+            const co2_saved = (orders.length - 1) * 2.5;
+
+            // Créer le groupe
+            const group = await DeliveryGroup.create({
+                transporteur_id,
+                statut: 'en_attente',
+                co2_saved,
+                cost_saved: 0 // Optionnel pour le moment
+            }, { transaction: t });
+
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+            // Mettre à jour les commandes
+            for (const order of orders) {
+                order.transporteur_id = transporteur_id;
+                order.delivery_group_id = group.id;
+                order.statut_livraison = 'ramasse';
+                order.delivery_otp = otp;
+                await order.save({ transaction: t });
+
+                await DeliveryLog.create({
+                    order_id: order.id,
+                    statut: 'ramasse',
+                    commentaire: 'Colis récupéré et ajouté au groupe de livraison'
+                }, { transaction: t });
+            }
+
+            await t.commit();
+            res.json({
+                message: "Livraisons regroupées avec succès !",
+                group,
+                co2_saved,
+                order_otp: otp
+            });
+        } catch (error) {
+            await t.rollback();
+            next(error);
+        }
+    }),
+
+    // 9. Récupérer les groupes de livraison du transporteur
+    getMyGroups: catchAsync(async (req, res, next) => {
+        const transporteur_id = req.user.id;
+        const groups = await DeliveryGroup.findAll({
+            where: { transporteur_id },
+            include: [{
+                model: Order,
+                as: 'commandes',
+                include: [
+                    {
+                        model: OrderItem,
+                        as: 'details',
+                        include: [{ model: Product, as: 'produit' }]
+                    },
+                    {
+                        model: User,
+                        as: 'client',
+                        attributes: ['nom_complet', 'telephone', 'adresse']
+                    }
+                ]
+            }],
+            order: [['created_at', 'DESC']]
+        });
+        res.json(groups);
+    }),
+
+    // 10. Statistiques transporteur (Dashboard Carrier)
+    getCarrierStats: catchAsync(async (req, res, next) => {
+        const transporteur_id = req.user.id;
+
+        const completed = await Order.count({
+            where: { transporteur_id, statut_livraison: 'livre' }
+        });
+
+        const active = await Order.count({
+            where: {
+                transporteur_id,
+                statut_livraison: { [Op.in]: ['ramasse', 'en_route', 'en_cours', 'pret'] }
+            }
+        });
+
+        const available = await Order.count({
+            where: { statut_livraison: 'pret', statut: { [Op.in]: ['payé', 'en_préparation'] } }
+        });
+
+        const groupsCount = await DeliveryGroup.count({ where: { transporteur_id } });
+
+        const co2Total = await DeliveryGroup.sum('co2_saved', { where: { transporteur_id } }) || 0;
+
+        res.json({
+            assigned: active,
+            inProgress: await Order.count({
+                where: { transporteur_id, statut_livraison: { [Op.in]: ['en_route', 'en_cours'] } }
+            }),
+            completed,
+            available,
+            groupsCount,
+            co2_saved_kg: parseFloat(co2Total).toFixed(1)
+        });
     })
 };
 

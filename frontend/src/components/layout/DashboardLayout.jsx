@@ -9,8 +9,9 @@ import messageService from '../../services/messageService';
 import socketService from '../../services/socketService';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
+import PageTransition from '../ui/PageTransition';
 
-const DashboardLayout = ({ children, title, noPadding }) => {
+const DashboardLayout = ({ children, title, noPadding, noFooter }) => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -198,25 +199,25 @@ const DashboardLayout = ({ children, title, noPadding }) => {
                     {/* Visual Grain & Scale Layer */}
                     <div className="absolute inset-x-0 top-0 h-[800px] bg-gradient-to-b from-primary/[0.01] to-transparent pointer-events-none" />
                     
-                    <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
+                    <PageTransition
                         className={cn(
                             "relative z-10 w-full",
                             !noPadding && "container"
                         )}
                     >
                         {children}
-                    </motion.div>
+                    </PageTransition>
 
                     {/* Infrastructure Ledger Footer */}
-                    <footer className="mt-40 py-12 px-10 border-t border-white/[0.02] flex flex-col sm:flex-row items-center justify-between gap-5 opacity-20 hover:opacity-100 transition-opacity duration-1000">
-                        <div className="flex items-center gap-5">
-                            <Zap className="size-5 text-primary animate-pulse" />
-                            <p className="text-[10px] font-black uppercase  text-muted-foreground pt-0.5">BCA Connect v2.6</p>
-                        </div>
-                        <p className="text-[10px] font-black uppercase  text-muted-foreground pt-0.5">© 2026 BCA Connect v2.6</p>
-                    </footer>
+                    {!noFooter && (
+                        <footer className="mt-40 py-12 px-10 border-t border-white/[0.02] flex flex-col sm:flex-row items-center justify-between gap-5 opacity-20 hover:opacity-100 transition-opacity duration-1000">
+                            <div className="flex items-center gap-5">
+                                <Zap className="size-5 text-primary animate-pulse" />
+                                <p className="text-[10px] font-black uppercase text-muted-foreground pt-0.5">BCA Connect v2.6</p>
+                            </div>
+                            <p className="text-[10px] font-black uppercase text-muted-foreground pt-0.5">© 2026 BCA Connect v2.6</p>
+                        </footer>
+                    )}
                 </main>
             </div>
         </div>

@@ -6,7 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useLanguage } from '../../context/LanguageContext';
 import { ROLES } from '../../constants/roles';
 
-// Alibaba-style "Start Selling" / supplier onboarding promotional banner
+// BCA-style "Start Selling" / supplier onboarding promotional banner
 export function SupplierBanner() {
     const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
@@ -24,7 +24,7 @@ export function SupplierBanner() {
         <section className="bg-white border-t border-slate-100 py-8 sm:py-10">
             <div className="container px-3 sm:px-6 lg:px-8">
 
-                {/* Main banner — orange gradient like Alibaba's "Start Selling" */}
+                {/* Main banner — orange gradient like BCA "Start Selling" */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -82,7 +82,7 @@ export function SupplierBanner() {
                     </div>
                 </motion.div>
 
-                {/* Trust badges row — Alibaba-style icon strip */}
+                {/* Trust badges row — BCA-style icon strip */}
                 <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
                         { icon: ShieldCheck, title: t('buyerProtection'), desc: t('escrowUntilDelivery') },

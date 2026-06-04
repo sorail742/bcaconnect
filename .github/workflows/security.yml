@@ -24,12 +24,12 @@ jobs:
         run: npm audit --audit-level=high
 
       - name: 🧪 Tests de Sécurité (Jest + Supertest)
-        cwd: backend
+        working-directory: backend
         run: |
           npm ci
-          npm test
+          npm run test:security
         env:
           NODE_ENV: test
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          JWT_SECRET: test_jwt_secret_minimum_32_characters_long_for_bca_ci
+          ENCRYPTION_KEY: d45259cf4cb572049b1c75c5ef9d0893b2bea7c3f3e8b7637d856a87530fd1df
           DATABASE_URL: sqlite::memory:

@@ -19,7 +19,7 @@ export const registerBaseSchema = z.object({
         .regex(/[a-z]/, "Le mot de passe doit contenir au moins une minuscule")
         .regex(/[A-Z]/, "Le mot de passe doit contenir au moins une majuscule")
         .regex(/\d/, "Le mot de passe doit contenir au moins un chiffre"),
-    role: z.enum(['client', 'fournisseur', 'transporteur', 'banque']).default('client'),
+    role: z.enum(['client', 'fournisseur', 'transporteur', 'banque', 'technicien']).default('client'),
     telephone: z.string().min(8, "Le numéro de téléphone est trop court").max(20, "Le numéro de téléphone est trop long"),
 });
 
@@ -41,11 +41,18 @@ export const registerTransporteurSchema = registerBaseSchema.extend({
     zone_couverture: z.string().min(1, "Veuillez sélectionner une zone de couverture"),
 });
 
+export const registerTechnicienSchema = registerBaseSchema.extend({
+    specialites: z.string().min(2, "Veuillez préciser vos spécialités"),
+    numero_agrement: z.string().optional(),
+    zone_intervention: z.string().min(2, "La zone d'intervention est requise"),
+});
+
 // Helper : retourne le bon schéma selon le rôle
 export const getRegisterSchema = (role) => {
     switch (role) {
         case 'fournisseur': return registerFournisseurSchema;
         case 'transporteur': return registerTransporteurSchema;
+        case 'technicien': return registerTechnicienSchema;
         default: return registerClientSchema;
     }
 };

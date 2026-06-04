@@ -19,6 +19,11 @@ const OrderItem = sequelize.define('OrderItem', {
         type: DataTypes.STRING(32),
         defaultValue: 'en_attente',
     },
+    escrow_released: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        comment: 'True si les fonds séquestre ont été libérés au vendeur',
+    },
 }, {
     tableName: 'details_commandes',
     timestamps: true,

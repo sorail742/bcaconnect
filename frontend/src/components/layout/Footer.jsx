@@ -64,7 +64,7 @@ const Footer = () => {
         {
             title: t('footerOpportunityTitle') || "Opportunités",
             links: [
-                { label: t('sellOnBca') || "Vendre sur BCA", href: "/vendors" },
+                
                 { label: t('becomeCarrier') || "Devenir Transporteur", href: "/carrier-join" },
                 { label: t('becomeConsultant') || "Devenir Consultant", href: "/consultant" },
                 { label: t('bcaLogistics') || "BCA Logistique", href: "/logistics" },
@@ -167,7 +167,7 @@ const Footer = () => {
                     </div>
 
                     {/* Links Grid */}
-                    <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-8">
+                    <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
                         {footerSections.map((section, i) => (
                             <div key={i} className="space-y-8">
                                 <h4 className="text-base font-black text-foreground uppercase tracking-[0.1em] relative inline-block">
@@ -177,7 +177,7 @@ const Footer = () => {
                                 <ul className="space-y-4">
                                     {section.links.map((link, j) => (
                                         <li key={j}>
-                                            <Link to={link.href} className="text-base text-muted-foreground hover:text-foreground hover:translate-x-2 transition-all flex items-center gap-2 group font-medium">
+                                            <Link to={link.href} className="text-base font-semibold text-slate-500 hover:text-primary hover:translate-x-2 transition-all flex items-center gap-2 group">
                                                 <ArrowRight className="size-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-primary" />
                                                 {link.label}
                                             </Link>
@@ -217,7 +217,7 @@ const Footer = () => {
                                 <div key={i} className="group relative">
                                     <div className={cn(
                                         "h-16 px-6 rounded-2xl flex items-center justify-center shadow-lg border border-border bg-white transition-all duration-500 hover:scale-105 hover:shadow-primary/20",
-                                        "overflow-hidden"
+                                        "overflow-hidden mb-6"
                                     )}>
                                         <img 
                                             src={op.src} 
@@ -225,7 +225,7 @@ const Footer = () => {
                                             className="h-10 w-auto object-contain transition-transform duration-500 group-hover:scale-110" 
                                         />
                                     </div>
-                                    <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-black uppercase tracking-tighter text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 text-[10px] font-black uppercase tracking-tighter text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                                         {op.label}
                                     </span>
                                 </div>

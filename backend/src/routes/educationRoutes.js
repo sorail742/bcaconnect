@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const educationController = require('../controllers/educationController');
-const { authMiddleware } = require('../middlewares/auth');
+const { optionalAuth } = require('../middlewares/authMiddleware');
 
 // Note: on utilise authMiddleware optionnellement, ou public
-router.get('/', educationController.getAllResources);
+router.get('/', optionalAuth, educationController.getAllResources);
 
 module.exports = router;

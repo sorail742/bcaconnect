@@ -193,7 +193,7 @@ const AdsManager = () => {
 
                 {/* Main Content Area */}
                 <div className="space-y-8 pb-20">
-                {/* Alibaba-Style High-Performance Table */}
+                {/* BCA-Style High-Performance Table */}
                 <div className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm relative">
                     <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left border-collapse min-w-[1000px]">
@@ -241,7 +241,7 @@ const AdsManager = () => {
                                                     <div className="size-14 rounded-xl bg-slate-50 border border-slate-100 flex-shrink-0 overflow-hidden relative group-hover:border-primary/40 transition-all">
                                                         {ad.url_image ? (
                                                             <img 
-                                                                src={ad.url_image.startsWith('http') ? ad.url_image : `http://localhost:5000/uploads/${ad.url_image}`} 
+                                                                src={ad.url_image.startsWith('http') ? ad.url_image : `http://localhost:5001/uploads/${ad.url_image}`} 
                                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                                                 alt={ad.titre}
                                                             />

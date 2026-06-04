@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import userService from '../../services/userService';
+import authService from '../../services/authService';
 import notificationService from '../../services/notificationService';
 import messageService from '../../services/messageService';
 import useAuthStore from '../../store/authStore';
@@ -11,11 +11,11 @@ export const useUserProfile = () => {
     const { token, isAuthenticated } = useAuthStore();
     const { data, isLoading: loading, error, isFetching, refetch } = useQuery({
         queryKey: ['user-profile'],
-        queryFn: () => userService.getById('me'),
+        queryFn: () => authService.getCurrentUser(),
         staleTime: 2 * 60_000,
         enabled: !!token && isAuthenticated,
     });
-    return { data, loading, error: error?.message || null, isFetching, refetch, mutate: refetch };
+    return { data: data?.user || data, loading, error: error?.message || null, isFetching, refetch, mutate: refetch };
 };
 
 /**
@@ -33,7 +33,7 @@ export const useNotificationsList = () => {
 };
 
 /**
- * useMessages — Conversations et chats.
+ * useMessages — Conversations de l'utilisateur.
  */
 export const useMessages = () => {
     const { token, isAuthenticated } = useAuthStore();
@@ -43,5 +43,19 @@ export const useMessages = () => {
         staleTime: 15_000,
         enabled: !!token && isAuthenticated,
     });
-    return { data, loading, error: error?.message || null, isFetching, refetch, mutate: refetch };
+    return { data: data || [], loading, error: error?.message || null, isFetching, refetch, mutate: refetch };
+};
+
+/**
+ * useConversationMessages — Messages d'une conversation.
+ */
+export const useConversationMessages = (conversationId) => {
+    const { token, isAuthenticated } = useAuthStore();
+    const { data, isLoading: loading, error, refetch, isFetching } = useQuery({
+        queryKey: ['conversation-messages', conversationId],
+        queryFn: () => messageService.getMessages(conversationId),
+        staleTime: 10_000,
+        enabled: !!token && isAuthenticated && !!conversationId,
+    });
+    return { data: data || [], loading, error: error?.message || null, refetch, isFetching };
 };

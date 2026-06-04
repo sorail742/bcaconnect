@@ -4,7 +4,7 @@ import {
     LayoutDashboard, Package, ShoppingCart, Store, Receipt,
     Users, MessageSquare, User, Truck, Plus, Landmark,
     Folder, RotateCcw, Bell, Wallet, Settings, LogOut,
-    Megaphone, Gavel, X, Shield, Search, Satellite, Zap
+    Megaphone, Gavel, X, Shield, Search, Satellite, Zap, Calendar
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../hooks/useAuth';
@@ -52,6 +52,7 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
             { path: '/vendor/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
             { path: '/vendor/products', label: 'Mes Produits', icon: Package, permission: 'manage_own_products' },
             { path: '/vendor/orders', label: 'Commandes', icon: ShoppingCart, permission: 'view_own_orders' },
+            { path: '/disputes', label: 'Litiges', icon: Gavel },
             { path: '/admin/ads', label: 'Mes Publicités', icon: Megaphone, permission: 'manage_ads' },
             { path: '/vendor/store', label: 'Ma Boutique', icon: Store, permission: 'manage_own_store' },
             { path: '/messages', label: 'Messages', icon: MessageSquare, badge: unreadMessages },
@@ -64,10 +65,20 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
         client: [
             { path: '/dashboard', label: 'Mon Espace', icon: LayoutDashboard },
             { path: '/marketplace', label: 'Marché', icon: Store },
-            { path: '/vendors', label: 'Fournisseurs', icon: Users },
+            { path: '/dashboard/vendors', label: 'Fournisseurs', icon: Users },
             { path: '/orders', label: 'Mes Commandes', icon: ShoppingCart, permission: 'view_own_history' },
+            { path: '/disputes', label: 'Mes Litiges', icon: Gavel },
+            { path: '/dashboard/credits', label: 'Mes Crédits', icon: Receipt },
+            { path: '/dashboard/credit-calendar', label: 'Calendrier', icon: Calendar },
             { path: '/payments', label: 'Paiements', icon: Wallet },
             { path: '/tracking', label: 'Livraisons', icon: Truck },
+            { path: '/messages', label: 'Messages', icon: MessageSquare, badge: unreadMessages },
+        ],
+        technicien: [
+            { path: '/technician/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
+            { path: '/technician/missions', label: 'Missions', icon: Zap },
+            { path: '/technician/equipment', label: 'Équipements', icon: Package },
+            { path: '/technician/wallet', label: 'Portefeuille', icon: Wallet },
             { path: '/messages', label: 'Messages', icon: MessageSquare, badge: unreadMessages },
         ]
     };
@@ -112,7 +123,8 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
                                     <p className="text-primary text-[8px] font-bold uppercase tracking-widest leading-none">
                                         {user?.role === 'admin' ? 'Administration' : 
                                          user?.role === 'fournisseur' ? 'Fournisseur Vérifié' : 
-                                         user?.role === 'transporteur' ? 'Logistique' : 'Client Privilège'}
+                                         user?.role === 'transporteur' ? 'Logistique' : 
+                                         user?.role === 'technicien' ? 'Technicien' : 'Client Privilège'}
                                     </p>
                                 </div>
                             </div>

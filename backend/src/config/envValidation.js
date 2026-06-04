@@ -113,6 +113,14 @@ const envSchema = Joi.object({
     AWS_ACCESS_KEY_ID: Joi.string().optional(),
     AWS_SECRET_ACCESS_KEY: Joi.string().optional(),
 
+    // CinetPay Mobile Money (requis en production)
+    PAYMENT_API_KEY: Joi.string().optional(),
+    PAYMENT_SITE_ID: Joi.string().optional(),
+    PAYMENT_SECRET: Joi.string().optional(),
+    PAYMENT_PROVIDER_URL: Joi.string().uri().optional(),
+    BACKEND_URL: Joi.string().uri().optional(),
+    FRONTEND_URL: Joi.string().uri().optional(),
+
 }).unknown();
 
 /**
@@ -134,6 +142,16 @@ function validateEnv() {
     }
 
     console.log('✅ Configuration validée avec succès');
+
+    if (value.NODE_ENV === 'production') {
+        const paymentKeys = ['PAYMENT_API_KEY', 'PAYMENT_SITE_ID', 'PAYMENT_SECRET', 'BACKEND_URL', 'FRONTEND_URL'];
+        const missing = paymentKeys.filter((k) => !process.env[k]);
+        if (missing.length) {
+            console.warn(`⚠️  [CINETPAY] Variables manquantes en production : ${missing.join(', ')}`);
+            console.warn('    → Voir backend/DEPLOYMENT_PROD.md et backend/.env.example');
+        }
+    }
+
     return value;
 }
 

@@ -13,3 +13,6 @@ export * from './data/useSupportData';
 export * from './data/useAdminData';
 export * from './data/useMarketingData';
 export * from './data/useCreditData';
+export * from './data/useTechnicianData';
+export * from './data/useCarrierData';
+export * from './data/useDeliveryData';

@@ -10,7 +10,7 @@ import {
     Lock, Share2, MoreVertical, PlusCircle, Download, Database, PieChart
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '../../lib/utils';
+import { cn, getImageUrl } from '../../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAdminDisputes } from '../../hooks/useDomainData';
 import useApiMutation from '../../hooks/useApiMutation';
@@ -71,27 +71,46 @@ const AdminDisputes = () => {
     const { data: disputes = [], loading, refetch: fetchDisputes } = useAdminDisputes();
     const [selectedDispute, setSelectedDispute] = useState(null);
     const [decision, setDecision] = useState('');
+    const [resolutionType, setResolutionType] = useState('mediation_seule');
+    const [refundAmount, setRefundAmount] = useState('');
     const [filterStatus, setFilterStatus] = useState('TOUS');
     const [showExportMenu, setShowExportMenu] = useState(false);
 
     const { mutate: resolveMutation, isPending: resolving } = useApiMutation(
-        ({ id, decision_finale }) => api.put(`/disputes/${id}/resolve`, {
+        ({ id, decision_finale, resolution_type, remboursement_montant }) => api.put(`/disputes/${id}/resolve`, {
             decision_finale,
+            resolution_type,
+            remboursement_montant: remboursement_montant ? parseFloat(remboursement_montant) : undefined,
             statut: 'resolu'
         }),
         {
             invalidateKeys: [['admin-disputes']],
-            successMessage: "DÉCISION APPLIQUÉE. LITIGE RÉSOLU OUVERT.",
+            successMessage: "DÉCISION APPLIQUÉE. REMBOURSEMENT TRAITÉ SI APPLICABLE.",
             onSuccess: () => {
                 setSelectedDispute(null);
                 setDecision('');
+                setResolutionType('mediation_seule');
+                setRefundAmount('');
             }
+        }
+    );
+
+    const { mutate: updateStatusMutation } = useApiMutation(
+        ({ id, statut }) => api.put(`/disputes/${id}/status`, { statut }),
+        {
+            invalidateKeys: [['admin-disputes']],
+            successMessage: "Statut du litige mis à jour.",
         }
     );
 
     const handleResolve = (id) => {
         if (!decision.trim()) return toast.error("VEUILLEZ FORMULER UN DÉCRET FINAL.");
-        resolveMutation({ id, decision_finale: decision });
+        resolveMutation({
+            id,
+            decision_finale: decision,
+            resolution_type: resolutionType,
+            remboursement_montant: refundAmount || undefined,
+        });
     };
 
     const filteredDisputes = disputes.filter(d => 
@@ -190,7 +209,7 @@ const AdminDisputes = () => {
         <DashboardLayout title="MÉDIATION & ARBITRAGE" noPadding>
             <div className="min-h-screen bg-[#f1f5f9] p-4 lg:p-8 space-y-8 pb-32 custom-scrollbar">
                 
-                {/* Header HUD - Alibaba Style */}
+                {/* Header HUD - BCA Style */}
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
                     <div className="flex items-center gap-6">
                         <div className="size-16 rounded-2xl bg-slate-900 flex items-center justify-center shadow-2xl shadow-slate-900/10">
@@ -282,7 +301,7 @@ const AdminDisputes = () => {
                     )}
                 </AnimatePresence>
 
-                {/* Quick Stats Alibaba */}
+                {/* Quick Stats BCA */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard title="Cas Ouverts" value={pendingDisputes.toString()} icon={ShieldAlert} color="text-amber-500" trend={totalDisputes > 0 ? "Actif" : "Sain"} />
                     <StatCard title="Vélocité IA" value={avgIAVelocity} icon={Zap} color="text-blue-500" />
@@ -384,7 +403,7 @@ const AdminDisputes = () => {
                         </div>
                     </div>
 
-                    {/* Content Column - Alibaba Advanced Panel */}
+                    {/* Content Column - BCA Advanced Panel */}
                     <div className="xl:col-span-8">
                         <AnimatePresence mode="wait">
                             {selectedDispute ? (
@@ -434,7 +453,7 @@ const AdminDisputes = () => {
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                         <div className="lg:col-span-2 space-y-8">
                                             
-                                            {/* Phase HUD (Alibaba Style Timeline) */}
+                                            {/* Phase HUD (BCA Style Timeline) */}
                                             <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
                                                 <div className="flex items-center justify-between px-4 relative">
                                                     <div className="absolute top-1/2 left-8 right-8 h-1 bg-slate-50 -translate-y-1/2 z-0" />
@@ -501,7 +520,7 @@ const AdminDisputes = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Evidence Section Alibaba Inspired */}
+                                            {/* Evidence Section BCA Inspired */}
                                             <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-8">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-2">
@@ -525,7 +544,7 @@ const AdminDisputes = () => {
                                                         >
                                                             <div className="size-full flex items-center justify-center">
                                                                 <img 
-                                                                    src={url.startsWith('http') ? url : `http://localhost:5000/uploads/${url}`}
+                                                                    src={getImageUrl(url)}
                                                                     className="size-full object-cover group-hover:scale-110 transition-transform duration-700" 
                                                                     alt="Evidence" 
                                                                 />
@@ -605,6 +624,36 @@ const AdminDisputes = () => {
                                                 </div>
 
                                                 <div className="space-y-4">
+                                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Type de résolution financière</label>
+                                                    <select
+                                                        value={resolutionType}
+                                                        onChange={e => setResolutionType(e.target.value)}
+                                                        className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-xs font-black uppercase tracking-widest text-slate-800 outline-none focus:ring-4 focus:ring-primary/10"
+                                                    >
+                                                        <option value="mediation_seule">Médiation seule (sans mouvement)</option>
+                                                        <option value="remboursement_integral">Remboursement intégral client</option>
+                                                        <option value="remboursement_partiel">Remboursement partiel</option>
+                                                        <option value="bon_achat">Bon d'achat</option>
+                                                        <option value="liberation_vendeur">Libération fonds vendeur</option>
+                                                    </select>
+                                                    {['remboursement_partiel', 'bon_achat'].includes(resolutionType) && (
+                                                        <input
+                                                            type="number"
+                                                            placeholder="Montant GNF"
+                                                            value={refundAmount}
+                                                            onChange={e => setRefundAmount(e.target.value)}
+                                                            className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-xs font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/10"
+                                                        />
+                                                    )}
+                                                    {selectedDispute?.statut !== 'resolu' && selectedDispute?.statut !== 'en_mediation' && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => updateStatusMutation({ id: selectedDispute.id, statut: 'en_mediation' })}
+                                                            className="w-full h-10 rounded-xl border border-amber-200 bg-amber-50 text-[9px] font-black uppercase tracking-widest text-amber-700 hover:bg-amber-100 transition-colors"
+                                                        >
+                                                            Passer en médiation IA
+                                                        </button>
+                                                    )}
                                                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Décret d'arbitrage</label>
                                                     <textarea
                                                         className="w-full h-48 bg-slate-50 border border-slate-100 rounded-2xl p-6 text-xs font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-inner placeholder:text-slate-300 uppercase tracking-tight"

@@ -261,8 +261,8 @@ const AdminDashboard = () => {
                             <button onClick={() => navigate('/admin/transactions')} className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline px-3 py-1 bg-primary/5 rounded-lg">{t('adHistory')}</button>
                         </div>
 
-                        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 overflow-hidden">
-                            <div className="space-y-4">
+                        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 overflow-x-auto">
+                            <div className="space-y-4 min-w-[400px]">
                                 {transactions.slice(0, 6).map((tx, idx) => (
                                     <div key={idx} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-transparent hover:border-slate-100 hover:bg-white hover:shadow-sm transition-all group">
                                         <div className="flex items-center gap-3">

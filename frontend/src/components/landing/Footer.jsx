@@ -102,19 +102,6 @@ export function Footer() {
                                 <Globe className="size-4" />
                             </button>
                         </div>
-
-                        <div className="flex items-center gap-3">
-                            {[
-                                t('secure') || (lang === 'FR' ? 'Sécurisé' : 'Secure'), 
-                                t('fast') || (lang === 'FR' ? 'Rapide' : 'Fast'), 
-                                '99%'
-                            ].map((text, i) => (
-                                <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted border border-border rounded-lg">
-                                    {[ShieldCheck, Zap, Star][i]({ className: "size-3.5 text-primary" })}
-                                    <span className="text-xs text-muted-foreground">{text}</span>
-                                </div>
-                            ))}
-                        </div>
                     </div>
 
                     {/* Nav links */}

@@ -12,6 +12,9 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     const { user, isAuthenticated, loading: isInitializing } = useAuthStore();
     const location = useLocation();
 
+    const PUBLIC_ROUTES = ['/', '/login', '/register', '/marketplace', '/catalog', '/search', '/faq', '/about', '/contact', '/vendors', '/terms', '/privacy', '/help', '/education', '/tracking'];
+    const PUBLIC_ROUTE_PREFIXES = ['/shop', '/store', '/product', '/category']; // routes that start with these are also public
+
     // Pendant la restauration de session (Initialisation)
     if (isInitializing) {
         return (
@@ -24,6 +27,12 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
         );
     }
 
+    // Si la route est publique, ne pas bloquer
+    const isPublicRoute = PUBLIC_ROUTES.includes(location.pathname) ||
+        PUBLIC_ROUTE_PREFIXES.some(prefix => location.pathname.startsWith(prefix));
+    if (isPublicRoute) {
+        return children;
+    }
     // Rediriger vers login si non connecté
     if (!isAuthenticated) {
         // Sauvegarder la page d'origine pour redirection après login

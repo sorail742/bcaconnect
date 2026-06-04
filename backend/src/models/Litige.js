@@ -40,7 +40,20 @@ const Litige = sequelize.define('Litige', {
     ia_score_gravite: {
         type: DataTypes.FLOAT,
         defaultValue: 0,
-    }
+    },
+    preuves: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    resolution_type: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        comment: 'mediation_seule | remboursement_integral | remboursement_partiel | bon_achat | liberation_vendeur',
+    },
+    remboursement_montant: {
+        type: DataTypes.DECIMAL(15, 2),
+        allowNull: true,
+    },
 }, {
     tableName: 'litiges',
     timestamps: true,

@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { useLanguage } from '../context/LanguageContext';
 import { ProductSkeleton } from '../components/ui/Loader';
 import { getCategoryIconComponent } from '../lib/categoryConstants';
+import BcaTrustBar from '../components/marketplace/BcaTrustBar';
 
 const ProductCatalogue = () => {
     const { t, lang } = useLanguage();
@@ -91,83 +92,103 @@ const ProductCatalogue = () => {
     const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
     const itemVariants = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 
-    return (
-        <div className="relative bg-slate-50 dark:bg-[#0A0D14] min-h-screen text-slate-900 dark:text-foreground font-sans">
-            
-            {/* ══ HERO SECTION ══ */}
-            <section className="relative min-h-[60vh] flex items-center overflow-hidden">
-                <AnimatePresence mode="wait">
-                    <motion.div 
-                        key={currentSlide}
-                        initial={{ opacity: 0, scale: 1.05 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 1.5 }}
-                        className="absolute inset-0"
-                    >
-                        <img src={slide.img} className="w-full h-full object-cover" alt="Hero background" />
-                        <div className="absolute inset-0 bg-slate-900/60 dark:bg-[#0A0D14]/80" />
-                        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 via-slate-900/50 to-transparent dark:from-[#0A0D14] dark:via-[#0A0D14]/80" />
-                    </motion.div>
-                </AnimatePresence>
+    const PROMO_TILES = [
+        { title: 'Gros volumes', desc: 'Prix de gros & MOQ', color: 'from-[#FF6600] to-[#ff8533]', link: '/marketplace' },
+        { title: 'Fournisseurs vérifiés', desc: 'Badges & audits BCA', color: 'from-[#389e0d] to-[#52c41a]', link: '/vendors' },
+        { title: 'Crédit B2B', desc: 'Paiement échelonné', color: 'from-[#1677ff] to-[#4096ff]', link: '/credits/simulate' },
+        { title: 'Logistique', desc: 'Conakry & intérieur', color: 'from-[#722ed1] to-[#9254de]', link: '/tracking' },
+    ];
 
-                <div className="container px-6 md:px-12 relative z-10 w-full pt-20">
-                    <motion.div 
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.2 }}
-                        className="max-w-2xl space-y-6"
-                    >
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#FF6600]/30 bg-[#FF6600]/10 text-xs font-bold uppercase tracking-wider text-[#FF6600] backdrop-blur-sm">
-                            <Sparkles className="size-4" />
-                            {slide.tag}
+    return (
+        <div className="relative marketplace-bg min-h-screen text-[#333] dark:text-foreground font-sans">
+            
+            {/* Hero B2B compact — style BCA */}
+            <section className="bg-white dark:bg-slate-900 border-b border-[#e8e8e8] dark:border-border pt-24 pb-0">
+                <div className="container px-4 md:px-12">
+                    <div className="grid lg:grid-cols-12 gap-4 pb-6">
+                        <div className="lg:col-span-8 relative rounded overflow-hidden min-h-[220px] md:min-h-[280px] border border-[#e8e8e8]">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={currentSlide}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.6 }}
+                                    className="absolute inset-0"
+                                >
+                                    <img src={slide.img} className="w-full h-full object-cover" alt="" />
+                                    <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+                                </motion.div>
+                            </AnimatePresence>
+                            <div className="relative z-10 p-6 md:p-8 flex flex-col justify-center h-full min-h-[220px] md:min-h-[280px]">
+                                <span className="inline-flex items-center gap-1.5 w-fit px-2 py-1 bg-[#FF6600] text-white text-[10px] font-bold uppercase tracking-wide mb-3">
+                                    <Sparkles className="size-3" />
+                                    {slide.tag}
+                                </span>
+                                <h1 className="text-2xl md:text-4xl font-bold text-white leading-tight max-w-lg">
+                                    {slide.title}
+                                </h1>
+                                <p className="text-sm md:text-base text-white/85 mt-2 max-w-md line-clamp-2">
+                                    {slide.subtitle}
+                                </p>
+                                <Link to={slide.ctaLink || '/marketplace'} className="mt-4">
+                                    <Button className="h-10 px-6 bca-btn-primary text-sm font-semibold rounded">
+                                        {slide.cta}
+                                        <ArrowRight className="size-4 ml-2" />
+                                    </Button>
+                                </Link>
+                            </div>
+                            {displaySlides.length > 1 && (
+                                <div className="absolute bottom-3 right-3 z-20 flex gap-1.5">
+                                    {displaySlides.map((_, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => setCurrentSlide(i)}
+                                            className={cn(
+                                                "size-2 rounded-full transition-all",
+                                                i === currentSlide ? "bg-[#FF6600] w-5" : "bg-white/60 hover:bg-white"
+                                            )}
+                                            aria-label={`Slide ${i + 1}`}
+                                        />
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                        <h1 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.1]">
-                            {slide.title}
-                        </h1>
-                        <p className="text-lg text-slate-300 font-medium leading-relaxed max-w-xl">
-                            {slide.subtitle}
-                        </p>
-                        <div className="pt-6">
-                            <Button className="h-14 px-10 bg-[#FF6600] text-white hover:bg-[#FF6600]/90 text-sm font-bold rounded-xl shadow-xl shadow-[#FF6600]/20 transition-all hover:-translate-y-1">
-                                {slide.cta}
-                                <ArrowRight className="size-5 ml-3" />
-                            </Button>
+                        <div className="lg:col-span-4 grid grid-cols-2 gap-2">
+                            {PROMO_TILES.map((tile) => (
+                                <Link
+                                    key={tile.title}
+                                    to={tile.link}
+                                    className={cn("bca-promo-tile p-4 flex flex-col justify-end min-h-[100px] bg-gradient-to-br text-white", tile.color)}
+                                >
+                                    <p className="text-sm font-bold leading-tight">{tile.title}</p>
+                                    <p className="text-[11px] text-white/85 mt-0.5">{tile.desc}</p>
+                                </Link>
+                            ))}
                         </div>
-                    </motion.div>
+                    </div>
                 </div>
             </section>
 
-            {/* ══ TRUST BAR ══ */}
-            <div className="border-b border-border bg-white dark:bg-slate-900 hidden md:block relative z-20 shadow-sm">
-                <div className="container px-6 md:px-12 h-16 flex items-center gap-8 text-sm font-semibold text-slate-600 dark:text-slate-400">
-                    <span className="flex items-center gap-2 text-slate-900 dark:text-white"><ShieldCheck className="size-5 text-[#FF6600]"/> {t('pdAuthenticity') || "Achat Protégé"}</span>
-                    <span className="w-px h-4 bg-border" />
-                    <span>{t('catCertifiedVendors') || "Fournisseurs Certifiés"}</span>
-                    <span className="w-px h-4 bg-border" />
-                    <span>{t('cartEscrowDesc') ? "Paiement Sécurisé (Escrow)" : "Paiement Sécurisé"}</span>
-                    <span className="w-px h-4 bg-border" />
-                    <span>{t('contactDesc') || "Support Client B2B 24/7"}</span>
-                </div>
-            </div>
+            <BcaTrustBar />
 
             {/* ══ MAIN CATALOGUE ══ */}
-            <section className="container px-4 md:px-12 py-12 flex flex-col lg:flex-row gap-8">
+            <section className="container px-4 md:px-12 py-8 flex flex-col lg:flex-row gap-4">
                 
-                {/* Advanced Filtering Sidebar */}
-                <aside className="lg:w-72 shrink-0 space-y-6">
-                    <div className="bg-white dark:bg-slate-800 border border-border rounded-2xl p-6 space-y-8 sticky top-24 shadow-sm">
+                {/* Sidebar filtres — style BCA */}
+                <aside className="lg:w-64 shrink-0">
+                    <div className="bca-sidebar-panel p-4 space-y-6 sticky top-24">
                         
                         {/* Search Input */}
                         <div>
-                            <div className="flex items-center gap-2 mb-4 text-slate-900 dark:text-white">
-                                <Filter className="size-5" />
-                                <h3 className="text-base font-bold">{t('catSmartFiltering') || "Filtres de recherche"}</h3>
+                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[#f0f0f0]">
+                                <Filter className="size-4 text-[#FF6600]" />
+                                <h3 className="text-sm font-bold text-[#333] dark:text-white">{t('catSmartFiltering') || "Filtres"}</h3>
                             </div>
                             <div className="relative">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400" />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#999]" />
                                 <input
-                                    className="h-12 w-full pl-12 pr-4 bg-slate-50 dark:bg-slate-700/50 border border-border focus:border-[#FF6600] rounded-xl text-sm font-medium outline-none transition-all text-slate-900 dark:text-white"
+                                    className="h-10 w-full pl-10 pr-3 bg-white border border-[#d9d9d9] focus:border-[#FF6600] rounded text-sm outline-none transition-all text-[#333] dark:text-white dark:bg-slate-800"
                                     placeholder={t('searchPlaceholder') || "Mot-clé, produit..."}
                                     value={searchQuery}
                                     onChange={e => { setSearchQuery(e.target.value); setPage(1); }}
@@ -177,13 +198,13 @@ const ProductCatalogue = () => {
 
                         {/* Categories List */}
                         <div className="space-y-3">
-                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Catégories</h4>
-                            <div className="flex flex-col gap-1">
+                            <h4 className="text-xs font-bold text-[#999] uppercase">Catégories</h4>
+                            <div className="flex flex-col gap-0.5">
                                 <button 
                                     onClick={() => { setActiveCategory('Tous'); setPage(1); }}
                                     className={cn(
-                                        "w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2",
-                                        activeCategory === 'Tous' ? "bg-orange-50 dark:bg-[#FF6600]/10 text-[#FF6600]" : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white"
+                                        "w-full text-left px-3 py-2 rounded text-sm transition-all flex items-center gap-2",
+                                        activeCategory === 'Tous' ? "bg-[#fff7e6] text-[#FF6600] font-semibold" : "text-[#666] hover:bg-[#fafafa] hover:text-[#FF6600]"
                                     )}
                                 >
                                     <LayoutGrid className="size-4" />
@@ -194,8 +215,8 @@ const ProductCatalogue = () => {
                                         key={cat.id}
                                         onClick={() => { setActiveCategory(cat.id); setPage(1); }}
                                         className={cn(
-                                            "w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold transition-all truncate flex items-center gap-2",
-                                            activeCategory === cat.id ? "bg-orange-50 dark:bg-[#FF6600]/10 text-[#FF6600]" : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white"
+                                            "w-full text-left px-3 py-2 rounded text-sm transition-all truncate flex items-center gap-2",
+                                            activeCategory === cat.id ? "bg-[#fff7e6] text-[#FF6600] font-semibold" : "text-[#666] hover:bg-[#fafafa] hover:text-[#FF6600]"
                                         )}
                                     >
                                         <span className="scale-[0.8] flex items-center justify-center shrink-0">{getCategoryIconComponent(cat.nom_categorie)}</span>
@@ -282,22 +303,17 @@ const ProductCatalogue = () => {
 
                 {/* Main Grid Area */}
                 <div className="flex-1 space-y-6">
-                    {/* Toolbar */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-800 border border-border rounded-2xl p-4 shadow-sm">
-                        <div className="flex items-center gap-3">
-                            <div className="size-10 rounded-lg bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-[#FF6600]">
-                                <LayoutGrid className="size-5" />
-                            </div>
-                            <div>
-                                <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{t('catalog') || "Catalogue Produit"}</h2>
-                                <p className="text-sm text-slate-500 font-medium">{productsData?.total || 0} {t('catResultsFiltered') || "produits correspondants"}</p>
-                            </div>
+                    {/* Toolbar BCA */}
+                    <div className="bca-toolbar flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3">
+                        <div>
+                            <h2 className="text-base font-bold text-[#333] dark:text-white">{t('catalog') || "Catalogue grossiste"}</h2>
+                            <p className="text-xs text-[#999]">{productsData?.total || 0} {t('catResultsFiltered') || "résultats"} · {activeCategory === 'Tous' ? 'Toutes catégories' : 'Filtré'}</p>
                         </div>
-                        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 p-1 rounded-xl">
-                            <button onClick={() => setViewMode('grid')} className={cn("size-9 flex items-center justify-center rounded-lg transition-all", viewMode === 'grid' ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-900 dark:hover:text-white")}>
+                        <div className="flex items-center gap-1 border border-[#e8e8e8] rounded p-0.5">
+                            <button onClick={() => setViewMode('grid')} className={cn("size-8 flex items-center justify-center rounded transition-all", viewMode === 'grid' ? "bg-[#FF6600] text-white" : "text-[#666] hover:text-[#FF6600]")}>
                                 <LayoutGrid className="size-4" />
                             </button>
-                            <button onClick={() => setViewMode('list')} className={cn("size-9 flex items-center justify-center rounded-lg transition-all", viewMode === 'list' ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-900 dark:hover:text-white")}>
+                            <button onClick={() => setViewMode('list')} className={cn("size-8 flex items-center justify-center rounded transition-all", viewMode === 'list' ? "bg-[#FF6600] text-white" : "text-[#666] hover:text-[#FF6600]")}>
                                 <List className="size-4" />
                             </button>
                         </div>
@@ -305,8 +321,8 @@ const ProductCatalogue = () => {
 
                     {/* Products Grid */}
                     {productsLoading ? (
-                        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {[...Array(8)].map((_, i) => <ProductSkeleton key={i} />)}
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                            {[...Array(10)].map((_, i) => <ProductSkeleton key={i} />)}
                         </div>
                     ) : productsError ? (
                         <ErrorState error={productsError} />
@@ -317,8 +333,8 @@ const ProductCatalogue = () => {
                                 initial="hidden"
                                 animate="show"
                                 className={cn(
-                                    "grid gap-6",
-                                    viewMode === 'grid' ? "grid-cols-2 md:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"
+                                    "grid gap-3",
+                                    viewMode === 'grid' ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5" : "grid-cols-1 gap-3"
                                 )}
                             >
                                 {products.map(p => (
@@ -330,23 +346,23 @@ const ProductCatalogue = () => {
 
                             {/* Pagination */}
                             {totalPages > 1 && (
-                                <div className="flex items-center justify-center gap-3 pt-12 pb-8">
+                                <div className="flex items-center justify-center gap-2 pt-8 pb-6">
                                     <Button 
                                         disabled={page <= 1}
                                         onClick={() => setPage(page - 1)}
-                                        className="size-12 rounded-xl bg-white dark:bg-slate-800 border border-border text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 shadow-sm"
+                                        className="h-9 px-3 rounded border border-[#d9d9d9] bg-white text-[#333] hover:border-[#FF6600] hover:text-[#FF6600] disabled:opacity-40"
                                     >
-                                        <ChevronLeft className="size-5" />
+                                        <ChevronLeft className="size-4" />
                                     </Button>
-                                    <div className="h-12 px-6 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center text-sm font-bold border border-border text-slate-900 dark:text-white shadow-sm">
-                                        Page {page} sur {totalPages}
-                                    </div>
+                                    <span className="h-9 px-4 flex items-center text-sm text-[#666] border border-[#e8e8e8] bg-white rounded">
+                                        {page} / {totalPages}
+                                    </span>
                                     <Button 
                                         disabled={page >= totalPages}
                                         onClick={() => setPage(page + 1)}
-                                        className="size-12 rounded-xl bg-white dark:bg-slate-800 border border-border text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 shadow-sm"
+                                        className="h-9 px-3 rounded border border-[#d9d9d9] bg-white text-[#333] hover:border-[#FF6600] hover:text-[#FF6600] disabled:opacity-40"
                                     >
-                                        <ChevronRight className="size-5" />
+                                        <ChevronRight className="size-4" />
                                     </Button>
                                 </div>
                             )}

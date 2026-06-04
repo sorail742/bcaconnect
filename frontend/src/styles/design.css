@@ -1,3 +1,4 @@
+/* ── Glass & banners (legacy) ── */
 .glass {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: saturate(180%) blur(20px);
@@ -15,7 +16,199 @@
   padding: 1rem;
 }
 
-/* Gradient background for banner */
 .banner-gradient {
-  background: linear-gradient(90deg, #b5f5ec, #36cfc9, #0050b3);
+  background: linear-gradient(90deg, #fff7e6, #ffe7ba, #ffd591);
+}
+
+/* ── BCA B2B Marketplace tokens ── */
+:root {
+  --bca-orange: #ff6600;
+  --bca-orange-hover: #e65c00;
+  --bca-orange-light: #fff7e6;
+  --bca-bg: #f5f5f5;
+  --bca-border: #e8e8e8;
+  --bca-text: #333333;
+  --bca-text-muted: #666666;
+  --bca-text-light: #999999;
+  --bca-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.marketplace-bg {
+  background-color: var(--bca-bg);
+}
+
+.bca-card {
+  background: #fff;
+  border: 1px solid var(--bca-border);
+  border-radius: 8px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.bca-card:hover {
+  border-color: #d9d9d9;
+  box-shadow: var(--bca-shadow-hover);
+}
+
+.bca-product-card {
+  background: #fff;
+  border: 1px solid var(--bca-border);
+  border-radius: 4px;
+  overflow: hidden;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.bca-product-card:hover {
+  box-shadow: var(--bca-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.bca-price {
+  color: var(--bca-orange);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.bca-btn-primary {
+  background: var(--bca-orange);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: background 0.15s ease;
+}
+
+.bca-btn-primary:hover:not(:disabled) {
+  background: var(--bca-orange-hover);
+}
+
+.bca-btn-outline {
+  background: #fff;
+  color: var(--bca-orange);
+  border: 1px solid var(--bca-orange);
+  border-radius: 4px;
+  font-weight: 600;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.bca-btn-outline:hover {
+  background: var(--bca-orange-light);
+}
+
+.bca-badge-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #389e0d;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 2px;
+}
+
+.bca-badge-trade {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--bca-orange);
+  background: var(--bca-orange-light);
+  border: 1px solid #ffd591;
+  border-radius: 2px;
+}
+
+.bca-badge-moq {
+  font-size: 11px;
+  color: var(--bca-text-muted);
+}
+
+.bca-sidebar-panel {
+  background: #fff;
+  border: 1px solid var(--bca-border);
+  border-radius: 4px;
+}
+
+.bca-trust-bar {
+  background: #fff;
+  border-bottom: 1px solid var(--bca-border);
+}
+
+.bca-promo-tile {
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--bca-border);
+  transition: box-shadow 0.2s ease;
+}
+
+.bca-promo-tile:hover {
+  box-shadow: var(--bca-shadow-hover);
+}
+
+.bca-search-input {
+  border: 2px solid var(--bca-orange);
+  border-radius: 4px;
+}
+
+.bca-toolbar {
+  background: #fff;
+  border: 1px solid var(--bca-border);
+  border-radius: 4px;
+}
+
+.bca-supplier-strip {
+  background: linear-gradient(90deg, #fff7e6 0%, #fff 100%);
+  border: 1px solid #ffd591;
+  border-radius: 4px;
+}
+
+.dark .bca-card,
+.dark .bca-product-card,
+.dark .bca-sidebar-panel,
+.dark .bca-toolbar,
+.dark .bca-trust-bar {
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
+}
+
+.dark .marketplace-bg {
+  background-color: hsl(var(--background));
+}
+
+/* ── BCA category sidebar (landing) ── */
+.bca-category-panel {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #ebebeb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.bca-category-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 transparent;
+}
+
+.bca-category-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.bca-category-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.bca-category-scroll::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 999px;
+}
+
+.bca-category-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.bca-category-item:focus-visible {
+  outline: 2px solid #ff6600;
+  outline-offset: -2px;
 }

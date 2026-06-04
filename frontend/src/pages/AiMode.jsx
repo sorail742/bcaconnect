@@ -630,7 +630,7 @@ const AiMode = () => {
                         </AnimatePresence>
 
                         <div className="flex items-center gap-3">
-                            {/* Discuter en ligne button — comme Alibaba */}
+                            {/* Discuter en ligne button — style BCA */}
                             <button
                                 onClick={() => setIsChatOpen(o => !o)}
                                 className={cn(
@@ -694,7 +694,7 @@ const AiMode = () => {
                     </div>
                 </div>
 
-                {/* Chat Panel — slide up depuis le bas comme Alibaba */}
+                {/* Chat Panel — slide up depuis le bas style BCA */}
                 <AnimatePresence>
                     {isChatOpen && (
                         <motion.div

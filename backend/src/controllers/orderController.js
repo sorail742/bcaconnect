@@ -1,4 +1,7 @@
 const { Order, OrderItem, Product, Wallet, Transaction, User, Notification, sequelize } = require('../models');
+const escrowService = require('../services/escrowService');
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/AppError');
 
 // Logic de calcul des frais de livraison dynamique pour la Guinée
 const calculateShippingFee = (adresse, itemsCount) => {
@@ -24,7 +27,7 @@ const calculateShippingFee = (adresse, itemsCount) => {
 };
 
 const orderController = {
-    create: async (req, res, next) => {
+    create: catchAsync(async (req, res, next) => {
         console.log("🚀 [ORDER CREATE] Début création commande...");
         const t = await sequelize.transaction();
         try {
@@ -48,11 +51,11 @@ const orderController = {
                 const pid = item.id || item.productId || item.product_id;
                 if (!pid) {
                     console.error('🔴 [ORDER ERROR] item sans ID:', item);
-                    throw new Error("L'ID du produit est manquant pour l'un des articles.");
+                    throw new AppError("L'ID du produit est manquant pour l'un des articles.", 400);
                 }
                 const product = await Product.findByPk(pid, { lock: t.LOCK.UPDATE, transaction: t });
-                if (!product) throw new Error(`Produit ${pid} non trouvé.`);
-                if (product.stock_quantite < item.quantity) throw new Error(`Stock insuffisant: ${product.nom_produit}.`);
+                if (!product) throw new AppError(`Produit ${pid} non trouvé.`, 404);
+                if (product.stock_quantite < item.quantity) throw new AppError(`Stock insuffisant: ${product.nom_produit}.`, 400);
 
                 const subtotal = product.prix_unitaire * item.quantity;
                 total_produits += parseFloat(subtotal);
@@ -62,14 +65,14 @@ const orderController = {
                 
                 if (!store) {
                     console.error(`🔴 [ORDER ERROR] Boutique non trouvée pour le produit ${product.id}`);
-                    throw new Error(`La boutique associée au produit "${product.nom_produit}" est introuvable.`);
+                    throw new AppError(`La boutique associée au produit "${product.nom_produit}" est introuvable.`, 404);
                 }
 
                 console.log(`[DEBUG ORDER] Item: ${product.nom_produit}, Vendor: ${store.proprietaire_id}`);
                 
                 // 🛑 SÉCURITÉ ANTI-FRAUDE : Empêcher l'achat de ses propres produits
                 if (store.proprietaire_id === utilisateur_id) {
-                    throw new Error(`Transaction refusée : Vous ne pouvez pas acheter votre propre produit ("${product.nom_produit}").`);
+                    throw new AppError(`Transaction refusée : Vous ne pouvez pas acheter votre propre produit ("${product.nom_produit}").`, 400);
                 }
 
                 orderItemsByVendor.push({
@@ -92,7 +95,7 @@ const orderController = {
             if (paymentMethod === 'wallet') {
                 wallet = await Wallet.findOne({ where: { user_id: utilisateur_id }, transaction: t });
                 if (!wallet || parseFloat(wallet.solde_virtuel) < total_ttc) {
-                    throw new Error('Solde insuffisant dans votre portefeuille BCA.');
+                    throw new AppError('Solde insuffisant dans votre portefeuille BCA.', 400);
                 }
                 await wallet.decrement('solde_virtuel', { by: total_ttc, transaction: t });
             }
@@ -129,28 +132,8 @@ const orderController = {
                 }, { transaction: t });
 
                 // 🛡️ SÉQUESTRE AUTOMATIQUE : Créditer les vendeurs en mode séquestre
-                const vendorsToCredit = {};
-                for (const item of orderItemsByVendor) {
-                    vendorsToCredit[item.fournisseur_id] = (vendorsToCredit[item.fournisseur_id] || 0) + (item.prix_unitaire_achat * item.quantite);
-                }
-
-                for (const [vendorId, amount] of Object.entries(vendorsToCredit)) {
-                    const vWallet = await Wallet.findOne({ where: { user_id: vendorId }, transaction: t, lock: t.LOCK.UPDATE });
-                    if (vWallet) {
-                        vWallet.solde_sequestre = parseFloat(vWallet.solde_sequestre) + parseFloat(amount);
-                        await vWallet.save({ transaction: t });
-
-                        // Log de mise en séquestre
-                        await Transaction.create({
-                            portefeuille_id: vWallet.id,
-                            commande_id: order.id,
-                            montant: amount,
-                            type_transaction: 'depot',
-                            statut: 'en_attente',
-                            metadata: { type: 'escrow_deposit', description: 'Fonds mis en séquestre suite à une vente' }
-                        }, { transaction: t });
-                    }
-                }
+                const orderItems = await OrderItem.findAll({ where: { commande_id: order.id }, transaction: t });
+                await escrowService.depositOrderEscrow(order.id, orderItems, t);
             }
 
             await t.commit();
@@ -189,12 +172,12 @@ const orderController = {
         } catch (error) {
             console.error("🔴 [ORDER 500] Erreur fatale:", error.message);
             if (t) await t.rollback();
-            next(error);
+            if (error instanceof AppError) return next(error);
+            return next(new AppError(error.message || 'Erreur création commande.', 400));
         }
-    },
+    }),
 
-    getMyOrders: async (req, res, next) => {
-        try {
+    getMyOrders: catchAsync(async (req, res) => {
             const { page = 1, limit = 10 } = req.query;
             const offset = (page - 1) * limit;
 
@@ -209,7 +192,7 @@ const orderController = {
                         include: [{ model: Product, as: 'produit' }]
                     }
                 ],
-                order: [['createdAt', 'DESC']], // Tri par date de création (Sequelize name)
+                order: [['createdAt', 'DESC']],
                 limit: parseInt(limit),
                 offset: parseInt(offset)
             });
@@ -222,13 +205,9 @@ const orderController = {
                 currentPage: parseInt(page),
                 orders
             });
-        } catch (error) {
-            next(error);
-        }
-    },
+    }),
 
-    getOrderById: async (req, res, next) => {
-        try {
+    getOrderById: catchAsync(async (req, res, next) => {
             const { id } = req.params;
             const order = await Order.findByPk(id, {
                 include: [
@@ -241,26 +220,21 @@ const orderController = {
             });
 
             if (!order) {
-                return res.status(404).json({ message: "Commande non trouvée." });
+                return next(new AppError('Commande non trouvée.', 404));
             }
 
-            // Vérifier l'autorisation (Propriétaire, Vendeur concerné ou Admin)
             const isOwner = order.utilisateur_id === req.user.id;
             const isRelatedVendor = order.details.some(item => item.fournisseur_id === req.user.id);
             const isAdmin = req.user.role === 'admin';
 
             if (!isOwner && !isRelatedVendor && !isAdmin) {
-                return res.status(403).json({ message: "Non autorisé à voir cette commande." });
+                return next(new AppError('Non autorisé à voir cette commande.', 403));
             }
 
             res.json(order);
-        } catch (error) {
-            next(error);
-        }
-    },
+    }),
 
-    getVendorOrders: async (req, res, next) => {
-        try {
+    getVendorOrders: catchAsync(async (req, res) => {
             const { page = 1, limit = 10 } = req.query;
             const offset = (page - 1) * limit;
 
@@ -285,13 +259,9 @@ const orderController = {
                 currentPage: parseInt(page),
                 orders
             });
-        } catch (error) {
-            next(error);
-        }
-    },
+    }),
 
-    getAllOrders: async (req, res, next) => {
-        try {
+    getAllOrders: catchAsync(async (req, res) => {
             const { page = 1, limit = 10 } = req.query;
             const offset = (page - 1) * limit;
 
@@ -319,59 +289,41 @@ const orderController = {
                 currentPage: parseInt(page),
                 orders
             });
-        } catch (error) {
-            next(error);
-        }
-    },
+    }),
 
-    updateItemStatus: async (req, res, next) => {
+    updateItemStatus: catchAsync(async (req, res, next) => {
+        const t = await sequelize.transaction();
         try {
             const { itemId } = req.params;
             const { statut, status } = req.body;
             const newStatus = statut || status;
             const fournisseur_id = req.user.id;
 
-            const item = await OrderItem.findByPk(itemId);
+            const item = await OrderItem.findByPk(itemId, { transaction: t });
             if (!item) {
-                return res.status(404).json({ message: "Élément de commande non trouvé." });
+                await t.rollback();
+                return next(new AppError('Élément de commande non trouvé.', 404));
             }
 
             if (item.fournisseur_id !== fournisseur_id && req.user.role !== 'admin') {
-                return res.status(403).json({ message: "Vous n'êtes pas autorisé à modifier cette commande." });
+                await t.rollback();
+                return next(new AppError("Vous n'êtes pas autorisé à modifier cette commande.", 403));
             }
+
+            const parentOrder = await Order.findByPk(item.commande_id, { transaction: t });
 
             item.statut = newStatus;
             await item.save({ transaction: t });
 
-            // 🛡️ LIBÉRATION DES FONDS SI LIVRÉ
-            if (newStatus === 'livre') {
-                const vendorWallet = await Wallet.findOne({ 
-                    where: { user_id: item.fournisseur_id }, 
-                    transaction: t,
-                    lock: t.LOCK.UPDATE 
-                });
-                
-                if (vendorWallet) {
-                    const amount = parseFloat(item.prix_unitaire_achat) * item.quantite;
-                    
-                    // Sécurité : Ne libérer que ce qui est disponible en séquestre
-                    const currentSequestre = parseFloat(vendorWallet.solde_sequestre);
-                    const releaseAmount = Math.min(currentSequestre, amount);
-
-                    vendorWallet.solde_sequestre = currentSequestre - releaseAmount;
-                    vendorWallet.solde_virtuel = parseFloat(vendorWallet.solde_virtuel) + releaseAmount;
-                    await vendorWallet.save({ transaction: t });
-
-                    await Transaction.create({
-                        portefeuille_id: vendorWallet.id,
-                        commande_id: item.commande_id,
-                        montant: releaseAmount,
-                        type_transaction: 'depot',
-                        statut: 'complete',
-                        reference_externe: `REL-MAN-${item.id.slice(0, 8)}`,
-                        metadata: { type: 'release_escrow_manual', description: 'Libération manuelle des fonds après livraison' }
-                    }, { transaction: t });
-                }
+            // 🛡️ LIBÉRATION MANUELLE — idempotente via escrowService
+            if (newStatus === 'livre' && parentOrder?.statut_livraison !== 'livre') {
+                await escrowService.releaseItemEscrow(
+                    item,
+                    item.commande_id,
+                    t,
+                    'REL-MAN',
+                    'release_escrow_manual'
+                );
             }
 
             // Vérifier si tous les articles de la commande sont préparés pour notifier le transporteur
@@ -414,11 +366,12 @@ const orderController = {
             });
         } catch (error) {
             if (t) await t.rollback();
-            next(error);
+            if (error instanceof AppError) return next(error);
+            return next(new AppError(error.message || 'Erreur mise à jour article.', 400));
         }
-    },
+    }),
 
-    updateOrderStatus: async (req, res, next) => {
+    updateOrderStatus: catchAsync(async (req, res, next) => {
         const t = await sequelize.transaction();
         try {
             const { orderId } = req.params;
@@ -430,7 +383,7 @@ const orderController = {
             });
             if (!order) {
                 await t.rollback();
-                return res.status(404).json({ message: "Commande non trouvée." });
+                return next(new AppError('Commande non trouvée.', 404));
             }
 
             const isAdmin = req.user.role === 'admin';
@@ -446,22 +399,18 @@ const orderController = {
 
             if (!transitions[order.statut] || !transitions[order.statut].includes(statut)) {
                 await t.rollback();
-                return res.status(400).json({
-                    message: `Transition globale invalide: de "${order.statut}" vers "${statut}".`
-                });
+                return next(new AppError(`Transition globale invalide: de "${order.statut}" vers "${statut}".`, 400));
             }
 
-            // Permissions
             if (statut === 'annulé' && !isOwner && !isAdmin) {
                 await t.rollback();
-                return res.status(403).json({ message: "Non autorisé à annuler cette commande." });
+                return next(new AppError('Non autorisé à annuler cette commande.', 403));
             }
 
-            // Autoriser uniquement annulation ou demande de retour par le client
             const allowedStatus = ['annulé', 'retourné'];
             if (!allowedStatus.includes(statut)) {
                 await t.rollback();
-                return res.status(403).json({ message: "Seul l'admin peut initier un retour global." });
+                return next(new AppError("Seul l'admin peut initier un retour global.", 403));
             }
 
             // Si annulation d'une commande payée ou en attente -> Remboursement
@@ -482,24 +431,9 @@ const orderController = {
                         reference_externe: `REFUND-CL-${order.id.slice(0, 8)}`
                     }, { transaction: t });
 
-                    // 2. Débiter le séquestre des vendeurs
+                    // 2. Annuler le séquestre vendeurs (idempotent)
                     for (const item of order.details) {
-                        const vendorWallet = await Wallet.findOne({ where: { user_id: item.fournisseur_id }, transaction: t, lock: t.LOCK.UPDATE });
-                        if (vendorWallet) {
-                            const amountToRefund = parseFloat(item.prix_unitaire_achat) * item.quantite;
-                            vendorWallet.solde_sequestre = Math.max(0, parseFloat(vendorWallet.solde_sequestre) - amountToRefund);
-                            await vendorWallet.save({ transaction: t });
-
-                            // Log de l'annulation du séquestre
-                            await Transaction.create({
-                                portefeuille_id: vendorWallet.id,
-                                commande_id: order.id,
-                                montant: amountToRefund,
-                                type_transaction: 'retrait',
-                                statut: 'complete',
-                                metadata: { type: 'escrow_reversal', description: 'Annulation du séquestre suite à un remboursement client' }
-                            }, { transaction: t });
-                        }
+                        await escrowService.reverseItemEscrow(item, order.id, t);
                     }
                 }
 
@@ -518,9 +452,10 @@ const orderController = {
             res.json({ message: `Commande passée en état: ${statut}`, order });
         } catch (error) {
             await t.rollback();
-            next(error);
+            if (error instanceof AppError) return next(error);
+            return next(new AppError(error.message || 'Erreur mise à jour commande.', 400));
         }
-    }
+    })
 };
 
 module.exports = orderController;

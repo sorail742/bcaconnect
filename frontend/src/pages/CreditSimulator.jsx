@@ -12,19 +12,21 @@ import { toast } from 'sonner';
 import { creditRequestSchema } from '../lib/validation';
 import { cn } from '../lib/utils';
 import { useCreditSimulation, useCreditScore, useRequestCredit } from '../hooks/data/useCreditData';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 
 export default function CreditSimulator() {
     const [amount, setAmount] = useState(5000000); // 5M GNF
     const [duration, setDuration] = useState(12);   // 12 mois
-    const [debouncedParams, setDebouncedParams] = useState({ montant: amount, duree_mois: duration, type_credit: 'personnel' });
+    const [interestRate, setInterestRate] = useState(12); // Taux d'intérêt par défaut 12%
+    const [debouncedParams, setDebouncedParams] = useState({ montant: amount, mois: duration, taux: interestRate });
 
     // Debouncing simulation params
     useEffect(() => {
         const timer = setTimeout(() => {
-            setDebouncedParams({ montant: amount, duree_mois: duration, type_credit: 'personnel' });
+            setDebouncedParams({ montant: amount, mois: duration, taux: interestRate });
         }, 500);
         return () => clearTimeout(timer);
-    }, [amount, duration]);
+    }, [amount, duration, interestRate]);
 
     // React Query Hooks
     const { data: simulation, isLoading: isSimulating } = useCreditSimulation(debouncedParams);
@@ -144,6 +146,31 @@ export default function CreditSimulator() {
                                 </div>
                             </div>
 
+                            {/* Taux d'Intérêt Selector */}
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-sm font-black text-foreground uppercase tracking-widest flex items-center gap-2">
+                                        <TrendingUp className="size-4 text-primary" /> Taux d'Intérêt Annuel
+                                    </label>
+                                    <span className="text-2xl font-black text-emerald-500 tabular-nums">
+                                        {interestRate}%
+                                    </span>
+                                </div>
+                                <input 
+                                    type="range" 
+                                    min={0} 
+                                    max={30} 
+                                    step={0.5}
+                                    value={interestRate}
+                                    onChange={(e) => setInterestRate(Number(e.target.value))}
+                                    className="w-full h-2 bg-muted rounded-full appearance-none cursor-pointer accent-emerald-500"
+                                />
+                                <div className="flex justify-between text-[10px] font-black text-muted-foreground uppercase opacity-60">
+                                    <span>0% (Sans Intérêt)</span>
+                                    <span>30%</span>
+                                </div>
+                            </div>
+
                             {/* Trust Info */}
                             <div className="pt-6 border-t border-border flex items-start gap-4">
                                 <div className="size-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center shrink-0">
@@ -204,16 +231,46 @@ export default function CreditSimulator() {
                                                 <div className="p-4 bg-muted rounded-2xl border border-border/50">
                                                     <p className="text-[9px] font-black text-muted-foreground uppercase mb-1">Cout Total</p>
                                                     <p className="text-sm font-black text-foreground tabular-nums">
-                                                        {simulation?.total_remboursement?.toLocaleString() || '---'} GNF
+                                                        {simulation?.total_a_rembourser?.toLocaleString() || '---'} GNF
                                                     </p>
                                                 </div>
                                                 <div className="p-4 bg-muted rounded-2xl border border-border/50">
-                                                    <p className="text-[9px] font-black text-muted-foreground uppercase mb-1">Taux Annuel</p>
-                                                    <p className="text-sm font-black text-emerald-500 tabular-nums">
-                                                        {simulation?.taux || '12'}% <span className="text-[8px] text-muted-foreground tracking-normal">(TDR)</span>
+                                                    <p className="text-[9px] font-black text-muted-foreground uppercase mb-1">Cout du Crédit</p>
+                                                    <p className="text-sm font-black text-rose-500 tabular-nums">
+                                                        +{simulation?.cout_du_credit?.toLocaleString() || '---'} GNF
                                                     </p>
                                                 </div>
                                             </div>
+
+                                            {/* Graphique de Répartition */}
+                                            {simulation && (
+                                                <div className="h-40 w-full pt-4">
+                                                    <ResponsiveContainer width="100%" height="100%">
+                                                        <PieChart>
+                                                            <Pie
+                                                                data={[
+                                                                    { name: 'Capital', value: simulation.montant_principal || amount },
+                                                                    { name: 'Intérêts', value: simulation.cout_du_credit || 0 }
+                                                                ]}
+                                                                cx="50%"
+                                                                cy="50%"
+                                                                innerRadius={40}
+                                                                outerRadius={60}
+                                                                paddingAngle={5}
+                                                                dataKey="value"
+                                                                stroke="none"
+                                                            >
+                                                                <Cell fill="hsl(var(--primary))" />
+                                                                <Cell fill="#f43f5e" />
+                                                            </Pie>
+                                                            <RechartsTooltip 
+                                                                formatter={(value) => `${value.toLocaleString()} GNF`}
+                                                                contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}
+                                                            />
+                                                        </PieChart>
+                                                    </ResponsiveContainer>
+                                                </div>
+                                            )}
 
                                             <div className="p-4 bg-slate-900 rounded-2xl border border-white/5 space-y-4">
                                                 <div className="flex items-center justify-between">

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
+import { useMessages, useConversationMessages } from '../hooks/useDomainData';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import {
     Search, Send, Phone, Video, MoreHorizontal,
@@ -95,8 +96,10 @@ const ConvItem = ({ conv, isActive, onClick, t, locale }) => {
 const Messages = () => {
     const { user } = useAuth();
     const { lang, t } = useLanguage();
+    const { data: fetchedConversations = [], loading: convLoading, refetch: refetchConversations } = useMessages();
     const [conversations, setConversations] = useState([]);
     const [selectedConv, setSelectedConv] = useState(null);
+    const { data: fetchedMessages = [], refetch: refetchMessages } = useConversationMessages(selectedConv?.id);
     const [messages, setMessages] = useState([]);
     const [messageInput, setMessageInput] = useState('');
     const [isLoading, setIsLoading] = useState(true);
@@ -121,30 +124,22 @@ const Messages = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, []);
 
-    // ── Charger conversations ─────────────────────────────────────────────────
-    const loadConversations = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const data = await messageService.getConversations();
-            setConversations(data);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+    // ── Sync React Query → state local (socket garde la priorité temps réel) ──
+    useEffect(() => {
+        setConversations(fetchedConversations);
+        setIsLoading(convLoading);
+    }, [fetchedConversations, convLoading]);
 
-    // ── Charger messages d'une conversation ───────────────────────────────────
-    const loadMessages = useCallback(async (convId) => {
-        try {
-            const data = await messageService.getMessages(convId);
-            setMessages(data);
-            setTimeout(scrollToBottom, 100);
-            messageService.markAsRead(convId);
-        } catch { /* silent */ }
-    }, [scrollToBottom]);
+    useEffect(() => {
+        if (!selectedConv?.id) return;
+        setMessages(fetchedMessages);
+        setTimeout(scrollToBottom, 100);
+        messageService.markAsRead(selectedConv.id).catch(() => {});
+    }, [selectedConv?.id, fetchedMessages, scrollToBottom]);
 
     // ── Socket.io setup ───────────────────────────────────────────────────────
     useEffect(() => {
-        loadConversations();
+        refetchConversations();
         socketService.connect();
 
         // Rejoindre la room utilisateur
@@ -161,7 +156,7 @@ const Messages = () => {
             setConversations(prev => {
                 const idx = prev.findIndex(c => c.id === data.conversation_id);
                 if (idx === -1) {
-                    loadConversations();
+                    refetchConversations();
                     return prev;
                 }
                 const updated = [...prev];
@@ -206,16 +201,14 @@ const Messages = () => {
             socketService.off('new_message', handleNewMessage);
             socketService.off('user_typing', handleTyping);
         };
-    }, [loadConversations, scrollToBottom, user?.id]);
+    }, [refetchConversations, scrollToBottom, user?.id]);
 
-    // ── Charger messages quand conversation change ────────────────────────────
+    // ── Rejoindre room conversation ───────────────────────────────────────────
     useEffect(() => {
         if (selectedConv) {
-            loadMessages(selectedConv.id);
-            // Rejoindre la room de conversation
             socketService.socket?.emit('join_conversation', selectedConv.id);
         }
-    }, [selectedConv, loadMessages]);
+    }, [selectedConv]);
 
     // ── Envoyer un message ────────────────────────────────────────────────────
     const handleSend = async (e) => {
@@ -442,26 +435,17 @@ const Messages = () => {
                     {selectedConv ? (
                         <>
                             {/* Header chat */}
-                            <header className="h-14 px-4 border-b border-border bg-card flex items-center justify-between shrink-0 shadow-sm">
+                            <header className="flex items-center justify-between p-4 border-b border-border bg-card shrink-0">
                                 <div className="flex items-center gap-3">
-                                    <button
-                                        onClick={() => setMobileShowChat(false)}
-                                        className="md:hidden size-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                                    >
+                                    <button onClick={() => setMobileShowChat(false)} className="md:hidden size-8 rounded-lg bg-muted flex items-center justify-center">
                                         <ArrowLeft className="size-4" />
                                     </button>
                                     <Avatar seed={partner?.id} size="md" online />
                                     <div>
-                                        <p className="text-sm font-bold text-foreground">{partner?.nom_complet}</p>
-                                        <div className="flex items-center gap-1.5">
-                                            {isTyping ? (
-                                                <span className="text-xs text-primary animate-pulse">{t('msgTyping')}</span>
-                                            ) : (
-                                                <>
-                                                    <div className="size-1.5 rounded-full bg-emerald-500" />
-                                                    <span className="text-xs text-muted-foreground">{t('msgOnline')}</span>
-                                                </>
-                                            )}
+                                        <h3 className="text-sm font-bold text-foreground">{partner?.nom_complet || 'Utilisateur'}</h3>
+                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                            <div className="size-1.5 rounded-full bg-emerald-500" />
+                                            <span className="text-xs text-muted-foreground">{t('msgOnline')}</span>
                                         </div>
                                     </div>
                                 </div>

@@ -246,7 +246,19 @@ Réponds TOUJOURS en JSON valide avec la structure suivante:
 Donne les tendances de marché actuelles pour une marketplace en Guinée Conakry (BCA Connect).
 Inclut: Électronique, Mode/Textile, Alimentation, Mobilier, Agriculture, Santé/Beauté, Transport.`;
 
-        return await callGroq(systemPrompt, userMessage, 700);
+        try {
+            return await callGroq(systemPrompt, userMessage, 700);
+        } catch (error) {
+            console.warn('[AI Fallback] Groq failed for market trends. Returning local fallback.');
+            return {
+                trends: [
+                    { category: "Produits Locaux", demand_score: 85, insight: "Forte demande sur le marché", periode: "Actuel" },
+                    { category: "Électronique", demand_score: 65, insight: "Demande stable", periode: "Actuel" }
+                ],
+                confidence: 0.5,
+                resume: "Tendances générées localement (IA indisponible)"
+            };
+        }
     },
 
     /**
@@ -314,7 +326,7 @@ Ton rôle est d'analyser l'intention de l'utilisateur.
 
 Structure JSON attendue:
 {
-  "message": "Ta réponse directe et pro (Inspiré d'Accio Alibaba)",
+  "message": "Ta réponse directe et pro (Inspiré d'Accio BCA)",
   "search_type": "product|supplier",
   "keywords": ["mots", "clés"],
   "category": "catégorie",
@@ -366,7 +378,7 @@ Réponds TOUJOURS en JSON valide avec la structure suivante:
 {
   "description": "string (Description attractive et détaillée en français)",
   "prix_suggere": number (en GNF, réaliste pour le marché guinéen),
-  "categorie_suggeree": "string (Une des catégories Alibaba standards)",
+  "categorie_suggeree": "string (Une des catégories BCA standards)",
   "unite_suggeree": "string (ex: Pièce, kg, Paire, Carton, Ensemble)",
   "mots_cles": ["string", "string"],
   "caracteristiques": [{"nom": "string", "valeur": "string"}]

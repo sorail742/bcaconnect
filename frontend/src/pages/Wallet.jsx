@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { useWallet } from '../hooks/useDomainData';
 import { WalletSkeleton } from '../components/ui/Loader';
@@ -24,6 +25,7 @@ const Wallet = () => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [amount, setAmount] = useState('');
     const [isSearching, setIsSearching] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const { scoreData, loading: scoreLoading } = useAIScore();
     const { on, off } = useSocket();
@@ -36,8 +38,18 @@ const Wallet = () => {
             mutate();
         };
         on('wallet_updated', handleWalletUpdate);
+
+        // Gestion du retour depuis le paiement externe
+        const status = searchParams.get('status');
+        if (status === 'success') {
+            toast.success('Paiement initié avec succès ! Votre solde sera mis à jour dès la confirmation de l\'opérateur.');
+            searchParams.delete('status');
+            searchParams.delete('tx');
+            setSearchParams(searchParams);
+        }
+
         return () => off('wallet_updated', handleWalletUpdate);
-    }, [on, off, mutate]);
+    }, [on, off, mutate, searchParams, setSearchParams]);
 
     const transactions = wallet?.transactions || [];
     const balance = wallet?.solde_virtuel || 0;
@@ -76,7 +88,7 @@ const Wallet = () => {
         if (parseFloat(amount) > balance) { toast.error("Solde insuffisant."); return; }
         try {
             setIsTransferring(true);
-            await walletService.transfer({ recipientId: selectedUser.id, amount: parseFloat(amount), description: `Transfert P2P vers ${selectedUser.nom_complet}` });
+            await walletService.transfer({ destinataire_id: selectedUser.id, montant: parseFloat(amount), description: `Transfert P2P vers ${selectedUser.nom_complet}` });
             toast.success("Transfert réussi !");
             setIsTransferModalOpen(false); setSelectedUser(null); setAmount(''); mutate();
         } catch (err) { toast.error(err.response?.data?.message || "Erreur lors du transfert."); }
@@ -85,25 +97,25 @@ const Wallet = () => {
 
     return (
         <DashboardLayout title="Portefeuille BCA" noPadding>
-            <div className="min-h-screen bg-[#f7f7f7] pb-16">
+            <div className="min-h-screen bg-background pb-16">
                 <div className="container px-4 md:px-8 py-8">
                     
                     {/* Header */}
                     <div className="flex items-end justify-between gap-6 mb-8">
                         <div>
                             <div className="flex items-center gap-3 mb-2">
-                                <div className="size-10 rounded-xl bg-orange-100 flex items-center justify-center">
+                                <div className="size-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
                                     <WalletIcon className="size-5 text-[#FF6600]" />
                                 </div>
-                                <h1 className="text-3xl font-black text-slate-900 tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                <h1 className="text-3xl font-black text-foreground tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
                                     Mon <span className="text-[#FF6600]">Portefeuille</span>
                                 </h1>
                             </div>
-                            <p className="text-sm text-slate-500 font-medium ml-1">
+                            <p className="text-sm text-muted-foreground font-medium ml-1">
                                 Gérez vos fonds, transférez de l'argent et consultez votre historique en toute sécurité.
                             </p>
                         </div>
-                        <button onClick={() => mutate()} className="h-10 px-4 bg-white border border-slate-200 rounded-xl text-xs font-bold hover:border-[#FF6600] hover:text-[#FF6600] transition-all flex items-center gap-2 shadow-sm text-slate-600">
+                        <button onClick={() => mutate()} className="h-10 px-4 bg-card border border-border rounded-xl text-xs font-bold hover:border-[#FF6600] hover:text-[#FF6600] transition-all flex items-center gap-2 shadow-sm text-muted-foreground">
                             <RefreshCcw className="size-3.5" /> <span className="hidden sm:inline">Actualiser</span>
                         </button>
                     </div>
@@ -118,7 +130,7 @@ const Wallet = () => {
                             {/* Dashboard Top Cards */}
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 
-                                {/* 1. Main Balance Card (Alibaba Style Gradient) */}
+                                {/* 1. Main Balance Card (BCA Style Gradient) */}
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -166,19 +178,19 @@ const Wallet = () => {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.1 }}
-                                    className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm flex flex-col justify-between"
+                                    className="bg-card rounded-[2rem] border border-border p-8 shadow-sm flex flex-col justify-between"
                                 >
                                     <div>
                                         <div className="flex items-center justify-between mb-4">
-                                            <div className="size-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                                            <div className="size-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
                                                 <Activity className="size-5 text-amber-500" />
                                             </div>
-                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">En attente</span>
+                                            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">En attente</span>
                                         </div>
-                                        <p className="text-3xl font-black text-slate-900 tabular-nums tracking-tight mb-1" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                            {pending.toLocaleString('fr-GN')} <span className="text-sm text-slate-400 font-bold">GNF</span>
+                                        <p className="text-3xl font-black text-foreground tabular-nums tracking-tight mb-1" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                                            {pending.toLocaleString('fr-GN')} <span className="text-sm text-muted-foreground font-bold">GNF</span>
                                         </p>
-                                        <p className="text-xs text-slate-500 font-medium">
+                                        <p className="text-xs text-muted-foreground font-medium">
                                             Fonds bloqués en séquestre (Escrow) jusqu'à validation de livraison.
                                         </p>
                                     </div>
@@ -189,12 +201,12 @@ const Wallet = () => {
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 
                                 {/* Left Side: Transactions List */}
-                                <div className="lg:col-span-2 bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
-                                    <div className="p-6 sm:p-8 border-b border-slate-50 flex items-center justify-between">
-                                        <h2 className="text-lg font-black text-slate-900">Historique des transactions</h2>
+                                <div className="lg:col-span-2 bg-card rounded-[2rem] border border-border shadow-sm overflow-hidden">
+                                    <div className="p-6 sm:p-8 border-b border-border flex items-center justify-between">
+                                        <h2 className="text-lg font-black text-foreground">Historique des transactions</h2>
                                         <div className="flex items-center gap-2">
                                             <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                                            <span className="text-xs font-bold text-slate-400">Live</span>
+                                            <span className="text-xs font-bold text-muted-foreground">Live</span>
                                         </div>
                                     </div>
 
@@ -202,19 +214,19 @@ const Wallet = () => {
                                         {transactions.length > 0 ? (
                                             <div className="space-y-3">
                                                 {transactions.slice(0, 10).map((tx, idx) => (
-                                                    <div key={tx.id || idx} className="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 rounded-2xl border border-slate-100 transition-colors">
+                                                    <div key={tx.id || idx} className="flex items-center justify-between p-4 bg-muted/50 hover:bg-muted rounded-2xl border border-border transition-colors">
                                                         <div className="flex items-center gap-4">
                                                             <div className={cn(
                                                                 "size-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm border",
-                                                                tx.type === 'credit' ? "bg-emerald-50 border-emerald-100 text-emerald-500" : "bg-rose-50 border-rose-100 text-rose-500"
+                                                                tx.type === 'credit' ? "bg-emerald-50 border-emerald-100 text-emerald-500 dark:bg-emerald-900/30 dark:border-emerald-800" : "bg-rose-50 border-rose-100 text-rose-500 dark:bg-rose-900/30 dark:border-rose-800"
                                                             )}>
                                                                 {tx.type === 'credit' ? <ArrowDownRight className="size-5" /> : <ArrowUpRight className="size-5" />}
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <p className="text-sm font-bold text-slate-900 truncate">
+                                                                <p className="text-sm font-bold text-foreground truncate">
                                                                     {tx.description || (tx.type === 'credit' ? 'Dépôt' : 'Paiement')}
                                                                 </p>
-                                                                <p className="text-xs text-slate-500">
+                                                                <p className="text-xs text-muted-foreground">
                                                                     {new Date(tx.createdAt || tx.date).toLocaleString('fr-FR', {
                                                                         day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit'
                                                                     })}
@@ -224,11 +236,11 @@ const Wallet = () => {
                                                         <div className="text-right shrink-0 ml-4">
                                                             <p className={cn(
                                                                 "text-base font-black tabular-nums tracking-tight",
-                                                                tx.type === 'credit' ? "text-emerald-600" : "text-slate-900"
+                                                                tx.type === 'credit' ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"
                                                             )}>
                                                                 {tx.type === 'credit' ? '+' : '-'}{parseFloat(tx.montant).toLocaleString('fr-GN')}
                                                             </p>
-                                                            <span className="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-slate-200/50 text-slate-500">
+                                                            <span className="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-muted text-muted-foreground">
                                                                 {tx.statut || 'Terminé'}
                                                             </span>
                                                         </div>
@@ -237,11 +249,11 @@ const Wallet = () => {
                                             </div>
                                         ) : (
                                             <div className="py-16 text-center flex flex-col items-center">
-                                                <div className="size-16 rounded-full bg-slate-50 flex items-center justify-center mb-4 text-slate-300">
+                                                <div className="size-16 rounded-full bg-muted flex items-center justify-center mb-4 text-muted-foreground/50">
                                                     <History className="size-8" />
                                                 </div>
-                                                <p className="font-bold text-slate-500 mb-1">Aucune transaction</p>
-                                                <p className="text-sm text-slate-400">Vos prochains flux apparaîtront ici.</p>
+                                                <p className="font-bold text-muted-foreground mb-1">Aucune transaction</p>
+                                                <p className="text-sm text-muted-foreground/80">Vos prochains flux apparaîtront ici.</p>
                                             </div>
                                         )}
                                     </div>
@@ -260,27 +272,27 @@ const Wallet = () => {
                                             <div className="relative z-10">
                                                 <div className="flex items-baseline gap-1 mb-2">
                                                     <p className="text-5xl font-black tabular-nums tracking-tighter" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                                        {scoreData.score || 95}
+                                                        {scoreData.score ?? 0}
                                                     </p>
                                                     <span className="text-[#FF6600] font-black text-xl">/100</span>
                                                 </div>
                                                 <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden mb-3">
-                                                    <div className="h-full bg-[#FF6600] rounded-full transition-all duration-1000" style={{ width: `${scoreData.score || 95}%` }} />
+                                                    <div className="h-full bg-[#FF6600] rounded-full transition-all duration-1000" style={{ width: `${scoreData.score ?? 0}%` }} />
                                                 </div>
                                                 <p className="text-xs text-white/60 font-medium">
-                                                    Votre profil est considéré comme <b className="text-white">Excellent</b> par notre moteur IA d'analyse des risques.
+                                                    Votre profil est considéré comme <b className="text-white">{scoreData.metadata?.status || 'N/A'}</b> par notre moteur IA d'analyse des risques.
                                                 </p>
                                             </div>
                                         </div>
                                     )}
 
                                     {/* Simple info banner */}
-                                    <div className="bg-blue-50 border border-blue-100 p-6 rounded-[2rem]">
-                                        <div className="size-10 rounded-xl bg-blue-100 flex items-center justify-center mb-4">
-                                            <Lock className="size-5 text-blue-600" />
+                                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 p-6 rounded-[2rem]">
+                                        <div className="size-10 rounded-xl bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center mb-4">
+                                            <Lock className="size-5 text-blue-600 dark:text-blue-400" />
                                         </div>
-                                        <h3 className="text-sm font-black text-blue-900 mb-2">Paiement Sécurisé BCA</h3>
-                                        <p className="text-xs text-blue-700/80 leading-relaxed mb-4">
+                                        <h3 className="text-sm font-black text-blue-900 dark:text-blue-300 mb-2">Paiement Sécurisé BCA</h3>
+                                        <p className="text-xs text-blue-700/80 dark:text-blue-300/80 leading-relaxed mb-4">
                                             Tous les fonds en attente sont conservés sur un compte Escrow inviolable et garantis par nos partenaires bancaires.
                                         </p>
                                     </div>
@@ -300,18 +312,18 @@ const Wallet = () => {
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 onClick={() => setIsTransferModalOpen(false)}
-                                className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
                             />
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                className="relative w-full max-w-md bg-white border border-slate-100 rounded-[2rem] shadow-2xl overflow-hidden"
+                                className="relative w-full max-w-md bg-card border border-border rounded-[2rem] shadow-2xl overflow-hidden"
                             >
                                 <div className="p-8 space-y-6">
                                     <div className="flex items-center justify-between">
-                                        <h3 className="text-xl font-black text-slate-900 tracking-tight">Envoyer de l'argent</h3>
-                                        <button onClick={() => setIsTransferModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors bg-slate-50 p-2 rounded-full">
+                                        <h3 className="text-xl font-black text-foreground tracking-tight">Envoyer de l'argent</h3>
+                                        <button onClick={() => setIsTransferModalOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors bg-muted p-2 rounded-full">
                                             <XCircle className="size-5" />
                                         </button>
                                     </div>
@@ -319,9 +331,9 @@ const Wallet = () => {
                                     {!selectedUser ? (
                                         <div className="space-y-4">
                                             <div className="relative">
-                                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+                                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                                                 <input
-                                                    className="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-[#FF6600] focus:ring-1 focus:ring-[#FF6600] transition-all"
+                                                    className="w-full h-12 pl-11 pr-4 bg-background border border-border rounded-xl text-sm font-medium text-foreground outline-none focus:border-[#FF6600] focus:ring-1 focus:ring-[#FF6600] transition-all"
                                                     placeholder="Nom, email ou ID..."
                                                     value={searchQuery}
                                                     onChange={(e) => handleSearchUsers(e.target.value)}
@@ -337,52 +349,52 @@ const Wallet = () => {
                                                         <button
                                                             key={user.id}
                                                             onClick={() => setSelectedUser(user)}
-                                                            className="w-full flex items-center gap-3 p-3 bg-white hover:bg-slate-50 border border-slate-100 rounded-xl text-left transition-all"
+                                                            className="w-full flex items-center gap-3 p-3 bg-card hover:bg-muted border border-border rounded-xl text-left transition-all"
                                                         >
-                                                            <div className="size-10 rounded-lg bg-orange-50 flex items-center justify-center text-[#FF6600] font-black text-sm">
+                                                            <div className="size-10 rounded-lg bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center text-[#FF6600] font-black text-sm">
                                                                 {user.nom_complet?.[0] || 'U'}
                                                             </div>
                                                             <div>
-                                                                <p className="text-sm font-bold text-slate-800">{user.nom_complet}</p>
-                                                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{user.role}</p>
+                                                                <p className="text-sm font-bold text-foreground">{user.nom_complet}</p>
+                                                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">{user.role}</p>
                                                             </div>
                                                         </button>
                                                     ))
                                                 ) : searchQuery.length >= 2 ? (
-                                                    <div className="text-center py-8 text-sm font-medium text-slate-400">Aucun utilisateur trouvé</div>
+                                                    <div className="text-center py-8 text-sm font-medium text-muted-foreground">Aucun utilisateur trouvé</div>
                                                 ) : (
-                                                    <div className="text-center py-8 text-xs font-medium text-slate-400">Recherchez le destinataire pour continuer</div>
+                                                    <div className="text-center py-8 text-xs font-medium text-muted-foreground">Recherchez le destinataire pour continuer</div>
                                                 )}
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="space-y-6">
-                                            <div className="flex items-center gap-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-                                                <div className="size-12 rounded-xl bg-orange-100 flex items-center justify-center text-[#FF6600] font-black text-lg">
+                                            <div className="flex items-center gap-4 p-4 bg-muted border border-border rounded-2xl">
+                                                <div className="size-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-[#FF6600] font-black text-lg">
                                                     {selectedUser.nom_complet?.[0]}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-bold text-slate-900 truncate">{selectedUser.nom_complet}</p>
-                                                    <p className="text-xs text-slate-500 truncate">{selectedUser.email}</p>
+                                                    <p className="text-sm font-bold text-foreground truncate">{selectedUser.nom_complet}</p>
+                                                    <p className="text-xs text-muted-foreground truncate">{selectedUser.email}</p>
                                                 </div>
-                                                <button onClick={() => setSelectedUser(null)} className="text-[10px] font-black text-slate-400 hover:text-[#FF6600] bg-white border border-slate-200 px-2 py-1 rounded">Changer</button>
+                                                <button onClick={() => setSelectedUser(null)} className="text-[10px] font-black text-muted-foreground hover:text-primary bg-background border border-border px-2 py-1 rounded">Changer</button>
                                             </div>
 
                                             <div className="space-y-2">
-                                                <label className="text-xs font-bold text-slate-700 ml-1">Montant à envoyer (GNF)</label>
+                                                <label className="text-xs font-bold text-foreground ml-1">Montant à envoyer (GNF)</label>
                                                 <div className="relative">
                                                     <input
                                                         type="number"
-                                                        className="w-full h-14 pl-4 pr-16 bg-white border border-slate-200 focus:border-[#FF6600] focus:ring-1 focus:ring-[#FF6600] rounded-xl text-xl font-black tabular-nums transition-all"
+                                                        className="w-full h-14 pl-4 pr-16 bg-background border border-border focus:border-[#FF6600] focus:ring-1 focus:ring-[#FF6600] rounded-xl text-xl text-foreground font-black tabular-nums transition-all"
                                                         placeholder="0"
                                                         value={amount}
                                                         onChange={(e) => setAmount(e.target.value)}
                                                     />
-                                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400">GNF</div>
+                                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-black text-muted-foreground">GNF</div>
                                                 </div>
                                                 <div className="flex justify-between items-center px-1">
-                                                    <p className="text-xs text-slate-500 font-medium">
-                                                        Solde dispo : <span className="font-bold text-slate-900">{balance.toLocaleString()} GNF</span>
+                                                    <p className="text-xs text-muted-foreground font-medium">
+                                                        Solde dispo : <span className="font-bold text-foreground">{balance.toLocaleString()} GNF</span>
                                                     </p>
                                                     <button onClick={() => setAmount(balance.toString())} className="text-[10px] font-black text-[#FF6600] hover:underline">MAX</button>
                                                 </div>

@@ -79,8 +79,7 @@ const useAuthStore = create(
             version: 1, // Gestion des versions pour migrations futures
             partialize: (state) => ({ 
                 user: state.user, 
-                // 🛑 SÉCURITÉ FINTECH : Le token n'est PLUS stocké en localStorage (anti-XSS)
-                // Il sera conservé en mémoire (Zustand) et rafraîchi via le HttpOnly Cookie.
+                token: state.token, 
                 isAuthenticated: state.isAuthenticated 
             }),
         }
@@ -88,4 +87,3 @@ const useAuthStore = create(
 );
 
 export default useAuthStore;
-

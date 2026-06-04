@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import orderService from '../services/orderService';
 import walletService from '../services/walletService';
 import cartService from '../services/cartService';
+import api from '../services/api';
 import { useWallet } from '../hooks/useDomainData';
 import useApiMutation from '../hooks/useApiMutation';
 import { useLanguage } from '../context/LanguageContext';
@@ -39,7 +40,7 @@ const Checkout = () => {
     const [formData, setFormData] = useState({
         prenom: '', nom: user?.nom_complet || '', email: user?.email || '',
         telephone: user?.telephone || '', adresse: '', ville: 'Conakry',
-        quartier: '', notes: '', paymentMethod: 'wallet'
+        quartier: '', notes: '', paymentMethod: 'wallet', mobileMoneyPhone: user?.telephone || ''
     });
 
     const total = (cartTotal || 0) + DELIVERY_FEE;
@@ -75,7 +76,9 @@ const Checkout = () => {
         }
     };
 
-    const handleProcessOrder = () => {
+    const [isMobileMoneyProcessing, setIsMobileMoneyProcessing] = useState(false);
+
+    const handleProcessOrder = async () => {
         if (cartItems.length === 0) {
             toast.error(t('ckEmptyCart'));
             navigate('/marketplace');
@@ -90,7 +93,6 @@ const Checkout = () => {
             }
         }
 
-        // Transformation via cartService
         const deliveryInfo = {
             nom: `${formData.prenom} ${formData.nom}`.trim(),
             telephone: formData.telephone,
@@ -103,7 +105,45 @@ const Checkout = () => {
             formData.paymentMethod
         );
 
-        // Exécution de la mutation
+        // --- FLUX MOBILE MONEY : commande d'abord, paiement ensuite, séquestre au webhook ---
+        if (formData.paymentMethod === 'mobile_money') {
+            if (!formData.mobileMoneyPhone) {
+                toast.error("Veuillez entrer votre numéro Mobile Money.");
+                return;
+            }
+            setIsMobileMoneyProcessing(true);
+            try {
+                const orderRes = await orderService.create(orderPayload);
+                const order = orderRes?.data || orderRes;
+
+                const { data: initData } = await api.post('/payments/initiate', {
+                    montant: total,
+                    order_id: order.id,
+                    moyen_paiement: 'mobile_money'
+                });
+
+                toast.info("Validation sur votre téléphone en cours...", { duration: 2000 });
+
+                if (initData.payment_url?.includes('/payment/simulate/')) {
+                    await api.post('/payments/capture-simulation', {
+                        transaction_id: initData.transaction_id
+                    });
+                    toast.success("Paiement Mobile Money validé — séquestre activé !");
+                    clearCart();
+                    navigate('/orders');
+                } else if (initData.payment_url) {
+                    clearCart();
+                    window.location.href = initData.payment_url;
+                }
+            } catch (error) {
+                console.error(error);
+                toast.error(error.response?.data?.message || "Échec du paiement Mobile Money.");
+            } finally {
+                setIsMobileMoneyProcessing(false);
+            }
+            return;
+        }
+
         createOrder(orderPayload);
     };
 
@@ -213,34 +253,54 @@ const Checkout = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {[
                                             { key: 'wallet', icon: Zap, label: t('ckBcaWallet'), sub: wallet ? `${t('balance')} : ${parseFloat(wallet.solde_virtuel).toLocaleString()} ${t('gnf')}` : t('ckInstantSecure'), color: 'primary' },
-                                            { key: 'cod', icon: Smartphone, label: t('ckCashAtBusiness'), sub: t('ckMobileMoney'), color: 'emerald' },
+                                            { key: 'mobile_money', icon: Smartphone, label: "Mobile Money", sub: "Orange Money / MTN", color: 'orange' },
+                                            { key: 'cod', icon: Package, label: t('ckCashAtBusiness'), sub: "Paiement à la livraison", color: 'emerald' },
                                         ].map(opt => (
-                                            <button key={opt.key} onClick={() => setFormData(p => ({ ...p, paymentMethod: opt.key }))}
-                                                className={cn("p-5 rounded-3xl border-2 transition-all text-left flex items-start gap-4 relative overflow-hidden",
-                                                    formData.paymentMethod === opt.key
-                                                        ? opt.color === 'primary' ? "border-primary bg-primary/5 shadow-inner" 
-                                                          : "border-emerald-500 bg-emerald-500/5 shadow-inner"
-                                                        : "border-border bg-card hover:border-primary/30"
-                                                )}>
-                                                <div className={cn("size-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg",
-                                                    formData.paymentMethod === opt.key
-                                                        ? opt.color === 'primary' ? "bg-primary text-primary-foreground" 
-                                                          : "bg-emerald-500 text-white"
-                                                        : "bg-muted border border-border text-muted-foreground"
-                                                )}>
-                                                    <opt.icon className="size-5" />
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs font-black text-foreground uppercase tracking-tight">{opt.label}</p>
-                                                    <p className="text-[10px] font-black text-muted-foreground mt-1 opacity-70 uppercase tracking-widest">{opt.sub}</p>
-                                                </div>
-                                                {formData.paymentMethod === opt.key && (
-                                                    <CheckCircle2 className={cn("size-5 absolute top-4 right-4", 
-                                                        opt.color === 'primary' ? "text-primary" 
-                                                        : "text-emerald-500"
-                                                    )} />
+                                            <div key={opt.key} className={cn("rounded-3xl border-2 transition-all relative overflow-hidden",
+                                                formData.paymentMethod === opt.key
+                                                    ? opt.color === 'primary' ? "border-primary bg-primary/5 shadow-inner" 
+                                                      : opt.color === 'orange' ? "border-orange-500 bg-orange-500/5 shadow-inner"
+                                                      : "border-emerald-500 bg-emerald-500/5 shadow-inner"
+                                                    : "border-border bg-card hover:border-primary/30"
+                                            )}>
+                                                <button onClick={() => setFormData(p => ({ ...p, paymentMethod: opt.key }))}
+                                                    className="w-full p-5 text-left flex items-start gap-4">
+                                                    <div className={cn("size-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg",
+                                                        formData.paymentMethod === opt.key
+                                                            ? opt.color === 'primary' ? "bg-primary text-primary-foreground" 
+                                                              : opt.color === 'orange' ? "bg-orange-500 text-white"
+                                                              : "bg-emerald-500 text-white"
+                                                            : "bg-muted border border-border text-muted-foreground"
+                                                    )}>
+                                                        <opt.icon className="size-5" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-black text-foreground uppercase tracking-tight">{opt.label}</p>
+                                                        <p className="text-[10px] font-black text-muted-foreground mt-1 opacity-70 uppercase tracking-widest">{opt.sub}</p>
+                                                    </div>
+                                                    {formData.paymentMethod === opt.key && (
+                                                        <CheckCircle2 className={cn("size-5 absolute top-4 right-4", 
+                                                            opt.color === 'primary' ? "text-primary" 
+                                                            : opt.color === 'orange' ? "text-orange-500"
+                                                            : "text-emerald-500"
+                                                        )} />
+                                                    )}
+                                                </button>
+                                                
+                                                {/* Input Numéro Mobile Money Révélé */}
+                                                {formData.paymentMethod === 'mobile_money' && opt.key === 'mobile_money' && (
+                                                    <div className="px-5 pb-5 animate-in slide-in-from-top-2">
+                                                        <label className="text-[10px] font-black text-foreground uppercase tracking-widest mb-2 block">Numéro de Téléphone *</label>
+                                                        <input 
+                                                            type="text" 
+                                                            className="w-full h-10 px-3 bg-white border border-orange-500/30 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-orange-500 transition-all placeholder:text-slate-300" 
+                                                            placeholder="Ex: 620 00 00 00"
+                                                            value={formData.mobileMoneyPhone}
+                                                            onChange={e => setFormData(p => ({ ...p, mobileMoneyPhone: e.target.value }))}
+                                                        />
+                                                    </div>
                                                 )}
-                                            </button>
+                                            </div>
                                         ))}
                                     </div>
 
@@ -263,9 +323,9 @@ const Checkout = () => {
                                     <button onClick={() => setStep(1)} className="h-14 px-8 rounded-2xl border border-border text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all flex items-center gap-3">
                                         <ArrowLeft className="size-4" /> {t('ckBack')}
                                     </button>
-                                    <Button onClick={handleProcessOrder} disabled={isSubmitting || isBalanceInsufficient}
+                                    <Button onClick={handleProcessOrder} disabled={isSubmitting || isBalanceInsufficient || isMobileMoneyProcessing}
                                         className="flex-1 h-14 rounded-2xl bg-primary text-primary-foreground font-black text-xs uppercase tracking-widest border-none hover:bg-primary/90 flex items-center justify-center gap-3 shadow-lg shadow-primary/20 disabled:opacity-50">
-                                        {isSubmitting ? <><div className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> {t('ckProcessing')}</>
+                                        {(isSubmitting || isMobileMoneyProcessing) ? <><div className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> {isMobileMoneyProcessing ? 'Paiement en cours...' : t('ckProcessing')}</>
                                             : <><ShieldCheck className="size-5" /> {t('ckConfirmAcquisition')}</>}
                                     </Button>
                                 </div>

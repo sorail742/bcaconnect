@@ -1,16 +1,48 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import creditService from '../../services/creditService';
 import { toast } from 'sonner';
+
+/**
+ * useMyCredits — Crédits et échéanciers de l'utilisateur.
+ */
+export const useMyCredits = () => {
+    const { data, isLoading: loading, error, refetch, isFetching } = useQuery({
+        queryKey: ['my-credits'],
+        queryFn: () => creditService.getMyCredits(),
+        staleTime: 60_000,
+    });
+    return { data: Array.isArray(data) ? data : [], loading, error: error?.message || null, refetch, isFetching };
+};
+
+/**
+ * usePayInstallment — Payer une échéance de crédit.
+ */
+export const usePayInstallment = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (echeanceId) => creditService.payInstallment(echeanceId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['my-credits'] });
+            toast.success('Échéance payée avec succès !');
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Erreur lors du paiement.');
+        },
+    });
+};
 
 /**
  * useCreditSimulation — Simule un crédit en temps réel.
  */
 export const useCreditSimulation = (params) => {
+    const payload = params?.montant
+        ? { montant: params.montant, duree_mois: params.mois || params.duree_mois, taux: params.taux }
+        : null;
     return useQuery({
-        queryKey: ['credit-simulation', params],
-        queryFn: () => creditService.simulate(params),
-        enabled: !!params?.montant && !!params?.duree_mois,
-        staleTime: 5 * 60_000, // Les paramètres de simulation ne changent pas souvent
+        queryKey: ['credit-simulation', payload],
+        queryFn: () => creditService.simulate(payload),
+        enabled: !!(payload?.montant && payload?.duree_mois),
+        staleTime: 5 * 60_000,
     });
 };
 

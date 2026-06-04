@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useUserProfile } from '../hooks/useDomainData';
 import { useLanguage } from '../context/LanguageContext';
 import DashboardLayout from '../components/layout/DashboardLayout';
+import { DataStateWrapper } from '../components/ui/DataStates';
 import { cn } from '../lib/utils';
 import {
     CalendarDays, BadgeCheck, Edit3, Trash2, Shield,
@@ -54,6 +56,8 @@ const FormField = ({ label, icon: Icon, ...props }) => (
 const UserProfile = () => {
     const { t } = useLanguage();
     const { user, updateProfile, deleteAccount, refreshUser } = useAuth();
+    const { data: profile, loading: profileLoading, error: profileError, refetch: refetchProfile } = useUserProfile();
+    const displayUser = profile || user;
     const location = useLocation();
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
@@ -69,14 +73,24 @@ const UserProfile = () => {
         navigate(tab === 'settings' ? '/settings' : '/profile');
     };
 
-    const [nomComplet, setNomComplet] = useState(user?.nom_complet || '');
-    const [telephone, setTelephone] = useState(user?.telephone || '');
-    const [email, setEmail] = useState(user?.email || '');
+    const [nomComplet, setNomComplet] = useState('');
+    const [telephone, setTelephone] = useState('');
+    const [email, setEmail] = useState('');
     const [motDePasse, setMotDePasse] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [emailAlerts, setEmailAlerts] = useState(user?.settings?.emailAlerts ?? true);
-    const [pushNotifs, setPushNotifs] = useState(user?.settings?.pushNotifs ?? false);
+    const [emailAlerts, setEmailAlerts] = useState(true);
+    const [pushNotifs, setPushNotifs] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+
+    useEffect(() => {
+        const source = profile || user;
+        if (!source) return;
+        setNomComplet(source.nom_complet || '');
+        setTelephone(source.telephone || '');
+        setEmail(source.email || '');
+        setEmailAlerts(source.settings?.emailAlerts ?? true);
+        setPushNotifs(source.settings?.pushNotifs ?? false);
+    }, [profile, user]);
 
     // 2FA States
     const [show2FASetup, setShow2FASetup] = useState(false);
@@ -92,6 +106,7 @@ const UserProfile = () => {
             onSuccess: () => {
                 setMotDePasse('');
                 setConfirmPassword('');
+                refetchProfile();
             }
         }
     );
@@ -118,6 +133,8 @@ const UserProfile = () => {
             setIsUploading(true);
             const { url } = await uploadService.uploadFile(file);
             await updateProfile({ avatar_url: url });
+            await refetchProfile();
+            if (refreshUser) await refreshUser();
             toast.success("Photo de profil mise à jour !");
         } catch (error) {
             console.error('Upload error:', error);
@@ -220,7 +237,7 @@ const UserProfile = () => {
                             </div>
                             <div>
                                 <h2 className="text-lg font-bold text-foreground">{t('profAccountMgmt')}</h2>
-                                <p className="text-xs text-muted-foreground">ID: {user?.id?.slice(0, 8).toUpperCase()}</p>
+                                <p className="text-xs text-muted-foreground">ID: {displayUser?.id?.slice(0, 8).toUpperCase()}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -251,6 +268,12 @@ const UserProfile = () => {
                     </div>
                 </div>
 
+                <DataStateWrapper
+                    isLoading={profileLoading && !displayUser}
+                    error={profileError}
+                    onRetry={refetchProfile}
+                    loadingVariant="default"
+                >
                 <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
                     {/* Left — Avatar card */}
                     <div className="xl:col-span-1 space-y-4">
@@ -267,9 +290,9 @@ const UserProfile = () => {
                                                 <Loader2 className="size-8 text-white animate-spin" />
                                             </div>
                                         ) : null}
-                                        {user?.avatar_url
-                                            ? <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
-                                            : <span className="text-2xl font-bold text-primary">{getInitials(user?.nom_complet)}</span>
+                                        {displayUser?.avatar_url
+                                            ? <img src={displayUser.avatar_url} alt="" className="w-full h-full object-cover" />
+                                            : <span className="text-2xl font-bold text-primary">{getInitials(displayUser?.nom_complet)}</span>
                                         }
                                     </div>
                                     <button 
@@ -282,11 +305,11 @@ const UserProfile = () => {
                                     </button>
                                 </div>
                                 <div className="mt-3 space-y-1">
-                                    <h4 className="text-sm font-bold text-foreground">{user?.nom_complet}</h4>
+                                    <h4 className="text-sm font-bold text-foreground">{displayUser?.nom_complet}</h4>
                                     <div className="flex items-center gap-1.5">
                                         <BadgeCheck className="size-3.5 text-primary" />
                                         <span className="text-xs text-primary font-medium">
-                                            {user?.role === 'fournisseur' ? t('profCertifiedMerchant') : t('profVerifiedMember')}
+                                            {displayUser?.role === 'fournisseur' ? t('profCertifiedMerchant') : t('profVerifiedMember')}
                                         </span>
                                     </div>
                                 </div>
@@ -344,10 +367,10 @@ const UserProfile = () => {
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <FormField label="{t('profFullName')}" icon={UserIcon} value={nomComplet} onChange={e => setNomComplet(e.target.value)} placeholder="{t('profFullNamePlaceholder')}" />
-                                            <FormField label="{t('profPhone')}" icon={Globe} type="tel" value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="+224 ..." />
+                                            <FormField label={t('profFullName')} icon={UserIcon} value={nomComplet} onChange={e => setNomComplet(e.target.value)} placeholder={t('profFullNamePlaceholder')} />
+                                            <FormField label={t('profPhone')} icon={Globe} type="tel" value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="+224 ..." />
                                         </div>
-                                        <FormField label="{t('profEmail')}" icon={Mail} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="votre@email.com" />
+                                        <FormField label={t('profEmail')} icon={Mail} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="votre@email.com" />
                                     </div>
 
                                     {/* Trust score */}
@@ -385,8 +408,8 @@ const UserProfile = () => {
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <FormField label="{t('profNewPassword')}" type="password" value={motDePasse} onChange={e => setMotDePasse(e.target.value)} placeholder="••••••••" />
-                                            <FormField label="{t('profConfirmPassword')}" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" />
+                                            <FormField label={t('profNewPassword')} type="password" value={motDePasse} onChange={e => setMotDePasse(e.target.value)} placeholder="••••••••" />
+                                            <FormField label={t('profConfirmPassword')} type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" />
                                         </div>
                                         <div className="flex items-center gap-3 p-3 bg-muted rounded-xl border border-border">
                                             <Clock className="size-4 text-muted-foreground shrink-0" />
@@ -482,6 +505,7 @@ const UserProfile = () => {
                         </AnimatePresence>
                     </div>
                 </div>
+                </DataStateWrapper>
             </div>
 
             {/* ── Modal {t('prof2FAConfigTitle')} ── */}

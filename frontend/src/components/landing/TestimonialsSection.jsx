@@ -92,7 +92,7 @@ export const TestimonialsSection = () => {
                              {t('testimonialsDesc') || "Rejoignez des milliers de professionnels qui transforment leur commerce en Guinée"}
                          </p>
                      </div>
-                     {/* Trust score — Alibaba style */}
+                     {/* Trust score — BCA style */}
                      <div className="flex items-center gap-2 shrink-0">
                          <div className="flex flex-col items-end">
                              <div className="flex items-center gap-1">
@@ -164,7 +164,7 @@ export const TestimonialsSection = () => {
                      ))}
                  </div>
  
-                 {/* Bottom trust strip — Alibaba trademark */}
+                 {/* Bottom trust strip — BCA trademark */}
                  <div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 py-5 border-t border-slate-100">
                      {trustMetrics.map((item, i) => (
                          <span key={i} className="flex items-center gap-2 text-sm text-slate-500 font-medium">

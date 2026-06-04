@@ -6,6 +6,7 @@ import {
     Mail, Phone, MapPin, Send, CheckCircle2,
     ChevronDown, Sparkles
 } from 'lucide-react';
+import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 import { useLanguage } from '../context/LanguageContext';
 import supportService from '../services/supportService';
@@ -18,7 +19,7 @@ const ContactPage = () => {
         'Support technique',
         'Litige / Réclamation',
         'Demande de partenariat',
-        'Devenir fournisseur',
+        // 'Devenir fournisseur', // Removed per user request
         'Questions sur BCA Connect',
         'Autre',
     ];
@@ -171,9 +172,11 @@ const ContactPage = () => {
                                         <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Téléphone (Optionnel)</label>
                                         <Input name="telephone" value={form.telephone} onChange={handleChange} placeholder="+224 6XX XX XX XX" className="h-12 bg-transparent" />
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Sujet de la demande</label>
-                                        <div className="relative">
+                                    <div className={cn(
+                                         "h-16 px-6 rounded-2xl flex items-center justify-center shadow-lg border border-border bg-white transition-all duration-500 hover:scale-105 hover:shadow-primary/20",
+                                         "overflow-hidden mb-4"
+                                     )}>
+                                        <div className="relative w-full">
                                             <select
                                                 name="raison"
                                                 value={form.raison}

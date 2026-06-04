@@ -5,33 +5,6 @@ import { Home, Headphones, Store, Wallet, HelpCircle, SearchX, Bell } from 'luci
 const NotFound = () => {
     return (
         <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display">
-            {/* Top Navigation Bar */}
-            <header className="w-full border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-4">
-                <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="text-primary">
-                            <svg className="size-8" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                                <g clipPath="url(#clip0_6_330)">
-                                    <path clipRule="evenodd" d="M24 0.757355L47.2426 24L24 47.2426L0.757355 24L24 0.757355ZM21 35.7574V12.2426L9.24264 24L21 35.7574Z" fill="currentColor" fillRule="evenodd"></path>
-                                </g>
-                                <defs>
-                                    <clipPath id="clip0_6_330"><rect fill="white" height="48" width="48"></rect></clipPath>
-                                </defs>
-                            </svg>
-                        </div>
-                        <h2 className="text-xl font-bold tracking-tight">BCA Connect</h2>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <div className="bg-primary/10 rounded-full p-2 text-primary cursor-pointer hover:bg-primary/20 transition-colors">
-                            <Bell className="size-5" />
-                        </div>
-                        <div
-                            className="size-10 rounded-full bg-slate-200 dark:bg-slate-700 bg-cover bg-center border-2 border-primary/20 cursor-pointer"
-                            style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCH5DZ71aAPw_UBTKtVErHDP7llRx2LtSpXZGh7XjdvbDPC2Cp6e0I_5gfNNzn7qNIwcWumFvp7EoBZoVWNK0DQEk-b5Zkkecr1wI3Lw_2WS6T9aBZ1JE26zQ_yYEYgC_D25Bm7PT8-kiTnImxaZvTebXdFQ6yl9-b976e8yAzggcWXlb_cMFqMbFwwVYGpyMRK0yoSTez7_-4-8JJWzlqP5RAMgGlMJz94gKqpUpkbgQ6-aZSYxb6EYKBhV1tmyD8u9Ym_2lajaMEP")' }}
-                        ></div>
-                    </div>
-                </div>
-            </header>
 
             {/* Main Content Area */}
             <main className="flex-1 flex items-center justify-center px-6 py-12 md:py-12">
@@ -102,16 +75,6 @@ const NotFound = () => {
                 </div>
             </main>
 
-            {/* Footer Space */}
-            <footer className="w-full py-8 border-t border-slate-200 dark:border-slate-800 px-6 mt-auto">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between text-slate-600 dark:text-muted-foreground/80 text-xs gap-4">
-                    <p>© 2024 BCA Connect. Tous droits réservés.</p>
-                    <div className="flex gap-6">
-                        <Link to="/conditions" className="hover:text-primary transition-colors">Conditions d'utilisation</Link>
-                        <Link to="/confidentialite" className="hover:text-primary transition-colors">Politique de confidentialité</Link>
-                    </div>
-                </div>
-            </footer>
         </div>
     );
 };

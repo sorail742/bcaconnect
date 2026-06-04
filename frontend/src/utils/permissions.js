@@ -17,8 +17,11 @@ export const PERMISSIONS = {
     CAN_SHIP: ['transporteur', 'admin'],
 
     // Finance
-    CAN_VIEW_WALLET: ['admin', 'fournisseur', 'transporteur', 'client', 'banque'],
-    CAN_WITHDRAW: ['fournisseur', 'transporteur', 'banque', 'admin'],
+    CAN_VIEW_WALLET: ['admin', 'fournisseur', 'transporteur', 'client', 'banque', 'technicien'],
+    CAN_WITHDRAW: ['fournisseur', 'transporteur', 'banque', 'admin', 'technicien'],
+
+    // Group Purchases
+    CAN_ACCESS_GROUP_PURCHASE: ['admin', 'technicien'],
 
     // Admin
     CAN_ACCESS_ADMIN_PANEL: ['admin'],

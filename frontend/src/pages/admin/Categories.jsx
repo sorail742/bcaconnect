@@ -21,7 +21,7 @@ import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import CreatableSelect from '../../components/ui/CreatableSelect';
-import { ALIBABA_CATEGORIES, getCategoryIconComponent } from '../../lib/categoryConstants';
+import { BCA_CATEGORIES, getCategoryIconComponent } from '../../lib/categoryConstants';
 const StatCard = ({ title, value, icon: Icon, color }) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -315,7 +315,7 @@ const Categories = () => {
                                 <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter" style={{ fontFamily: "'Outfit', sans-serif" }}>
                                     Hub de Création Rapide
                                 </h2>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Standardisation Alibaba & Taxonomie</p>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Standardisation BCA & Taxonomie</p>
                             </div>
                         </div>
                         <button 
@@ -323,7 +323,7 @@ const Categories = () => {
                                 if (!window.confirm("CRÉER TOUTES LES CATÉGORIES STANDARDS MANQUANTES ?")) return;
                                 toast.info("DÉPLOYEMENT DE LA TAXONOMIE GLOBALE...");
                                 let created = 0;
-                                for (const cat of ALIBABA_CATEGORIES) {
+                                for (const cat of BCA_CATEGORIES) {
                                     if (!categories.find(c => c.nom_categorie.toLowerCase() === cat.nom.toLowerCase())) {
                                         try {
                                             await categoryService.create({ nom_categorie: cat.nom, description: `Catégorie standard: ${cat.nom}` });
@@ -345,7 +345,7 @@ const Categories = () => {
                     </div>
 
                     <div className="flex flex-wrap gap-3">
-                        {ALIBABA_CATEGORIES.map(cat => {
+                        {BCA_CATEGORIES.map(cat => {
                             const exists = categories.find(c => c.nom_categorie.toLowerCase() === cat.nom.toLowerCase());
                             return (
                                 <button
@@ -473,7 +473,7 @@ const Categories = () => {
                 </div>
             </div>
 
-            {/* Premium Alibaba Modal */}
+            {/* Premium BCA Modal */}
             <Modal
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
@@ -486,7 +486,7 @@ const Categories = () => {
                             <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-900 px-1">Désignation de la Classe</label>
                             <CreatableSelect
                                                 options={[
-                                                    ...ALIBABA_CATEGORIES.map(cat => ({ id: cat.nom, label: cat.nom, icon: cat.icon })),
+                                                    ...BCA_CATEGORIES.map(cat => ({ id: cat.nom, label: cat.nom, icon: cat.icon })),
                                                     ...categories.map(cat => ({ id: cat.nom_categorie, label: cat.nom_categorie }))
                                                 ].filter((v, i, a) => a.findIndex(t => t.id === v.id) === i)}
                                 value={formData.nom_categorie}

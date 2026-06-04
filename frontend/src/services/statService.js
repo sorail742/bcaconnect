@@ -11,10 +11,10 @@ const statService = {
     },
     getAdminStats: async () => {
         try {
-            const response = await api.get('/stats/admin/public');
+            const response = await api.get('/stats/admin/public', { timeout: 8000, _bg: true });
             return response.data;
-        } catch (error) {
-            throw error;
+        } catch {
+            return null;
         }
     },
     getFinancialStats: async () => {

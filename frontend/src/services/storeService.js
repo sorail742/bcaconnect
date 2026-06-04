@@ -11,8 +11,8 @@ const storeService = {
         return response.data;
     },
 
-    getAll: async () => {
-        const response = await api.get('/stores');
+    getAll: async (params = {}) => {
+        const response = await api.get('/stores', { params });
         return response.data;
     },
 

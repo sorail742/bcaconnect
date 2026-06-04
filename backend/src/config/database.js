@@ -9,10 +9,14 @@ let sequelize;
 const path = require('path');
 
 if (useLocalDB || isTest) {
-    console.log('📦 Utilisation de SQLite (Local/Persistant)');
+    if (isTest) {
+        console.log('📦 Utilisation de SQLite (:memory:) pour les tests');
+    } else {
+        console.log('📦 Utilisation de SQLite (Local/Persistant)');
+    }
     sequelize = new Sequelize({
         dialect: 'sqlite',
-        storage: path.join(__dirname, '../data/database.sqlite'),
+        storage: isTest ? ':memory:' : path.join(__dirname, '../data/database.sqlite'),
         logging: false,
         define: {
             timestamps: true,

@@ -2,10 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import storeService from '../../services/storeService';
 import statService from '../../services/statService';
 
-export const useVendors = () => {
+export const useVendors = (filters = {}) => {
     const { data, isLoading: loading, error, isFetching } = useQuery({
-        queryKey: ['vendors'],
-        queryFn: () => storeService.getAll(),
+        queryKey: ['vendors', filters],
+        queryFn: () => storeService.getAll(filters),
         staleTime: 5 * 60_000,
     });
     return { data, loading, error: error?.message || null, isFetching };

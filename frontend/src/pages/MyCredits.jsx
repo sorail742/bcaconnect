@@ -1,21 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
     Landmark, Clock, CheckCircle2, AlertCircle, ArrowRight,
     CreditCard, Calendar, TrendingUp, RefreshCcw, Sparkles
 } from 'lucide-react';
-import creditService from '../services/creditService';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
-import { LoadingState, ErrorState, EmptyState } from '../components/ui/DataStates';
+import { DataStateWrapper } from '../components/ui/DataStates';
 import { useLanguage } from '../context/LanguageContext';
+import { useMyCredits, usePayInstallment } from '../hooks/useDomainData';
 
 export default function MyCredits() {
     const { t, lang } = useLanguage();
-    const [credits, setCredits] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const { data: credits, loading, error, refetch } = useMyCredits();
+    const payInstallment = usePayInstallment();
     const [payingId, setPayingId] = useState(null);
 
     const statusMap = {
@@ -25,31 +24,10 @@ export default function MyCredits() {
         refuse: { label: t('statusRejected') || 'Refusé', color: 'text-rose-500', bg: 'bg-rose-500/10', icon: AlertCircle },
     };
 
-    const fetchCredits = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const data = await creditService.getMyCredits();
-            setCredits(Array.isArray(data) ? data : []);
-        } catch (err) {
-            setError(t('errorLoadingCredits') || "Échec du chargement des crédits.");
-        } finally {
-            setIsLoading(false);
-        }
-    }, [t]);
-
-    useEffect(() => {
-        fetchCredits();
-    }, [fetchCredits]);
-
     const handlePayInstallment = async (echeanceId) => {
         setPayingId(echeanceId);
         try {
-            await creditService.payInstallment(echeanceId);
-            toast.success(t('paymentSuccess') || "Échéance payée avec succès !");
-            fetchCredits();
-        } catch (err) {
-            toast.error(err.response?.data?.message || t('paymentError') || "Erreur lors du paiement.");
+            await payInstallment.mutateAsync(echeanceId);
         } finally {
             setPayingId(null);
         }
@@ -88,14 +66,15 @@ export default function MyCredits() {
 
                 {/* Content */}
                 <div className="max-w-5xl mx-auto space-y-6">
-                    {isLoading ? (
-                        <LoadingState message={t('loadingCredits') || "Chargement de vos financements..."} />
-                    ) : error ? (
-                        <ErrorState error={error} />
-                    ) : credits.length === 0 ? (
-                        <EmptyState message={t('noCredits') || "Aucun crédit en cours. Lancez une simulation pour commencer."} />
-                    ) : (
-                        credits.map((credit, idx) => {
+                    <DataStateWrapper
+                        isLoading={loading}
+                        error={error}
+                        isEmpty={!credits.length}
+                        onRetry={refetch}
+                        loadingVariant="grid"
+                        emptyMessage={t('noCredits') || 'Aucun crédit en cours. Lancez une simulation pour commencer.'}
+                    >
+                        {credits.map((credit, idx) => {
                             const status = statusMap[credit.statut] || statusMap.en_attente;
                             const StatusIcon = status.icon;
                             const echeances = credit.echeances || [];
@@ -217,8 +196,8 @@ export default function MyCredits() {
                                     )}
                                 </motion.div>
                             );
-                        })
-                    )}
+                        })}
+                    </DataStateWrapper>
                 </div>
             </div>
         </main>

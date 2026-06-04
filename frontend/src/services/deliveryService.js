@@ -19,6 +19,18 @@ const deliveryService = {
         return response.data;
     },
 
+    // Grouper des commandes
+    groupOrders: async (orderIds) => {
+        const response = await api.post('/delivery/group', { orderIds });
+        return response.data;
+    },
+
+    // Obtenir les groupes de livraisons
+    getMyGroups: async () => {
+        const response = await api.get('/delivery/groups/my');
+        return response.data;
+    },
+
     // Mettre à jour la position GPS et le statut (Transporteur)
     updateTracking: async (trackingData) => {
         // trackingData: { orderId, latitude, longitude, status, commentaire }
@@ -36,7 +48,19 @@ const deliveryService = {
     getHistory: async (orderId) => {
         const response = await api.get(`/delivery/history/${orderId}`);
         return response.data;
-    }
+    },
+
+    // 🌐 Suivi PUBLIC (sans authentification, données masquées RGPD)
+    trackOrder: async (trackingNumber) => {
+        const response = await api.get(`/delivery/track/${encodeURIComponent(trackingNumber)}`);
+        return response.data;
+    },
+
+    // Statistiques dashboard transporteur
+    getCarrierStats: async () => {
+        const response = await api.get('/delivery/stats');
+        return response.data;
+    },
 };
 
 export default deliveryService;

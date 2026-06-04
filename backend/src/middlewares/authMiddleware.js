@@ -71,6 +71,7 @@ const authorize = (...roles) => {
 
 // protect = alias de authMiddleware (compatibilité avec les nouvelles routes)
 const protect = authMiddleware;
+const roleMiddleware = authorize;
 
 // optionalAuth : tente de décoder le token sans bloquer si absent
 const optionalAuth = (req, res, next) => {
@@ -86,4 +87,4 @@ const optionalAuth = (req, res, next) => {
     next()
 };
 
-module.exports = { authMiddleware, protect, authorize, optionalAuth, grantAccess };
+module.exports = { authMiddleware, protect, authorize, optionalAuth, grantAccess, roleMiddleware };

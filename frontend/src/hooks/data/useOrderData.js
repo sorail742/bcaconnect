@@ -10,7 +10,10 @@ export const useOrders = () => {
 
     const { data, isLoading: loading, error, isFetching, refetch } = useQuery({
         queryKey: ['orders', user?.id, isAdmin],
-        queryFn: () => isAdmin ? orderService.getAllAdmin() : orderService.getAll(),
+        queryFn: async () => {
+            const res = isAdmin ? await orderService.getAllAdmin() : await orderService.getAll();
+            return Array.isArray(res) ? { orders: res, total: res.length } : res;
+        },
         staleTime: 30_000,
         refetchInterval: 30_000,
         refetchIntervalInBackground: true,
@@ -36,7 +39,10 @@ export const useVendorOrders = () => {
     const { token, isAuthenticated } = useAuthStore();
     const { data, isLoading: loading, error, isFetching, refetch } = useQuery({
         queryKey: ['vendor-orders'],
-        queryFn: () => orderService.getVendorOrders(),
+        queryFn: async () => {
+            const res = await orderService.getVendorOrders();
+            return Array.isArray(res) ? { orders: res, total: res.length } : res;
+        },
         staleTime: 30_000,
         enabled: !!token && isAuthenticated,
     });

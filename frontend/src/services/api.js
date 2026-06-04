@@ -80,7 +80,7 @@ api.interceptors.response.use(
                         return Promise.reject(error);
                     }
 
-                    // 🔇 OPTIMISATION - ALIBABA STYLE :
+                    // 🔇 OPTIMISATION - BCA STYLE :
                     // Si c'est une requête d'arrière-plan (polling/badging), on ne déclenche pas de refresh agressif
                     // pour éviter de spammer le serveur si la session est vraiment KO.
                     if (config._bg) {
@@ -88,12 +88,11 @@ api.interceptors.response.use(
                         return Promise.reject(error);
                     }
 
-                    const PUBLIC_ROUTES = ['/', '/login', '/register', '/marketplace', '/faq', '/about', '/contact', '/vendors'];
+                    const PUBLIC_ROUTES = ['/', '/login', '/register', '/marketplace', '/catalog', '/search', '/faq', '/about', '/contact', '/vendors', '/terms', '/privacy', '/help', '/education', '/tracking'];
                     const isPublicRoute = PUBLIC_ROUTES.includes(window.location.pathname)
                         || window.location.pathname.startsWith('/shop/')
-                        || window.location.pathname.startsWith('/store/');
-
-                    if (isPublicRoute) break;
+                        || window.location.pathname.startsWith('/store/')
+                        || window.location.pathname.startsWith('/product/');
 
                     // ✅ Si un refresh est déjà en cours, mettre en queue
                     if (isRefreshing) {
@@ -147,16 +146,17 @@ api.interceptors.response.use(
                         processQueue(refreshError, null);
                         useAuthStore.getState().clearAuth();
                         
-                        // Une seule notification de session expirée
-                        if (!window.sessionExpiredNotified) {
-                            toast.error('Session expirée. Reconnexion requise.');
-                            window.sessionExpiredNotified = true;
+                        // On ne notifie et ne redirige que si on est sur une route privée
+                        if (!isPublicRoute) {
+                            if (!window.sessionExpiredNotified) {
+                                toast.error('Session expirée. Reconnexion requise.');
+                                window.sessionExpiredNotified = true;
+                            }
+                            
+                            setTimeout(() => {
+                                window.location.href = '/login';
+                            }, 500);
                         }
-                        
-                        // Utilisons un setTimeout pour laisser la pile d'exécution se vider
-                        setTimeout(() => {
-                            window.location.href = '/login';
-                        }, 500);
                         
                         return Promise.reject(refreshError);
                     }
@@ -185,11 +185,13 @@ api.interceptors.response.use(
                     break;
             }
         } else if (error.request) {
-            // 🔇 UX : On ne montre un toast de connexion que si ce n'est pas une requête d'arrière-plan.
-            if (!config._bg) {
+            const isBackground = config?._bg;
+            if (!isBackground) {
                 toast.error("Problème de connexion réseau. Veuillez vérifier votre accès internet.");
             }
-            console.warn('Requête API sans réponse (réseau/CORS):', error.config?.url);
+            if (!isBackground) {
+                console.warn('Requête API sans réponse (réseau/CORS):', error.config?.url);
+            }
         }
 
         return Promise.reject(error);

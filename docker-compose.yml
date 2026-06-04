@@ -57,7 +57,7 @@ services:
       context: ./frontend
       args:
         - VITE_API_URL=http://localhost:5000/api
-        - VITE_SOCKET_URL=http://localhost:5000
+        - VITE_SOCKET_URL=http://localhost:5001
     container_name: bca_frontend
     ports:
       - "80:80"

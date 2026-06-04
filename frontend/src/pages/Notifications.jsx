@@ -129,9 +129,10 @@ const Notifications = () => {
                                                 <h3 className="font-black text-sm text-foreground uppercase tracking-tight">
                                                     {notification.title}
                                                 </h3>
-                                                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                                                    {notification.message}
-                                                </p>
+                                                <p
+                                                    className="text-xs text-muted-foreground mt-1 leading-relaxed"
+                                                    dangerouslySetInnerHTML={{ __html: notification.message }}
+                                                />
                                             </div>
                                             {!notification.read && (
                                                 <div className="size-2 rounded-full bg-primary shrink-0 mt-1.5 animate-pulse" />

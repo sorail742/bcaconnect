@@ -101,8 +101,26 @@ const storeController = {
 
     getAll: async (req, res, next) => {
         try {
+            const { search, category, verified } = req.query;
+            const whereClause = { statut: 'actif' };
+
+            if (search) {
+                whereClause[Op.or] = [
+                    { nom_boutique: { [Op.iLike]: `%${search}%` } },
+                    { description: { [Op.iLike]: `%${search}%` } }
+                ];
+            }
+
+            if (category && category !== 'all') {
+                whereClause.categorie_principale = category;
+            }
+
+            if (verified === 'true') {
+                whereClause.is_verified = true;
+            }
+
             const stores = await Store.findAll({
-                where: { statut: 'actif' },
+                where: whereClause,
                 include: [
                     { model: User, attributes: ['nom_complet'] },
                     { 

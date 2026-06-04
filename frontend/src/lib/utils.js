@@ -31,13 +31,19 @@ export const getImageUrl = (url, keyword = 'default') => {
         return mappedImage;
     }
     
-    if (url.startsWith('http')) return url;
+    // Si l'URL absolue provient de la base de données avec l'ancien port 5000, on corrige dynamiquement
+    let processedUrl = url;
+    if (processedUrl.startsWith('http://localhost:5000/')) {
+        processedUrl = processedUrl.replace('http://localhost:5000/', 'http://localhost:5001/');
+    }
+
+    if (processedUrl.startsWith('http')) return processedUrl;
     
     // On récupère l'URL de base du serveur
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
     const serverUrl = apiUrl.replace('/api', '');
     
     // S'assurer que le chemin pointe vers /uploads/
-    const cleanPath = url.startsWith('/uploads') ? url : `/uploads/${url.replace(/^\//, '')}`;
+    const cleanPath = processedUrl.startsWith('/uploads') ? processedUrl : `/uploads/${processedUrl.replace(/^\//, '')}`;
     return `${serverUrl}${cleanPath.startsWith('/') ? '' : '/'}${cleanPath}`;
 };

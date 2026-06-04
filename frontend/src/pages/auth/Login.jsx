@@ -197,6 +197,7 @@ const Login = () => {
                                         <input
                                             type="email"
                                             required
+                                            autoComplete="username"
                                             value={email}
                                             onChange={(e) => handleChange('email', e.target.value)}
                                             placeholder="votre@email.com"
@@ -221,6 +222,7 @@ const Login = () => {
                                         <input
                                             type={showPassword ? 'text' : 'password'}
                                             required
+                                            autoComplete="current-password"
                                             value={password}
                                             onChange={(e) => handleChange('password', e.target.value)}
                                             placeholder="••••••••"
@@ -334,7 +336,7 @@ const Login = () => {
                         />
                     </AnimatePresence>
                     {/* Immersive Dark Gradient Overlay with High Contrast */}
-                    <div className="absolute inset-0 bg-black/50 lg:bg-[#0a0f1c]/80 flex flex-col justify-end backdrop-blur-[1px] z-10" />
+                    <div className="absolute inset-0 bg-black/50 lg:bg-[#0a0f1c]/80 flex flex-col justify-end backdrop-blur-[1px] z-10 pointer-events-none" />
                 </div>
 
                 {/* 2. Foreground Layer (Fixed Static Content) */}

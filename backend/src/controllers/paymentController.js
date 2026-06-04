@@ -1,166 +1,418 @@
-const { Transaction, Wallet, Notification, sequelize } = require('../models');
+const { Transaction, Wallet, Notification, Order, sequelize } = require('../models');
+
+const { Op } = require('sequelize');
+
 const { v4: uuidv4 } = require('uuid');
 
-const paymentController = {
-    // Simulation de détection de fraude par IA
-    checkFraudIA: async (user_id, montant) => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+const paymentProviderService = require('../services/paymentProviderService');
 
-        try {
-            const wallet = await Wallet.findOne({ where: { user_id } });
-            if (!wallet) return false;
+const escrowService = require('../services/escrowService');
 
-            const recentTransactions = await Transaction.count({
-                where: {
-                    portefeuille_id: wallet.id,
-                    createdAt: { [require('sequelize').Op.gte]: today },
-                    statut: 'complete'
-                }
-            });
+const catchAsync = require('../utils/catchAsync');
 
-            // Seuil : montant > 5 000 000 GNF OU plus de 10 transactions dans la journée
-            if (parseFloat(montant || 0) > 5000000 || recentTransactions > 10) {
-                return true;
-            }
-            return false;
-        } catch (error) {
-            console.error('Erreur checkFraudIA:', error);
-            return false;
+const AppError = require('../utils/AppError');
+
+
+
+const checkFraudIA = async (user_id, montant) => {
+
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+
+
+
+    const wallet = await Wallet.findOne({ where: { user_id } });
+
+    if (!wallet) return false;
+
+
+
+    const recentTransactions = await Transaction.count({
+
+        where: {
+
+            portefeuille_id: wallet.id,
+
+            created_at: { [Op.gte]: today },
+
+            statut: 'complete'
+
         }
-    },
 
-    // 1. Initier un dépôt (Simulation Orange Money / Wave)
-    initiateDeposit: async (req, res, next) => {
-        try {
-            const montant = req.body.montant || req.body.amount;
-            const moyen_paiement = req.body.moyen_paiement || req.body.method || 'unknown';
-            const user_id = req.user.id;
+    });
 
-            if (!montant) {
-                return res.status(400).json({ message: "Le montant est requis." });
-            }
 
-            // Vérifier la fraude via IA
-            const isSuspect = await paymentController.checkFraudIA(user_id, montant);
 
-            // Récupérer le portefeuille de l'utilisateur
-            const wallet = await Wallet.findOne({ where: { user_id } });
-            if (!wallet) {
-                return res.status(404).json({ message: "Portefeuille non trouvé." });
-            }
+    return parseFloat(montant || 0) > 5000000 || recentTransactions > 10;
 
-            // Créer une transaction en attente
-            const transaction = await Transaction.create({
-                portefeuille_id: wallet.id,
-                montant: parseFloat(montant),
-                type_transaction: 'depot',
-                statut: 'en_attente',
-                reference_externe: `PAY-${uuidv4().slice(0, 8)}`,
-                ia_suspect: isSuspect,
-                metadata: { moyen_paiement }
-            });
+};
 
-            res.status(201).json({
-                message: isSuspect ? "Transaction initiée (Vérification de sécurité en cours)" : "Transaction initiée",
-                payment_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment/simulate/${transaction.id}`,
-                transaction_id: transaction.id,
-                is_suspect: isSuspect
-            });
-        } catch (error) {
-            console.error('🔴 [PAYMENT ERROR] detail:', error);
-            next(error);
+
+
+const resolveOrderId = (body) => body.order_id || body.commande_id;
+
+
+
+exports.initiateDeposit = catchAsync(async (req, res, next) => {
+
+    const montant = req.body.montant || req.body.amount;
+
+    const moyen_paiement = req.body.moyen_paiement || req.body.method || req.body.methode_paiement || 'mobile_money';
+
+    const orderId = resolveOrderId(req.body);
+
+
+
+    if (!montant || parseFloat(montant) <= 0) {
+
+        return next(new AppError('Le montant est requis et doit être positif.', 400));
+
+    }
+
+
+
+    const wallet = await Wallet.findOne({ where: { user_id: req.user.id } });
+
+    if (!wallet) return next(new AppError('Portefeuille non trouvé.', 404));
+
+
+
+    let order = null;
+
+    if (orderId) {
+
+        order = await Order.findOne({ where: { id: orderId, utilisateur_id: req.user.id } });
+
+        if (!order) return next(new AppError('Commande introuvable.', 404));
+
+        if (order.statut !== 'en_attente_paiement') {
+
+            return next(new AppError('Cette commande ne peut plus être payée.', 400));
+
         }
-    },
 
-    // 2. Webhook de confirmation (Appelé par l'agrégateur)
-    handleWebhook: async (req, res, next) => {
-        const t = await sequelize.transaction();
-        try {
-            const { transaction_id, status } = req.body;
+        if (Math.abs(parseFloat(montant) - parseFloat(order.total_ttc)) > 0.01) {
 
-            const transaction = await Transaction.findByPk(transaction_id, { transaction: t });
+            return next(new AppError('Le montant ne correspond pas au total de la commande.', 400));
 
-            if (!transaction || transaction.statut !== 'en_attente') {
-                await t.rollback();
-                return res.status(400).json({ message: "Transaction invalide ou déjà traitée." });
-            }
+        }
 
-            if (status === 'success') {
-                transaction.statut = 'complete';
-                await transaction.save({ transaction: t });
+    }
 
-                // Créditer le portefeuille
-                const wallet = await Wallet.findByPk(transaction.portefeuille_id, { transaction: t });
-                wallet.solde_virtuel = parseFloat(wallet.solde_virtuel) + parseFloat(transaction.montant);
-                await wallet.save({ transaction: t });
 
-                await t.commit();
 
-                // ⚡ NOTIFICATION TEMPS RÉEL
-                const io = req.app.get('socketio');
-                if (io) {
-                    const paymentNotif = await Notification.create({
-                        utilisateur_id: wallet.user_id,
-                        titre: "Recharge réussie !",
-                        message: `Votre portefeuille BCA a été crédité de <span class="font-black text-emerald-600">${parseFloat(transaction.montant).toLocaleString('fr-FR')} GNF</span>.`,
-                        type: 'payment'
-                    });
-                    io.to(wallet.user_id).emit('notification_received', paymentNotif);
-                }
+    const isSuspect = await checkFraudIA(req.user.id, montant);
 
-                return res.json({ message: "Paiement confirmé et portefeuille crédité." });
-            } else {
-                transaction.statut = 'echoue';
-                await transaction.save({ transaction: t });
-                await t.commit();
-                return res.json({ message: "Paiement échoué." });
-            }
-        } catch (error) {
+    const paymentType = orderId ? 'order_payment' : 'wallet_deposit';
+
+
+
+    const transaction = await Transaction.create({
+
+        portefeuille_id: wallet.id,
+
+        commande_id: orderId || null,
+
+        montant: parseFloat(montant),
+
+        type_transaction: orderId ? 'achat_produit' : 'depot',
+
+        statut: 'en_attente',
+
+        reference_externe: `PAY-${uuidv4().slice(0, 8)}`,
+
+        ia_suspect: isSuspect,
+
+        metadata: {
+
+            moyen_paiement,
+
+            provider: paymentProviderService.isConfigured() ? 'cinetpay' : 'simulation',
+
+            type: paymentType,
+
+            commande_id: orderId || undefined
+
+        }
+
+    });
+
+
+
+    const description = orderId
+
+        ? `Commande BCA #${orderId.slice(0, 8)}`
+
+        : 'Recharge Portefeuille BCA';
+
+
+
+    const payment_url = await paymentProviderService.generatePaymentUrl(
+
+        transaction.id,
+
+        parseFloat(montant),
+
+        description,
+
+        req.user.telephone
+
+    );
+
+
+
+    res.status(201).json({
+
+        message: isSuspect ? 'Transaction initiée (vérification de sécurité en cours)' : 'Transaction initiée',
+
+        payment_url,
+
+        transaction_id: transaction.id,
+
+        order_id: orderId || null,
+
+        is_suspect: isSuspect,
+
+        provider: paymentProviderService.isConfigured() ? 'cinetpay' : 'simulation'
+
+    });
+
+});
+
+
+
+const finalizeSuccessfulPayment = async (transaction, req, t) => {
+
+    const orderId = transaction.commande_id || transaction.metadata?.commande_id;
+
+    const isOrderPayment = transaction.metadata?.type === 'order_payment' || !!orderId;
+
+
+
+    if (isOrderPayment && orderId) {
+
+        const result = await escrowService.confirmOrderPayment(orderId, t);
+
+        transaction.statut = 'complete';
+
+        await transaction.save({ transaction: t });
+
+
+
+        const io = req.app.get('socketio');
+
+        if (io && result.order) {
+
+            const orderNotif = await Notification.create({
+
+                utilisateur_id: result.order.utilisateur_id,
+
+                titre: 'Paiement confirmé !',
+
+                message: `Votre commande <span class="font-black text-primary">#${orderId.slice(0, 8)}</span> est payée. Le séquestre vendeur est activé.`,
+
+                type: 'order'
+
+            });
+
+            io.to(result.order.utilisateur_id).emit('notification_received', orderNotif);
+
+        }
+
+
+
+        return { kind: 'order', orderId, result };
+
+    }
+
+
+
+    transaction.statut = 'complete';
+
+    await transaction.save({ transaction: t });
+
+
+
+    const wallet = await Wallet.findByPk(transaction.portefeuille_id, { transaction: t, lock: t.LOCK.UPDATE });
+
+    wallet.solde_virtuel = parseFloat(wallet.solde_virtuel) + parseFloat(transaction.montant);
+
+    await wallet.save({ transaction: t });
+
+
+
+    const io = req.app.get('socketio');
+
+    if (io) {
+
+        const paymentNotif = await Notification.create({
+
+            utilisateur_id: wallet.user_id,
+
+            titre: 'Recharge réussie !',
+
+            message: `Votre portefeuille BCA a été crédité de <span class="font-black text-emerald-600">${parseFloat(transaction.montant).toLocaleString('fr-FR')} GNF</span>.`,
+
+            type: 'payment'
+
+        });
+
+        io.to(wallet.user_id).emit('notification_received', paymentNotif);
+
+    }
+
+
+
+    return { kind: 'wallet', wallet };
+
+};
+
+
+
+exports.handleWebhook = catchAsync(async (req, res, next) => {
+
+    if (!paymentProviderService.verifyWebhookSignature(req)) {
+
+        return next(new AppError('Signature webhook non autorisée.', 403));
+
+    }
+
+
+
+    const t = await sequelize.transaction();
+
+    try {
+
+        const transaction_id = req.body.transaction_id || req.body.cpm_trans_id;
+
+        const status = req.body.status || (req.body.cpm_result === '00' ? 'success' : 'failed');
+
+
+
+        const transaction = await Transaction.findByPk(transaction_id, { transaction: t, lock: t.LOCK.UPDATE });
+
+
+
+        if (!transaction || transaction.statut !== 'en_attente') {
+
             await t.rollback();
-            next(error);
+
+            return next(new AppError('Transaction invalide ou déjà traitée.', 400));
+
         }
-    },
 
-    // 3. Simuler un succès (Pour Phase 1 / Tests)
-    captureSimulation: async (req, res, next) => {
-        const t = await sequelize.transaction();
-        try {
-            const { transaction_id } = req.body;
-            const transaction = await Transaction.findByPk(transaction_id, { transaction: t });
 
-            if (!transaction || transaction.statut !== 'en_attente') {
-                await t.rollback();
-                return res.status(400).json({ message: "Transaction invalide." });
+
+        if (status === 'success') {
+
+            if (paymentProviderService.isConfigured()) {
+
+                const verified = await paymentProviderService.verifyTransactionStatus(transaction_id);
+
+                if (verified && verified !== 'ACCEPTED' && verified !== 'SUCCESS') {
+
+                    await t.rollback();
+
+                    return next(new AppError('Statut de paiement non confirmé par le provider.', 400));
+
+                }
+
             }
 
-            transaction.statut = 'complete';
-            await transaction.save({ transaction: t });
 
-            const wallet = await Wallet.findByPk(transaction.portefeuille_id, { transaction: t });
-            wallet.solde_virtuel = parseFloat(wallet.solde_virtuel) + parseFloat(transaction.montant);
-            await wallet.save({ transaction: t });
+
+            await finalizeSuccessfulPayment(transaction, req, t);
 
             await t.commit();
 
-            // ⚡ NOTIFICATION TEMPS RÉEL
-            const io = req.app.get('socketio');
-            if (io) {
-                const simNotif = await Notification.create({
-                    utilisateur_id: wallet.user_id,
-                    titre: "Compte crédité (Sim)",
-                    message: `Simulation réussie : <span class="font-black text-emerald-600">${parseFloat(transaction.montant).toLocaleString('fr-FR')} GNF</span> ajoutés.`,
-                    type: 'payment'
-                });
-                io.to(wallet.user_id).emit('notification_received', simNotif);
-            }
+            return res.json({ message: 'Paiement confirmé.' });
 
-            res.json({ message: "Recharge réussie (Simulation)", solde: wallet.solde_virtuel });
-        } catch (error) {
-            await t.rollback();
-            next(error);
         }
-    }
-};
 
-module.exports = paymentController;
+
+
+        transaction.statut = 'echoue';
+
+        await transaction.save({ transaction: t });
+
+        await t.commit();
+
+        return res.json({ message: 'Paiement échoué.' });
+
+    } catch (error) {
+
+        await t.rollback();
+
+        next(error);
+
+    }
+
+});
+
+
+
+exports.captureSimulation = catchAsync(async (req, res, next) => {
+
+    if (process.env.NODE_ENV === 'production' && paymentProviderService.isConfigured()) {
+
+        return next(new AppError('Simulation désactivée en production.', 403));
+
+    }
+
+
+
+    const t = await sequelize.transaction();
+
+    try {
+
+        const { transaction_id } = req.body;
+
+        const transaction = await Transaction.findByPk(transaction_id, { transaction: t, lock: t.LOCK.UPDATE });
+
+
+
+        if (!transaction || transaction.statut !== 'en_attente') {
+
+            await t.rollback();
+
+            return next(new AppError('Transaction invalide.', 400));
+
+        }
+
+
+
+        const outcome = await finalizeSuccessfulPayment(transaction, req, t);
+
+        await t.commit();
+
+
+
+        if (outcome.kind === 'order') {
+
+            return res.json({
+
+                message: 'Paiement commande confirmé (Simulation)',
+
+                order_id: outcome.orderId,
+
+                statut: 'payé'
+
+            });
+
+        }
+
+
+
+        res.json({ message: 'Recharge réussie (Simulation)', solde: outcome.wallet.solde_virtuel });
+
+    } catch (error) {
+
+        await t.rollback();
+
+        next(error);
+
+    }
+
+});
+

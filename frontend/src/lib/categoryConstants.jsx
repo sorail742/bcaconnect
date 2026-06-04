@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from './utils';
 
-export const ALIBABA_ICONS = {
+export const BCA_ICONS = {
     star: (props) => (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={cn("size-[22px] shrink-0 text-slate-700", props?.className)} {...props}>
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -219,74 +219,74 @@ export const ALIBABA_ICONS = {
     )
 };
 
-export const ALIBABA_CATEGORIES = [
-    { id: 'cat-1', nom: 'Vêtements & Accessoires', icon: ALIBABA_ICONS.dress, color: 'bg-white text-slate-800', filter: 'Vêtements' },
-    { id: 'cat-2', nom: 'Électronique grand public', icon: ALIBABA_ICONS.headset, color: 'bg-white text-slate-800', filter: 'Electronique' },
-    { id: 'cat-3', nom: 'Maison & Jardin', icon: ALIBABA_ICONS.home, color: 'bg-white text-slate-800', filter: 'Maison' },
-    { id: 'cat-4', nom: 'Sports & Loisirs', icon: ALIBABA_ICONS.sports, color: 'bg-white text-slate-800', filter: 'Sport' },
-    { id: 'cat-5', nom: 'Bijoux, Lunettes & Montres', icon: ALIBABA_ICONS.diamond, color: 'bg-white text-slate-800', filter: 'Bijoux' },
-    { id: 'cat-6', nom: "Tenues de sport et vêtements d'extérieur", icon: ALIBABA_ICONS.tshirt, color: 'bg-white text-slate-800', filter: 'Sport' },
-    { id: 'cat-7', nom: 'Produits de beauté', icon: ALIBABA_ICONS.beauty, color: 'bg-white text-slate-800', filter: 'Beauté' },
+export const BCA_CATEGORIES = [
+    { id: 'cat-1', nom: 'Vêtements & Accessoires', icon: BCA_ICONS.dress, color: 'bg-white text-slate-800', filter: 'Vêtements' },
+    { id: 'cat-2', nom: 'Électronique grand public', icon: BCA_ICONS.headset, color: 'bg-white text-slate-800', filter: 'Electronique' },
+    { id: 'cat-3', nom: 'Maison & Jardin', icon: BCA_ICONS.home, color: 'bg-white text-slate-800', filter: 'Maison' },
+    { id: 'cat-4', nom: 'Sports & Loisirs', icon: BCA_ICONS.sports, color: 'bg-white text-slate-800', filter: 'Sport' },
+    { id: 'cat-5', nom: 'Bijoux, Lunettes & Montres', icon: BCA_ICONS.diamond, color: 'bg-white text-slate-800', filter: 'Bijoux' },
+    { id: 'cat-6', nom: "Tenues de sport et vêtements d'extérieur", icon: BCA_ICONS.tshirt, color: 'bg-white text-slate-800', filter: 'Sport' },
+    { id: 'cat-7', nom: 'Produits de beauté', icon: BCA_ICONS.beauty, color: 'bg-white text-slate-800', filter: 'Beauté' },
 
     // Nouveaux ajouts - Image 2
-    { id: 'cat-8', nom: 'Équipements & Fournitures Électriques', icon: ALIBABA_ICONS.plug, color: 'bg-white text-slate-800', filter: 'Équipement' },
-    { id: 'cat-9', nom: 'Sûreté & sécurité', icon: ALIBABA_ICONS.security, color: 'bg-white text-slate-800', filter: 'Sécurité' },
-    { id: 'cat-10', nom: 'Manutention', icon: ALIBABA_ICONS.forklift, color: 'bg-white text-slate-800', filter: 'Manutention' },
-    { id: 'cat-11', nom: 'Instrument & Équipement de test', icon: ALIBABA_ICONS.test, color: 'bg-white text-slate-800', filter: 'Équipement' },
-    { id: 'cat-12', nom: "Transmission d'énergie", icon: ALIBABA_ICONS.energy, color: 'bg-white text-slate-800', filter: 'Énergie' },
-    { id: 'cat-13', nom: 'Composants électroniques', icon: ALIBABA_ICONS.microchip, color: 'bg-white text-slate-800', filter: 'Électronique' },
-    { id: 'cat-14', nom: 'Véhicules et transport', icon: ALIBABA_ICONS.truck, color: 'bg-white text-slate-800', filter: 'Véhicule' },
-    { id: 'cat-15', nom: 'Agriculture, Aliments & Boissons', icon: ALIBABA_ICONS.agriculture, color: 'bg-white text-slate-800', filter: 'Agriculture' },
-    { id: 'cat-16', nom: 'Matières premières', icon: ALIBABA_ICONS.materials, color: 'bg-white text-slate-800', filter: 'Matériaux' },
-    { id: 'cat-17', nom: 'Services de fabrication', icon: ALIBABA_ICONS.factory, color: 'bg-white text-slate-800', filter: 'Service' },
-    { id: 'cat-18', nom: 'Service', icon: ALIBABA_ICONS.server, color: 'bg-white text-slate-800', filter: 'Service' },
+    { id: 'cat-8', nom: 'Équipements & Fournitures Électriques', icon: BCA_ICONS.plug, color: 'bg-white text-slate-800', filter: 'Équipement' },
+    { id: 'cat-9', nom: 'Sûreté & sécurité', icon: BCA_ICONS.security, color: 'bg-white text-slate-800', filter: 'Sécurité' },
+    { id: 'cat-10', nom: 'Manutention', icon: BCA_ICONS.forklift, color: 'bg-white text-slate-800', filter: 'Manutention' },
+    { id: 'cat-11', nom: 'Instrument & Équipement de test', icon: BCA_ICONS.test, color: 'bg-white text-slate-800', filter: 'Équipement' },
+    { id: 'cat-12', nom: "Transmission d'énergie", icon: BCA_ICONS.energy, color: 'bg-white text-slate-800', filter: 'Énergie' },
+    { id: 'cat-13', nom: 'Composants électroniques', icon: BCA_ICONS.microchip, color: 'bg-white text-slate-800', filter: 'Électronique' },
+    { id: 'cat-14', nom: 'Véhicules et transport', icon: BCA_ICONS.truck, color: 'bg-white text-slate-800', filter: 'Véhicule' },
+    { id: 'cat-15', nom: 'Agriculture, Aliments & Boissons', icon: BCA_ICONS.agriculture, color: 'bg-white text-slate-800', filter: 'Agriculture' },
+    { id: 'cat-16', nom: 'Matières premières', icon: BCA_ICONS.materials, color: 'bg-white text-slate-800', filter: 'Matériaux' },
+    { id: 'cat-17', nom: 'Services de fabrication', icon: BCA_ICONS.factory, color: 'bg-white text-slate-800', filter: 'Service' },
+    { id: 'cat-18', nom: 'Service', icon: BCA_ICONS.server, color: 'bg-white text-slate-800', filter: 'Service' },
 
     // Nouveaux ajouts - Image 3
-    { id: 'cat-19', nom: 'Chaussures & Accessoires', icon: ALIBABA_ICONS.shoe, color: 'bg-white text-slate-800', filter: 'Chaussures' },
-    { id: 'cat-20', nom: 'Bagages, Sacs, Étuis', icon: ALIBABA_ICONS.bag, color: 'bg-white text-slate-800', filter: 'Bagages' },
-    { id: 'cat-21', nom: 'Emballage & Impression', icon: ALIBABA_ICONS.box, color: 'bg-white text-slate-800', filter: 'Emballage' },
-    { id: 'cat-22', nom: 'Parents, Enfants & Jouets', icon: ALIBABA_ICONS.toy, color: 'bg-white text-slate-800', filter: 'Jouets' },
-    { id: 'cat-23', nom: 'Hygiène perso & Ménage', icon: ALIBABA_ICONS.hygiene, color: 'bg-white text-slate-800', filter: 'Hygiène' },
-    { id: 'cat-24', nom: 'Médical & Santé', icon: ALIBABA_ICONS.medical, color: 'bg-white text-slate-800', filter: 'Santé' },
-    { id: 'cat-25', nom: 'Cadeaux & Artisanat', icon: ALIBABA_ICONS.gift, color: 'bg-white text-slate-800', filter: 'Cadeaux' },
-    { id: 'cat-26', nom: 'Animalerie', icon: ALIBABA_ICONS.paw, color: 'bg-white text-slate-800', filter: 'Animalerie' },
-    { id: 'cat-27', nom: 'Fournitures de bureau', icon: ALIBABA_ICONS.pen, color: 'bg-white text-slate-800', filter: 'Bureau' },
+    { id: 'cat-19', nom: 'Chaussures & Accessoires', icon: BCA_ICONS.shoe, color: 'bg-white text-slate-800', filter: 'Chaussures' },
+    { id: 'cat-20', nom: 'Bagages, Sacs, Étuis', icon: BCA_ICONS.bag, color: 'bg-white text-slate-800', filter: 'Bagages' },
+    { id: 'cat-21', nom: 'Emballage & Impression', icon: BCA_ICONS.box, color: 'bg-white text-slate-800', filter: 'Emballage' },
+    { id: 'cat-22', nom: 'Parents, Enfants & Jouets', icon: BCA_ICONS.toy, color: 'bg-white text-slate-800', filter: 'Jouets' },
+    { id: 'cat-23', nom: 'Hygiène perso & Ménage', icon: BCA_ICONS.hygiene, color: 'bg-white text-slate-800', filter: 'Hygiène' },
+    { id: 'cat-24', nom: 'Médical & Santé', icon: BCA_ICONS.medical, color: 'bg-white text-slate-800', filter: 'Santé' },
+    { id: 'cat-25', nom: 'Cadeaux & Artisanat', icon: BCA_ICONS.gift, color: 'bg-white text-slate-800', filter: 'Cadeaux' },
+    { id: 'cat-26', nom: 'Animalerie', icon: BCA_ICONS.paw, color: 'bg-white text-slate-800', filter: 'Animalerie' },
+    { id: 'cat-27', nom: 'Fournitures de bureau', icon: BCA_ICONS.pen, color: 'bg-white text-slate-800', filter: 'Bureau' },
 
     // Nouveaux ajouts - Image 4
-    { id: 'cat-28', nom: 'Machines industrielles', icon: ALIBABA_ICONS.factory, color: 'bg-white text-slate-800', filter: 'Machine' },
-    { id: 'cat-29', nom: 'Équipements et machines commerciaux', icon: ALIBABA_ICONS.commercial, color: 'bg-white text-slate-800', filter: 'Équipement' },
-    { id: 'cat-30', nom: 'Machines pour le Bâtiment & la Construction', icon: ALIBABA_ICONS.excavator, color: 'bg-white text-slate-800', filter: 'Construction' },
-    { id: 'cat-31', nom: 'Construction & Immobilier', icon: ALIBABA_ICONS.construction, color: 'bg-white text-slate-800', filter: 'Construction' },
-    { id: 'cat-32', nom: 'Meubles', icon: ALIBABA_ICONS.cabinet, color: 'bg-white text-slate-800', filter: 'Meubles' },
-    { id: 'cat-33', nom: 'Lumière & Éclairage', icon: ALIBABA_ICONS.lightbulb, color: 'bg-white text-slate-800', filter: 'Lumière' },
-    { id: 'cat-34', nom: 'Électroménager', icon: ALIBABA_ICONS.tv, color: 'bg-white text-slate-800', filter: 'Électroménager' },
-    { id: 'cat-35', nom: 'Fournitures & Outils auto', icon: ALIBABA_ICONS.wheel, color: 'bg-white text-slate-800', filter: 'Auto' },
-    { id: 'cat-36', nom: 'Pièces & Accessoires pour véhicules', icon: ALIBABA_ICONS.wrench, color: 'bg-white text-slate-800', filter: 'Auto' },
-    { id: 'cat-37', nom: 'Bricolage & Quincaillerie', icon: ALIBABA_ICONS.wrench, color: 'bg-white text-slate-800', filter: 'Bricolage' },
-    { id: 'cat-38', nom: 'Énergies renouvelables', icon: ALIBABA_ICONS.solar, color: 'bg-white text-slate-800', filter: 'Énergie' },
+    { id: 'cat-28', nom: 'Machines industrielles', icon: BCA_ICONS.factory, color: 'bg-white text-slate-800', filter: 'Machine' },
+    { id: 'cat-29', nom: 'Équipements et machines commerciaux', icon: BCA_ICONS.commercial, color: 'bg-white text-slate-800', filter: 'Équipement' },
+    { id: 'cat-30', nom: 'Machines pour le Bâtiment & la Construction', icon: BCA_ICONS.excavator, color: 'bg-white text-slate-800', filter: 'Construction' },
+    { id: 'cat-31', nom: 'Construction & Immobilier', icon: BCA_ICONS.construction, color: 'bg-white text-slate-800', filter: 'Construction' },
+    { id: 'cat-32', nom: 'Meubles', icon: BCA_ICONS.cabinet, color: 'bg-white text-slate-800', filter: 'Meubles' },
+    { id: 'cat-33', nom: 'Lumière & Éclairage', icon: BCA_ICONS.lightbulb, color: 'bg-white text-slate-800', filter: 'Lumière' },
+    { id: 'cat-34', nom: 'Électroménager', icon: BCA_ICONS.tv, color: 'bg-white text-slate-800', filter: 'Électroménager' },
+    { id: 'cat-35', nom: 'Fournitures & Outils auto', icon: BCA_ICONS.wheel, color: 'bg-white text-slate-800', filter: 'Auto' },
+    { id: 'cat-36', nom: 'Pièces & Accessoires pour véhicules', icon: BCA_ICONS.wrench, color: 'bg-white text-slate-800', filter: 'Auto' },
+    { id: 'cat-37', nom: 'Bricolage & Quincaillerie', icon: BCA_ICONS.wrench, color: 'bg-white text-slate-800', filter: 'Bricolage' },
+    { id: 'cat-38', nom: 'Énergies renouvelables', icon: BCA_ICONS.solar, color: 'bg-white text-slate-800', filter: 'Énergie' },
 ];
 
 export const getCategoryIconComponent = (name, props = {}) => {
-    if (!name) return ALIBABA_ICONS.default(props);
+    if (!name) return BCA_ICONS.default(props);
     const lowerName = name.toLowerCase();
-    const cat = ALIBABA_CATEGORIES.find(c => lowerName.includes(c.filter.toLowerCase()) || c.nom.toLowerCase().includes(lowerName) || lowerName.includes(c.nom.toLowerCase()));
+    const cat = BCA_CATEGORIES.find(c => lowerName.includes(c.filter.toLowerCase()) || c.nom.toLowerCase().includes(lowerName) || lowerName.includes(c.nom.toLowerCase()));
     if (cat) {
         const IconComp = cat.icon;
         return <IconComp {...props} />;
     }
     
     // Fallbacks based on keywords
-    if (lowerName.includes('vêtement') || lowerName.includes('mode') || lowerName.includes('textile') || lowerName.includes('accessoire') || lowerName.includes('chaussure') || lowerName.includes('bagage')) return ALIBABA_ICONS.dress(props);
-    if (lowerName.includes('électronique') || lowerName.includes('tech') || lowerName.includes('informatique') || lowerName.includes('composant')) return ALIBABA_ICONS.microchip(props);
-    if (lowerName.includes('maison') || lowerName.includes('jardin') || lowerName.includes('construction') || lowerName.includes('immobilier') || lowerName.includes('meuble')) return ALIBABA_ICONS.home(props);
-    if (lowerName.includes('sport') || lowerName.includes('loisir')) return ALIBABA_ICONS.sports(props);
-    if (lowerName.includes('bijou') || lowerName.includes('montre') || lowerName.includes('lunette')) return ALIBABA_ICONS.diamond(props);
-    if (lowerName.includes('beauté') || lowerName.includes('santé') || lowerName.includes('hygiène') || lowerName.includes('médical')) return ALIBABA_ICONS.beauty(props);
-    if (lowerName.includes('auto') || lowerName.includes('véhicule') || lowerName.includes('transport')) return ALIBABA_ICONS.truck(props);
-    if (lowerName.includes('industrie') || lowerName.includes('fabrication') || lowerName.includes('machine')) return ALIBABA_ICONS.factory(props);
-    if (lowerName.includes('agriculture') || lowerName.includes('aliment') || lowerName.includes('boisson')) return ALIBABA_ICONS.agriculture(props);
-    if (lowerName.includes('bricolage') || lowerName.includes('outil')) return ALIBABA_ICONS.wrench(props);
+    if (lowerName.includes('vêtement') || lowerName.includes('mode') || lowerName.includes('textile') || lowerName.includes('accessoire') || lowerName.includes('chaussure') || lowerName.includes('bagage')) return BCA_ICONS.dress(props);
+    if (lowerName.includes('électronique') || lowerName.includes('tech') || lowerName.includes('informatique') || lowerName.includes('composant')) return BCA_ICONS.microchip(props);
+    if (lowerName.includes('maison') || lowerName.includes('jardin') || lowerName.includes('construction') || lowerName.includes('immobilier') || lowerName.includes('meuble')) return BCA_ICONS.home(props);
+    if (lowerName.includes('sport') || lowerName.includes('loisir')) return BCA_ICONS.sports(props);
+    if (lowerName.includes('bijou') || lowerName.includes('montre') || lowerName.includes('lunette')) return BCA_ICONS.diamond(props);
+    if (lowerName.includes('beauté') || lowerName.includes('santé') || lowerName.includes('hygiène') || lowerName.includes('médical')) return BCA_ICONS.beauty(props);
+    if (lowerName.includes('auto') || lowerName.includes('véhicule') || lowerName.includes('transport')) return BCA_ICONS.truck(props);
+    if (lowerName.includes('industrie') || lowerName.includes('fabrication') || lowerName.includes('machine')) return BCA_ICONS.factory(props);
+    if (lowerName.includes('agriculture') || lowerName.includes('aliment') || lowerName.includes('boisson')) return BCA_ICONS.agriculture(props);
+    if (lowerName.includes('bricolage') || lowerName.includes('outil')) return BCA_ICONS.wrench(props);
     
-    return ALIBABA_ICONS.default(props);
+    return BCA_ICONS.default(props);
 };
 

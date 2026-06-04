@@ -16,6 +16,7 @@ const Litige = require('./Litige');
 const Credit = require('./Credit');
 const Echeancier = require('./Echeancier');
 const DeliveryLog = require('./DeliveryLog');
+const DeliveryGroup = require('./DeliveryGroup');
 const Ticket = require('./Ticket');
 const Review = require('./Review');
 const Notification = require('./Notification');
@@ -115,6 +116,9 @@ Echeancier.belongsTo(Credit, { foreignKey: 'credit_id' });
 Order.hasMany(DeliveryLog, { foreignKey: 'order_id', as: 'tracking_history' });
 DeliveryLog.belongsTo(Order, { foreignKey: 'order_id' });
 
+DeliveryGroup.hasMany(Order, { foreignKey: 'delivery_group_id', as: 'commandes' });
+Order.belongsTo(DeliveryGroup, { foreignKey: 'delivery_group_id', as: 'delivery_group' });
+
 // 12. Relations SAV & Feedback (Phase 12)
 User.hasMany(Ticket, { foreignKey: 'utilisateur_id', as: 'tickets' });
 Ticket.belongsTo(User, { foreignKey: 'utilisateur_id' });
@@ -193,6 +197,7 @@ module.exports = {
     Credit,
     Echeancier,
     DeliveryLog,
+    DeliveryGroup,
     Ticket,
     Review,
     Notification,

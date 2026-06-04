@@ -59,6 +59,20 @@ const Store = sequelize.define('Store', {
             this.setDataValue('banner_images', val ? JSON.stringify(val) : null);
         }
     },
+    categorie_principale: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+    },
+    temps_reponse: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        defaultValue: '< 2h',
+    },
+    localisation: {
+        type: DataTypes.STRING(150),
+        allowNull: true,
+        defaultValue: 'Guinée',
+    },
     /* location: {
         type: DataTypes.GEOMETRY('POINT'),
         allowNull: true,

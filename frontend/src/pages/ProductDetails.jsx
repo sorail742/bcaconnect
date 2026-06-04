@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
     ShoppingCart, Star, Minus, Plus, ShieldCheck, Truck, 
@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { cn, getImageUrl } from '../lib/utils';
-import productService from '../services/productService';
 import useCart from '../hooks/useCart';
 import { toast } from 'sonner';
 import { useLanguage } from '../context/LanguageContext';
@@ -16,8 +15,9 @@ import useAuthStore from '../store/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedCounter from '../components/ui/AnimatedCounter';
 import { PageLoader } from '../components/ui/Loader';
-import { ProductRating, ProductPrice } from '../components/produits/ProductCard';
+import { ProductRating, ProductPrice, ProductStockBadge } from '../components/produits/ProductCard';
 import messageService from '../services/messageService';
+import { useProductById } from '../hooks/useDomainData';
 
 const FALLBACK = 'https://images.unsplash.com/photo-1523275319145-80b01958f7a2?auto=format&fit=crop&q=80&w=800';
 
@@ -28,29 +28,11 @@ const ProductDetail = () => {
     const { addToCart } = useCart();
     const { user } = useAuthStore();
     
-    // State
-    const [product, setProduct] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(false);
+    const { data: product, loading, error, refetch } = useProductById(id);
     const [quantity, setQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState('desc');
     const [addedToCart, setAddedToCart] = useState(false);
     const [activeImg, setActiveImg] = useState(0);
-
-    useEffect(() => {
-        const fetchProduct = async () => {
-            try {
-                setLoading(true);
-                const data = await productService.getById(id);
-                setProduct(data);
-            } catch {
-                setError(true);
-            } finally {
-                setLoading(false);
-            }
-        };
-        if (id) fetchProduct();
-    }, [id]);
 
     const isOwner = user && product?.boutique && product.boutique.proprietaire_id === user.id;
 
@@ -105,7 +87,7 @@ const ProductDetail = () => {
         );
     }
 
-    const images = product.images?.length > 0 
+    const images = product.images?.length > 0
         ? product.images.map(img => getImageUrl(img.url_image)) 
         : [getImageUrl(product.image_url || product.image)];
     const price = parseFloat(product.prix_unitaire || 0);
@@ -118,48 +100,62 @@ const ProductDetail = () => {
         { label: 'Garantie BCA', value: 'Protection Premium (12 mois)' },
     ];
 
-    return (
-        <div className="bg-background text-foreground min-h-screen pt-32 pb-24 font-jakarta">
-            <div className="max-w-7xl mx-auto px-6 lg:px-12">
-                
-                {/* 1. Header & Navigation */}
-                <header className="mb-12 space-y-4">
-                    <nav className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
-                        <Link to="/" className="hover:text-primary transition-colors">Accueil</Link>
-                        <ArrowRight className="size-3" />
-                        <Link to="/marketplace" className="hover:text-primary transition-colors">Marketplace</Link>
-                        <ArrowRight className="size-3" />
-                        <span className="text-foreground truncate max-w-[200px]">{product.nom_produit}</span>
-                    </nav>
-                </header>
+    if (product.preferences_ia && typeof product.preferences_ia === 'object' && Object.keys(product.preferences_ia).length > 0) {
+        Object.entries(product.preferences_ia).forEach(([key, value]) => {
+            if (value) {
+                // Format the key to be more readable (e.g., 'boite_vitesse' -> 'Boite Vitesse')
+                const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                specs.push({ label, value: String(value) });
+            }
+        });
+    }
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+    return (
+        <div className="marketplace-bg text-[#333] min-h-screen pt-28 pb-24">
+            <div className="max-w-7xl mx-auto px-4 lg:px-8">
+                
+                {/* Fil d'Ariane style BCA */}
+                <nav className="text-xs text-[#999] mb-4 flex items-center gap-2 flex-wrap">
+                    <Link to="/marketplace" className="hover:text-[#FF6600]">Marketplace</Link>
+                    <span>/</span>
+                    <span className="text-[#666] truncate max-w-[200px]">{product.categorie?.nom_categorie || 'Produits'}</span>
+                    <span>/</span>
+                    <span className="text-[#333] font-medium truncate">{product.nom_produit}</span>
+                </nav>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     
-                    {/* 2. Gallery Section */}
-                    <div className="lg:col-span-7 space-y-6">
-                        <div className="relative aspect-[4/3] rounded-[2.5rem] bg-muted border border-border overflow-hidden group">
+                    {/* Galerie */}
+                    <div className="lg:col-span-7 space-y-3">
+                        <div className="relative aspect-square max-h-[520px] rounded border border-[#e8e8e8] bg-white overflow-hidden group">
                             <AnimatePresence mode="wait">
                                 <motion.img
                                     key={activeImg}
-                                    initial={{ opacity: 0, scale: 1.1 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
                                     src={images[activeImg] || FALLBACK}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                                    className="w-full h-full object-contain p-4 group-hover:scale-[1.02] transition-transform duration-500"
                                 />
                             </AnimatePresence>
-                            <div className="absolute top-6 left-6 flex items-center gap-3">
-                                <div className="px-4 py-2 bg-background/80 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center gap-2 shadow-2xl">
-                                    <ShieldCheck className="size-4 text-primary" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Actif Certifié</span>
-                                </div>
+                            <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                                <span className="bca-badge-trade">
+                                    <ShieldCheck className="size-3" />
+                                    Escrow BCA
+                                </span>
+                                {product.boutique?.is_verified && (
+                                    <span className="bca-badge-verified">
+                                        <Award className="size-3" />
+                                        Fournisseur vérifié
+                                    </span>
+                                )}
                             </div>
                         </div>
 
                         {images.length > 1 && (
-                            <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+                            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                                 {images.map((img, idx) => (
-                                    <button key={idx} onClick={() => setActiveImg(idx)} className={cn("min-w-[100px] aspect-square rounded-2xl border-4 overflow-hidden bg-muted transition-all", activeImg === idx ? "border-primary scale-95" : "border-transparent opacity-40 hover:opacity-100")}>
+                                    <button key={idx} onClick={() => setActiveImg(idx)} className={cn("min-w-[72px] size-[72px] rounded border-2 overflow-hidden bg-white transition-all", activeImg === idx ? "border-[#FF6600]" : "border-[#e8e8e8] opacity-70 hover:opacity-100")}>
                                         <img src={img} className="w-full h-full object-cover" alt="" />
                                     </button>
                                 ))}
@@ -167,84 +163,94 @@ const ProductDetail = () => {
                         )}
                     </div>
 
-                    {/* 3. Info & Buy Box Section */}
-                    <div className="lg:col-span-5 space-y-8 sticky top-32">
-                        <div className="space-y-4">
-                            <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tighter uppercase leading-[0.9]" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                {product.nom_produit}
-                            </h1>
-                            <div className="flex items-center gap-6">
-                                <ProductRating avis={product.avis} />
-                                <div className="h-4 w-px bg-border" />
-                                <span className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">
-                                    Avis Vérifiés ({product.avis?.length || 0})
-                                </span>
+                    {/* Buy box BCA */}
+                    <div className="lg:col-span-5 space-y-4 sticky top-28">
+                        {product.boutique && (
+                            <div className="bca-supplier-strip p-3 flex items-center gap-3">
+                                <div className="size-10 rounded bg-white border border-[#ffd591] flex items-center justify-center text-[#FF6600]">
+                                    <Globe className="size-5" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-[#333] truncate">{product.boutique.nom_boutique}</p>
+                                    <p className="text-[11px] text-[#999]">Guinée · Réponse &lt; 24h</p>
+                                </div>
+                                <button onClick={handleStartChat} className="bca-btn-outline h-8 px-3 text-xs hidden sm:flex items-center gap-1">
+                                    <MessageSquare className="size-3.5" />
+                                    Chat
+                                </button>
                             </div>
-                        </div>
+                        )}
 
-                        <div className="p-8 rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border border-border shadow-2xl space-y-8 relative overflow-hidden">
+                        <div className="bca-card p-5 space-y-5">
+                            <div>
+                                <h1 className="text-xl md:text-2xl font-bold text-[#333] leading-snug">
+                                    {product.nom_produit}
+                                </h1>
+                                <div className="flex items-center gap-4 mt-2">
+                                    <ProductRating avis={product.avis} />
+                                    <ProductStockBadge qty={product.stock_quantite} />
+                                </div>
+                            </div>
+
+                            <div className="py-4 border-y border-[#f0f0f0]">
+                                <ProductPrice price={product.prix_unitaire} size="lg" variant="bca" />
+                                <p className="text-[11px] text-[#999] mt-1">Prix unitaire · Paiement sécurisé escrow</p>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-[#666]">Quantité</span>
+                                <div className="flex items-center border border-[#d9d9d9] rounded">
+                                    <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="size-9 flex items-center justify-center hover:bg-[#fafafa] text-[#666]">
+                                        <Minus className="size-4" />
+                                    </button>
+                                    <span className="w-12 text-center text-sm font-semibold">{quantity}</span>
+                                    <button onClick={() => setQuantity(q => Math.min(product.stock_quantite, q + 1))} className="size-9 flex items-center justify-center hover:bg-[#fafafa] text-[#666]">
+                                        <Plus className="size-4" />
+                                    </button>
+                                </div>
+                            </div>
+
                             <div className="space-y-2">
-                                <ProductPrice price={product.prix_unitaire} size="lg" />
-                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Cotation Temps Réel Marketplace</p>
+                                <button disabled={!inStock || isOwner} onClick={handleAddToCart} className={cn("w-full h-12 rounded font-semibold text-sm flex items-center justify-center gap-2", isOwner ? "bg-[#f5f5f5] text-[#999] cursor-not-allowed" : addedToCart ? "bg-emerald-500 text-white" : "bca-btn-primary")}>
+                                    {addedToCart ? <><CheckCircle2 className="size-5" /> Ajouté au panier</> : <><ShoppingCart className="size-5" /> Ajouter au panier</>}
+                                </button>
+                                <button disabled={!inStock || isOwner} onClick={handleBuyNow} className={cn("w-full h-12 rounded font-semibold text-sm flex items-center justify-center gap-2 border", isOwner ? "border-[#f0f0f0] text-[#999] cursor-not-allowed" : "border-[#FF6600] text-[#FF6600] hover:bg-[#fff7e6]")}>
+                                    <Zap className="size-4" />
+                                    Commander maintenant
+                                </button>
+                                <button onClick={handleStartChat} className="w-full h-10 rounded text-sm font-medium flex items-center justify-center gap-2 text-[#666] hover:text-[#FF6600] sm:hidden">
+                                    <MessageSquare className="size-4" />
+                                    Contacter le fournisseur
+                                </button>
                             </div>
 
-                            <div className="space-y-6">
-                                <div className="flex items-center justify-between p-2 pl-6 bg-muted/50 border border-border rounded-2xl">
-                                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Quantité</span>
-                                    <div className="flex items-center gap-1">
-                                        <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="size-10 flex items-center justify-center rounded-xl bg-background border border-border hover:bg-primary/10 transition-colors">
-                                            <Minus className="size-4" />
-                                        </button>
-                                        <span className="w-12 text-center text-sm font-black text-foreground">{quantity}</span>
-                                        <button onClick={() => setQuantity(q => Math.min(product.stock_quantite, q + 1))} className="size-10 flex items-center justify-center rounded-xl bg-background border border-border hover:bg-primary/10 transition-colors">
-                                            <Plus className="size-4" />
-                                        </button>
-                                    </div>
+                            <div className="grid grid-cols-2 gap-2 pt-2 text-[11px] text-[#666]">
+                                <div className="flex items-center gap-2 p-2 bg-[#fafafa] rounded">
+                                    <Truck className="size-4 text-[#FF6600] shrink-0" />
+                                    <span>Livraison Conakry 24–48h</span>
                                 </div>
-
-                                <div className="grid grid-cols-1 gap-4">
-                                    <button disabled={!inStock || isOwner} onClick={handleAddToCart} className={cn("w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-xl", isOwner ? "bg-rose-100 text-rose-400 cursor-not-allowed" : addedToCart ? "bg-emerald-500 text-white" : "bg-primary text-white shadow-primary/25 hover:scale-[1.02] active:scale-95")}>
-                                        {addedToCart ? <><CheckCircle2 className="size-5" /> Confirmé</> : <><ShoppingCart className="size-5" /> Ajouter au panier</>}
-                                    </button>
-                                    
-                                    <button disabled={!inStock || isOwner} onClick={handleBuyNow} className={cn("w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-xl", isOwner ? "bg-rose-100 text-rose-400 cursor-not-allowed" : "bg-foreground text-background hover:opacity-90")}>
-                                        <Zap className="size-5 fill-current" />
-                                        Achat Instantané
-                                    </button>
-
-                                    <button onClick={handleStartChat} className="w-full h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-3 border-2 border-primary/20 text-primary hover:bg-primary/5 active:scale-95">
-                                        <MessageSquare className="size-5" />
-                                        Discuter en ligne
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4 pt-4 border-t border-border">
-                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-muted/30">
-                                    <Truck className="size-6 text-primary shrink-0" />
-                                    <div className="space-y-1">
-                                        <p className="text-[11px] font-black text-foreground uppercase tracking-tight">Logistique Prioritaire</p>
-                                        <p className="text-xs text-muted-foreground font-medium">Livrable à Conakry en 24h.</p>
-                                    </div>
+                                <div className="flex items-center gap-2 p-2 bg-[#fafafa] rounded">
+                                    <ShieldCheck className="size-4 text-emerald-600 shrink-0" />
+                                    <span>Remboursement litige</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* 4. Specifications & Reviews */}
-                <div className="mt-24 space-y-12">
-                    <div className="flex gap-2 p-1.5 bg-muted rounded-2xl w-fit">
+                {/* Specs & avis */}
+                <div className="mt-10 space-y-6">
+                    <div className="flex gap-0 border-b border-[#e8e8e8]">
                         {[
                             { id: 'desc', label: 'Description' },
-                            { id: 'reviews', label: `Avis Clients (${product.avis?.length || 0})` }
+                            { id: 'reviews', label: `Avis (${product.avis?.length || 0})` }
                         ].map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={cn(
-                                    "px-8 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all",
-                                    activeTab === tab.id ? "bg-background text-foreground shadow-xl" : "text-muted-foreground hover:text-foreground"
+                                    "px-6 py-3 text-sm font-medium border-b-2 -mb-px transition-all",
+                                    activeTab === tab.id ? "border-[#FF6600] text-[#FF6600]" : "border-transparent text-[#666] hover:text-[#333]"
                                 )}
                             >
                                 {tab.label}
@@ -255,22 +261,21 @@ const ProductDetail = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                         <div className="lg:col-span-8">
                             {activeTab === 'desc' ? (
-                                <div className="p-10 rounded-[3rem] bg-muted/30 border border-border space-y-6">
-                                    <div className="flex items-center gap-3 text-primary">
-                                        <Info className="size-5" />
-                                        <h3 className="text-xl font-black uppercase tracking-tighter">Spécifications Opérationnelles</h3>
-                                    </div>
-                                    <p className="text-lg text-muted-foreground font-medium leading-relaxed italic">
-                                        {product.description_longue || product.description}
+                                <div className="bca-card p-6 space-y-4">
+                                    <h3 className="text-base font-bold text-[#333]">Description produit</h3>
+                                    <p className="text-sm text-[#666] leading-relaxed">
+                                        {product.description_longue || product.description || 'Aucune description disponible.'}
                                     </p>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
-                                        {specs.map((spec, i) => (
-                                            <div key={i} className="p-6 rounded-2xl bg-background border border-border flex justify-between items-center">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{spec.label}</span>
-                                                <span className="text-sm font-black text-foreground">{spec.value}</span>
-                                            </div>
-                                        ))}
-                                    </div>
+                                    {specs.length > 0 && (
+                                        <div className="border border-[#f0f0f0] rounded overflow-hidden mt-4">
+                                            {specs.map((spec, i) => (
+                                                <div key={i} className={cn("flex justify-between px-4 py-3 text-sm", i % 2 === 0 ? "bg-[#fafafa]" : "bg-white")}>
+                                                    <span className="text-[#999]">{spec.label}</span>
+                                                    <span className="font-medium text-[#333]">{spec.value}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="space-y-8">
@@ -333,71 +338,63 @@ const ProductDetail = () => {
                             )}
                         </div>
                         
-                        <div className="lg:col-span-4 space-y-6">
-                            {/* Vendor Card (Alibaba Style) */}
-                            <div className="p-8 rounded-[3rem] bg-card border border-border shadow-xl space-y-6">
-                                <div className="flex items-center gap-4">
-                                    <div className="size-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                                        <Globe className="size-8" />
+                        <div className="lg:col-span-4 space-y-4">
+                            <div className="bca-card p-5 space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-12 rounded bg-[#fff7e6] flex items-center justify-center text-[#FF6600]">
+                                        <Globe className="size-6" />
                                     </div>
-                                    <div className="flex-1">
-                                        <h3 className="text-sm font-black uppercase tracking-tight text-foreground truncate">{product.boutique?.nom_boutique}</h3>
-                                        <div className="flex items-center gap-2">
-                                            <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">En ligne</span>
-                                        </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="text-sm font-bold text-[#333] truncate">{product.boutique?.nom_boutique}</h3>
+                                        <span className="text-[11px] text-emerald-600 font-medium">● En ligne</span>
                                     </div>
                                 </div>
-                                
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="p-4 rounded-2xl bg-muted/50 border border-border text-center">
-                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Note</p>
-                                        <p className="text-sm font-black text-foreground">4.9/5.0</p>
+                                <div className="grid grid-cols-2 gap-2 text-center">
+                                    <div className="p-3 bg-[#fafafa] rounded border border-[#f0f0f0]">
+                                        <p className="text-[10px] text-[#999]">Note</p>
+                                        <p className="text-sm font-bold text-[#333]">4.9/5</p>
                                     </div>
-                                    <div className="p-4 rounded-2xl bg-muted/50 border border-border text-center">
-                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Rép.</p>
-                                        <p className="text-sm font-black text-foreground">&lt; 1h</p>
+                                    <div className="p-3 bg-[#fafafa] rounded border border-[#f0f0f0]">
+                                        <p className="text-[10px] text-[#999]">Réponse</p>
+                                        <p className="text-sm font-bold text-[#333]">&lt; 1h</p>
                                     </div>
                                 </div>
-
-                                <button onClick={handleStartChat} className="w-full h-14 rounded-2xl bg-primary text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3">
-                                    <MessageSquare className="size-5" />
-                                    Contacter le Fournisseur
+                                <button onClick={handleStartChat} className="w-full h-10 bca-btn-primary text-sm font-semibold flex items-center justify-center gap-2">
+                                    <MessageSquare className="size-4" />
+                                    Contacter le fournisseur
                                 </button>
-                                
                                 <Link to={`/shop/${product.boutique?.slug}`} className="block">
-                                    <button className="w-full h-14 rounded-2xl border-2 border-border text-foreground font-black text-[10px] uppercase tracking-widest hover:bg-muted transition-all flex items-center justify-center gap-3">
-                                        <Award className="size-5" />
-                                        Visiter la Boutique
+                                    <button className="w-full h-10 bca-btn-outline text-sm font-semibold flex items-center justify-center gap-2">
+                                        <Award className="size-4" />
+                                        Visiter la boutique
                                     </button>
                                 </Link>
                             </div>
 
-                            {/* Trust Badge Card */}
-                            <div className="p-8 rounded-[3rem] bg-emerald-500/5 border border-emerald-500/10 flex flex-col items-center text-center space-y-6">
-                                 <div className="size-16 rounded-[1.5rem] bg-emerald-500 text-white flex items-center justify-center shadow-2xl shadow-emerald-500/20">
-                                    <ShieldCheck className="size-8" />
-                                 </div>
-                                 <div className="space-y-2">
-                                    <h3 className="text-lg font-black uppercase tracking-tighter text-emerald-900 dark:text-emerald-400">Trade Assurance</h3>
-                                    <p className="text-[11px] text-emerald-700/70 dark:text-emerald-500/70 font-medium leading-relaxed italic">
-                                        "Protection intégrale de votre commande, du paiement à la livraison."
+                            <div className="bca-card p-5 flex items-start gap-4 border-l-4 border-l-emerald-500">
+                                <ShieldCheck className="size-8 text-emerald-600 shrink-0" />
+                                <div>
+                                    <h3 className="text-sm font-bold text-[#333]">Trade Assurance BCA</h3>
+                                    <p className="text-xs text-[#666] mt-1 leading-relaxed">
+                                        Votre paiement est bloqué en escrow jusqu&apos;à confirmation de livraison. Remboursement en cas de litige.
                                     </p>
-                                 </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Mobile Bottom Control */}
-            <div className="lg:hidden fixed bottom-6 left-6 right-6 z-50">
-                <div className="p-4 bg-background/80 backdrop-blur-3xl border border-white/10 rounded-[2rem] shadow-2xl flex items-center justify-between gap-6">
-                    <div className="pl-4">
-                        <ProductPrice price={product.prix_unitaire} size="sm" />
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-[#e8e8e8] bg-white p-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+                <div className="flex items-center gap-3">
+                    <div className="shrink-0">
+                        <ProductPrice price={product.prix_unitaire} size="sm" variant="bca" />
                     </div>
-                    <button onClick={handleAddToCart} disabled={!inStock || isOwner} className={cn("flex-1 h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all", isOwner ? "bg-rose-100 text-rose-400" : addedToCart ? "bg-emerald-500 text-white" : "bg-primary text-white shadow-lg shadow-primary/20")}>
-                        {addedToCart ? "AJOUTÉ" : "ACQUÉRIR"}
+                    <button onClick={handleAddToCart} disabled={!inStock || isOwner} className={cn("flex-1 h-11 rounded font-semibold text-sm", isOwner ? "bg-[#f5f5f5] text-[#999]" : addedToCart ? "bg-emerald-500 text-white" : "bca-btn-primary")}>
+                        {addedToCart ? 'Ajouté' : 'Panier'}
+                    </button>
+                    <button onClick={handleBuyNow} disabled={!inStock || isOwner} className="h-11 px-4 bca-btn-outline text-sm font-semibold">
+                        Acheter
                     </button>
                 </div>
             </div>

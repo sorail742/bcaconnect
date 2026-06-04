@@ -8,11 +8,11 @@ const MainLayout = ({ children }) => {
     const dashboardRoutes = [
         '/dashboard', '/messages', '/wallet', '/profile', '/orders', 
         '/notifications', '/settings', '/credits', '/tracking', '/payments',
-        '/vendor', '/admin', '/bank', '/carrier', '/dispute'
+        '/vendor', '/admin', '/bank', '/carrier', '/dispute', '/technician'
     ];
     
-    const hideLayout = ['/login', '/register', '/onboarding', '/forgot-password', '/reset-password'].includes(location.pathname) 
-        || dashboardRoutes.some(route => location.pathname.startsWith(route));
+    const hideLayout = ['/login', '/register', '/onboarding', '/forgot-password', '/reset-password', '/ai-mode'].includes(location.pathname) 
+        || dashboardRoutes.some(route => location.pathname === route || location.pathname.startsWith(route + '/'));
 
     return (
         <div className="relative flex min-h-screen flex-col bg-white dark:bg-background selection:bg-primary/20 selection:text-foreground">

@@ -97,11 +97,10 @@ export const aiService = {
 
     getMarketTrends: async () => {
         try {
-            const response = await api.get('/ai/market-trends');
+            const response = await api.get('/ai/market-trends', { timeout: 8000, _bg: true });
             return response.data;
-        } catch (error) {
-            console.error('Erreur tendances IA:', error);
-            throw error;
+        } catch {
+            return null;
         }
     },
 

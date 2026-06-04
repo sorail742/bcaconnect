@@ -10,7 +10,11 @@ const productService = {
             return await offlineStorage.getProducts();
         }
         try {
-            const response = await api.get('/products', { params });
+        // Nettoyer les paramètres : si categorie_id n'est pas un UUID valide, on le supprime pour éviter l'erreur serveur
+        if (params.categorie_id && !/^[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}$/.test(params.categorie_id)) {
+            delete params.categorie_id;
+        }
+        const response = await api.get('/products', { params, timeout: 15000, _bg: true });
             const data = response.data;
             
             // On cache les produits si on récupère la liste complète sans filtres complexes
@@ -18,10 +22,18 @@ const productService = {
                 offlineStorage.saveProducts(data).catch(err => console.error("Erreur cache produits:", err));
             }
 
+            // Standardize return format so components expecting { products: [] } don't break when it's an array
+            if (Array.isArray(data)) {
+                return { products: data, total: data.length, pages: 1 };
+            }
             return data;
         } catch (error) {
             if (Object.keys(params).length === 0) {
-                return await offlineStorage.getProducts();
+                const cached = await offlineStorage.getProducts();
+                if (cached?.length) return { products: cached, total: cached.length, pages: 1 };
+            }
+            if (!error.response) {
+                return { products: [], total: 0, pages: 0 };
             }
             throw error;
         }
@@ -73,7 +85,9 @@ const productService = {
 
     // ✨ Produits à la une (Landing Page)
     getFeatured: async (limit = 8) => {
-        return await productService.getAll({ featured: true, limit });
+        const response = await productService.getAll({ featured: true, limit });
+        // Make sure it consistently returns an array or an object with products
+        return response;
     }
 };
 

@@ -28,7 +28,7 @@ const User = sequelize.define('User', {
         allowNull: false,
     },
     role: {
-        type: DataTypes.ENUM('admin', 'fournisseur', 'transporteur', 'client', 'banque'),
+        type: DataTypes.ENUM('admin', 'fournisseur', 'transporteur', 'client', 'banque', 'technicien'),
         defaultValue: 'client',
         allowNull: false,
     },
@@ -100,6 +100,26 @@ const User = sequelize.define('User', {
         type: DataTypes.INTEGER,
         defaultValue: 0,
         comment: 'Points de fidélité accumulés par l\'utilisateur',
+    },
+    specialites: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        comment: "Spécialités du technicien (ex: plomberie, électricité)"
+    },
+    numero_agrement: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+        comment: "Numéro d'agrément du technicien (optionnel)"
+    },
+    zone_intervention: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        comment: "Zone d'intervention du technicien"
+    },
+    location: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        comment: 'Dernière position GPS du transporteur { type: Point, coordinates: [lng, lat] }',
     },
 
 }, {

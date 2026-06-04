@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 
 /**
- * Page générique pour les routes en développement (Sleek Alibaba-inspired)
+ * Page générique pour les routes en développement (Sleek BCA-inspired)
  */
 const PAGE_LABELS = {
     '/careers':     { title: 'Carrières',              desc: 'Rejoignez notre équipe et participez à la révolution E-commerce.', icon: Rocket, color: 'from-blue-500 to-cyan-400' },
@@ -68,7 +68,7 @@ export default function ComingSoon() {
     return (
         <div className="min-h-screen bg-slate-900 flex flex-col justify-center relative overflow-hidden font-sans">
             
-            {/* Alibaba Industrial Dark Aesthetic Background */}
+            {/* BCA Industrial Dark Aesthetic Background */}
             <div className="absolute inset-0 z-0">
                 <div className="absolute -top-[20%] -right-[10%] w-[70vw] h-[70vw] rounded-full bg-gradient-to-b from-[#FF6600]/10 to-transparent blur-[150px] opacity-70" />
                 <div className="absolute top-[40%] -left-[20%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-tr from-blue-500/10 to-transparent blur-[120px] opacity-50" />

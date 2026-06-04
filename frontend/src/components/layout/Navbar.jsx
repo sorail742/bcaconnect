@@ -28,6 +28,7 @@ import aiService from '../../services/aiService';
 import { toast } from 'sonner';
 import { ROLES } from '../../constants/roles';
 import AiSourcingModal from '../ui/AiSourcingModal';
+import { BcaMegaMenu } from '../landing/BcaMegaMenu';
 
 // ─── Role-aware dashboard link ────────────────────────────────────────────────
 function getDashboardLink(user) {
@@ -55,44 +56,7 @@ function RoleBadge({ role, t }) {
     );
 }
 
-// Typical Alibaba Sub-items from Screenshot
-const ALIBABA_MOCK_ITEMS = [
-    { name: 'Chemises pour hommes', icon: '👔', badge: 'blue' },
-    { name: 'Des boucles d\'oreilles', icon: '✨', badge: null },
-    { name: 'Ensembles de bijoux', icon: '💍', badge: null },
-    { name: 'Bras', icon: '👚', badge: 'blue' },
-    { name: 'Abaya', icon: '👗', badge: null },
-    { name: 'Jeans pour hommes', icon: '👖', badge: 'blue' },
-    { name: 'Bracelet', icon: '📿', badge: null },
-    { name: 'Sweats à capuche', icon: '🧥', badge: 'orange' },
-    { name: 'T-shirts pour hommes', icon: '👕', badge: 'orange' },
-    { name: 'Caméra', icon: '📷', badge: null },
-    { name: 'Drones', icon: '🚁', badge: 'orange' },
-    { name: 'Robes de mariée', icon: '👰', badge: 'orange' },
-    { name: 'T-shirt', icon: '👕', badge: 'orange' },
-    { name: 'Trottinettes électriques', icon: '🛴', badge: 'orange' },
-];
-
-// Dynamic sub-section generator based on category name
-const getSubSectionsForCategory = (categoryName) => {
-    // If it's the personalized section
-    if (categoryName === 'Catégories pour vous') return ALIBABA_MOCK_ITEMS;
-    
-    // Map existing categories to Alibaba-style sub-items
-    const mapping = {
-        'Mode': ALIBABA_MOCK_ITEMS.filter(i => ['👔', '👗', '👖', '👕', '🧥', '👰'].includes(i.icon)),
-        'Électronique': ALIBABA_MOCK_ITEMS.filter(i => ['📷', '🚁', '🛴', '🎧'].includes(i.icon)),
-        'Bijoux': ALIBABA_MOCK_ITEMS.filter(i => ['💍', '✨', '📿'].includes(i.icon)),
-        'Vêtements': ALIBABA_MOCK_ITEMS.filter(i => ['👔', '👗', '👖', '👕', '🧥'].includes(i.icon)),
-    };
-
-    // Try to find a match in the mapping
-    const match = Object.entries(mapping).find(([k]) => categoryName.toLowerCase().includes(k.toLowerCase()));
-    return match ? match[1] : ALIBABA_MOCK_ITEMS; // Fallback to all items for variety
-};
-
-
-
+// Mega menu sub-items — voir lib/bcaLandingContent.js (utilisé par BcaMegaMenu)
 
 const Navbar = () => {
     const navigate = useNavigate();
@@ -116,15 +80,27 @@ const Navbar = () => {
     const { data: categoriesData } = useCategories();
     const categories = categoriesData || [];
     const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
-    const [activeCategoryId, setActiveCategoryId] = useState(null);
+    const userMenuRef = useRef(null);
+    const headerRef = useRef(null);
     const megaMenuTimeoutRef = useRef(null);
-
+    const [megaMenuTop, setMegaMenuTop] = useState(140);
 
     const { lang, changeLanguage, t } = useLanguage();
     const { theme, toggleTheme } = useTheme();
-    const isDark = theme === 'dark';
-    const userMenuRef = useRef(null);
-    const dashboardLink = getDashboardLink(user);
+const isDark = theme === 'dark';
+    const hideLayout = ['/login', '/register', '/onboarding', '/forgot-password', '/reset-password', '/ai-mode'].includes(location.pathname);
+
+    const getDashboardLink = () => {
+        if (!user) return '/login';
+        switch (user.role) {
+            case 'admin': return '/admin';
+            case 'fournisseur': return '/vendor';
+            case 'transporteur': return '/carrier';
+            case 'banque': return '/bank';
+            default: return '/dashboard';
+        }
+    };
+    const dashboardLink = getDashboardLink();
 
     // ── Scroll shadow ──────────────────────────────────────────────────────
     useEffect(() => {
@@ -159,6 +135,27 @@ const Navbar = () => {
 
     // ── Close mobile menu on route change ─────────────────────────────────
     useEffect(() => { setIsMenuOpen(false); }, [location.pathname]);
+
+    useEffect(() => {
+        const syncMegaTop = () => {
+            if (headerRef.current) {
+                setMegaMenuTop(headerRef.current.getBoundingClientRect().bottom);
+            }
+        };
+        syncMegaTop();
+        window.addEventListener('resize', syncMegaTop);
+        window.addEventListener('scroll', syncMegaTop, { passive: true });
+        return () => {
+            window.removeEventListener('resize', syncMegaTop);
+            window.removeEventListener('scroll', syncMegaTop);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (isMegaMenuOpen && headerRef.current) {
+            setMegaMenuTop(headerRef.current.getBoundingClientRect().bottom);
+        }
+    }, [isMegaMenuOpen]);
 
     // ── Search ────────────────────────────────────────────────────────────
     const handleSearch = (e) => {
@@ -249,10 +246,6 @@ const Navbar = () => {
     const handleMegaMenuOpen = () => {
         if (megaMenuTimeoutRef.current) clearTimeout(megaMenuTimeoutRef.current);
         setIsMegaMenuOpen(true);
-        if (categories.length > 0 && !activeCategoryId) {
-            const topLevel = categories.filter(c => !c.parent_id);
-            if (topLevel.length > 0) setActiveCategoryId(topLevel[0].id);
-        }
     };
 
     const handleMegaMenuClose = () => {
@@ -261,24 +254,14 @@ const Navbar = () => {
         }, 150);
     };
 
-    const topLevelCategories = categories.filter(c => !c.parent_id).slice(0, 10);
-    const activeCategory = activeCategoryId === 'for-you' 
-        ? { id: 'for-you', nom_categorie: t('catForYou') || 'Catégories pour vous', sous_categories: [] }
-        : (categories.find(c => c.id === activeCategoryId) || topLevelCategories[0]);
-        
-    const subItems = activeCategory?.sous_categories?.length > 0 
-        ? activeCategory.sous_categories.map(sc => ({ name: sc.nom_categorie, icon: sc.image_url, badge: null }))
-        : getSubSectionsForCategory(activeCategory?.nom_categorie || 'default');
-
-
-
     return (
-        <header className={cn(
-            "w-full font-sans bg-white/10 backdrop-blur-md border border-white/20 sticky top-0 z-50 transition-shadow duration-300 overflow-x-hidden",
-            isScrolled && "shadow-[0_4px_30px_rgba(0,0,0,0.06)]"
-        )}>
+        <>
+            <header ref={headerRef} className={cn(
+                "w-full font-sans bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-[100] transition-shadow duration-300",
+                isScrolled && "shadow-[0_4px_30px_rgba(0,0,0,0.06)]"
+            )}>
             {/* ── Promotional Banner ───────────────────────────────────────── */}
-            <div className="banner-gradient glass h-10 flex items-center justify-center relative overflow-hidden animate-pulse">
+            <div className="banner-gradient glass h-10 flex items-center justify-center relative overflow-hidden">
                 <div className="flex items-center gap-4 z-10 relative text-white">
                     <span className="font-extrabold text-sm">BCA Work</span>
                     <span className="opacity-40 hidden sm:block">|</span>
@@ -338,7 +321,7 @@ const Navbar = () => {
                         </button>
                     </form>
 
-                    {/* Mode IA Button (Alibaba Style) */}
+                    {/* Mode IA Button (BCA Style) */}
                     <button 
                         onClick={() => setIsAiModalOpen(true)}
                         className="shrink-0 flex items-center gap-2 h-12 px-5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full font-black text-xs uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 active:scale-95 transition-all group"
@@ -515,45 +498,8 @@ const Navbar = () => {
                                                     <Wallet className="size-5 text-emerald-600" />
                                                 </div>
                                                 <div className="flex-1">
-                                                    {(() => {
-                                                        const navItems = [
-                                                            { to: dashboardLink, icon: LayoutDashboard, label: t('dashboard') },
-                                                            { to: '/orders', icon: Package, label: t('myOrders') || 'Mes commandes' },
-                                                            { to: '/wallet', icon: CreditCard, label: t('myWallet') || 'Mon portefeuille' },
-                                                            { to: '/notifications', icon: Bell, label: t('notifications') || 'Notifications', badge: notificationCount },
-                                                            { to: '/profile', icon: Settings, label: t('accountSettings') || 'Paramètres du compte' },
-                                                            { to: '/help', icon: HelpCircle, label: t('helpCenter') || "Centre d'assistance" },
-                                                        ];
-
-                                                        return (
-                                                            <div className="p-3 space-y-0.5">
-                                                                {navItems.map(item => {
-                                                                    const isActive = location.pathname === item.to;
-                                                                    return (
-                                                                        <Link
-                                                                            key={item.to}
-                                                                            to={item.to}
-                                                                            onClick={() => setIsUserMenuOpen(false)}
-                                                                            className={cn(
-                                                                                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all",
-                                                                                isActive ? "bg-foreground/10 text-[#FF6600]" : "text-foreground hover:bg-foreground/5 hover:text-[#FF6600]"
-                                                                            )}
-                                                                        >
-                                                                            <item.icon className={cn("size-4", isActive ? "text-[#FF6600]" : "text-muted-foreground group-hover:text-[#FF6600]")} />
-                                                                            <span className="text-sm font-semibold flex-1">{item.label}</span>
-                                                                            {item.badge && item.badge > 0 && (
-                                                                                <span className="bg-[#FF6600] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full tabular-nums">
-                                                                                    {item.badge}
-                                                                                </span>
-                                                                            )}
-                                                                        </Link>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        );
-                                                    })()}
-                                                    <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">{t('walletBalanceLabel') || "Solde Wallet"}</p>
-                                                    <p className="text-base font-black text-emerald-800 tabular-nums">{walletBalance.toLocaleString(lang === 'FR' ? 'fr-GN' : 'en-US')} GNF</p>
+                                                    <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mb-0.5">{t('walletBalanceLabel') || "Solde Wallet"}</p>
+                                                    <p className="text-base font-black text-emerald-800 tabular-nums leading-none">{walletBalance.toLocaleString(lang === 'FR' ? 'fr-GN' : 'en-US')} GNF</p>
                                                 </div>
                                                 <ChevronRight className="size-4 text-emerald-400 group-hover:translate-x-1 transition-transform" />
                                             </Link>
@@ -610,11 +556,10 @@ const Navbar = () => {
                             </Link>
                             <Link
                                 to="/register"
-                                className="flex items-center bg-[#FF6600] text-white px-4 py-2 rounded-full font-bold text-sm hover:bg-[#e65c00] transition-colors shadow-md whitespace-nowrap shrink-0 gap-2"
+                                className="hidden md:flex items-center bg-[#FF6600] text-white px-4 py-2 rounded-full font-bold text-sm hover:bg-[#e65c00] transition-colors shadow-md whitespace-nowrap shrink-0 gap-2"
                             >
                                 <Zap className="size-4" />
-                                <span className="hidden sm:inline">{t('register')}</span>
-                                <span className="sm:hidden">{t('register')}</span>
+                                <span>{t('register')}</span>
                             </Link>
                         </div>
                     )}
@@ -631,131 +576,29 @@ const Navbar = () => {
             </div>
 
             {/* ── Bottom Nav Row ────────────────────────────────────────────── */}
-            <div className="hidden md:flex flex-wrap border-t border-border/5 overflow-x-hidden">
-                <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-12 flex flex-wrap items-center justify-center h-12 gap-4 lg:gap-12 overflow-x-auto">
+            <div className="hidden md:flex flex-wrap border-t border-border/5 relative">
+                <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-12 flex flex-wrap items-center justify-center h-12 gap-4 lg:gap-12">
                     <div 
-                        className="relative h-full flex items-center"
+                        className="h-full flex items-center"
                         onMouseEnter={handleMegaMenuOpen}
                         onMouseLeave={handleMegaMenuClose}
                     >
-                        <div className="flex items-center gap-2 cursor-pointer group pr-4 border-r border-border/10 h-full">
-                            <Menu className="size-5 text-foreground group-hover:text-[#FF6600] transition-colors" />
-                            <span className="font-bold text-sm text-foreground group-hover:text-[#FF6600] transition-colors whitespace-nowrap">
+                        <div className={cn(
+                            "flex items-center gap-2 cursor-pointer group pr-4 border-r border-border/10 h-full transition-colors",
+                            isMegaMenuOpen && "text-[#FF6600]"
+                        )}>
+                            <Menu className={cn("size-5 transition-colors", isMegaMenuOpen ? "text-[#FF6600]" : "text-foreground group-hover:text-[#FF6600]")} />
+                            <span className={cn("font-bold text-sm transition-colors whitespace-nowrap", isMegaMenuOpen ? "text-[#FF6600]" : "text-foreground group-hover:text-[#FF6600]")}>
                                 {t('allCategories') || "Toutes les catégories"}
                             </span>
                         </div>
 
-                        {/* Mega Menu Dropdown */}
-                        <AnimatePresence>
-                            {isMegaMenuOpen && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: 5, scale: 0.98 }}
-                                    transition={{ duration: 0.2, ease: "easeOut" }}
-                                    className="absolute top-full left-0 w-[calc(100vw-2rem)] max-w-[1150px] glass-card border border-white/20 rounded-b-2xl shadow-[0_30px_90px_rgba(0,0,0,0.15)] z-50 flex overflow-hidden"
-                                >
-                                    {/* Left Sidebar: Exact Alibaba Reproduction */}
-                                    <div className="w-[220px] lg:w-[280px] shrink-0 bg-white/50 border-r border-white/10 py-2 overflow-y-auto max-h-[650px] no-scrollbar">
-                                        {/* For You Section */}
-                                        <div
-                                            onMouseEnter={() => setActiveCategoryId('for-you')}
-                                            className={cn(
-                                                "px-6 py-4 cursor-pointer flex items-center gap-4 transition-all border-l-4",
-                                                activeCategoryId === 'for-you' || !activeCategoryId
-                                                    ? "bg-slate-50 border-slate-900 text-slate-900 font-bold" 
-                                                    : "border-transparent text-slate-600 hover:bg-slate-50"
-                                            )}
-                                        >
-                                            <Star className={cn("size-5", activeCategoryId === 'for-you' ? "fill-slate-900 text-slate-900" : "text-slate-400")} />
-                                            <span className="text-[15px]">{t('catForYou') || "Catégories pour vous"}</span>
-                                        </div>
-
-                                        {/* Dynamic Categories */}
-                                        {topLevelCategories.map((cat) => {
-                                            return (
-                                                <div
-                                                    key={cat.id}
-                                                    onMouseEnter={() => setActiveCategoryId(cat.id)}
-                                                    onClick={() => {
-                                                        navigate(`/marketplace?category=${cat.id}`);
-                                                        setIsMegaMenuOpen(false);
-                                                    }}
-                                                    className={cn(
-                                                        "px-6 py-3.5 cursor-pointer flex items-center gap-4 transition-all border-l-4",
-                                                        activeCategoryId === cat.id 
-                                                            ? "bg-slate-50 border-slate-900 text-slate-900 font-bold" 
-                                                            : "border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                                                    )}
-                                                >
-                                                    {getCategoryIconComponent(cat.nom_categorie, { className: cn("size-5", activeCategoryId === cat.id ? "text-slate-900" : "text-slate-400") })}
-                                                    <span className="text-[15px] leading-tight flex-1">{cat.nom_categorie}</span>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-
-                                    {/* Right Content: Alibaba Grid Style */}
-                                    <div className="flex-1 p-4 lg:p-10 bg-white/50 overflow-y-auto max-h-[650px] no-scrollbar">
-                                        {activeCategory && (
-                                            <motion.div
-                                                key={activeCategory.id}
-                                                initial={{ opacity: 0, y: 5 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                className="h-full"
-                                            >
-                                                <h3 className="text-2xl font-bold text-slate-900 mb-10 px-4">
-                                                    {activeCategory.nom_categorie}
-                                                </h3>
-
-                                                <div className="grid grid-cols-4 lg:grid-cols-7 gap-y-12 gap-x-6">
-                                                    {subItems.map((item, idx) => (
-                                                        <Link
-                                                            key={idx}
-                                                            to={`/search?q=${encodeURIComponent(item.name)}`}
-                                                            onClick={() => setIsMegaMenuOpen(false)}
-                                                            className="flex flex-col items-center gap-4 group"
-                                                        >
-                                                            <div className="relative size-24 lg:size-28 rounded-full bg-slate-50 flex items-center justify-center border border-slate-50 group-hover:bg-slate-100 transition-all duration-300">
-                                                                <span className="text-4xl lg:text-5xl group-hover:scale-110 transition-transform duration-500 drop-shadow-sm">
-                                                                    {item.icon || '📦'}
-                                                                </span>
-                                                                
-                                                                {/* Alibaba Badges (Blue Arrow / Orange Flame) */}
-                                                                {item.badge && (
-                                                                    <div className="absolute -top-1 -right-1 size-7 bg-white rounded-full shadow-sm flex items-center justify-center border border-slate-100">
-                                                                        {item.badge === 'blue' ? (
-                                                                            <TrendingUp className="size-4 text-blue-500 stroke-[3]" />
-                                                                        ) : (
-                                                                            <Flame className="size-4 text-orange-500 fill-orange-500" />
-                                                                        )}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            <span className="text-[13px] text-center font-medium text-slate-700 group-hover:text-orange-500 transition-colors px-2 leading-tight max-w-[110px]">
-                                                                {item.name}
-                                                            </span>
-                                                        </Link>
-                                                    ))}
-                                                </div>
-                                                
-                                                <div className="mt-16 pt-10 border-t border-slate-100 flex items-center justify-between px-4">
-                                                    <p className="text-[15px] text-slate-400 font-medium italic">Parcourez les sélections en vedette de {activeCategory.nom_categorie}</p>
-                                                    <Link 
-                                                        to={`/marketplace?category=${activeCategory.id}`}
-                                                        className="flex items-center gap-2 text-base font-bold text-slate-900 hover:text-orange-500 transition-colors"
-                                                    >
-                                                        Voir plus <ArrowRight className="size-5" />
-                                                    </Link>
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
-
+                        <BcaMegaMenu
+                            isOpen={isMegaMenuOpen}
+                            top={megaMenuTop}
+                            onMouseEnter={handleMegaMenuOpen}
+                            onMouseLeave={handleMegaMenuClose}
+                        />
                     </div>
 
 
@@ -814,8 +657,7 @@ const Navbar = () => {
                             to="/register?role=fournisseur"
                             className="text-sm font-bold text-[#FF6600] hover:underline whitespace-nowrap transition-colors flex items-center gap-1"
                         >
-                            <span className="hidden lg:inline xl:hidden">{t('becomeVendor') || "Devenir Fournisseur"}</span>
-                            <span className="hidden xl:inline">{(t('becomeVendor') || "Devenir Fournisseur") + (t('onBcaConnect') || " sur BCA Connect")}</span>
+
                             <span className="lg:hidden">{t('sellOnBca') || "Vendre sur BCA"}</span>
                         </Link>
                     </div>
@@ -837,6 +679,7 @@ const Navbar = () => {
                     </button>
                 </form>
             </div>
+        </header>
 
             {/* ── Mobile Sidebar ─────────────────────────────────────────────── */}
             <AnimatePresence>
@@ -847,14 +690,14 @@ const Navbar = () => {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setIsMenuOpen(false)}
-                            className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm"
+                            className="fixed inset-0 bg-black/60 z-[110] md:hidden backdrop-blur-sm"
                         />
                         <motion.div
                             initial={{ x: '-100%' }}
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
                             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="fixed top-0 left-0 bottom-0 w-[85%] max-w-sm bg-card z-50 flex flex-col md:hidden overflow-y-auto"
+                            className="fixed top-0 left-0 bottom-0 w-[85%] max-w-sm bg-card z-[120] flex flex-col md:hidden overflow-y-auto"
                         >
                             {/* Mobile Header */}
                             <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-6 flex items-center justify-between">
@@ -961,7 +804,7 @@ const Navbar = () => {
                                         { to: '/help', icon: HelpCircle, label: "Centre d'assistance" },
                                         { to: '/contact', icon: Globe, label: 'Contactez-nous' },
                                         { to: '/about', icon: ShieldCheck, label: 'À propos de BCA' },
-                                        { to: '/register?role=fournisseur', icon: Store, label: 'Devenir Fournisseur' },
+
                                     ].map(item => (
                                         <Link
                                             key={item.to}
@@ -1008,7 +851,7 @@ const Navbar = () => {
                     </>
                 )}
             </AnimatePresence>
-        </header>
+        </>
     );
 };
 

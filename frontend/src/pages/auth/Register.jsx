@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, Navigate, useSearchParams } from 'react-router-dom';
 import { 
-    User, Mail, Phone, Lock, ArrowRight, Store, Truck, 
+    User, Mail, Phone, Lock, ArrowRight, Store, Truck, Wrench,
     Zap, Loader2, MapPin, FileText, Tag, Car, Shield, Globe, CreditCard, Building2
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
@@ -109,7 +109,7 @@ const Register = () => {
     const [fieldErrors, setFieldErrors] = useState({});
 
     const queryRole = searchParams.get('role');
-    const validRoles = ['client', 'fournisseur', 'transporteur'];
+    const validRoles = ['client', 'fournisseur', 'transporteur', 'technicien'];
     const defaultRole = validRoles.includes(queryRole) ? queryRole : (queryRole === 'vendeur' ? 'fournisseur' : 'client');
 
     const [formData, setFormData] = useState({
@@ -128,6 +128,9 @@ const Register = () => {
         type_vehicule: '',
         numero_permis: '',
         zone_couverture: '',
+        specialites: '',
+        numero_agrement: '',
+        zone_intervention: '',
     });
 
     useEffect(() => {
@@ -188,26 +191,36 @@ const Register = () => {
             validationData.nom_boutique = formData.nom_boutique;
             validationData.categorie_activite = formData.categorie_activite;
             validationData.adresse_boutique = formData.adresse_boutique;
+            validationData.description_boutique = formData.description_boutique;
+            validationData.registre_commerce = formData.registre_commerce;
         }
         if (formData.role === 'transporteur') {
             validationData.type_vehicule = formData.type_vehicule;
             validationData.numero_permis = formData.numero_permis;
             validationData.zone_couverture = formData.zone_couverture;
         }
+        if (formData.role === 'technicien') {
+            validationData.specialites = formData.specialites;
+            validationData.numero_agrement = formData.numero_agrement;
+            validationData.zone_intervention = formData.zone_intervention;
+        }
 
         const schema = getRegisterSchema(formData.role);
         const validation = schema.safeParse(validationData);
 
         if (!validation.success) {
+            // Log complet des erreurs Zod dans la console pour le développeur
+            console.error('Validation Zod Errors:', validation.error.errors);
+            // Construction d'un message d'erreur détaillé pour l'utilisateur
+            const detailedMsg = validation.error.errors.map(err => `${err.path[0]}: ${err.message}`).join(' | ');
+            toast.error(detailedMsg || t('regValidationFailed'));
             const errors = {};
             validation.error.errors.forEach(err => {
                 const path = err.path[0];
-                // Mapping path to formData names
                 const fieldName = path === 'nom_complet' ? 'fullName' : path;
                 if (!errors[fieldName]) errors[fieldName] = err.message;
             });
             setFieldErrors(errors);
-            toast.error(t('regValidationFailed'));
             return;
         }
 
@@ -229,6 +242,11 @@ const Register = () => {
                 type_vehicule: formData.type_vehicule,
                 numero_permis: formData.numero_permis,
                 zone_couverture: formData.zone_couverture,
+            }),
+            ...(formData.role === 'technicien' && {
+                specialites: formData.specialites,
+                numero_agrement: formData.numero_agrement,
+                zone_intervention: formData.zone_intervention,
             })
         };
 
@@ -294,14 +312,7 @@ const Register = () => {
             <div className="flex-1 flex flex-col p-8 md:p-12 overflow-y-auto">
                 <div className="max-w-xl w-full mx-auto">
                     
-                    <header className="mb-8 text-center md:text-left">
-                        <Link to="/" className="inline-flex mb-12">
-                            <BcaLogo size="h-10" />
-                        </Link>
-                        
-                        <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">{t('registerTitleText')}</h1>
-                        <p className="text-slate-500 text-sm">{t('registerSubText')}</p>
-                    </header>
+                    <></>
 
                     {(localError || authError) && (
                         <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm font-bold flex items-center gap-2">
@@ -320,6 +331,7 @@ const Register = () => {
                                     { id: 'client', icon: User, label: t('roleBuyer') },
                                     { id: 'fournisseur', icon: Store, label: t('roleSeller') },
                                     { id: 'transporteur', icon: Truck, label: t('roleCarrier') },
+                                    { id: 'technicien', icon: Wrench, label: 'Technicien' },
                                 ].map(r => (
                                     <button
                                         key={r.id}
@@ -373,6 +385,14 @@ const Register = () => {
                                         <FormSelect icon={Globe} label="Zone de Couverture" name="zone_couverture" value={formData.zone_couverture} onChange={handleChange} options={ZONES_COUVERTURE} placeholder="Sélectionnez la zone" error={fieldErrors.zone_couverture} />
                                     </div>
                                     <FormInput icon={CreditCard} label="Numéro de Permis" name="numero_permis" value={formData.numero_permis} onChange={handleChange} placeholder="Identifiant permis" error={fieldErrors.numero_permis} />
+                                </motion.div>
+                            )}
+
+                            {formData.role === 'technicien' && (
+                                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-5 pt-2">
+                                    <FormInput icon={Wrench} label="Spécialités (ex: Plomberie, Électricité...)" name="specialites" value={formData.specialites} onChange={handleChange} placeholder="Vos compétences" error={fieldErrors.specialites} />
+                                    <FormInput icon={Globe} label="Zone d'Intervention" name="zone_intervention" value={formData.zone_intervention} onChange={handleChange} placeholder="Commune, Quartier..." error={fieldErrors.zone_intervention} />
+                                    <FormInput icon={Shield} label="Numéro d'Agrément (Optionnel)" name="numero_agrement" value={formData.numero_agrement} onChange={handleChange} placeholder="Ex: AGR-2024-XXXX" error={fieldErrors.numero_agrement} />
                                 </motion.div>
                             )}
                         </AnimatePresence>
