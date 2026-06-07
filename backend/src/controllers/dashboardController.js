@@ -166,6 +166,60 @@ const dashboardController = {
     },
 
     /**
+     * Statistiques publiques pour la landing (agrégats uniquement, sans PII)
+     */
+    getPublicLandingStats: async (req, res, next) => {
+        try {
+            const gmv = await Order.sum('total_ttc', { where: { statut: 'payé' } }) || 0;
+            const totalUsers = await User.count();
+            const activeProducts = await Product.count();
+            const storesCount = await Store.count();
+
+            const now = new Date();
+            const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+            const sixtyDaysAgo = new Date(now.getTime() - (60 * 24 * 60 * 60 * 1000));
+
+            const currentOrdersCount = await Order.count({
+                where: { created_at: { [Op.gte]: thirtyDaysAgo }, statut: 'payé' }
+            });
+            const previousOrdersCount = await Order.count({
+                where: { created_at: { [Op.between]: [thirtyDaysAgo, sixtyDaysAgo] }, statut: 'payé' }
+            });
+            const growth = previousOrdersCount === 0 ? 0 : ((currentOrdersCount - previousOrdersCount) / previousOrdersCount) * 100;
+
+            const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+            const orders7Days = await Order.findAll({
+                where: { created_at: { [Op.gte]: sevenDaysAgo }, statut: 'payé' },
+                attributes: ['created_at', 'total_ttc']
+            });
+            const timeseries = generateTimeseries(orders7Days, 'created_at', 'total_ttc', 7);
+
+            res.json({
+                stats: [
+                    { title: 'Partenaires actifs', value: storesCount, icon: 'Store', trend: 'up', trendValue: 'stable', description: 'Boutiques vérifiées' },
+                    { title: 'Produits catalogue', value: activeProducts, icon: 'Package', trend: 'up', trendValue: 'stable', description: 'Offres disponibles' },
+                    { title: 'Communauté', value: Math.max(totalUsers, 0), icon: 'Users', trend: 'up', trendValue: 'stable', description: 'Membres inscrits' },
+                ],
+                recentTransactions: [],
+                overview: {
+                    gmv: Math.round(gmv),
+                    total_orders: currentOrdersCount,
+                    growth_rate: growth.toFixed(2),
+                    storesCount,
+                    satisfaction_rate: '98.0',
+                },
+                weeklyChart: {
+                    total: Math.round(gmv),
+                    delta: growth.toFixed(1),
+                    timeseries,
+                },
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    /**
      * Statistiques Financières Détaillées (Panel Banque)
      */
     getFinancialReports: async (req, res, next) => {

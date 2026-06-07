@@ -10,8 +10,10 @@ const DataTable = ({
     emptyMessage = "AUCUNE DONNÉE DISPONIBLE",
     selectable = false,
     selectedIds = [],
-    onSelectionChange
+    onSelectionChange,
+    compact = false,
 }) => {
+    const cellPad = compact ? 'px-3 py-2.5' : 'px-6 py-4';
     const handleSelectAll = (e) => {
         if (e.target.checked) {
             onSelectionChange?.(data.map(item => item.id || item._id));
@@ -65,7 +67,7 @@ const DataTable = ({
                                 </th>
                             )}
                             {columns.map((col, idx) => (
-                                <th key={idx} className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/80">
+                                <th key={idx} className={cn(cellPad, "text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/80 whitespace-nowrap")}>
                                     {col.label}
                                 </th>
                             ))}
@@ -96,7 +98,7 @@ const DataTable = ({
                                         )}
                                         {columns.map((col, colIdx) => (
                                             <td key={colIdx} className={cn(
-                                                "px-6 py-4 text-[10px] font-bold transition-all duration-300 uppercase tracking-widest",
+                                                cellPad, "text-[10px] font-bold transition-all duration-300 uppercase tracking-widest",
                                                 isSelected ? "text-[#FF6600]" : "text-slate-600 dark:text-muted-foreground/80 group-hover:text-slate-900 dark:group-hover:text-foreground"
                                             )}>
                                                 {col.render ? col.render(row) : <span>{row[col.key]}</span>}

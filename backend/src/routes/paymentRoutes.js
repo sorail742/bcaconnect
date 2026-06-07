@@ -7,7 +7,10 @@ const { validateCreatePayment } = require('../middlewares/dtoValidator');
 // Initier un dépôt (nécessite auth + validation DTO)
 router.post('/initiate', authMiddleware, validateCreatePayment, paymentController.initiateDeposit);
 
-// Webhook de confirmation (public, appelé par l'agrégateur)
+// Statut transaction (polling après retour CinetPay)
+router.get('/status/:transactionId', authMiddleware, paymentController.getPaymentStatus);
+
+// Webhook de confirmation (public, appelé par CinetPay — x-www-form-urlencoded)
 router.post('/webhook', paymentController.handleWebhook);
 
 // Simulation de succès (nécessite auth)

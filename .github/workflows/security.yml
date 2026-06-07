@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
@@ -20,16 +20,19 @@ jobs:
           cache-dependency-path: backend/package-lock.json
 
       - name: 🛡️ Audit des dépendances (NPM Audit)
-        cwd: backend
+        working-directory: backend
         run: npm audit --audit-level=high
 
       - name: 🧪 Tests de Sécurité (Jest + Supertest)
         working-directory: backend
         run: |
           npm ci
+          export JWT_PRIVATE_KEY="$(openssl genrsa 2048 2>/dev/null)"
+          export JWT_PUBLIC_KEY="$(printf '%s' "$JWT_PRIVATE_KEY" | openssl rsa -pubout 2>/dev/null)"
           npm run test:security
         env:
           NODE_ENV: test
           JWT_SECRET: test_jwt_secret_minimum_32_characters_long_for_bca_ci
           ENCRYPTION_KEY: d45259cf4cb572049b1c75c5ef9d0893b2bea7c3f3e8b7637d856a87530fd1df
+          GROQ_API_KEY: gsk_ci_dummy_key_for_tests_only
           DATABASE_URL: sqlite::memory:

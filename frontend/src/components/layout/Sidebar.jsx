@@ -4,7 +4,7 @@ import {
     LayoutDashboard, Package, ShoppingCart, Store, Receipt,
     Users, MessageSquare, User, Truck, Plus, Landmark,
     Folder, RotateCcw, Bell, Wallet, Settings, LogOut,
-    Megaphone, Gavel, X, Shield, Search, Satellite, Zap, Calendar
+    Megaphone, Gavel, X, Shield, Search, Satellite, Zap, Calendar, BarChart2, GraduationCap
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../hooks/useAuth';
@@ -38,6 +38,7 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
     const menuItems = {
         admin: [
             { path: '/admin/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
+            { path: '/admin/logistics', label: 'Logistique', icon: Truck },
             { path: '/admin/users', label: 'Utilisateurs', icon: Users, permission: 'manage_users' },
             { path: '/admin/products', label: 'Produits', icon: Package },
             { path: '/admin/categories', label: 'Catégories', icon: Folder, permission: 'manage_categories' },
@@ -45,21 +46,25 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
             { path: '/admin/disputes', label: 'Litiges', icon: Gavel, permission: 'solve_disputes' },
             { path: '/admin/transactions', label: 'Transactions', icon: Receipt, permission: 'view_all_transactions' },
             { path: '/admin/financial', label: 'Finances', icon: Landmark, permission: 'view_all_transactions' },
+            { path: '/admin/returns', label: 'Retours', icon: RotateCcw },
             { path: '/admin/ads', label: 'Publicités', icon: Megaphone, permission: 'manage_ads' },
+            { path: '/admin/education', label: 'BCA Academy', icon: GraduationCap, permission: 'manage_education' },
             { path: '/messages', label: 'Messages', icon: MessageSquare, badge: unreadMessages },
         ],
         fournisseur: [
             { path: '/vendor/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
             { path: '/vendor/products', label: 'Mes Produits', icon: Package, permission: 'manage_own_products' },
             { path: '/vendor/orders', label: 'Commandes', icon: ShoppingCart, permission: 'view_own_orders' },
+            { path: '/vendor/reports', label: 'Rapports', icon: BarChart2, permission: 'view_vendor_insights' },
             { path: '/disputes', label: 'Litiges', icon: Gavel },
-            { path: '/admin/ads', label: 'Mes Publicités', icon: Megaphone, permission: 'manage_ads' },
+            { path: '/vendor/ads', label: 'Mes Publicités', icon: Megaphone, permission: 'manage_ads' },
             { path: '/vendor/store', label: 'Ma Boutique', icon: Store, permission: 'manage_own_store' },
             { path: '/messages', label: 'Messages', icon: MessageSquare, badge: unreadMessages },
         ],
         transporteur: [
-            { path: '/carrier/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
-            { path: '/tracking', label: 'Livraisons', icon: Truck, permission: 'view_available_deliveries' },
+            { path: '/carrier/dashboard', label: 'Missions', icon: Truck, permission: 'view_available_deliveries' },
+            { path: '/wallet', label: 'Portefeuille', icon: Wallet },
+            { path: '/tracking', label: 'Suivi colis', icon: Satellite },
             { path: '/messages', label: 'Messages', icon: MessageSquare, badge: unreadMessages },
         ],
         client: [
@@ -72,6 +77,8 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
             { path: '/dashboard/credit-calendar', label: 'Calendrier', icon: Calendar },
             { path: '/payments', label: 'Paiements', icon: Wallet },
             { path: '/tracking', label: 'Livraisons', icon: Truck },
+            { path: '/sav/guarantees', label: 'Garanties SAV', icon: Shield },
+            { path: '/group-purchase', label: 'Achats groupés', icon: Users },
             { path: '/messages', label: 'Messages', icon: MessageSquare, badge: unreadMessages },
         ],
         technicien: [
@@ -79,6 +86,12 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
             { path: '/technician/missions', label: 'Missions', icon: Zap },
             { path: '/technician/equipment', label: 'Équipements', icon: Package },
             { path: '/technician/wallet', label: 'Portefeuille', icon: Wallet },
+            { path: '/messages', label: 'Messages', icon: MessageSquare, badge: unreadMessages },
+        ],
+        banque: [
+            { path: '/bank/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
+            { path: '/bank/credits', label: 'Crédits en attente', icon: Receipt, permission: 'manage_credits' },
+            { path: '/admin/financial', label: 'Rapports financiers', icon: Landmark, permission: 'view_financial_reports' },
             { path: '/messages', label: 'Messages', icon: MessageSquare, badge: unreadMessages },
         ]
     };
@@ -121,9 +134,10 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
                                 <div className="flex items-center gap-2 mt-1">
                                     <div className="size-1.5 rounded-full bg-primary animate-pulse" />
                                     <p className="text-primary text-[8px] font-bold uppercase tracking-widest leading-none">
-                                        {user?.role === 'admin' ? 'Administration' : 
-                                         user?.role === 'fournisseur' ? 'Fournisseur Vérifié' : 
-                                         user?.role === 'transporteur' ? 'Logistique' : 
+                                        {user?.role === 'admin' ? 'Administration' :
+                                         user?.role === 'fournisseur' ? 'Fournisseur Vérifié' :
+                                         user?.role === 'transporteur' ? 'Logistique' :
+                                         user?.role === 'banque' ? 'Partenaire Financier' :
                                          user?.role === 'technicien' ? 'Technicien' : 'Client Privilège'}
                                     </p>
                                 </div>

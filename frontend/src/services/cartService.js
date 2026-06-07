@@ -10,7 +10,7 @@ const cartService = {
      * @param {string} paymentMethod - 'wallet' par défaut.
      * @returns {Object} Payload formaté pour l'API.
      */
-    formatOrderData: (cartItems, deliveryInfo, paymentMethod = 'wallet') => {
+    formatOrderData: (cartItems, deliveryInfo, paymentMethod = 'wallet', typeLivraison = 'standard') => {
         return {
             items: cartItems.map(item => ({
                 productId: item.id || item.productId || item.product_id,
@@ -21,6 +21,7 @@ const cartService = {
                 telephone: deliveryInfo.telephone,
                 adresse: deliveryInfo.adresse
             },
+            type_livraison: typeLivraison,
             paymentMethod,
             // Génération d'une clé d'idempotence pour éviter les doubles commandes
             cle_idempotence: `BCA-${Date.now()}-${Math.random().toString(36).substring(7)}`

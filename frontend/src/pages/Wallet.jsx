@@ -66,8 +66,16 @@ const Wallet = () => {
                 methode_paiement: 'mobile_money', // Defaulting to mobile_money since 'wallet_topup' is invalid
                 description: 'Alimentation du portefeuille'
             });
-            if (response.payment_url) { window.location.href = response.payment_url; }
-            else { toast.success("Dépôt simulé réussi !"); mutate(); }
+            if (response.payment_url?.includes('/payment/simulate/')) {
+                await walletService.captureSimulation(response.transaction_id);
+                toast.success('Recharge simulée réussie !');
+                mutate();
+            } else if (response.payment_url) {
+                window.location.href = response.payment_url;
+            } else {
+                toast.success('Dépôt simulé réussi !');
+                mutate();
+            }
         } catch (err) { toast.error("Erreur d'initialisation du dépôt."); }
         finally { setIsDepositing(false); toast.dismiss(); }
     };

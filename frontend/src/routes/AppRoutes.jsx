@@ -60,7 +60,9 @@ const CreditSimulator = lazy(() => import("../pages/CreditSimulator"));
 const CreditCalendar = lazy(() => import("../pages/CreditCalendar"));
 const DisputeReport = lazy(() => import("../pages/DisputeReport"));
 const MyDisputes = lazy(() => import("../pages/MyDisputes"));
+const DisputeDetail = lazy(() => import("../pages/DisputeDetail"));
 const MyGuarantees = lazy(() => import("../pages/sav/MyGuarantees"));
+const MyInterventions = lazy(() => import("../pages/sav/MyInterventions"));
 const MaintenanceRequest = lazy(
   () => import("../pages/sav/MaintenanceRequest"),
 );
@@ -80,6 +82,7 @@ const CarrierDashboard = lazy(
 
 // Bank Pages - Lazy Loaded
 const BankDashboard = lazy(() => import("../pages/bank/BankDashboard"));
+const BankCredits = lazy(() => import("../pages/bank/BankCredits"));
 
 
 // Technician Pages - Lazy Loaded
@@ -95,12 +98,15 @@ const AdminTransactions = lazy(
   () => import("../pages/admin/AdminTransactions"),
 );
 const Categories = lazy(() => import("../pages/admin/Categories"));
+const AdminEducation = lazy(() => import("../pages/admin/AdminEducation"));
 const Returns = lazy(() => import("../pages/admin/Returns"));
 const AdManager = lazy(() => import("../pages/admin/AdManager"));
 const AdminDisputes = lazy(() => import("../pages/admin/AdminDisputes"));
 const AITrends = lazy(() => import("../pages/admin/AITrends"));
 const FinancialReports = lazy(() => import("../pages/admin/FinancialReports"));
+const AdminLogistics = lazy(() => import("../pages/admin/AdminLogistics"));
 const PaymentSimulation = lazy(() => import("../pages/PaymentSimulation"));
+const PaymentReturn = lazy(() => import("../pages/PaymentReturn"));
 
 const AppRoutes = () => {
   return (
@@ -121,6 +127,17 @@ const AppRoutes = () => {
           <Suspense fallback={<LazyFallback />}>
             <ProtectedRoute>
               <PaymentSimulation />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+
+      <Route
+        path="/payment/return"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute>
+              <PaymentReturn />
             </ProtectedRoute>
           </Suspense>
         }
@@ -176,7 +193,9 @@ const AppRoutes = () => {
         path="/cart"
         element={
           <Suspense fallback={<LazyFallback />}>
-            <CartPage />
+            <ProtectedRoute allowedRoles={[ROLES.CLIENT, ROLES.ADMIN]}>
+              <CartPage />
+            </ProtectedRoute>
           </Suspense>
         }
       />
@@ -274,7 +293,7 @@ const AppRoutes = () => {
         path="/group-purchase"
         element={
           <Suspense fallback={<LazyFallback />}>
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.TECHNICIEN]}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.CLIENT, ROLES.FOURNISSEUR, ROLES.BANQUE, ROLES.TECHNICIEN]}>
               <GroupPurchase />
             </ProtectedRoute>
           </Suspense>
@@ -427,7 +446,7 @@ const AppRoutes = () => {
         path="/checkout"
         element={
           <Suspense fallback={<LazyFallback />}>
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={[ROLES.CLIENT, ROLES.ADMIN]}>
               <Checkout />
             </ProtectedRoute>
           </Suspense>
@@ -440,6 +459,17 @@ const AppRoutes = () => {
           <Suspense fallback={<LazyFallback />}>
             <ProtectedRoute>
               <MyDisputes />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+
+      <Route
+        path="/disputes/:id"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute>
+              <DisputeDetail />
             </ProtectedRoute>
           </Suspense>
         }
@@ -473,6 +503,17 @@ const AppRoutes = () => {
           <Suspense fallback={<LazyFallback />}>
             <ProtectedRoute>
               <MaintenanceRequest />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+
+      <Route
+        path="/sav/interventions"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute>
+              <MyInterventions />
             </ProtectedRoute>
           </Suspense>
         }
@@ -556,6 +597,17 @@ const AppRoutes = () => {
         }
       />
 
+      <Route
+        path="/vendor/ads"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.FOURNISSEUR, ROLES.ADMIN]}>
+              <AdManager />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+
       {/* Carrier Routes */}
       <Route
         path="/carrier/dashboard"
@@ -575,6 +627,16 @@ const AppRoutes = () => {
           <Suspense fallback={<LazyFallback />}>
             <ProtectedRoute allowedRoles={[ROLES.BANQUE]}>
               <BankDashboard />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+      <Route
+        path="/bank/credits"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.BANQUE, ROLES.ADMIN]}>
+              <BankCredits />
             </ProtectedRoute>
           </Suspense>
         }
@@ -682,6 +744,17 @@ const AppRoutes = () => {
       />
 
       <Route
+        path="/admin/education"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+              <AdminEducation />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+
+      <Route
         path="/admin/returns"
         element={
           <Suspense fallback={<LazyFallback />}>
@@ -737,6 +810,17 @@ const AppRoutes = () => {
       />
 
       <Route
+        path="/admin/logistics"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+              <AdminLogistics />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+
+      <Route
         path="/unauthorized"
         element={
           <Suspense fallback={<LazyFallback />}>
@@ -745,20 +829,17 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Coming Soon Routes */}
-      {[
-        "/careers",
-        "/ads",
-        "/insights",
-        "/ai-trends",
-        "/consultant",
-        "/logistics",
-        "/carrier-join",
-        "/download",
-        "/returns",
-        "/blog",
-        "/investors",
-      ].map((path) => (
+      {/* Redirections vers pages existantes */}
+      <Route path="/ads" element={<Navigate to="/marketplace" replace />} />
+      <Route path="/insights" element={<Navigate to="/about" replace />} />
+      <Route path="/ai-trends" element={<Navigate to="/education" replace />} />
+      <Route path="/logistics" element={<Navigate to="/tracking" replace />} />
+      <Route path="/carrier-join" element={<Navigate to="/register" replace />} />
+      <Route path="/download" element={<Navigate to="/help" replace />} />
+      <Route path="/returns" element={<Navigate to="/help" replace />} />
+
+      {/* Pages en cours de développement */}
+      {["/careers", "/consultant", "/blog", "/investors"].map((path) => (
         <Route key={path} path={path} element={<ComingSoon />} />
       ))}
 

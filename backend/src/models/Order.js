@@ -32,6 +32,14 @@ const Order = sequelize.define('Order', {
         type: DataTypes.DECIMAL(15, 2),
         defaultValue: 0,
     },
+    type_livraison: {
+        type: DataTypes.STRING(20),
+        defaultValue: 'standard',
+    },
+    delai_estime_jours: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
     statut: {
         type: DataTypes.STRING(32),
         defaultValue: 'en_attente_paiement',

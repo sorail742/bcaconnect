@@ -1,6 +1,9 @@
-const { Credit, Echeancier, Order, Wallet, sequelize } = require('../models');
+const { Credit, Echeancier, Order, OrderItem, Wallet, User, Transaction, Notification, sequelize } = require('../models');
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/AppError');
 const { Op } = require('sequelize');
 const aiScoringService = require('../services/aiScoringService');
+const escrowService = require('../services/escrowService');
 
 /**
  * Calculer les mensualités pour une simulation
@@ -115,8 +118,77 @@ exports.approveCredit = async (req, res, next) => {
 
         await Echeancier.bulkCreate(echeances, { transaction: t });
 
+        let orderActivated = false;
+        let activatedOrder = null;
+
+        if (credit.commande_id) {
+            try {
+                const orderResult = await escrowService.confirmOrderPayment(credit.commande_id, t);
+                if (orderResult.confirmed) {
+                    orderActivated = true;
+                    activatedOrder = orderResult.order;
+                    activatedOrder.methode_paiement = 'credit';
+                    await activatedOrder.save({ transaction: t });
+
+                    const wallet = await Wallet.findOne({
+                        where: { user_id: credit.utilisateur_id },
+                        transaction: t,
+                    });
+                    if (wallet) {
+                        await Transaction.create({
+                            portefeuille_id: wallet.id,
+                            commande_id: credit.commande_id,
+                            montant: credit.montant_principal,
+                            type_transaction: 'credit_financement',
+                            statut: 'complete',
+                            reference_externe: `CREDIT-${credit.id.slice(0, 8)}-${Date.now().toString(36)}`,
+                            metadata: { credit_id: credit.id, source: 'bank_approval' },
+                        }, { transaction: t });
+                    }
+                }
+            } catch (orderErr) {
+                console.warn(`[CREDIT] Commande ${credit.commande_id} non activée:`, orderErr.message);
+            }
+        }
+
         await t.commit();
-        res.json({ message: "Crédit approuvé et échéancier généré", credit });
+
+        if (orderActivated && activatedOrder) {
+            try {
+                const io = req.app.get('socketio');
+                if (io) {
+                    const buyerNotif = await Notification.create({
+                        utilisateur_id: credit.utilisateur_id,
+                        titre: 'Crédit approuvé — commande activée',
+                        message: `Votre crédit a été approuvé. La commande <span class="font-black text-primary">#${activatedOrder.id.slice(0, 8)}</span> est maintenant payée et en préparation.`,
+                        type: 'payment',
+                    });
+                    io.to(credit.utilisateur_id).emit('notification_received', buyerNotif);
+
+                    const items = await OrderItem.findAll({ where: { commande_id: activatedOrder.id } });
+                    const vendorIds = [...new Set(items.map(i => i.fournisseur_id))];
+                    for (const vendorId of vendorIds) {
+                        const vendorNotif = await Notification.create({
+                            utilisateur_id: vendorId,
+                            titre: 'Commande financée par crédit',
+                            message: `La commande <span class="font-black text-primary">#${activatedOrder.id.slice(0, 8)}</span> a été financée. Préparez les produits.`,
+                            type: 'order',
+                        });
+                        io.to(vendorId).emit('notification_received', vendorNotif);
+                    }
+                }
+            } catch (notifErr) {
+                console.warn('[CREDIT] Notification post-approbation:', notifErr.message);
+            }
+        }
+
+        res.json({
+            message: orderActivated
+                ? 'Crédit approuvé, échéancier généré et commande activée.'
+                : 'Crédit approuvé et échéancier généré',
+            credit,
+            orderActivated,
+        });
     } catch (error) {
         await t.rollback();
         next(error);
@@ -138,6 +210,14 @@ exports.payInstallment = async (req, res, next) => {
         if (!echeance || echeance.statut === 'paye') {
             await t.rollback();
             return res.status(400).json({ message: "Échéance invalide ou déjà payée." });
+        }
+
+        const creditOwnerId = echeance.Credit?.utilisateur_id;
+        const isOwner = creditOwnerId === req.user.id;
+        const isAdmin = req.user.role === 'admin';
+        if (!isOwner && !isAdmin) {
+            await t.rollback();
+            return res.status(403).json({ message: "Vous n'êtes pas autorisé à payer cette échéance." });
         }
 
         const wallet = await Wallet.findOne({ where: { user_id: req.user.id }, transaction: t });
@@ -172,6 +252,40 @@ exports.payInstallment = async (req, res, next) => {
         next(error);
     }
 };
+
+/**
+ * Demandes en attente (banque / admin)
+ */
+exports.getPendingCredits = catchAsync(async (req, res) => {
+    const credits = await Credit.findAll({
+        where: { statut: 'en_attente' },
+        include: [
+            { model: User, as: 'utilisateur', attributes: ['id', 'nom_complet', 'email', 'telephone', 'role'] },
+            { model: Order, attributes: ['id', 'total_ttc', 'statut'] },
+        ],
+        order: [['created_at', 'DESC']],
+    });
+    res.json(credits);
+});
+
+/**
+ * Refuser une demande de crédit (banque / admin)
+ */
+exports.rejectCredit = catchAsync(async (req, res, next) => {
+    const { id } = req.params;
+    const { motif_refus } = req.body;
+
+    const credit = await Credit.findByPk(id);
+    if (!credit || credit.statut !== 'en_attente') {
+        return next(new AppError('Demande invalide ou déjà traitée.', 400));
+    }
+
+    credit.statut = 'refuse';
+    credit.notes_admin = motif_refus || 'Demande refusée par l\'institution financière.';
+    await credit.save();
+
+    res.json({ message: 'Demande de crédit refusée.', credit });
+});
 
 /**
  * Récupérer mes crédits et leurs échéanciers

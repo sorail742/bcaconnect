@@ -41,6 +41,12 @@ export default function EducationCenter() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {resources?.length === 0 && (
+                    <div className="col-span-full text-center py-16 text-muted-foreground">
+                        <GraduationCap className="size-12 mx-auto mb-4 opacity-30" />
+                        <p>Aucune ressource disponible pour le moment.</p>
+                    </div>
+                )}
                 {resources?.map(resource => (
                     <div key={resource.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow group">
                         <div className="flex justify-between items-start mb-4">

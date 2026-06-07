@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
-const { authMiddleware } = require('../middlewares/authMiddleware');
+const { authMiddleware, optionalAuth } = require('../middlewares/authMiddleware');
 const { 
     validateRegister, 
     validateLogin, 
@@ -17,7 +17,9 @@ router.post('/register', validateRegister, authController.register);
 router.post('/login', validateLogin, authController.login);
 router.post('/google-login', validateGoogleLogin, authController.googleLogin);
 router.post('/refresh-token', validateRefreshToken, authController.refreshToken);
-router.post('/logout', authController.logout);
+router.post('/logout', optionalAuth, authController.logout);
+router.post('/otp/request', authController.requestOtp);
+router.post('/otp/verify', authController.verifyOtp);
 router.post('/verify-2fa', validateVerify2FA, authController.verify2FA);
 
 // Routes protégées avec validation DTO

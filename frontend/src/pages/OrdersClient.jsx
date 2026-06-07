@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/layout/DashboardLayout';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useOrders } from '../hooks/useDomainData';
 import useSocket from '../hooks/useSocket';
 import { LoadingState, ErrorState } from '../components/ui/DataStates';
@@ -27,7 +27,9 @@ const STATUS_CONFIG = {
 };
 
 const OrderCard = ({ order, index }) => {
+    const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const vendorId = order.details?.[0]?.fournisseur_id;
     const status = STATUS_CONFIG[order.statut] || STATUS_CONFIG['en_attente_paiement'];
     const StatusIcon = status.icon;
     const total = parseFloat(order.total_ttc || 0);
@@ -83,7 +85,12 @@ const OrderCard = ({ order, index }) => {
                     {[
                         { label: 'Montant', value: `${total.toLocaleString('fr-FR')} GNF` },
                         { label: 'Articles', value: order.items_count || '—' },
-                        { label: 'Livraison', value: `${parseFloat(order.frais_port || 0).toLocaleString('fr-FR')} GNF` },
+                        {
+                            label: 'Livraison',
+                            value: order.type_livraison
+                                ? `${({ eco: 'Éco', standard: 'Std', prioritaire: 'Prio' })[order.type_livraison] || order.type_livraison} — ${parseFloat(order.frais_port || 0).toLocaleString('fr-FR')} GNF`
+                                : `${parseFloat(order.frais_port || 0).toLocaleString('fr-FR')} GNF`,
+                        },
                     ].map((m, i) => (
                         <div key={i} className="px-5 py-4 bg-muted/30 text-center space-y-1">
                             <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{m.label}</p>
@@ -102,7 +109,11 @@ const OrderCard = ({ order, index }) => {
                         <Eye className="size-4" />
                         Suivre
                     </Link>
-                    <button className="h-10 px-6 bg-muted border border-border rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:border-primary/30 hover:bg-primary/5 transition-all text-foreground">
+                    <button
+                        type="button"
+                        onClick={() => navigate(`/messages${vendorId ? `?recipient=${vendorId}` : ''}`)}
+                        className="h-10 px-6 bg-muted border border-border rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:border-primary/30 hover:bg-primary/5 transition-all text-foreground"
+                    >
                         <MessageSquare className="size-4" />
                         Contact
                     </button>

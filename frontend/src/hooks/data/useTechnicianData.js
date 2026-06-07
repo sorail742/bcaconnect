@@ -15,6 +15,32 @@ const formatMission = (m, defaultStatus) => ({
     description: m.description_probleme || 'Aucune description fournie.',
 });
 
+export const useTechnicianStats = () => {
+    const { data, isLoading: loading, error, refetch, isFetching } = useQuery({
+        queryKey: ['technician-stats'],
+        queryFn: () => technicianService.getStats(),
+        staleTime: 30_000,
+    });
+    return { data: data || null, loading, error: error?.message || null, refetch, isFetching };
+};
+
+export const useAllTechnicianMissions = () => {
+    const { data, isLoading: loading, error, refetch, isFetching } = useQuery({
+        queryKey: ['technician-missions-all'],
+        queryFn: async () => {
+            const [available, mine] = await Promise.all([
+                technicianService.getAvailableMissions(),
+                technicianService.getMyMissions(),
+            ]);
+            const formattedAvailable = (available || []).map((m) => formatMission(m, 'Nouveau'));
+            const formattedMine = (mine || []).map((m) => formatMission(m));
+            return [...formattedAvailable, ...formattedMine];
+        },
+        staleTime: 30_000,
+    });
+    return { data: data || [], loading, error: error?.message || null, refetch, isFetching };
+};
+
 export const useMyTechnicianMissions = () => {
     const { data, isLoading: loading, error, refetch, isFetching } = useQuery({
         queryKey: ['technician-missions-my'],
@@ -55,6 +81,8 @@ export const useAcceptTechnicianMission = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['technician-missions-my'] });
             queryClient.invalidateQueries({ queryKey: ['technician-missions-available'] });
+            queryClient.invalidateQueries({ queryKey: ['technician-missions-all'] });
+            queryClient.invalidateQueries({ queryKey: ['technician-stats'] });
             toast.success('Mission acceptée avec succès.');
         },
         onError: (err) => {
@@ -67,9 +95,18 @@ export const useCompleteTechnicianMission = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: ({ id, data }) => technicianService.completeMission(id, data),
-        onSuccess: () => {
+        onSuccess: (result) => {
             queryClient.invalidateQueries({ queryKey: ['technician-missions-my'] });
-            toast.success('Mission marquée comme complétée.');
+            queryClient.invalidateQueries({ queryKey: ['technician-missions-all'] });
+            queryClient.invalidateQueries({ queryKey: ['technician-stats'] });
+            queryClient.invalidateQueries({ queryKey: ['technician-equipments'] });
+            queryClient.invalidateQueries({ queryKey: ['wallet'] });
+            const fee = result?.feeCredited;
+            if (fee > 0) {
+                toast.success(`Mission terminée — ${fee.toLocaleString('fr-FR')} GNF crédités.`);
+            } else {
+                toast.success('Mission marquée comme complétée.');
+            }
         },
         onError: (err) => {
             toast.error(err.response?.data?.error || 'Erreur lors de la finalisation.');

@@ -174,6 +174,7 @@ const AdminDashboard = () => {
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2">
                     {[
                         { label: t('adSynthesis'), path: '/admin/dashboard', active: true },
+                        { label: 'Logistique', path: '/admin/logistics' },
                         { label: t('adFinanceFlux'), path: '/admin/transactions' },
                         { label: t('adDisputeHub'), path: '/admin/disputes' },
                         { label: t('adTaxonomy'), path: '/admin/categories' },

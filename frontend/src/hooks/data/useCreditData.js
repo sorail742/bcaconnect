@@ -71,3 +71,49 @@ export const useRequestCredit = () => {
         }
     });
 };
+
+/**
+ * usePendingCredits — Demandes en attente (banque / admin).
+ */
+export const usePendingCredits = () => {
+    const { data, isLoading: loading, error, refetch, isFetching } = useQuery({
+        queryKey: ['pending-credits'],
+        queryFn: () => creditService.getPending(),
+        staleTime: 30_000,
+    });
+    return { data: Array.isArray(data) ? data : [], loading, error: error?.message || null, refetch, isFetching };
+};
+
+/**
+ * useApproveCredit — Approuver une demande de crédit.
+ */
+export const useApproveCredit = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id) => creditService.approve(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['pending-credits'] });
+            toast.success('Crédit approuvé — échéancier généré.');
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Erreur lors de l\'approbation.');
+        },
+    });
+};
+
+/**
+ * useRejectCredit — Refuser une demande de crédit.
+ */
+export const useRejectCredit = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, motif_refus }) => creditService.reject(id, motif_refus),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['pending-credits'] });
+            toast.success('Demande de crédit refusée.');
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Erreur lors du refus.');
+        },
+    });
+};

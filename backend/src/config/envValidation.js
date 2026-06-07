@@ -121,6 +121,12 @@ const envSchema = Joi.object({
     BACKEND_URL: Joi.string().uri().optional(),
     FRONTEND_URL: Joi.string().uri().optional(),
 
+    PAYMENT_MODE: Joi.string()
+        .valid('simulation', 'live')
+        .default('simulation'),
+
+    IOT_STUB_ENABLED: Joi.boolean().optional(),
+
 }).unknown();
 
 /**
@@ -143,12 +149,17 @@ function validateEnv() {
 
     console.log('✅ Configuration validée avec succès');
 
-    if (value.NODE_ENV === 'production') {
+    const needsPaymentKeys = value.NODE_ENV === 'production' || value.PAYMENT_MODE === 'live';
+    if (needsPaymentKeys) {
         const paymentKeys = ['PAYMENT_API_KEY', 'PAYMENT_SITE_ID', 'PAYMENT_SECRET', 'BACKEND_URL', 'FRONTEND_URL'];
         const missing = paymentKeys.filter((k) => !process.env[k]);
         if (missing.length) {
-            console.warn(`⚠️  [CINETPAY] Variables manquantes en production : ${missing.join(', ')}`);
-            console.warn('    → Voir backend/DEPLOYMENT_PROD.md et backend/.env.example');
+            const doc = value.NODE_ENV === 'production' ? 'DEPLOYMENT_PROD.md' : 'DEPLOYMENT_STAGING.md';
+            console.warn(`⚠️  [CINETPAY] Variables manquantes (${value.NODE_ENV}/${value.PAYMENT_MODE}) : ${missing.join(', ')}`);
+            console.warn(`    → Voir backend/${doc} et backend/.env.staging.example`);
+        }
+        if (process.env.BACKEND_URL && !process.env.BACKEND_URL.startsWith('https://')) {
+            console.warn('⚠️  [CINETPAY] BACKEND_URL doit être HTTPS pour recevoir les webhooks CinetPay.');
         }
     }
 

@@ -7,6 +7,8 @@ const technicianController = require('../controllers/technicianController');
 router.use(authMiddleware);
 router.use(roleMiddleware(['technicien']));
 
+router.get('/stats', technicianController.getTechnicianStats);
+
 // Get available missions
 router.get('/missions/available', technicianController.getAvailableMissions);
 

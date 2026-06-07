@@ -20,8 +20,12 @@ export const PERMISSIONS = {
     CAN_VIEW_WALLET: ['admin', 'fournisseur', 'transporteur', 'client', 'banque', 'technicien'],
     CAN_WITHDRAW: ['fournisseur', 'transporteur', 'banque', 'admin', 'technicien'],
 
-    // Group Purchases
-    CAN_ACCESS_GROUP_PURCHASE: ['admin', 'technicien'],
+    // Technicien SAV
+    CAN_ACCEPT_MISSION: ['technicien', 'admin'],
+    CAN_COMPLETE_MISSION: ['technicien', 'admin'],
+
+    // Group Purchases (aligné AppRoutes)
+    CAN_ACCESS_GROUP_PURCHASE: ['admin', 'client', 'fournisseur', 'banque', 'technicien'],
 
     // Admin
     CAN_ACCESS_ADMIN_PANEL: ['admin'],

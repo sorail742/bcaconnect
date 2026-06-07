@@ -20,6 +20,25 @@ export const useMyDeliveries = () => {
     return { data: data || [], isLoading, error: error?.message || null, refetch, isFetching };
 };
 
+export const useCompletedDeliveries = () => {
+    const { data, isLoading, error, refetch, isFetching } = useQuery({
+        queryKey: ['completed-deliveries'],
+        queryFn: () => deliveryService.getCompletedDeliveries(),
+        staleTime: 60_000,
+    });
+    return { data: data || [], isLoading, error: error?.message || null, refetch, isFetching };
+};
+
+export const useJourneyHistory = (orderId) => {
+    return useQuery({
+        queryKey: ['journey-history', orderId],
+        queryFn: () => deliveryService.getHistory(orderId),
+        enabled: !!orderId,
+        refetchInterval: orderId ? 15_000 : false,
+        staleTime: 10_000,
+    });
+};
+
 export const useMyGroups = () => {
     const { data, isLoading, error, refetch, isFetching } = useQuery({
         queryKey: ['my-groups'],
@@ -95,6 +114,16 @@ export const useCarrierStats = () => {
         queryKey: ['carrier-stats'],
         queryFn: () => deliveryService.getCarrierStats(),
         staleTime: 60_000,
+    });
+    return { data, isLoading, error: error?.message || null, refetch, isFetching };
+};
+
+export const useAdminLogistics = () => {
+    const { data, isLoading, error, refetch, isFetching } = useQuery({
+        queryKey: ['admin-logistics'],
+        queryFn: () => deliveryService.getAdminOverview(),
+        staleTime: 30_000,
+        refetchInterval: 30_000,
     });
     return { data, isLoading, error: error?.message || null, refetch, isFetching };
 };

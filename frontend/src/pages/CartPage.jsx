@@ -1,23 +1,58 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
-import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, ShieldCheck, Truck, Package, ArrowLeft, Tag, Zap, AlertCircle } from 'lucide-react';
+import {
+    ShoppingCart, Trash2, Plus, Minus, ArrowRight, ShieldCheck, Truck,
+    Package, ArrowLeft, Tag, Zap, AlertCircle, Leaf, Rocket, Clock,
+} from 'lucide-react';
 import useCart from '../hooks/useCart';
-import { cn } from '../lib/utils';
+import { cn, getImageUrl } from '../lib/utils';
 import { toast } from 'sonner';
 import { useLanguage } from '../context/LanguageContext';
+import shippingService from '../services/shippingService';
+import useCartStore from '../store/cartStore';
 
-const DELIVERY_FEE = 50000;
+const DELIVERY_ICONS = {
+    eco: Leaf,
+    standard: Truck,
+    prioritaire: Rocket,
+};
 
 const CartPage = () => {
     const { t } = useLanguage();
-    const { cartItems, removeFromCart, updateQuantity, clearCart, cartTotal } = useCart();
+    const {
+        cartItems, removeFromCart, updateQuantity, clearCart, cartTotal,
+        typeLivraison, deliveryFee, setDelivery,
+    } = useCart();
     const navigate = useNavigate();
-    const total = (cartTotal || 0) + DELIVERY_FEE;
+    const [deliveryOptions, setDeliveryOptions] = useState([]);
+    const [loadingShipping, setLoadingShipping] = useState(false);
+
+    const total = (cartTotal || 0) + (deliveryFee || 0);
+
+    useEffect(() => {
+        if (cartItems.length === 0) return;
+        let cancelled = false;
+        setLoadingShipping(true);
+        shippingService.getOptions('Conakry, Kaloum', cartItems.length)
+            .then((options) => {
+                if (cancelled) return;
+                setDeliveryOptions(options);
+                const current = useCartStore.getState().typeLivraison;
+                const selected = options.find((o) => o.type_livraison === current)
+                    || options.find((o) => o.type_livraison === 'standard')
+                    || options[0];
+                if (selected) setDelivery(selected.type_livraison, selected.frais_port);
+            })
+            .catch(() => {})
+            .finally(() => { if (!cancelled) setLoadingShipping(false); });
+        return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [cartItems.length]);
 
     const handleRemove = (item) => {
         removeFromCart(item.id);
-        toast.info(`${item.name} ${t('cartItemRemoved')}`);
+        toast.info(`${item.nom_produit || item.name} ${t('cartItemRemoved')}`);
     };
 
     const handleCheckout = () => {
@@ -28,11 +63,14 @@ const CartPage = () => {
         navigate('/checkout');
     };
 
+    const getItemPrice = (item) => parseFloat(item.prix_unitaire ?? item.price ?? 0);
+    const getItemName = (item) => item.nom_produit || item.name || t('product');
+    const getItemImage = (item) => getImageUrl(item.image_url || item.image);
+
     return (
         <div className="bg-background min-h-screen text-foreground pb-16">
             <div className="max-w-6xl mx-auto px-6 md:px-12 pt-24 space-y-8">
 
-                {/* Header */}
                 <div className="flex items-center justify-between pb-6 border-b border-border">
                     <div className="space-y-2">
                         <button onClick={() => navigate('/marketplace')} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
@@ -43,9 +81,9 @@ const CartPage = () => {
                         </h1>
                     </div>
                     {cartItems.length > 0 && (
-                        <button onClick={() => { 
+                        <button onClick={() => {
                             if (window.confirm(t('cartEmptyCartConfirm'))) {
-                                clearCart(); 
+                                clearCart();
                                 toast.info(t('cartEmptySuccess'));
                             }
                         }}
@@ -70,16 +108,15 @@ const CartPage = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Items */}
                         <div className="lg:col-span-2 space-y-4">
                             {cartItems.map(item => {
-                                const price = parseFloat(item.price || 0);
-                                const name = item.name || t('product');
-                                const img = item.image;
+                                const price = getItemPrice(item);
+                                const name = getItemName(item);
+                                const img = getItemImage(item);
                                 return (
                                     <div key={item.id} className="flex gap-4 p-4 bg-card rounded-2xl border border-border hover:border-primary/30 transition-all group shadow-sm">
                                         <div className="size-20 rounded-xl bg-muted border border-border overflow-hidden shrink-0">
-                                            {img ? <img src={img} alt={name} className="w-full h-full object-cover" onError={e => e.target.style.display='none'} />
+                                            {img ? <img src={img} alt={name} className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; }} />
                                                 : <Package className="size-6 text-muted-foreground m-auto mt-7" />}
                                         </div>
                                         <div className="flex-1 min-w-0">
@@ -112,8 +149,50 @@ const CartPage = () => {
                             })}
                         </div>
 
-                        {/* Summary */}
-                        <div className="lg:col-span-1">
+                        <div className="lg:col-span-1 space-y-4">
+                            {/* Mode de livraison */}
+                            <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+                                <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4">
+                                    <Truck className="size-4 text-primary" /> Mode de livraison
+                                </h3>
+                                <div className="space-y-2">
+                                    {(deliveryOptions.length ? deliveryOptions : []).map((opt) => {
+                                        const Icon = DELIVERY_ICONS[opt.type_livraison] || Truck;
+                                        const selected = typeLivraison === opt.type_livraison;
+                                        return (
+                                            <button
+                                                key={opt.type_livraison}
+                                                type="button"
+                                                onClick={() => setDelivery(opt.type_livraison, opt.frais_port)}
+                                                className={cn(
+                                                    'w-full p-3 rounded-xl border-2 text-left transition-all',
+                                                    selected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30',
+                                                )}
+                                            >
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <Icon className={cn('size-4', selected ? 'text-primary' : 'text-muted-foreground')} />
+                                                        <span className="text-xs font-bold">{opt.label}</span>
+                                                    </div>
+                                                    <span className="text-xs font-bold text-primary tabular-nums">
+                                                        {parseFloat(opt.frais_port).toLocaleString()} {t('gnf')}
+                                                    </span>
+                                                </div>
+                                                <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                                                    <Clock className="size-3" /> {opt.description}
+                                                </p>
+                                            </button>
+                                        );
+                                    })}
+                                    {loadingShipping && (
+                                        <p className="text-[10px] text-muted-foreground animate-pulse">Calcul des frais...</p>
+                                    )}
+                                    <p className="text-[10px] text-muted-foreground pt-1">
+                                        Estimation zone Conakry — affinée à l&apos;adresse au checkout.
+                                    </p>
+                                </div>
+                            </div>
+
                             <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm sticky top-24">
                                 <div className="h-1 bg-primary" />
                                 <div className="p-5 space-y-5">
@@ -126,8 +205,13 @@ const CartPage = () => {
                                             <span className="font-medium text-foreground tabular-nums">{(cartTotal || 0).toLocaleString()} {t('gnf')}</span>
                                         </div>
                                         <div className="flex justify-between text-muted-foreground">
-                                            <span className="flex items-center gap-1.5"><Truck className="size-3.5 text-primary" /> {t('cartLogistics')}</span>
-                                            <span className="font-medium text-foreground tabular-nums">{DELIVERY_FEE.toLocaleString()} {t('gnf')}</span>
+                                            <span className="flex items-center gap-1.5">
+                                                <Truck className="size-3.5 text-primary" />
+                                                {deliveryOptions.find((o) => o.type_livraison === typeLivraison)?.label || t('cartLogistics')}
+                                            </span>
+                                            <span className="font-medium text-foreground tabular-nums">
+                                                {loadingShipping ? '...' : `${(deliveryFee || 0).toLocaleString()} ${t('gnf')}`}
+                                            </span>
                                         </div>
                                         <div className="flex justify-between font-bold text-base pt-2 border-t border-border">
                                             <span>{t('total')}</span>
@@ -141,9 +225,6 @@ const CartPage = () => {
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                             <ShieldCheck className="size-3.5 text-emerald-500" /> {t('cartSecurePayment')}
-                                        </div>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <Truck className="size-3.5 text-primary" /> {t('cartExpressDelivery')}
                                         </div>
                                     </div>
                                     <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl">
@@ -159,7 +240,6 @@ const CartPage = () => {
                 )}
             </div>
 
-            {/* Mobile sticky CTA */}
             {cartItems.length > 0 && (
                 <div className="fixed bottom-4 left-4 right-4 z-50 lg:hidden">
                     <div className="flex items-center gap-3 p-3 bg-card/95 backdrop-blur-md border border-border rounded-2xl shadow-lg">

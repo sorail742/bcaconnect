@@ -1,5 +1,5 @@
 import { offlineStorage } from '../lib/db';
-import orderService from './orderService';
+import api from './api';
 import productService from './productService';
 import categoryService from './categoryService';
 import { toast } from 'sonner';
@@ -8,26 +8,41 @@ class SyncService {
     constructor() {
         this.isSyncing = false;
         this.syncInterval = null;
+        this.listeners = new Set();
+    }
+
+    subscribe(fn) {
+        this.listeners.add(fn);
+        return () => this.listeners.delete(fn);
+    }
+
+    notify() {
+        this.listeners.forEach((fn) => fn());
+    }
+
+    async getPendingCount() {
+        const [orders, products] = await Promise.all([
+            offlineStorage.getQueuedOrders(),
+            offlineStorage.getQueuedProducts(),
+        ]);
+        return orders.length + products.length;
     }
 
     init() {
-        // Surveiller le retour au mode en ligne
         window.addEventListener('online', () => {
-            toast.info("Connexion rétablie. Synchronisation des données...");
+            toast.info('Connexion rétablie. Synchronisation en cours...');
             this.syncAll();
         });
 
-        // Surveiller le passage hors ligne
         window.addEventListener('offline', () => {
-            toast.warning("Vous êtes maintenant hors ligne. Mode résilience activé.");
+            toast.warning('Mode hors ligne — vos actions seront synchronisées au retour du réseau.');
+            this.notify();
         });
 
-        // Lancer une synchro initiale si on est en ligne
         if (navigator.onLine) {
             this.syncAll();
         }
 
-        // Configurer une synchro périodique toutes les 5 minutes si en ligne
         this.syncInterval = setInterval(() => {
             if (navigator.onLine && !this.isSyncing) {
                 this.syncAll();
@@ -36,26 +51,18 @@ class SyncService {
     }
 
     async syncAll() {
-        if (this.isSyncing) return;
+        if (this.isSyncing || !navigator.onLine) return;
         this.isSyncing = true;
 
         try {
-            console.log("🔄 Début de la synchronisation globale...");
-            
-            // 1. Synchroniser les commandes en attente
             await this.syncOrders();
-
-            // 2. Synchroniser les produits en attente
             await this.syncProducts();
-            
-            // 3. Mettre à jour le cache (en arrière-plan, ne bloque pas l'utilisateur)
             this.refreshCache();
-
-            console.log("✅ Synchronisation terminée.");
         } catch (error) {
-            console.error("❌ Erreur de synchronisation:", error);
+            console.error('Erreur de synchronisation:', error);
         } finally {
             this.isSyncing = false;
+            this.notify();
         }
     }
 
@@ -63,18 +70,15 @@ class SyncService {
         const queuedOrders = await offlineStorage.getQueuedOrders();
         if (queuedOrders.length === 0) return;
 
-        console.log(`📦 Synchro de ${queuedOrders.length} commandes en attente...`);
-        
         for (const order of queuedOrders) {
             try {
-                // On retire les champs internes de Dexie avant l'envoi
                 const { id, status, timestamp, ...apiData } = order;
-                await orderService.create(apiData);
+                await api.post('/orders', apiData);
                 await offlineStorage.markOrderSynced(id);
-                toast.success(`Commande #${id} synchronisée !`);
+                toast.success('Commande hors ligne synchronisée !');
             } catch (error) {
                 console.error(`Erreur synchro commande ${order.id}:`, error);
-                await offlineStorage.markOrderFailed(order.id, error.message);
+                await offlineStorage.markOrderFailed(order.id, error?.response?.data?.message || error.message);
             }
         }
     }
@@ -83,28 +87,29 @@ class SyncService {
         const queuedProducts = await offlineStorage.getQueuedProducts();
         if (queuedProducts.length === 0) return;
 
-        console.log(`🍎 Synchro de ${queuedProducts.length} produits en attente...`);
-        
         for (const product of queuedProducts) {
             try {
                 const { id, status, timestamp, ...apiData } = product;
-                await productService.create(apiData);
+                await api.post('/products', apiData);
                 await offlineStorage.markProductSynced(id);
-                toast.success(`Produit "${apiData.nom_produit}" publié automatiquement !`);
+                toast.success(`Produit "${apiData.nom_produit}" synchronisé !`);
             } catch (error) {
                 console.error(`Erreur synchro produit ${product.id}:`, error);
-                await offlineStorage.markProductFailed(product.id, error.message);
+                await offlineStorage.markProductFailed(product.id, error?.response?.data?.message || error.message);
             }
         }
     }
 
     async refreshCache() {
         try {
-            // Force le rafraîchissement des produits et catégories pour le cache local
-            await productService.getAll();
+            const productsRes = await productService.getAll();
+            const list = productsRes?.products || productsRes || [];
+            if (Array.isArray(list) && list.length) {
+                await offlineStorage.saveProducts(list);
+            }
             await categoryService.getAll();
         } catch (error) {
-            console.warn("Échec du rafraîchissement du cache:", error);
+            console.warn('Échec du rafraîchissement du cache:', error);
         }
     }
 

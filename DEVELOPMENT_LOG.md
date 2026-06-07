@@ -4,7 +4,43 @@ Ce document sert de fil conducteur pour le développement en groupe. Il réperto
 
 ---
 
-## 🗓️ 01 Mai 2026 - Session Actuelle (Développeur & Antigravity)
+## 🗓️ 05 Juin 2026 - Consolidation Pilote Phase 2
+
+### Livraisons majeures
+- **Achats groupés** : backend + frontend + seed + tests 20/20
+- **Litiges interactifs** : workflow complet + tests Jest 14/14
+- **Livraison** : 3 tiers (eco/standard/prioritaire), GPS transporteur, paiement wallet transporteur, admin logistique
+- **Crédit banque** : approve/reject, dashboard banque, seed pending credits
+- **SAV** : garanties, interventions, technicien (dashboard, missions, wallet)
+- **Offline-first** : syncService, OfflineBanner, checkout COD hors ligne
+
+### Sprint 3 — Expérience utilisateur
+- **Avis produits** : `ReviewForm`, `GET /reviews/eligible`, validation commande livrée + anti-doublon
+- **Achats groupés** : paiement wallet à l'engagement, remboursement si leave, stock + séquestre à la clôture
+- **Publicités fournisseur** : permission `manage_ads`, route `/vendor/ads`, filtre `?mine=1`
+- **Sidebar** : achats groupés (client), rapports + ads (fournisseur), retours (admin)
+- **BankDashboard** : boutons morts remplacés par liens Crédits / Détails
+
+### Sprint 2 — Intégrité métier
+- **Crédit approuvé** → active commande liée (`confirmOrderPayment` + séquestre + notif)
+- **payInstallment** → protection IDOR (ownership échéance)
+- **Socket technicien** → `socketio` corrigé
+- **Statut transaction** → `complete` harmonisé (order wallet)
+- **Logout** → `POST /auth/logout` + révocation refresh token
+
+### Corrections consolidation (Sprint 1)
+- Checkout → redirect `/orders` (au lieu de `/dashboard/orders`)
+- Sidebar rôle **banque** + RBAC frontend aligné backend
+- Lien **Achats groupés** dans menu client
+- Messages.jsx : `refetchConversations`
+- Admin logistique : layout KPI
+
+### Référence
+- État complet documenté dans [`STATUS_CONSOLIDE.md`](./STATUS_CONSOLIDE.md)
+
+---
+
+## 🗓️ 01 Mai 2026 - Session (Développeur & Antigravity)
 
 ### 🏗️ Interface & Design
 - **Standardisation Full-Width** : Passage de la mise en page de `container` à `w-full max-w-none` sur l'ensemble de la landing page (`Navbar`, `Hero`, `FeaturedProducts`, `CategorySection`).
@@ -39,4 +75,4 @@ Ce document sert de fil conducteur pour le développement en groupe. Il réperto
 - **Assistant AI** : Antigravity
 
 ---
-*Dernière mise à jour : 01 Mai 2026*
+*Dernière mise à jour : 05 Juin 2026*

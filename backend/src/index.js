@@ -17,211 +17,13 @@ const { Server } = require("socket.io");
 const { QueryTypes } = require("sequelize");
 const refreshTokenService = require("./services/refreshTokenService");
 const { startCreditReminders } = require("./cron/creditReminderCron");
-
-/**
- * Migration douce : ajoute les colonnes manquantes sans DROP/RECREATE.
- * Compatible SQLite avec contraintes FK.
- */
-async function runSafeMigrations(sequelize) {
-  const qi = sequelize.getQueryInterface();
-
-  const migrations = [
-    // Table boutiques
-    {
-      table: "boutiques",
-      column: "use_carousel",
-      definition: {
-        type: require("sequelize").DataTypes.BOOLEAN,
-        defaultValue: false,
-        allowNull: false,
-      },
-    },
-    {
-      table: "boutiques",
-      column: "banner_images",
-      definition: {
-        type: require("sequelize").DataTypes.TEXT,
-        allowNull: true,
-      },
-    },
-    {
-      table: "boutiques",
-      column: "is_verified",
-      definition: {
-        type: require("sequelize").DataTypes.BOOLEAN,
-        defaultValue: false,
-      },
-    },
-    {
-      table: "boutiques",
-      column: "rating",
-      definition: {
-        type: require("sequelize").DataTypes.FLOAT,
-        defaultValue: 4.5,
-      },
-    },
-    // Table utilisateurs
-    {
-      table: "utilisateurs",
-      column: "avatar_url",
-      definition: {
-        type: require("sequelize").DataTypes.STRING(255),
-        allowNull: true,
-      },
-    },
-    {
-      table: "utilisateurs",
-      column: "points_fidelite",
-      definition: {
-        type: require("sequelize").DataTypes.INTEGER,
-        defaultValue: 0,
-      },
-    },
-    {
-      table: "utilisateurs",
-      column: "specialites",
-      definition: {
-        type: require("sequelize").DataTypes.STRING(255),
-        allowNull: true,
-      },
-    },
-    {
-      table: "utilisateurs",
-      column: "numero_agrement",
-      definition: {
-        type: require("sequelize").DataTypes.STRING(100),
-        allowNull: true,
-      },
-    },
-    {
-      table: "utilisateurs",
-      column: "zone_intervention",
-      definition: {
-        type: require("sequelize").DataTypes.STRING(255),
-        allowNull: true,
-      },
-    },
-    // Table produits
-    {
-      table: "produits",
-      column: "condition",
-      definition: {
-        type: require("sequelize").DataTypes.STRING(20),
-        defaultValue: "neuf",
-      },
-    },
-    {
-      table: "produits",
-      column: "marque",
-      definition: {
-        type: require("sequelize").DataTypes.STRING(100),
-        allowNull: true,
-      },
-    },
-    {
-      table: "produits",
-      column: "is_featured",
-      definition: {
-        type: require("sequelize").DataTypes.BOOLEAN,
-        defaultValue: false,
-      },
-    },
-    {
-      table: "produits",
-      column: "unite_mesure",
-      definition: {
-        type: require("sequelize").DataTypes.STRING(50),
-        defaultValue: "Pièce",
-        allowNull: true,
-      },
-    },
-    {
-      table: "produits",
-      column: "mots_cles",
-      definition: {
-        type: require("sequelize").DataTypes.JSON,
-        defaultValue: [],
-        allowNull: true,
-      },
-    },
-    // Table catégories
-    {
-      table: "categories",
-      column: "image_url",
-      definition: {
-        type: require("sequelize").DataTypes.STRING,
-        allowNull: true,
-      },
-    },
-    // Table commandes
-    {
-      table: "commandes",
-      column: "delivery_group_id",
-      definition: {
-        type: require("sequelize").DataTypes.UUID,
-        allowNull: true,
-      },
-    },
-    {
-      table: "details_commandes",
-      column: "escrow_released",
-      definition: {
-        type: require("sequelize").DataTypes.BOOLEAN,
-        defaultValue: false,
-        allowNull: false,
-      },
-    },
-    {
-      table: "litiges",
-      column: "resolution_type",
-      definition: {
-        type: require("sequelize").DataTypes.STRING(50),
-        allowNull: true,
-      },
-    },
-    {
-      table: "litiges",
-      column: "remboursement_montant",
-      definition: {
-        type: require("sequelize").DataTypes.DECIMAL(15, 2),
-        allowNull: true,
-      },
-    },
-    {
-      table: "litiges",
-      column: "preuves",
-      definition: {
-        type: require("sequelize").DataTypes.TEXT,
-        allowNull: true,
-      },
-    },
-  ];
-
-  for (const m of migrations) {
-    try {
-      // Vérifier si la colonne existe déjà (Agnostique SQL)
-      const tableDefinition = await qi.describeTable(m.table);
-      const exists = !!tableDefinition[m.column];
-
-      if (!exists) {
-        await qi.addColumn(m.table, m.column, m.definition);
-        console.log(
-          `✅ Migration : colonne '${m.column}' ajoutée à '${m.table}'`,
-        );
-      }
-    } catch (err) {
-      console.warn(
-        `⚠️  Migration '${m.column}' sur '${m.table}' ignorée : ${err.message}`,
-      );
-    }
-  }
-}
+const { runMigrations } = require("./config/runMigrations");
 
 // Lancement de la tâche Cron de rappels
 startCreditReminders();
 
 // 🚀 Démarrage du Serveur Node
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 const ALLOWED_ORIGINS =
   process.env.NODE_ENV === "production"
@@ -306,14 +108,13 @@ const start = async () => {
 
     // Connexion à la base de données
     await sequelize.authenticate();
-    console.log("✅ Connexion PostgreSQL établie.");
+    console.log("✅ Connexion base de données établie.");
 
     // Synchronisation standard (ne modifie pas les tables existantes)
     await sequelize.sync();
     console.log("✅ Modèles synchronisés.");
 
-    // Migration douce : ajout des colonnes manquantes sans toucher aux FK
-    await runSafeMigrations(sequelize);
+    await runMigrations(sequelize);
 
     // Démarrer le serveur
     server.listen(PORT, () => {

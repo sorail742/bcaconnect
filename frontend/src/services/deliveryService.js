@@ -19,6 +19,11 @@ const deliveryService = {
         return response.data;
     },
 
+    getCompletedDeliveries: async () => {
+        const response = await api.get('/delivery/completed');
+        return response.data;
+    },
+
     // Grouper des commandes
     groupOrders: async (orderIds) => {
         const response = await api.post('/delivery/group', { orderIds });
@@ -59,6 +64,11 @@ const deliveryService = {
     // Statistiques dashboard transporteur
     getCarrierStats: async () => {
         const response = await api.get('/delivery/stats');
+        return response.data;
+    },
+
+    getAdminOverview: async () => {
+        const response = await api.get('/delivery/admin/overview');
         return response.data;
     },
 };

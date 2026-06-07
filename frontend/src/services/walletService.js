@@ -29,7 +29,12 @@ const walletService = {
     captureSimulation: async (transactionId) => {
         const response = await api.post('/payments/capture-simulation', { transaction_id: transactionId });
         return response.data;
-    }
+    },
+
+    getPaymentStatus: async (transactionId) => {
+        const response = await api.get(`/payments/status/${transactionId}`);
+        return response.data;
+    },
 };
 
 export default walletService;

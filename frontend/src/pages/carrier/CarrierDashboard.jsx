@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import DashboardCard from '../../components/ui/DashboardCard';
 import DataTable from '../../components/ui/DataTable';
@@ -24,7 +25,9 @@ import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 import { 
     useAvailableDeliveries, 
-    useMyDeliveries, 
+    useMyDeliveries,
+    useCompletedDeliveries,
+    useJourneyHistory,
     useAssignDelivery, 
     useUpdateTracking,
     useGroupOrders,
@@ -32,7 +35,7 @@ import {
     useCarrierStats
 } from '../../hooks/data/useCarrierData';
 import { DataStateWrapper } from '../../components/ui/DataStates';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useLanguage } from '../../context/LanguageContext';
@@ -52,9 +55,29 @@ const carrierIcon = new L.DivIcon({
 });
 
 const DEFAULT_COORDS = { lat: 9.535, lng: -13.6773 };
+const GPS_INTERVAL_MS = 30_000;
+const GPS_MIN_METERS = 50;
+
+const distanceMeters = (a, b) => {
+    const R = 6371000;
+    const dLat = (b.lat - a.lat) * Math.PI / 180;
+    const dLng = (b.lng - a.lng) * Math.PI / 180;
+    const x = Math.sin(dLat / 2) ** 2
+        + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(x));
+};
+
+const MapRecenter = ({ center }) => {
+    const map = useMap();
+    useEffect(() => {
+        map.setView(center, map.getZoom());
+    }, [center, map]);
+    return null;
+};
 
 const CarrierDashboard = () => {
     const { t } = useLanguage();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('AVAILABLE');
     const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
     const [selectedOrderId, setSelectedOrderId] = useState(null);
@@ -62,33 +85,49 @@ const CarrierDashboard = () => {
     const [carrierPosition, setCarrierPosition] = useState(DEFAULT_COORDS);
     const [activeJourneyId, setActiveJourneyId] = useState(null);
     const watchRef = useRef(null);
+    const lastGpsRef = useRef({ time: 0, lat: 0, lng: 0 });
 
     const { data: availableDeliveries = [], isLoading: loadingAvailable, error: errorAvailable, refetch: refetchAvailable, isFetching: fetchingAvailable } = useAvailableDeliveries();
     const { data: myDeliveries = [], isLoading: loadingMine, error: errorMine, refetch: refetchMine, isFetching: fetchingMine } = useMyDeliveries();
+    const { data: completedDeliveries = [], isLoading: loadingCompleted, refetch: refetchCompleted, isFetching: fetchingCompleted } = useCompletedDeliveries();
     const { data: myGroups = [], isLoading: loadingGroups, error: errorGroups, refetch: refetchGroups, isFetching: fetchingGroups } = useMyGroups();
     const { data: carrierStats, refetch: refetchStats } = useCarrierStats();
+    const { data: journeyHistory = [] } = useJourneyHistory(activeJourneyId);
 
     const assignMutation = useAssignDelivery();
     const trackingMutation = useUpdateTracking();
     const groupMutation = useGroupOrders();
     const { on, off } = useSocket();
 
-    const isLoading = loadingAvailable || loadingMine || loadingGroups;
-    const isFetching = fetchingAvailable || fetchingMine || fetchingGroups;
+    const isLoading = loadingAvailable || loadingMine || loadingGroups || loadingCompleted;
+    const isFetching = fetchingAvailable || fetchingMine || fetchingGroups || fetchingCompleted;
     const queryError = errorAvailable || errorMine || errorGroups;
 
     const refetchAll = useCallback(() => {
         refetchAvailable();
         refetchMine();
+        refetchCompleted();
         refetchGroups();
         refetchStats();
-    }, [refetchAvailable, refetchMine, refetchGroups, refetchStats]);
+    }, [refetchAvailable, refetchMine, refetchCompleted, refetchGroups, refetchStats]);
 
     const activeTabData = activeTab === 'AVAILABLE'
         ? availableDeliveries
         : activeTab === 'MINE'
             ? myDeliveries
-            : myGroups;
+            : activeTab === 'COMPLETED'
+                ? completedDeliveries
+                : myGroups;
+
+    const activeMission = useMemo(
+        () => myDeliveries.find((d) => d.id === activeJourneyId),
+        [myDeliveries, activeJourneyId],
+    );
+
+    const routePoints = useMemo(() => journeyHistory
+        .filter((h) => h.latitude != null && h.longitude != null)
+        .map((h) => [parseFloat(h.latitude), parseFloat(h.longitude)]),
+    [journeyHistory]);
 
     const stats = {
         assigned: String(carrierStats?.assigned ?? myDeliveries.length),
@@ -122,11 +161,18 @@ const CarrierDashboard = () => {
             refetchMine();
             refetchStats();
         };
+        const handleNewDelivery = () => {
+            toast.info('Nouvelle livraison disponible !');
+            refetchAvailable();
+            refetchStats();
+        };
         on('notification_received', handleUpdate);
         on('order_status_updated', handleUpdate);
+        on('delivery_available', handleNewDelivery);
         return () => {
             off('notification_received', handleUpdate);
             off('order_status_updated', handleUpdate);
+            off('delivery_available', handleNewDelivery);
         };
     }, [on, off, refetchAvailable, refetchMine, refetchStats]);
 
@@ -168,21 +214,31 @@ const CarrierDashboard = () => {
         });
     };
 
+    const maybeSendGps = useCallback((orderId, coords) => {
+        const now = Date.now();
+        const last = lastGpsRef.current;
+        const moved = last.lat ? distanceMeters(last, coords) >= GPS_MIN_METERS : true;
+        if (now - last.time < GPS_INTERVAL_MS && !moved) return;
+        lastGpsRef.current = { time: now, ...coords };
+        trackingMutation.mutate({
+            orderId,
+            latitude: coords.lat,
+            longitude: coords.lng,
+            status: 'en_route',
+            commentaire: 'Position GPS en temps réel',
+        });
+    }, [trackingMutation]);
+
     const handleStartJourney = async (orderId) => {
         setActiveJourneyId(orderId);
+        lastGpsRef.current = { time: 0, lat: 0, lng: 0 };
         await pushTrackingUpdate(orderId, 'en_route', 'Transporteur en route vers la destination');
         if (watchRef.current) navigator.geolocation.clearWatch(watchRef.current);
         watchRef.current = navigator.geolocation.watchPosition(
             (pos) => {
                 const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                 setCarrierPosition(coords);
-                trackingMutation.mutate({
-                    orderId,
-                    latitude: coords.lat,
-                    longitude: coords.lng,
-                    status: 'en_route',
-                    commentaire: 'Position GPS en temps réel'
-                });
+                maybeSendGps(orderId, coords);
             },
             () => {},
             { enableHighAccuracy: true, maximumAge: 30000 }
@@ -228,6 +284,14 @@ const CarrierDashboard = () => {
                     {row.adresse_livraison}
                 </div>
             )
+        },
+        {
+            label: 'FRAIS',
+            render: (row) => (
+                <span className="text-[10px] font-black text-emerald-500 tabular-nums">
+                    {parseFloat(row.frais_port || 0).toLocaleString('fr-GN')} GNF
+                </span>
+            ),
         },
         {
             label: t('actions') || 'ACTION',
@@ -335,25 +399,60 @@ const CarrierDashboard = () => {
         {
             label: t('carOperationTracking') || 'STATUT',
             render: (row) => {
-                const status = row.statut_livraison;
+                const status = row.statut;
                 return (
                     <div className="flex items-center gap-2">
                         <div className={cn(
                             "size-1.5 rounded-full",
                             status === 'termine' ? "bg-emerald-500" :
-                            status === 'en_route' ? "bg-amber-500 animate-pulse" : "bg-blue-500"
+                            status === 'en_cours' ? "bg-amber-500 animate-pulse" : "bg-blue-500"
                         )} />
                         <span className={cn(
                             "text-[8px] font-black uppercase tracking-widest",
                             status === 'termine' ? "text-emerald-500" :
-                            status === 'en_route' ? "text-amber-500" : "text-blue-500"
+                            status === 'en_cours' ? "text-amber-500" : "text-blue-500"
                         )}>
-                            {status === 'en_route' ? t('carTransit') : status === 'termine' ? 'Terminé' : 'Nouveau'}
+                            {status === 'en_cours' ? t('carTransit') : status === 'termine' ? 'Terminé' : 'En attente'}
                         </span>
                     </div>
                 );
             }
         }
+    ];
+
+    const completedColumns = [
+        {
+            label: 'MISSION',
+            render: (row) => (
+                <span className="font-black text-emerald-500 uppercase text-[9px] tracking-wide bg-emerald-500/5 px-2 py-1 rounded-lg border border-emerald-500/10">
+                    #{row.id.slice(0, 8).toUpperCase()}
+                </span>
+            ),
+        },
+        {
+            label: 'DESTINATION',
+            render: (row) => (
+                <span className="text-[9px] font-black text-muted-foreground uppercase truncate max-w-[180px] block">
+                    {row.adresse_livraison}
+                </span>
+            ),
+        },
+        {
+            label: 'GAIN',
+            render: (row) => (
+                <span className="text-[10px] font-black text-primary tabular-nums">
+                    +{parseFloat(row.frais_port || 0).toLocaleString('fr-GN')} GNF
+                </span>
+            ),
+        },
+        {
+            label: 'DATE',
+            render: (row) => (
+                <span className="text-[9px] text-muted-foreground">
+                    {new Date(row.updated_at || row.date_commande).toLocaleDateString('fr-GN')}
+                </span>
+            ),
+        },
     ];
 
     return (
@@ -398,11 +497,22 @@ const CarrierDashboard = () => {
                                 <UserCheck className="size-4" /> {t('carMyLogbook')}
                             </button>
                             <button
+                                onClick={() => setActiveTab('COMPLETED')}
+                                className={cn(
+                                    "flex-1 h-12 rounded-xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all",
+                                    activeTab === 'COMPLETED'
+                                        ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                                        : "text-muted-foreground hover:bg-slate-50 dark:hover:bg-foreground/5"
+                                )}
+                            >
+                                <CheckCircle2 className="size-4" /> HISTORIQUE ({completedDeliveries.length})
+                            </button>
+                            <button
                                 onClick={() => setActiveTab('GROUPS')}
                                 className={cn(
                                     "flex-1 h-12 rounded-xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all",
                                     activeTab === 'GROUPS' 
-                                        ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" 
+                                        ? "bg-slate-700 text-white shadow-lg" 
                                         : "text-muted-foreground hover:bg-slate-50 dark:hover:bg-foreground/5"
                                 )}
                             >
@@ -449,7 +559,12 @@ const CarrierDashboard = () => {
                                     emptyMessage={t('carEmptyTerminal') || 'Aucune mission disponible'}
                                 >
                                     <DataTable
-                                        columns={activeTab === 'AVAILABLE' ? availableColumns : activeTab === 'MINE' ? myMissionsColumns : myGroupsColumns}
+                                        columns={
+                                            activeTab === 'AVAILABLE' ? availableColumns
+                                                : activeTab === 'MINE' ? myMissionsColumns
+                                                    : activeTab === 'COMPLETED' ? completedColumns
+                                                        : myGroupsColumns
+                                        }
                                         data={activeTabData}
                                         isLoading={false}
                                         className="bg-transparent border-0"
@@ -490,11 +605,20 @@ const CarrierDashboard = () => {
                                         attribution='&copy; CartoDB'
                                         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                                     />
+                                    <MapRecenter center={[carrierPosition.lat, carrierPosition.lng]} />
+                                    {routePoints.length > 1 && (
+                                        <Polyline positions={routePoints} color="#FF6600" weight={3} opacity={0.8} />
+                                    )}
                                     <Marker position={[carrierPosition.lat, carrierPosition.lng]} icon={carrierIcon}>
                                         <Popup>Votre position actuelle</Popup>
                                     </Marker>
                                 </MapContainer>
                             </div>
+                            {activeMission && (
+                                <p className="text-[9px] text-slate-400 relative z-10 truncate">
+                                    → {activeMission.adresse_livraison}
+                                </p>
+                            )}
                             {carrierStats?.co2_saved_kg && (
                                 <div className="flex items-center gap-2 text-emerald-400 relative z-10">
                                     <Leaf className="size-4" />
@@ -515,7 +639,10 @@ const CarrierDashboard = () => {
                                 {t('carAccountInOrder')}
                             </p>
                             <div className="pt-2">
-                                <button className="w-full h-12 bg-slate-900 dark:bg-white text-foreground dark:text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#FF6600] hover:text-foreground">
+                                <button
+                                    onClick={() => navigate('/messages')}
+                                    className="w-full h-12 bg-slate-900 dark:bg-white text-foreground dark:text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#FF6600] hover:text-foreground"
+                                >
                                     {t('carContactHub')}
                                 </button>
                             </div>
@@ -529,7 +656,7 @@ const CarrierDashboard = () => {
                 isOpen={isOtpModalOpen}
                 onClose={() => setIsOtpModalOpen(false)}
                 orderId={selectedOrderId}
-                onSuccess={() => { refetchAvailable(); refetchMine(); }}
+                onSuccess={() => { refetchAvailable(); refetchMine(); refetchCompleted(); refetchStats(); }}
             />
         </DashboardLayout>
     );

@@ -6,6 +6,11 @@ const adService = {
         return response.data;
     },
 
+    getMine: async () => {
+        const response = await api.get('/ads', { params: { mine: '1' } });
+        return response.data;
+    },
+
     getActive: async () => {
         const response = await api.get('/ads?status=actif');
         return response.data;

@@ -7,7 +7,7 @@ import authService from '../services/authService';
  * Combine l'état global de Zustand avec les appels API du service.
  */
 export const useAuth = () => {
-    const { user, token, isAuthenticated, loading: storeLoading, setAuth, clearAuth, updateUser, logout } = useAuthStore();
+    const { user, token, isAuthenticated, loading: storeLoading, setAuth, clearAuth, updateUser } = useAuthStore();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
@@ -101,13 +101,26 @@ export const useAuth = () => {
     };
 
     /**
+     * Déconnecte l'utilisateur (révoque le refresh token serveur + nettoie le store).
+     */
+    const logout = async () => {
+        try {
+            await authService.logout();
+        } catch {
+            // Ignorer — clearAuth dans tous les cas
+        }
+        clearAuth();
+        window.location.href = '/';
+    };
+
+    /**
      * Supprime le compte de l'utilisateur.
      */
     const deleteAccount = async () => {
         try {
             setLoading(true);
             await authService.deleteAccount();
-            logout();
+            await logout();
         } catch (err) {
             const message = err.response?.data?.message || err.message || "Erreur de suppression";
             setError(message);

@@ -13,6 +13,7 @@ const PubliciteCiblage = require('./PubliciteCiblage');
 const PubliciteStat = require('./PubliciteStat');
 const PaiementPublicite = require('./PaiementPublicite');
 const Litige = require('./Litige');
+const LitigeEvenement = require('./LitigeEvenement');
 const Credit = require('./Credit');
 const Echeancier = require('./Echeancier');
 const DeliveryLog = require('./DeliveryLog');
@@ -28,6 +29,9 @@ const Intervention = require('./Intervention');
 const EducationalResource = require('./EducationalResource');
 const IoTTrackingLog = require('./IoTTrackingLog');
 const BlockchainTransactionStub = require('./BlockchainTransactionStub');
+const AchatGroupe = require('./AchatGroupe');
+const AchatGroupeParticipant = require('./AchatGroupeParticipant');
+const OtpVerification = require('./OtpVerification');
 const sequelize = require('../config/database');
 
 // 1. Relations Utilisateur - Portefeuille
@@ -52,6 +56,7 @@ Category.belongsTo(Category, { foreignKey: 'parent_id', as: 'parent' });
 // 5. Relations Commandes
 User.hasMany(Order, { foreignKey: 'utilisateur_id', as: 'commandes' });
 Order.belongsTo(User, { foreignKey: 'utilisateur_id', as: 'client' });
+Order.belongsTo(User, { foreignKey: 'transporteur_id', as: 'transporteur' });
 
 Order.hasMany(OrderItem, { foreignKey: 'commande_id', as: 'details' });
 OrderItem.belongsTo(Order, { foreignKey: 'commande_id', as: 'commande' });
@@ -102,9 +107,13 @@ Litige.belongsTo(User, { foreignKey: 'demandeur_id', as: 'demandeur' });
 User.hasMany(Litige, { foreignKey: 'defenseur_id', as: 'litiges_contre' });
 Litige.belongsTo(User, { foreignKey: 'defenseur_id', as: 'defenseur' });
 
+Litige.hasMany(LitigeEvenement, { foreignKey: 'litige_id', as: 'evenements' });
+LitigeEvenement.belongsTo(Litige, { foreignKey: 'litige_id' });
+LitigeEvenement.belongsTo(User, { foreignKey: 'auteur_id', as: 'auteur' });
+
 // 10. Relations Crédit & Financement
 User.hasMany(Credit, { foreignKey: 'utilisateur_id', as: 'credits' });
-Credit.belongsTo(User, { foreignKey: 'utilisateur_id' });
+Credit.belongsTo(User, { foreignKey: 'utilisateur_id', as: 'utilisateur' });
 
 Order.hasOne(Credit, { foreignKey: 'commande_id' });
 Credit.belongsTo(Order, { foreignKey: 'commande_id' });
@@ -178,6 +187,22 @@ ConversationParticipant.belongsTo(Conversation, { foreignKey: 'conversation_id' 
 ConversationParticipant.belongsTo(User, { foreignKey: 'user_id', as: 'utilisateur' });
 Conversation.hasMany(ConversationParticipant, { foreignKey: 'conversation_id', as: 'details_participants' });
 
+// 15. Achats groupés (ONG / B2B)
+User.hasMany(AchatGroupe, { foreignKey: 'organisateur_id', as: 'campagnes_organisees' });
+AchatGroupe.belongsTo(User, { foreignKey: 'organisateur_id', as: 'organisateur' });
+
+Product.hasMany(AchatGroupe, { foreignKey: 'produit_id', as: 'achats_groupes' });
+AchatGroupe.belongsTo(Product, { foreignKey: 'produit_id', as: 'produit' });
+
+AchatGroupe.hasMany(AchatGroupeParticipant, { foreignKey: 'achat_groupe_id', as: 'participants' });
+AchatGroupeParticipant.belongsTo(AchatGroupe, { foreignKey: 'achat_groupe_id', as: 'campagne' });
+
+User.hasMany(AchatGroupeParticipant, { foreignKey: 'utilisateur_id', as: 'participations_groupe' });
+AchatGroupeParticipant.belongsTo(User, { foreignKey: 'utilisateur_id', as: 'participant' });
+
+Order.hasOne(AchatGroupeParticipant, { foreignKey: 'commande_id' });
+AchatGroupeParticipant.belongsTo(Order, { foreignKey: 'commande_id', as: 'commande' });
+
 module.exports = {
     User,
     Wallet,
@@ -194,6 +219,7 @@ module.exports = {
     PubliciteStat,
     PaiementPublicite,
     Litige,
+    LitigeEvenement,
     Credit,
     Echeancier,
     DeliveryLog,
@@ -209,5 +235,8 @@ module.exports = {
     EducationalResource,
     IoTTrackingLog,
     BlockchainTransactionStub,
+    AchatGroupe,
+    AchatGroupeParticipant,
+    OtpVerification,
     sequelize
 };

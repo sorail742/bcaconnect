@@ -194,11 +194,17 @@ const MyDisputes = () => {
 
                                                 <div className="flex flex-col gap-2 shrink-0">
                                                     <button
+                                                        onClick={() => navigate(`/disputes/${dispute.id}`)}
+                                                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-black uppercase tracking-widest hover:opacity-90 transition-colors"
+                                                    >
+                                                        Ouvrir le dossier
+                                                        <ChevronRight className="size-3.5" />
+                                                    </button>
+                                                    <button
                                                         onClick={() => navigate(`/orders`)}
                                                         className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border text-xs font-black uppercase tracking-widest hover:bg-muted transition-colors"
                                                     >
                                                         Voir commande
-                                                        <ChevronRight className="size-3.5" />
                                                     </button>
                                                     {!['resolu', 'ferme'].includes(dispute.statut) && (
                                                         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 text-amber-700 text-[10px] font-black uppercase tracking-widest">

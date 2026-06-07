@@ -148,16 +148,19 @@ exports.initiateDeposit = catchAsync(async (req, res, next) => {
 
 
 
+    const returnPath = orderId
+        ? `/payment/return?tx=${transaction.id}&type=order&order_id=${orderId}`
+        : `/payment/return?tx=${transaction.id}&type=wallet`;
+
     const payment_url = await paymentProviderService.generatePaymentUrl(
-
         transaction.id,
-
         parseFloat(montant),
-
         description,
-
-        req.user.telephone
-
+        req.user.telephone,
+        {
+            returnPath,
+            metadata: { type: paymentType, commande_id: orderId || undefined },
+        },
     );
 
 
@@ -284,9 +287,7 @@ exports.handleWebhook = catchAsync(async (req, res, next) => {
 
     try {
 
-        const transaction_id = req.body.transaction_id || req.body.cpm_trans_id;
-
-        const status = req.body.status || (req.body.cpm_result === '00' ? 'success' : 'failed');
+        const { transactionId: transaction_id, success } = paymentProviderService.parseWebhookStatus(req.body);
 
 
 
@@ -304,7 +305,7 @@ exports.handleWebhook = catchAsync(async (req, res, next) => {
 
 
 
-        if (status === 'success') {
+        if (success) {
 
             if (paymentProviderService.isConfigured()) {
 
@@ -352,11 +353,48 @@ exports.handleWebhook = catchAsync(async (req, res, next) => {
 
 
 
+exports.getPaymentStatus = catchAsync(async (req, res, next) => {
+    const { transactionId } = req.params;
+    const transaction = await Transaction.findByPk(transactionId, {
+        include: [{ model: Wallet }],
+    });
+
+    if (!transaction) {
+        return next(new AppError('Transaction introuvable.', 404));
+    }
+
+    const wallet = transaction.Wallet || await Wallet.findByPk(transaction.portefeuille_id);
+    if (!wallet || wallet.user_id !== req.user.id) {
+        return next(new AppError('Accès non autorisé à cette transaction.', 403));
+    }
+
+    let providerStatus = null;
+    if (transaction.statut === 'en_attente' && paymentProviderService.isConfigured()) {
+        providerStatus = await paymentProviderService.verifyTransactionStatus(transactionId);
+    }
+
+    res.json({
+        transaction_id: transaction.id,
+        statut: transaction.statut,
+        montant: parseFloat(transaction.montant),
+        order_id: transaction.commande_id || transaction.metadata?.commande_id || null,
+        provider: transaction.metadata?.provider || 'simulation',
+        provider_status: providerStatus,
+        type: transaction.metadata?.type || null,
+    });
+});
+
 exports.captureSimulation = catchAsync(async (req, res, next) => {
 
-    if (process.env.NODE_ENV === 'production' && paymentProviderService.isConfigured()) {
+    if (process.env.NODE_ENV === 'production') {
 
         return next(new AppError('Simulation désactivée en production.', 403));
+
+    }
+
+    if (process.env.PAYMENT_MODE === 'live') {
+
+        return next(new AppError('Mode paiement live actif — simulation désactivée.', 403));
 
     }
 

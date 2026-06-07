@@ -20,7 +20,7 @@ const DashboardCard = ({
             "shadow-sm",
             className
         )}>
-            <div className="p-5 flex flex-col h-full gap-4">
+            <div className="p-4 md:p-5 flex flex-col h-full gap-3">
                 {/* Header */}
                 <div className="flex items-start justify-between">
                     <div className={cn(
@@ -58,7 +58,7 @@ const DashboardCard = ({
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                         {title}
                     </p>
-                    <p className="text-2xl font-bold text-foreground tracking-tight tabular-nums truncate">
+                    <p className="text-xl md:text-2xl font-bold text-foreground tracking-tight tabular-nums leading-tight">
                         {value}
                     </p>
                 </div>

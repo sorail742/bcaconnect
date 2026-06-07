@@ -60,7 +60,7 @@ export default function CreditSimulator() {
         }, {
             onSuccess: () => {
                 setShowConfirm(false);
-                navigate('/credits');
+                navigate('/dashboard/credits');
             }
         });
     };

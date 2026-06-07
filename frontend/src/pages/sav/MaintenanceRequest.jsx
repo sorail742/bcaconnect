@@ -1,81 +1,95 @@
 import React, { useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-import savService from '../../services/savService';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import DashboardLayout from '../../components/layout/DashboardLayout';
+import { useRequestIntervention } from '../../hooks/data/useSavData';
+import { Wrench, Loader2, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
-import { Wrench, Loader2 } from 'lucide-react';
 
-export default function MaintenanceRequest() {
+const MaintenanceRequest = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const productId = searchParams.get('product');
     const guaranteeId = searchParams.get('guarantee');
-    
     const [description, setDescription] = useState('');
 
-    const mutation = useMutation({
-        mutationFn: savService.requestIntervention,
-        onSuccess: () => {
-            toast.success("Demande d'intervention envoyée avec succès.");
-            navigate('/sav/guarantees'); // Ou vers une page listant les interventions
-        },
-        onError: () => {
-            toast.error("Erreur lors de l'envoi de la demande.");
-        }
-    });
+    const { mutate, isPending } = useRequestIntervention();
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!productId) {
-            toast.error("Produit non spécifié.");
+            toast.error('Produit requis', { description: 'Sélectionnez un produit depuis vos garanties SAV.' });
             return;
         }
-        if (!description.trim()) {
-            toast.error("Veuillez décrire le problème.");
-            return;
-        }
+        if (!description.trim()) return;
 
-        mutation.mutate({
-            produit_id: productId,
-            guarantee_id: guaranteeId,
-            description_probleme: description
-        });
+        mutate(
+            {
+                produit_id: productId,
+                guarantee_id: guaranteeId,
+                description_probleme: description,
+            },
+            { onSuccess: () => navigate('/sav/interventions') },
+        );
     };
 
     return (
-        <div className="max-w-2xl mx-auto p-4 py-8">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 md:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="p-3 bg-primary/10 rounded-xl">
-                        <Wrench className="size-6 text-primary" />
+        <DashboardLayout title="DEMANDE SAV">
+            <div className="max-w-2xl mx-auto pb-24 animate-in fade-in duration-500">
+                <Link
+                    to="/sav/guarantees"
+                    className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-6 transition-colors"
+                >
+                    <ArrowLeft className="size-4" /> Retour aux garanties
+                </Link>
+
+                {!productId && (
+                    <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200">
+                        <AlertTriangle className="size-5 shrink-0 mt-0.5" />
+                        <div>
+                            <p className="font-semibold">Aucun produit sélectionné</p>
+                            <p className="mt-1 opacity-90">Retournez à vos garanties et cliquez sur « Demander une intervention » pour un produit couvert.</p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-bold">Demander une intervention</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Remplissez ce formulaire pour solliciter le SAV BCA.</p>
+                )}
+
+                <div className="bg-card border border-border rounded-2xl shadow-sm p-6 md:p-8">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                            <Wrench className="size-6" />
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-black uppercase tracking-tight">Demande d&apos;intervention</h1>
+                            <p className="text-sm text-muted-foreground">Un technicien BCA sera notifié immédiatement.</p>
+                        </div>
                     </div>
+
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <div>
+                            <label className="block text-xs font-black uppercase tracking-wide text-muted-foreground mb-2">
+                                Description du problème *
+                            </label>
+                            <textarea
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Décrivez le dysfonctionnement, les symptômes, la fréquence..."
+                                className="w-full rounded-xl border border-border bg-background p-4 min-h-[150px] text-sm outline-none focus:border-primary/50 resize-none normal-case"
+                                required
+                                disabled={!productId}
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={isPending || !description.trim() || !productId}
+                            className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-primary/90 transition-colors disabled:opacity-50"
+                        >
+                            {isPending ? <Loader2 className="size-4 animate-spin" /> : 'Envoyer la demande SAV'}
+                        </button>
+                    </form>
                 </div>
-
-                <form onSubmit={handleSubmit} className="space-y-5">
-                    <div>
-                        <label className="block text-sm font-bold mb-2">Description du problème *</label>
-                        <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Décrivez en détail le dysfonctionnement constaté..."
-                            className="w-full rounded-xl border-gray-300 dark:border-gray-600 bg-transparent p-4 min-h-[150px] focus:ring-primary focus:border-primary"
-                            required
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={mutation.isPending}
-                        className="w-full flex items-center justify-center gap-2 bg-primary text-white py-3 rounded-xl font-bold hover:bg-orange-600 transition-colors disabled:opacity-50"
-                    >
-                        {mutation.isPending ? <Loader2 className="animate-spin" /> : 'Envoyer la demande'}
-                    </button>
-                </form>
             </div>
-        </div>
+        </DashboardLayout>
     );
-}
+};
+
+export default MaintenanceRequest;

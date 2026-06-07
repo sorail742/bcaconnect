@@ -14,8 +14,15 @@ import { useWallet } from '../hooks/useDomainData';
 import useApiMutation from '../hooks/useApiMutation';
 import { useLanguage } from '../context/LanguageContext';
 import { checkoutStep1Schema } from '../lib/validation';
+import shippingService from '../services/shippingService';
+import { syncService } from '../services/syncService';
+import { Leaf, Clock, Rocket } from 'lucide-react';
 
-const DELIVERY_FEE = 50000;
+const DELIVERY_ICONS = {
+    eco: Leaf,
+    standard: Truck,
+    prioritaire: Rocket,
+};
 
 const Field = ({ label, ...props }) => {
     const { t } = useLanguage();
@@ -29,7 +36,7 @@ const Field = ({ label, ...props }) => {
 
 const Checkout = () => {
     const { t } = useLanguage();
-    const { cartItems, cartTotal, clearCart } = useCart();
+    const { cartItems, cartTotal, clearCart, typeLivraison: cartDeliveryType } = useCart();
     const { user } = useAuth();
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
@@ -40,10 +47,45 @@ const Checkout = () => {
     const [formData, setFormData] = useState({
         prenom: '', nom: user?.nom_complet || '', email: user?.email || '',
         telephone: user?.telephone || '', adresse: '', ville: 'Conakry',
-        quartier: '', notes: '', paymentMethod: 'wallet', mobileMoneyPhone: user?.telephone || ''
+        quartier: '', notes: '', paymentMethod: 'wallet', mobileMoneyPhone: user?.telephone || '',
+        typeLivraison: cartDeliveryType || 'standard',
     });
+    const [deliveryOptions, setDeliveryOptions] = useState([]);
+    const [deliveryFee, setDeliveryFee] = useState(50000);
+    const [loadingShipping, setLoadingShipping] = useState(false);
 
-    const total = (cartTotal || 0) + DELIVERY_FEE;
+    const buildAddress = () => {
+        const parts = [formData.adresse, formData.quartier, formData.ville].filter(Boolean);
+        return parts.join(', ') || 'Conakry';
+    };
+
+    const total = (cartTotal || 0) + deliveryFee;
+
+    useEffect(() => {
+        const addr = buildAddress();
+        if (!addr || addr.length < 5) return;
+
+        let cancelled = false;
+        setLoadingShipping(true);
+        shippingService.getOptions(addr, cartItems.length)
+            .then((options) => {
+                if (cancelled) return;
+                setDeliveryOptions(options);
+            })
+            .catch(() => {
+                if (!cancelled) setDeliveryOptions([]);
+            })
+            .finally(() => { if (!cancelled) setLoadingShipping(false); });
+
+        return () => { cancelled = true; };
+    }, [formData.adresse, formData.quartier, formData.ville, cartItems.length]);
+
+    useEffect(() => {
+        const selected = deliveryOptions.find((o) => o.type_livraison === formData.typeLivraison)
+            || deliveryOptions.find((o) => o.type_livraison === 'standard')
+            || deliveryOptions[0];
+        if (selected) setDeliveryFee(selected.frais_port);
+    }, [deliveryOptions, formData.typeLivraison]);
 
     useEffect(() => { if (cartItems.length === 0) navigate('/marketplace'); }, [cartItems, navigate]);
 
@@ -51,12 +93,15 @@ const Checkout = () => {
     const { mutate: createOrder, isPending: isSubmitting } = useApiMutation(
         (payload) => orderService.create(payload),
         {
-            successMessage: t('ckOrderValidated'),
-            invalidateKeys: ['wallet', 'orders', 'user-profile'],
-            onSuccess: () => {
+            successMessage: (data) => data?.offline
+                ? (data.message || 'Commande enregistrée hors ligne.')
+                : t('ckOrderValidated'),
+            invalidateKeys: (data) => data?.offline ? [] : ['wallet', 'orders', 'user-profile'],
+            onSuccess: (data) => {
                 clearCart();
-                navigate('/dashboard/orders');
-            }
+                if (data?.offline) syncService.notify();
+                navigate('/orders');
+            },
         }
     );
 
@@ -85,6 +130,13 @@ const Checkout = () => {
             return;
         }
 
+        if (!navigator.onLine) {
+            if (formData.paymentMethod !== 'cod') {
+                toast.error('Hors ligne : seul le paiement à la livraison est disponible.');
+                return;
+            }
+        }
+
         if (formData.paymentMethod === 'wallet') {
             const balance = wallet ? parseFloat(wallet.solde_virtuel) : 0;
             if (balance < total) { 
@@ -100,9 +152,10 @@ const Checkout = () => {
         };
 
         const orderPayload = cartService.formatOrderData(
-            cartItems, 
-            deliveryInfo, 
-            formData.paymentMethod
+            cartItems,
+            deliveryInfo,
+            formData.paymentMethod,
+            formData.typeLivraison,
         );
 
         // --- FLUX MOBILE MONEY : commande d'abord, paiement ensuite, séquestre au webhook ---
@@ -236,6 +289,48 @@ const Checkout = () => {
                                         <textarea name="adresse" value={formData.adresse} onChange={handleChange} placeholder={t('ckPreciseAddress')} rows={3}
                                             className="w-full px-4 py-3 bg-background border border-border rounded-2xl text-xs font-medium outline-none focus:border-primary/50 transition-all text-foreground placeholder:text-muted-foreground resize-none" />
                                     </div>
+
+                                    <div className="space-y-3 pt-2">
+                                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Mode de livraison</label>
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            {(deliveryOptions.length ? deliveryOptions : [
+                                                { type_livraison: 'eco', label: 'Économique', description: '5-7 jours', frais_port: Math.round(deliveryFee * 0.75) },
+                                                { type_livraison: 'standard', label: 'Standard', description: '3-5 jours', frais_port: deliveryFee },
+                                                { type_livraison: 'prioritaire', label: 'Prioritaire', description: '24-48 h', frais_port: Math.round(deliveryFee * 1.6) },
+                                            ]).map((opt) => {
+                                                const Icon = DELIVERY_ICONS[opt.type_livraison] || Truck;
+                                                const selected = formData.typeLivraison === opt.type_livraison;
+                                                return (
+                                                    <button
+                                                        key={opt.type_livraison}
+                                                        type="button"
+                                                        onClick={() => setFormData((p) => ({ ...p, typeLivraison: opt.type_livraison }))}
+                                                        className={cn(
+                                                            'p-4 rounded-2xl border-2 text-left transition-all',
+                                                            selected
+                                                                ? 'border-primary bg-primary/5 shadow-inner'
+                                                                : 'border-border hover:border-primary/30',
+                                                        )}
+                                                    >
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <Icon className={cn('size-4', selected ? 'text-primary' : 'text-muted-foreground')} />
+                                                            <span className="text-xs font-black uppercase">{opt.label}</span>
+                                                        </div>
+                                                        <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                            <Clock className="size-3" />
+                                                            {opt.description}
+                                                        </p>
+                                                        <p className="text-sm font-bold text-primary mt-2 tabular-nums">
+                                                            {parseFloat(opt.frais_port).toLocaleString()} {t('gnf')}
+                                                        </p>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        {loadingShipping && (
+                                            <p className="text-[10px] text-muted-foreground animate-pulse">Calcul des frais selon votre zone...</p>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <Button onClick={() => validateStep1() && setStep(2)}
@@ -366,8 +461,13 @@ const Checkout = () => {
                                         <span className="font-medium text-foreground tabular-nums">{(cartTotal || 0).toLocaleString()} {t('gnf')}</span>
                                     </div>
                                     <div className="flex justify-between text-muted-foreground">
-                                        <span className="flex items-center gap-1.5"><Truck className="size-3.5 text-primary" /> {t('ckLogistics')}</span>
-                                        <span className="font-medium text-foreground tabular-nums">{DELIVERY_FEE.toLocaleString()} {t('gnf')}</span>
+                                        <span className="flex items-center gap-1.5">
+                                            <Truck className="size-3.5 text-primary" />
+                                            {deliveryOptions.find((o) => o.type_livraison === formData.typeLivraison)?.label || t('ckLogistics')}
+                                        </span>
+                                        <span className="font-medium text-foreground tabular-nums">
+                                            {loadingShipping ? '...' : `${deliveryFee.toLocaleString()} ${t('gnf')}`}
+                                        </span>
                                     </div>
                                     <div className="flex justify-between font-bold text-base pt-2 border-t border-border">
                                         <span className="text-foreground">{t('total')}</span>

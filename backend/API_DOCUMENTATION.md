@@ -40,7 +40,7 @@ Bienvenue dans la documentation officielle de l'API **BCA Connect**. Cette API R
 | `GET` | `/orders/vendor` | Fournisseur | Commandes contenant vos produits. |
 | `GET` | `/orders/:id` | Client/Vendeur/Admin | Détail commande + items. |
 | `PATCH` | `/orders/:orderId/status` | Client/Admin | Annulation / retour (transitions strictes). |
-| `PATCH` | `/orders/items/:itemId/status` | Fournisseur | Flux vendeur : `prepare`, `expedie`, `livre` → libération escrow idempotente. |
+| `PATCH` | `/orders/items/:itemId/status` | Fournisseur | Flux vendeur : `prepare`, `expedie`, `livre` (statut uniquement — séquestre libéré à l'OTP transporteur). |
 
 ---
 

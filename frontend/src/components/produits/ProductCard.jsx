@@ -7,6 +7,8 @@ import {
 import useCart from '../../hooks/useCart';
 import useWishlistStore from '../../store/wishlistStore';
 import useAuthStore from '../../store/authStore';
+import { hasPermission } from '../../utils/permissions';
+import messageService from '../../services/messageService';
 import { cn, getImageUrl } from '../../lib/utils';
 import { toast } from 'sonner';
 import LazyImage from '../ui/LazyImage';
@@ -142,15 +144,22 @@ const ProductCard = ({
     const { user } = useAuthStore();
     
     const [isAdded, setIsAdded] = React.useState(false);
+    const [chatLoading, setChatLoading] = React.useState(false);
 
     const isWishlisted = isInWishlist(product.id);
     const isOwner = user && product.boutique && product.boutique.proprietaire_id === user.id;
+    const canBuy = hasPermission(user, 'CAN_BUY');
     const inStock = parseInt(product.stock_quantite || 0) > 0;
+    const cartDisabled = !inStock || isOwner || !canBuy;
     const moq = getMoq(product);
 
     const handleAddToCart = (e) => {
         e.preventDefault();
         e.stopPropagation();
+        if (!canBuy) {
+            toast.error('Action réservée aux clients', { description: 'Seuls les comptes client peuvent passer commande.' });
+            return;
+        }
         if (isOwner) {
             toast.error(t('pdOwnerAction'), { description: t('pdOwnerDesc') });
             return;
@@ -172,12 +181,32 @@ const ProductCard = ({
         added ? toast.success(t('pdAddedToWishlist')) : toast.info(t('pdRemovedFromWishlist'));
     };
 
-    const handleChat = (e) => {
+    const handleChat = async (e) => {
         e.preventDefault();
         e.stopPropagation();
+        if (!user) {
+            toast.info('Connexion requise', { description: 'Connectez-vous pour discuter avec le fournisseur.' });
+            navigate('/login');
+            return;
+        }
+        if (isOwner) {
+            toast.error(t('pdOwnerAction'), { description: t('pdOwnerDesc') });
+            return;
+        }
         const vendorId = product.boutique?.proprietaire_id || product.vendeur_id;
-        if (vendorId) navigate(`/messages?recipient=${vendorId}`);
-        else toast.error(t('pdVendorNotFound'));
+        if (!vendorId) {
+            toast.error(t('pdVendorNotFound') || 'Vendeur introuvable.');
+            return;
+        }
+        setChatLoading(true);
+        try {
+            const conversation = await messageService.startConversation(vendorId);
+            navigate(`/messages?id=${conversation.id}`, { state: { openConversation: conversation } });
+        } catch {
+            toast.error('Impossible de démarrer la conversation.');
+        } finally {
+            setChatLoading(false);
+        }
     };
 
     // ── Variant: TABLE ROW (Dashboard) ─────────────────────────
@@ -252,10 +281,9 @@ const ProductCard = ({
                             </button>
                             <button
                                 onClick={handleAddToCart}
-                                disabled={!inStock || isOwner}
                                 className={cn(
                                     "h-9 px-4 text-xs flex items-center gap-1.5 rounded",
-                                    isOwner ? "bg-[#f5f5f5] text-[#999] cursor-not-allowed" :
+                                    cartDisabled ? "bg-[#f5f5f5] text-[#999] cursor-not-allowed" :
                                     isAdded ? "bg-emerald-500 text-white" : "bca-btn-primary"
                                 )}
                             >
@@ -317,17 +345,20 @@ const ProductCard = ({
                 <div className="grid grid-cols-2 gap-1.5 mt-auto pt-2 border-t border-[#f5f5f5]">
                     <button 
                         onClick={handleChat}
-                        className="flex items-center justify-center gap-1 h-8 text-[10px] font-semibold bca-btn-outline"
+                        disabled={chatLoading || isOwner}
+                        className={cn(
+                            "flex items-center justify-center gap-1 h-8 text-[10px] font-semibold bca-btn-outline",
+                            (chatLoading || isOwner) && "opacity-50 cursor-not-allowed",
+                        )}
                     >
                         <MessageCircle className="size-3" />
-                        Chat
+                        {chatLoading ? '...' : 'Chat'}
                     </button>
                     <button 
                         onClick={handleAddToCart}
-                        disabled={!inStock || isOwner}
                         className={cn(
                             "flex items-center justify-center gap-1 h-8 text-[10px] font-semibold rounded",
-                            isOwner ? "bg-[#f5f5f5] text-[#999] cursor-not-allowed" :
+                            cartDisabled ? "bg-[#f5f5f5] text-[#999] cursor-not-allowed" :
                             isAdded ? "bg-emerald-500 text-white" : "bca-btn-primary"
                         )}
                     >

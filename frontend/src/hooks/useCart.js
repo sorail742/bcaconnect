@@ -8,9 +8,12 @@ const useCart = () => {
     const cartItems = useCartStore((state) => state.items);
     const cartTotal = useCartStore((state) => state.total);
     const totalQuantity = useCartStore((state) => state.itemCount);
+    const typeLivraison = useCartStore((state) => state.typeLivraison);
+    const deliveryFee = useCartStore((state) => state.deliveryFee);
     
     // Actions
     const addToCart = useCartStore((state) => state.addItem);
+    const setDelivery = useCartStore((state) => state.setDelivery);
     const removeFromCart = useCartStore((state) => state.removeItem);
     const updateQuantity = useCartStore((state) => state.updateQuantity);
     const clearCart = useCartStore((state) => state.clearCart);
@@ -19,6 +22,9 @@ const useCart = () => {
         cartItems,
         cartTotal,
         totalQuantity,
+        typeLivraison,
+        deliveryFee,
+        setDelivery,
         addToCart,
         removeFromCart,
         updateQuantity,

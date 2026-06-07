@@ -1,8 +1,6 @@
 const cron = require('node-cron');
 const { Op } = require('sequelize');
-const { Echeancier, Credit, User } = require('../models');
-const { getIO } = require('../app'); // Assuming socket.io is accessible, wait I should use the standard way
-// Let's just mock the email/notification sending for now or use console.log
+const { Echeancier, Credit, User, Notification } = require('../models');
 
 /**
  * Tâche Cron : Rappels automatiques pour les échéances de crédit
@@ -33,7 +31,7 @@ const startCreditReminders = () => {
                     model: Credit,
                     include: [{
                         model: User,
-                        as: 'Utilisateur', // or default association name
+                        as: 'utilisateur',
                         attributes: ['id', 'email', 'nom_complet', 'telephone']
                     }]
                 }]
@@ -46,25 +44,23 @@ const startCreditReminders = () => {
                 const timeDiff = datePrevue.getTime() - today.getTime();
                 const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
                 
-                const user = echeance.Credit?.User || echeance.Credit?.Utilisateur;
+                const user = echeance.Credit?.utilisateur;
                 if (!user) continue;
 
                 // Logique d'alerte
                 if (daysDiff === 3) {
-                    sendNotification(user, `Rappel : Votre échéance de ${echeance.montant_du} GNF arrive à échéance dans 3 jours (${datePrevue.toLocaleDateString()}).`);
+                    await sendNotification(user, `Rappel : Votre échéance de ${echeance.montant_du} GNF arrive à échéance dans 3 jours (${datePrevue.toLocaleDateString()}).`);
                 } else if (daysDiff === 1) {
-                    sendNotification(user, `Alerte : Votre échéance de ${echeance.montant_du} GNF est due demain !`);
+                    await sendNotification(user, `Alerte : Votre échéance de ${echeance.montant_du} GNF est due demain !`);
                 } else if (daysDiff === 0) {
-                    sendNotification(user, `Urgent : Votre échéance de ${echeance.montant_du} GNF est due AUJOURD'HUI. Cliquez ici pour payer.`);
+                    await sendNotification(user, `Urgent : Votre échéance de ${echeance.montant_du} GNF est due AUJOURD'HUI. Cliquez ici pour payer.`);
                 } else if (daysDiff < 0 && echeance.statut !== 'en_retard') {
-                    // Mettre à jour le statut
                     echeance.statut = 'en_retard';
                     await echeance.save();
-                    sendNotification(user, `Retard : Votre échéance de ${echeance.montant_du} GNF est en retard de ${Math.abs(daysDiff)} jours. Veuillez régulariser votre situation.`);
+                    await sendNotification(user, `Retard : Votre échéance de ${echeance.montant_du} GNF est en retard de ${Math.abs(daysDiff)} jours. Veuillez régulariser votre situation.`);
                 } else if (daysDiff < 0 && echeance.statut === 'en_retard') {
-                    // Relance tous les 5 jours de retard
                     if (Math.abs(daysDiff) % 5 === 0) {
-                        sendNotification(user, `Dernier Rappel : Votre échéance est en retard de ${Math.abs(daysDiff)} jours. Pénalités applicables.`);
+                        await sendNotification(user, `Dernier Rappel : Votre échéance est en retard de ${Math.abs(daysDiff)} jours. Pénalités applicables.`);
                     }
                 }
             }
@@ -77,12 +73,18 @@ const startCreditReminders = () => {
     console.log('[CRON] Tâche de rappel des échéances planifiée (Tous les jours à 08:00).');
 };
 
-const sendNotification = (user, message) => {
-    // Simulation d'envoi d'Email / SMS / Push
+const sendNotification = async (user, message, titre = 'Rappel crédit BCA') => {
     console.log(`[NOTIF -> ${user.nom_complet} / ${user.telephone || user.email}] : ${message}`);
-    
-    // Si on avait accès direct à Socket.io de l'app :
-    // getIO().to(`user_${user.id}`).emit('credit_reminder', { message });
+    try {
+        await Notification.create({
+            utilisateur_id: user.id,
+            titre,
+            message,
+            type: 'credit',
+        });
+    } catch (err) {
+        console.warn('[CRON] Échec création notification crédit:', err.message);
+    }
 };
 
 module.exports = { startCreditReminders };

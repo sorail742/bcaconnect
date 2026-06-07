@@ -1,37 +1,26 @@
 const { Order, OrderItem, Product, Wallet, Transaction, User, Notification, sequelize } = require('../models');
 const escrowService = require('../services/escrowService');
+const { calculateShipping, listDeliveryOptions } = require('../services/shippingService');
+const { reserveStockForItems } = require('../services/orderStockService');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
 
-// Logic de calcul des frais de livraison dynamique pour la Guinée
-const calculateShippingFee = (adresse, itemsCount) => {
-    const checkCase = (str) => str?.toLowerCase() || '';
-    const addr = checkCase(adresse);
-
-    // Conakry : Dynamisation par zone
-    const isConakry = addr.includes('conakry');
-    const isKaloum = addr.includes('kaloum'); // Zone administrative/business (souvent plus cher ou base différente)
-    const otherCommunes = ['dixinn', 'ratoma', 'matam', 'matoto', 'kagbelen', 'dubréka'];
-    const matchesCommune = otherCommunes.some(c => addr.includes(c));
-
-    if (isKaloum) {
-        return 25000 + (itemsCount * 2500); // Kaloum est plus central mais accès plus restreint
-    }
-
-    if (isConakry || matchesCommune) {
-        return 20000 + (itemsCount * 2000); // Standard Conakry
-    }
-
-    // Province : Base fixe plus élevée
-    return 50000 + (itemsCount * 5000);
-};
-
 const orderController = {
+    getShippingQuote: catchAsync(async (req, res) => {
+        const { adresse, items, type } = req.query;
+        const itemsCount = parseInt(items, 10) || 1;
+
+        if (type) {
+            return res.json(calculateShipping(adresse, itemsCount, type));
+        }
+        res.json({ options: listDeliveryOptions(adresse, itemsCount) });
+    }),
+
     create: catchAsync(async (req, res, next) => {
         console.log("🚀 [ORDER CREATE] Début création commande...");
         const t = await sequelize.transaction();
         try {
-            const { items, cle_idempotence, deliveryInfo, paymentMethod } = req.body;
+            const { items, cle_idempotence, deliveryInfo, paymentMethod, type_livraison, mode_resilience } = req.body;
             console.log(`📦 [ORDER DEBUG] Items: ${items?.length}, Method: ${paymentMethod}`);
             const utilisateur_id = req.user.id;
 
@@ -82,12 +71,23 @@ const orderController = {
                     prix_unitaire_achat: product.prix_unitaire,
                     statut: 'en_attente'
                 });
-
-                await product.decrement('stock_quantite', { by: item.quantity, transaction: t });
             }
 
-            // --- CALCUL DES FRAIS DE PORT ---
-            const frais_port = calculateShippingFee(deliveryInfo?.adresse, items.length);
+            const reserveStockNow = paymentMethod === 'wallet' || paymentMethod === 'cod';
+            if (reserveStockNow) {
+                await reserveStockForItems(
+                    orderItemsByVendor.map((i) => ({ produit_id: i.produit_id, quantite: i.quantite })),
+                    t,
+                );
+            }
+
+            // --- CALCUL DES FRAIS DE PORT (éco / standard / prioritaire) ---
+            const shipping = calculateShipping(
+                deliveryInfo?.adresse,
+                items.length,
+                type_livraison || 'standard',
+            );
+            const frais_port = shipping.frais_port;
             const total_ttc = total_produits + frais_port;
 
             // 3. Gestion du paiement
@@ -105,8 +105,11 @@ const orderController = {
                 utilisateur_id,
                 total_ttc,
                 frais_port,
+                type_livraison: shipping.type_livraison,
+                delai_estime_jours: shipping.delai_estime_jours,
                 statut: paymentMethod === 'wallet' ? 'payé' : 'en_attente_paiement',
                 methode_paiement: paymentMethod || 'wallet',
+                mode_resilience: Boolean(mode_resilience),
                 nom_destinataire: deliveryInfo?.nom,
                 telephone_livraison: deliveryInfo?.telephone,
                 adresse_livraison: deliveryInfo?.adresse,
@@ -128,7 +131,7 @@ const orderController = {
                     commande_id: order.id,
                     montant: total_ttc,
                     type_transaction: 'achat_produit',
-                    statut: 'terminé'
+                    statut: 'complete'
                 }, { transaction: t });
 
                 // 🛡️ SÉQUESTRE AUTOMATIQUE : Créditer les vendeurs en mode séquestre
@@ -315,16 +318,7 @@ const orderController = {
             item.statut = newStatus;
             await item.save({ transaction: t });
 
-            // 🛡️ LIBÉRATION MANUELLE — idempotente via escrowService
-            if (newStatus === 'livre' && parentOrder?.statut_livraison !== 'livre') {
-                await escrowService.releaseItemEscrow(
-                    item,
-                    item.commande_id,
-                    t,
-                    'REL-MAN',
-                    'release_escrow_manual'
-                );
-            }
+            // Le séquestre est libéré uniquement à la validation OTP transporteur (delivery/verify).
 
             // Vérifier si tous les articles de la commande sont préparés pour notifier le transporteur
             const allItems = await OrderItem.findAll({ where: { commande_id: item.commande_id }, transaction: t });
@@ -339,10 +333,11 @@ const orderController = {
 
             await t.commit();
 
-            // ⚡ NOTIFICATION POUR LE CLIENT
             const io = req.app.get('socketio');
-            if (io) {
-                const order = await Order.findByPk(item.commande_id);
+            const order = await Order.findByPk(item.commande_id);
+
+            // ⚡ NOTIFICATION POUR LE CLIENT
+            if (io && order) {
                 const statusLabels = {
                     'prepare': 'est en cours de préparation',
                     'expedie': 'a été expédiée',
@@ -357,6 +352,29 @@ const orderController = {
                     type: 'order'
                 });
                 io.to(order.utilisateur_id).emit('notification_received', clientNotif);
+            }
+
+            // ⚡ NOTIFIER LES TRANSPORTEURS quand la commande est prête
+            if (allPrepared && order?.statut_livraison === 'pret' && io) {
+                const carriers = await User.findAll({
+                    where: { role: 'transporteur', statut: 'actif' },
+                    attributes: ['id'],
+                });
+                for (const carrier of carriers) {
+                    const carrierNotif = await Notification.create({
+                        utilisateur_id: carrier.id,
+                        titre: 'Nouvelle livraison disponible',
+                        message: `Commande <span class="font-black text-primary">#${order.id.slice(0, 8)}</span> prête à ramasser — ${parseFloat(order.frais_port || 0).toLocaleString('fr-GN')} GNF`,
+                        type: 'delivery',
+                        metadata: { order_id: order.id },
+                    });
+                    io.to(carrier.id).emit('notification_received', carrierNotif);
+                    io.to(carrier.id).emit('delivery_available', {
+                        orderId: order.id,
+                        frais_port: order.frais_port,
+                        adresse: order.adresse_livraison,
+                    });
+                }
             }
 
             res.json({
@@ -437,9 +455,14 @@ const orderController = {
                     }
                 }
 
-                // Restaurer stocks
-                for (const item of order.details) {
-                    await Product.increment('stock_quantite', { by: item.quantite, where: { id: item.produit_id }, transaction: t });
+                // Restaurer stocks uniquement si le stock avait été réservé (wallet, COD ou commande payée)
+                const stockWasReserved = order.statut === 'payé'
+                    || order.methode_paiement === 'cod'
+                    || order.methode_paiement === 'wallet';
+                if (stockWasReserved) {
+                    for (const item of order.details) {
+                        await Product.increment('stock_quantite', { by: item.quantite, where: { id: item.produit_id }, transaction: t });
+                    }
                 }
                 // Update all items to annulé
                 await OrderItem.update({ statut: 'annulé' }, { where: { commande_id: order.id }, transaction: t });

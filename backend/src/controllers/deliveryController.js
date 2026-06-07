@@ -87,6 +87,11 @@ const deliveryController = {
     updateTracking: catchAsync(async (req, res, next) => {
         const { orderId, latitude, longitude, status, commentaire } = req.body;
 
+        const orderCheck = await Order.findByPk(orderId, { attributes: ['id', 'transporteur_id', 'utilisateur_id'] });
+        if (!orderCheck || orderCheck.transporteur_id !== req.user.id) {
+            return next(new AppError('Action non autorisée sur cette livraison.', 403));
+        }
+
         const log = await DeliveryLog.create({
             order_id: orderId,
             latitude,
@@ -159,8 +164,44 @@ const deliveryController = {
                 commentaire: 'Livraison finalisée et validée par OTP'
             }, { transaction: t });
 
+            const fraisPort = parseFloat(order.frais_port || 0);
+            let walletBalance = null;
+            if (fraisPort > 0) {
+                const wallet = await Wallet.findOne({
+                    where: { user_id: transporteur_id },
+                    transaction: t,
+                    lock: t.LOCK.UPDATE,
+                });
+                if (wallet) {
+                    wallet.solde_virtuel = parseFloat(wallet.solde_virtuel) + fraisPort;
+                    await wallet.save({ transaction: t });
+                    await Transaction.create({
+                        portefeuille_id: wallet.id,
+                        montant: fraisPort,
+                        commande_id: orderId,
+                        type_transaction: 'frais_livraison',
+                        statut: 'complete',
+                        reference_externe: `DEL-${orderId.slice(0, 8)}`,
+                        cle_idempotence: `carrier-payout-${orderId}`,
+                        metadata: { transporteur_id },
+                    }, { transaction: t });
+                    walletBalance = parseFloat(wallet.solde_virtuel);
+                }
+            }
+
             await t.commit();
-            res.json({ message: "Livraison réussie et validée !", order });
+
+            const io = req.app.get('socketio');
+            if (io && walletBalance !== null) {
+                io.to(transporteur_id).emit('wallet_updated', { amount: fraisPort, balance: walletBalance });
+            }
+
+            res.json({
+                message: "Livraison réussie et validée !",
+                order,
+                frais_verses: fraisPort,
+                wallet_balance: walletBalance,
+            });
         } catch (error) {
             if (t) await t.rollback();
             next(error);
@@ -192,14 +233,34 @@ const deliveryController = {
         res.json(history);
     }),
 
-    // 6. Récupérer l'historique de tracking (Client)
+    // 6. Récupérer l'historique de tracking (propriétaire, transporteur ou admin)
     getTrackingHistory: catchAsync(async (req, res, next) => {
         const { orderId } = req.params;
+        const order = await Order.findByPk(orderId, { attributes: ['id', 'utilisateur_id', 'transporteur_id'] });
+        if (!order) return next(new AppError('Commande introuvable.', 404));
+
+        const allowed = order.utilisateur_id === req.user.id
+            || order.transporteur_id === req.user.id
+            || req.user.role === 'admin';
+        if (!allowed) return next(new AppError('Accès non autorisé à cet historique.', 403));
+
         const history = await DeliveryLog.findAll({
             where: { order_id: orderId },
             order: [['created_at', 'ASC']]
         });
         res.json(history);
+    }),
+
+    // 6b. Livraisons terminées du transporteur
+    getCompletedDeliveries: catchAsync(async (req, res) => {
+        const transporteur_id = req.user.id;
+        const completed = await Order.findAll({
+            where: { transporteur_id, statut_livraison: 'livre' },
+            attributes: ['id', 'adresse_livraison', 'frais_port', 'nom_destinataire', 'updated_at', 'date_commande'],
+            order: [['updated_at', 'DESC']],
+            limit: 50,
+        });
+        res.json(completed);
     }),
 
     // 7. Suivi PUBLIC par numéro de commande (sans authentification, données masquées RGPD)
@@ -349,7 +410,106 @@ const deliveryController = {
         res.json(groups);
     }),
 
-    // 10. Statistiques transporteur (Dashboard Carrier)
+    // 10. Vue logistique admin (flotte + livraisons actives)
+    getAdminLogisticsOverview: catchAsync(async (req, res) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const [pret, active, livreToday, carriers] = await Promise.all([
+            Order.count({ where: { statut_livraison: 'pret' } }),
+            Order.count({
+                where: { statut_livraison: { [Op.in]: ['ramasse', 'en_route', 'en_cours'] } },
+            }),
+            Order.count({
+                where: {
+                    statut_livraison: 'livre',
+                    updated_at: { [Op.gte]: today },
+                },
+            }),
+            User.findAll({
+                where: { role: 'transporteur' },
+                attributes: ['id', 'nom_complet', 'email', 'telephone', 'location', 'metadata_transporteur', 'statut'],
+            }),
+        ]);
+
+        const carrierStats = await Promise.all(carriers.map(async (carrier) => {
+            const [completed, activeCount] = await Promise.all([
+                Order.count({ where: { transporteur_id: carrier.id, statut_livraison: 'livre' } }),
+                Order.count({
+                    where: {
+                        transporteur_id: carrier.id,
+                        statut_livraison: { [Op.in]: ['ramasse', 'en_route', 'en_cours'] },
+                    },
+                }),
+            ]);
+            const coords = carrier.location?.coordinates;
+            return {
+                id: carrier.id,
+                nom_complet: carrier.nom_complet,
+                email: carrier.email,
+                statut: carrier.statut,
+                metadata_transporteur: carrier.metadata_transporteur,
+                location: coords ? { lat: coords[1], lng: coords[0] } : null,
+                completed,
+                active_deliveries: activeCount,
+            };
+        }));
+
+        const activeOrders = await Order.findAll({
+            where: { statut_livraison: { [Op.in]: ['ramasse', 'en_route', 'en_cours'] } },
+            attributes: ['id', 'adresse_livraison', 'statut_livraison', 'frais_port', 'transporteur_id', 'updated_at'],
+            include: [
+                { model: User, as: 'transporteur', attributes: ['id', 'nom_complet'] },
+                { model: User, as: 'client', attributes: ['id', 'nom_complet'] },
+            ],
+            order: [['updated_at', 'DESC']],
+            limit: 30,
+        });
+
+        const activeWithGps = await Promise.all(activeOrders.map(async (order) => {
+            const lastLog = await DeliveryLog.findOne({
+                where: { order_id: order.id, latitude: { [Op.ne]: null } },
+                order: [['created_at', 'DESC']],
+            });
+            return {
+                id: order.id,
+                adresse_livraison: order.adresse_livraison,
+                statut_livraison: order.statut_livraison,
+                frais_port: order.frais_port,
+                transporteur: order.transporteur,
+                client: order.client,
+                lastPosition: lastLog ? {
+                    lat: parseFloat(lastLog.latitude),
+                    lng: parseFloat(lastLog.longitude),
+                    updated_at: lastLog.created_at,
+                } : null,
+            };
+        }));
+
+        const pendingOrders = await Order.findAll({
+            where: { statut_livraison: 'pret', statut: { [Op.in]: ['payé', 'en_préparation'] } },
+            attributes: ['id', 'adresse_livraison', 'frais_port', 'type_livraison', 'created_at'],
+            order: [['created_at', 'DESC']],
+            limit: 20,
+        });
+
+        const carriersOnline = carrierStats.filter((c) => c.location).length;
+
+        res.json({
+            stats: {
+                pret,
+                active,
+                livre_today: livreToday,
+                carriers_online: carriersOnline,
+                total_carriers: carriers.length,
+            },
+            carriers: carrierStats,
+            active_orders: activeWithGps,
+            pending_orders: pendingOrders,
+        });
+    }),
+
+    // 11. Statistiques transporteur (Dashboard Carrier)
     getCarrierStats: catchAsync(async (req, res, next) => {
         const transporteur_id = req.user.id;
 

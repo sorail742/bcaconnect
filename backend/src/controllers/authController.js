@@ -513,6 +513,28 @@ const authController = {
             res.clearCookie('bca_refresh_token');
             res.json({ message: "Compte supprimé conformément au RGPD." });
         } catch (error) { await t.rollback(); next(error); }
+    },
+
+    requestOtp: async (req, res, next) => {
+        try {
+            const otpService = require('../services/otpService');
+            const { telephone, type_action } = req.body;
+            const result = await otpService.createOtp(telephone, type_action);
+            res.json({ message: 'Code OTP envoyé.', ...result });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    verifyOtp: async (req, res, next) => {
+        try {
+            const otpService = require('../services/otpService');
+            const { telephone, code, type_action } = req.body;
+            const result = await otpService.verifyOtp(telephone, code, type_action);
+            res.json({ message: 'Code OTP validé.', ...result });
+        } catch (error) {
+            next(error);
+        }
     }
 };
 

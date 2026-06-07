@@ -15,7 +15,9 @@ router.post('/verify', protect, authorize('transporteur'), validateVerifyOTP, de
 router.post('/group', protect, authorize('transporteur'), deliveryController.groupOrders);
 router.get('/groups/my', protect, authorize('transporteur'), deliveryController.getMyGroups);
 router.get('/mine', protect, authorize('transporteur'), deliveryController.getMyDeliveries);
+router.get('/completed', protect, authorize('transporteur'), deliveryController.getCompletedDeliveries);
 router.get('/stats', protect, authorize('transporteur'), deliveryController.getCarrierStats);
+router.get('/admin/overview', protect, authorize('admin'), deliveryController.getAdminLogisticsOverview);
 router.get('/history/:orderId', protect, deliveryController.getTrackingHistory);
 
 module.exports = router;

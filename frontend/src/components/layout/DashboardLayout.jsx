@@ -193,7 +193,7 @@ const DashboardLayout = ({ children, title, noPadding, noFooter }) => {
 
                 {/* Intelligence Viewport */}
                 <main className={cn(
-                    "flex-1 overflow-y-auto relative bg-background custom-scrollbar",
+                    "flex-1 overflow-y-auto overflow-x-hidden relative bg-background custom-scrollbar",
                     noPadding ? "" : "p-4 md:p-6 pb-10"
                 )}>
                     {/* Visual Grain & Scale Layer */}
@@ -201,8 +201,8 @@ const DashboardLayout = ({ children, title, noPadding, noFooter }) => {
                     
                     <PageTransition
                         className={cn(
-                            "relative z-10 w-full",
-                            !noPadding && "container"
+                            "relative z-10 w-full min-w-0 max-w-full",
+                            !noPadding && "container max-w-full"
                         )}
                     >
                         {children}

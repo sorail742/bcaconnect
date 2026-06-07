@@ -1,5 +1,6 @@
 import api from './api';
 import { offlineStorage } from '../lib/db';
+import deliveryService from './deliveryService';
 
 const orderService = {
     getAll: async () => {
@@ -29,12 +30,13 @@ const orderService = {
 
     create: async (orderData) => {
         if (!navigator.onLine) {
-            const id = await offlineStorage.queueOrder(orderData);
+            const payload = { ...orderData, mode_resilience: true, paymentMethod: orderData.paymentMethod || 'cod' };
+            const id = await offlineStorage.queueOrder(payload);
             return {
                 id,
                 offline: true,
                 message: "Commande enregistrée en local. Elle sera synchronisée dès le retour d'Internet.",
-                ...orderData
+                ...payload
             };
         }
         const response = await api.post('/orders', orderData);
@@ -54,7 +56,9 @@ const orderService = {
     getById: async (orderId) => {
         const response = await api.get(`/orders/${orderId}`);
         return response.data;
-    }
+    },
+
+    getTracking: async (orderId) => deliveryService.getHistory(orderId),
 };
 
 export default orderService;

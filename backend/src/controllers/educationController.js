@@ -1,28 +1,85 @@
+const { Op } = require('sequelize');
 const { EducationalResource } = require('../models');
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/AppError');
 
-exports.getAllResources = async (req, res) => {
-    try {
-        const role = req.user?.role || 'tous';
-        // On récupère les ressources destinées à 'tous' + celles destinées au rôle de l'utilisateur
+const ROLE_AUDIENCE = {
+    client: 'clients',
+    fournisseur: 'fournisseurs',
+    transporteur: 'transporteurs',
+};
+
+const audienceForRole = (role) => {
+    if (!role || role === 'admin') return null;
+    return ROLE_AUDIENCE[role] || 'tous';
+};
+
+const educationController = {
+    getAllResources: catchAsync(async (req, res) => {
+        const audience = audienceForRole(req.user?.role);
+        const where = audience
+            ? { audience_cible: { [Op.in]: ['tous', audience] } }
+            : {};
+
         const resources = await EducationalResource.findAll({
-            where: {
-                audience_cible: ['tous', role + 's'] // Simplification: 'fournisseur' -> 'fournisseurs'
-            },
-            order: [['createdAt', 'DESC']]
+            where,
+            order: [['created_at', 'DESC']],
         });
-        
-        // S'il n'y a pas de ressources, on envoie des mock data pour la démo
-        if (resources.length === 0) {
-            return res.status(200).json([
-                { id: '1', titre: 'Comment optimiser ses fiches produits', type_contenu: 'video', description: 'Apprenez à mettre en valeur vos produits.', url_contenu: '#', tag: 'Vente' },
-                { id: '2', titre: 'Guide du paiement sécurisé Escrow', type_contenu: 'guide', description: 'Tout comprendre sur le séquestre.', url_contenu: '#', tag: 'Sécurité' },
-                { id: '3', titre: 'Stratégies de tarification', type_contenu: 'article', description: 'Comment fixer le bon prix en Guinée.', url_contenu: '#', tag: 'Business' }
-            ]);
+
+        res.json(resources);
+    }),
+
+    getAllAdmin: catchAsync(async (req, res) => {
+        const resources = await EducationalResource.findAll({
+            order: [['created_at', 'DESC']],
+        });
+        res.json(resources);
+    }),
+
+    create: catchAsync(async (req, res, next) => {
+        const { titre, description, type_contenu, url_contenu, audience_cible, tag } = req.body;
+
+        if (!titre?.trim() || !description?.trim() || !url_contenu?.trim()) {
+            return next(new AppError('titre, description et url_contenu sont requis.', 400));
         }
 
-        res.status(200).json(resources);
-    } catch (error) {
-        console.error("Error fetching resources:", error);
-        res.status(500).json({ error: 'Erreur lors de la récupération des ressources éducatives' });
-    }
+        const resource = await EducationalResource.create({
+            titre: titre.trim(),
+            description: description.trim(),
+            type_contenu: type_contenu || 'article',
+            url_contenu: url_contenu.trim(),
+            audience_cible: audience_cible || 'tous',
+            tag: tag?.trim() || null,
+        });
+
+        res.status(201).json(resource);
+    }),
+
+    update: catchAsync(async (req, res, next) => {
+        const resource = await EducationalResource.findByPk(req.params.id);
+        if (!resource) return next(new AppError('Ressource introuvable.', 404));
+
+        const { titre, description, type_contenu, url_contenu, audience_cible, tag } = req.body;
+
+        await resource.update({
+            titre: titre?.trim() ?? resource.titre,
+            description: description?.trim() ?? resource.description,
+            type_contenu: type_contenu ?? resource.type_contenu,
+            url_contenu: url_contenu?.trim() ?? resource.url_contenu,
+            audience_cible: audience_cible ?? resource.audience_cible,
+            tag: tag !== undefined ? (tag?.trim() || null) : resource.tag,
+        });
+
+        res.json(resource);
+    }),
+
+    delete: catchAsync(async (req, res, next) => {
+        const resource = await EducationalResource.findByPk(req.params.id);
+        if (!resource) return next(new AppError('Ressource introuvable.', 404));
+
+        await resource.destroy();
+        res.json({ message: 'Ressource supprimée.' });
+    }),
 };
+
+module.exports = educationController;

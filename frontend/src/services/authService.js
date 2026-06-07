@@ -79,11 +79,15 @@ const authService = {
     },
 
     /**
-     * Supprime le token local.
+     * Déconnexion serveur (révoque refresh token) puis nettoyage local.
      */
-    logout: () => {
-        localStorage.removeItem('token');
-    }
+    logout: async () => {
+        try {
+            await api.post('/auth/logout');
+        } catch {
+            // Token expiré ou réseau indisponible — on nettoie quand même côté client
+        }
+    },
 };
 
 export default authService;

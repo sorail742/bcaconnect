@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const orderController = require('../controllers/orderController');
-const { authMiddleware, authorize } = require('../middlewares/authMiddleware');
+const { authMiddleware, authorize, grantAccess } = require('../middlewares/authMiddleware');
 const { validateCreateOrder, validateUpdateOrder } = require('../middlewares/dtoValidator');
 
-router.post('/', authMiddleware, validateCreateOrder, orderController.create);
+router.post('/', authMiddleware, grantAccess('place_orders'), validateCreateOrder, orderController.create);
+router.get('/shipping-quote', authMiddleware, orderController.getShippingQuote);
 router.get('/me', authMiddleware, orderController.getMyOrders);
 router.get('/vendor', authMiddleware, authorize(['fournisseur', 'admin']), orderController.getVendorOrders);
 router.get('/', authMiddleware, authorize(['admin']), orderController.getAllOrders);

@@ -7,11 +7,11 @@ import {
     Zap, LayoutGrid
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '../../lib/utils';
+import { cn, getImageUrl } from '../../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
 import { useQueryClient } from '@tanstack/react-query';
-import { useAdminAds, useProducts } from '../../hooks/useDomainData';
+import { useAdsManagement, useProducts } from '../../hooks/useDomainData';
 import useApiMutation from '../../hooks/useApiMutation';
 import Modal from '../../components/ui/Modal';
 
@@ -36,7 +36,7 @@ const StatCard = ({ label, value, icon: Icon, color }) => (
 );
 
 const AdsManager = () => {
-    const { data: ads = [], loading, refetch, isFetching } = useAdminAds();
+    const { data: ads = [], loading, refetch, isFetching, isVendor } = useAdsManagement();
     const queryClient = useQueryClient();
     const { data: productsData = [] } = useProducts({ limit: 50 });
     const products = productsData.products || [];
@@ -129,7 +129,7 @@ const AdsManager = () => {
     };
 
     return (
-        <DashboardLayout title="GESTION DES PUBLICITÉS" noPadding>
+        <DashboardLayout title={isVendor ? 'MES PUBLICITÉS' : 'GESTION DES PUBLICITÉS'} noPadding>
             <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8 space-y-8 custom-scrollbar">
                 
                 {/* HUD Header */}
@@ -241,7 +241,7 @@ const AdsManager = () => {
                                                     <div className="size-14 rounded-xl bg-slate-50 border border-slate-100 flex-shrink-0 overflow-hidden relative group-hover:border-primary/40 transition-all">
                                                         {ad.url_image ? (
                                                             <img 
-                                                                src={ad.url_image.startsWith('http') ? ad.url_image : `http://localhost:5001/uploads/${ad.url_image}`} 
+                                                                src={getImageUrl(ad.url_image)} 
                                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                                                 alt={ad.titre}
                                                             />

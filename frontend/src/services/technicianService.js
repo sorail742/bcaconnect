@@ -1,6 +1,11 @@
 import api from './api';
 
 const technicianService = {
+    getStats: async () => {
+        const response = await api.get('/technician/stats');
+        return response.data;
+    },
+
     getAvailableMissions: async () => {
         const response = await api.get('/technician/missions/available');
         return response.data;

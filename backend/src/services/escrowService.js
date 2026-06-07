@@ -1,4 +1,5 @@
 const { Wallet, Transaction, OrderItem } = require('../models');
+const { reserveStockForItems } = require('./orderStockService');
 
 /**
  * Service centralisé de gestion du séquestre (escrow) — idempotent par article.
@@ -193,6 +194,7 @@ const escrowService = {
         }
 
         const items = await OrderItem.findAll({ where: { commande_id: orderId }, transaction });
+        await reserveStockForItems(items, transaction);
         await this.depositOrderEscrow(orderId, items, transaction);
 
         order.statut = 'payé';

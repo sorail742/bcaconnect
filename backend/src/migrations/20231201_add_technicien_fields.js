@@ -1,28 +1,33 @@
-/* eslint-disable strict */
 'use strict';
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.addColumn('utilisateurs', 'specialites', {
+    const table = await queryInterface.describeTable('utilisateurs').catch(() => null);
+    if (!table) return;
+
+    const addIfMissing = async (column, definition) => {
+      if (!table[column]) {
+        await queryInterface.addColumn('utilisateurs', column, definition);
+      }
+    };
+
+    await addIfMissing('specialites', {
       type: Sequelize.STRING(255),
       allowNull: true,
-      comment: "Spécialités du technicien (ex: plomberie, électricité)"
     });
-    await queryInterface.addColumn('utilisateurs', 'numero_agrement', {
+    await addIfMissing('numero_agrement', {
       type: Sequelize.STRING(100),
       allowNull: true,
-      comment: "Numéro d'agrément du technicien (optionnel)"
     });
-    await queryInterface.addColumn('utilisateurs', 'zone_intervention', {
+    await addIfMissing('zone_intervention', {
       type: Sequelize.STRING(255),
       allowNull: true,
-      comment: "Zone d'intervention du technicien"
     });
   },
 
-  down: async (queryInterface, Sequelize) => {
-    await queryInterface.removeColumn('utilisateurs', 'specialites');
-    await queryInterface.removeColumn('utilisateurs', 'numero_agrement');
-    await queryInterface.removeColumn('utilisateurs', 'zone_intervention');
-  }
+  down: async (queryInterface) => {
+    await queryInterface.removeColumn('utilisateurs', 'specialites').catch(() => {});
+    await queryInterface.removeColumn('utilisateurs', 'numero_agrement').catch(() => {});
+    await queryInterface.removeColumn('utilisateurs', 'zone_intervention').catch(() => {});
+  },
 };

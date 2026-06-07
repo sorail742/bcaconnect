@@ -17,7 +17,10 @@ import AnimatedCounter from '../components/ui/AnimatedCounter';
 import { PageLoader } from '../components/ui/Loader';
 import { ProductRating, ProductPrice, ProductStockBadge } from '../components/produits/ProductCard';
 import messageService from '../services/messageService';
+import reviewService from '../services/reviewService';
+import ReviewForm from '../components/reviews/ReviewForm';
 import { useProductById } from '../hooks/useDomainData';
+import { useQuery } from '@tanstack/react-query';
 
 const FALLBACK = 'https://images.unsplash.com/photo-1523275319145-80b01958f7a2?auto=format&fit=crop&q=80&w=800';
 
@@ -26,9 +29,15 @@ const ProductDetail = () => {
     const navigate = useNavigate();
     const { t, lang } = useLanguage();
     const { addToCart } = useCart();
-    const { user } = useAuthStore();
-    
+    const { user, isAuthenticated } = useAuthStore();
+
     const { data: product, loading, error, refetch } = useProductById(id);
+    const { data: eligibleOrders = [], refetch: refetchEligible } = useQuery({
+        queryKey: ['review-eligible', id],
+        queryFn: () => reviewService.getEligible(id),
+        enabled: !!id && isAuthenticated && !!user,
+        staleTime: 60_000,
+    });
     const [quantity, setQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState('desc');
     const [addedToCart, setAddedToCart] = useState(false);
@@ -70,7 +79,7 @@ const ProductDetail = () => {
         }
         try {
             const conversation = await messageService.startConversation(product.boutique.proprietaire_id);
-            navigate(`/messages?id=${conversation.id}`);
+            navigate(`/messages?id=${conversation.id}`, { state: { openConversation: conversation } });
         } catch (err) {
             toast.error("Erreur", { description: "Impossible de démarrer la conversation." });
         }
@@ -279,6 +288,16 @@ const ProductDetail = () => {
                                 </div>
                             ) : (
                                 <div className="space-y-8">
+                                    {isAuthenticated && !isOwner && (
+                                        <ReviewForm
+                                            productId={id}
+                                            eligibleOrders={eligibleOrders}
+                                            onSuccess={() => {
+                                                refetch();
+                                                refetchEligible();
+                                            }}
+                                        />
+                                    )}
                                     {product.avis?.length > 0 ? (
                                         <div className="grid grid-cols-1 gap-6">
                                             {product.avis.map((rev, i) => (
@@ -295,8 +314,12 @@ const ProductDetail = () => {
                                                                 <User className="size-6" />
                                                             </div>
                                                             <div>
-                                                                <p className="text-sm font-black text-foreground uppercase tracking-tight">Utilisateur Anonyme</p>
-                                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{new Date(rev.created_at).toLocaleDateString('fr-FR')}</p>
+                                                                <p className="text-sm font-black text-foreground uppercase tracking-tight">
+                                                                    {rev.User?.nom_complet || 'Client vérifié'}
+                                                                </p>
+                                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                                                                    {new Date(rev.created_at || rev.createdAt).toLocaleDateString('fr-FR')}
+                                                                </p>
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-1 px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 rounded-xl">

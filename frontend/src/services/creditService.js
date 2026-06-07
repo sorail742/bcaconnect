@@ -57,7 +57,22 @@ const creditService = {
         } catch (error) {
             throw error;
         }
-    }
+    },
+
+    getPending: async () => {
+        const response = await api.get('/credits/pending');
+        return response.data;
+    },
+
+    approve: async (id) => {
+        const response = await api.put(`/credits/${id}/approve`);
+        return response.data;
+    },
+
+    reject: async (id, motif_refus) => {
+        const response = await api.put(`/credits/${id}/reject`, { motif_refus });
+        return response.data;
+    },
 };
 
 export default creditService;

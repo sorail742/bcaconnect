@@ -6,12 +6,19 @@ const adController = {
     getAll: async (req, res, next) => {
         try {
             console.log(`[DEBUG ADS] Get All - User: ${req.user?.role}`);
-            const { position, status } = req.query;
+            const { position, status, mine } = req.query;
             const where = {};
-            
-            if (position) where.format = position; 
-            if (status) where.statut = status;
-            else if (!req.user || req.user.role?.toLowerCase() !== 'admin') where.statut = 'actif';
+
+            if (position) where.format = position;
+
+            if (mine === '1' && req.user) {
+                where.vendeur_id = req.user.id;
+                if (status) where.statut = status;
+            } else if (status) {
+                where.statut = status;
+            } else if (!req.user || req.user.role?.toLowerCase() !== 'admin') {
+                where.statut = 'actif';
+            }
 
             const ads = await Publicite.findAll({
                 where,
@@ -119,7 +126,33 @@ const adController = {
                 await Publicite.update({ statut: 'completed' }, { where: { id } });
             }
 
-            res.json({ message: "Clic enregistré" });
+            res.json({ message: 'Clic enregistré' });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    getById: async (req, res, next) => {
+        try {
+            const { id } = req.params;
+            const ad = await Publicite.findByPk(id, {
+                include: [
+                    { model: PubliciteCiblage, as: 'ciblages' },
+                    { model: PubliciteStat, as: 'stats' },
+                ],
+            });
+
+            if (!ad) {
+                return res.status(404).json({ message: 'Publicité introuvable' });
+            }
+
+            const isOwner = req.user && ad.vendeur_id === req.user.id;
+            const isAdmin = req.user?.role?.toLowerCase() === 'admin';
+            if (ad.statut !== 'actif' && !isOwner && !isAdmin) {
+                return res.status(403).json({ message: 'Non autorisé' });
+            }
+
+            res.json(ad);
         } catch (error) {
             next(error);
         }

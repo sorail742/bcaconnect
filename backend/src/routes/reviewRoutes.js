@@ -3,6 +3,7 @@ const router = express.Router();
 const reviewController = require('../controllers/reviewController');
 const { authMiddleware } = require('../middlewares/authMiddleware');
 
+router.get('/eligible', authMiddleware, reviewController.getEligible);
 router.post('/create', authMiddleware, reviewController.create);
 router.get('/product/:productId', reviewController.getProductReviews);
 

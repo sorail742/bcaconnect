@@ -1,16 +1,18 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import DashboardCard from '../../components/ui/DashboardCard';
 import DataTable from '../../components/ui/DataTable';
-import { Landmark, Hourglass, CreditCard, CheckCircle2, TrendingUp, Activity, Zap, RefreshCcw, Landmark as Bank, Search, Shield } from 'lucide-react';
-import statService from '../../services/statService';
+import { Landmark, Hourglass, CreditCard, CheckCircle2, TrendingUp, Activity, Zap, RefreshCcw, Landmark as Bank, Search, Shield, ArrowRight, FileText } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { toast } from 'sonner';
 
 import { useFinancialStats } from '../../hooks/useStats';
+import { usePendingCredits } from '../../hooks/data/useCreditData';
+import { ROUTES } from '../../constants/routes';
 
 const BankDashboard = () => {
-    const { data: dashboardData, isLoading, error, refetch } = useFinancialStats();
+    const { data: dashboardData, isLoading, refetch } = useFinancialStats();
+    const { data: pendingCredits, loading: creditsLoading } = usePendingCredits();
 
 
     const stats = [
@@ -97,20 +99,25 @@ const BankDashboard = () => {
             }
         },
         {
-            label: 'GOUVERNANCE',
+            label: 'ACTION',
             render: (row) => (
-                <div className="text-right flex items-center justify-end gap-3 pr-4">
-                    {row.status === 'En attente' && (
-                        <>
-                            <button className="size-6 rounded-lg bg-emerald-500 text-foreground flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-md group/btn" title="APPROUVER FLUX">
-                                <CheckCircle2 className="size-4" />
-                            </button>
-                            <button className="size-6 rounded-lg bg-rose-500 text-foreground flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-md group/btn" title="REJETER FLUX">
-                                <Zap className="size-4 rotate-12" />
-                            </button>
-                        </>
+                <div className="text-right pr-4">
+                    {row.status === 'En attente' ? (
+                        <Link
+                            to={ROUTES.BANK.CREDITS}
+                            className="h-8 px-4 inline-flex items-center gap-2 bg-[#FF6600]/10 border border-[#FF6600]/20 text-[#FF6600] hover:bg-[#FF6600] hover:text-white rounded-xl text-[8px] font-black uppercase tracking-widest transition-all"
+                        >
+                            <FileText className="size-3" />
+                            Crédits
+                        </Link>
+                    ) : (
+                        <Link
+                            to={ROUTES.BANK.CREDITS}
+                            className="h-8 px-4 inline-flex items-center text-muted-foreground/80 hover:text-[#FF6600] text-[8px] font-black uppercase tracking-widest transition-all"
+                        >
+                            Détails
+                        </Link>
                     )}
-                    <button className="h-8 px-4 bg-slate-50 dark:bg-foreground/5 border border-slate-200 dark:border-foreground/10 text-muted-foreground/80 hover:text-[#FF6600] rounded-xl text-[8px] font-black uppercase tracking-widest transition-all">AUDIT</button>
                 </div>
             )
         }
@@ -153,6 +160,30 @@ const BankDashboard = () => {
                         <DashboardCard key={idx} {...stat} className="h-32" />
                     ))}
                 </div>
+
+                {/* Demandes de crédit en attente */}
+                <Link
+                    to={ROUTES.BANK.CREDITS}
+                    className="block bg-white dark:bg-[#0F1219] border border-slate-200 dark:border-foreground/5 rounded-2xl p-4 shadow-sm hover:border-primary/30 transition-all group"
+                >
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="size-11 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 border border-amber-500/10">
+                                <FileText className="size-5" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-black uppercase tracking-tight">Demandes de financement</h3>
+                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">
+                                    {creditsLoading ? 'Chargement...' : `${pendingCredits.length} en attente d'approbation`}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-primary">
+                            <span className="text-[10px] font-black uppercase tracking-widest">Traiter</span>
+                            <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                    </div>
+                </Link>
 
                 {/* Financial Activity — Strategic Matrix */}
                 <div className="bg-white dark:bg-[#0F1219] border border-slate-200 dark:border-foreground/5 rounded-2xl shadow-sm overflow-hidden relative group">

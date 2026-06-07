@@ -29,9 +29,12 @@ export const ROUTES = {
         EDIT_PRODUCT: (id) => `/vendor/products/edit/${id}`,
         STORE: '/vendor/store',
         ORDERS: '/vendor/orders',
+        REPORTS: '/vendor/reports',
+        ADS: '/vendor/ads',
     },
     ADMIN: {
         DASHBOARD: '/admin/dashboard',
+        LOGISTICS: '/admin/logistics',
         USERS: '/admin/users',
         PRODUCTS: '/admin/products',
         TRANSACTIONS: '/admin/transactions',
@@ -45,5 +48,6 @@ export const ROUTES = {
     },
     BANK: {
         DASHBOARD: '/bank/dashboard',
+        CREDITS: '/bank/credits',
     },
 };

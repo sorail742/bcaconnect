@@ -1,0 +1,65 @@
+const crypto = require('crypto');
+const paymentProviderService = require('../src/services/paymentProviderService');
+
+describe('CinetPay webhook HMAC', () => {
+    const secret = 'test-secret-key';
+
+    const buildToken = (body) => {
+        const data = paymentProviderService.buildCinetPayHmacPayload(body);
+        return crypto.createHmac('sha256', secret).update(data).digest('hex');
+    };
+
+    it('valide un token x-token conforme à la spec CinetPay', () => {
+        const originalSecret = process.env.PAYMENT_SECRET;
+        process.env.PAYMENT_SECRET = secret;
+
+        const body = {
+            cpm_site_id: '123456',
+            cpm_trans_id: 'tx-uuid-001',
+            cpm_trans_date: '2026-06-06 12:00:00',
+            cpm_amount: '10000',
+            cpm_currency: 'GNF',
+            signature: 'sig-from-cinetpay',
+            payment_method: 'OMGN',
+            cel_phone_num: '620000000',
+            cpm_phone_prefixe: '224',
+            cpm_language: 'fr',
+            cpm_version: 'V4',
+            cpm_payment_config: 'Single',
+            cpm_page_action: 'Payment',
+            cpm_custom: '',
+            cpm_designation: 'Recharge BCA',
+            cpm_error_message: 'SUCCES',
+        };
+
+        const token = buildToken(body);
+        const req = { headers: { 'x-token': token }, body };
+
+        expect(paymentProviderService.verifyWebhookSignature(req)).toBe(true);
+
+        process.env.PAYMENT_SECRET = originalSecret;
+    });
+
+    it('rejette un token invalide', () => {
+        const originalSecret = process.env.PAYMENT_SECRET;
+        process.env.PAYMENT_SECRET = secret;
+
+        const req = {
+            headers: { 'x-token': 'invalid-token' },
+            body: { cpm_trans_id: 'tx-1', cpm_site_id: '1' },
+        };
+
+        expect(paymentProviderService.verifyWebhookSignature(req)).toBe(false);
+
+        process.env.PAYMENT_SECRET = originalSecret;
+    });
+
+    it('parse le statut succès cpm_result=00', () => {
+        const parsed = paymentProviderService.parseWebhookStatus({
+            cpm_trans_id: 'abc',
+            cpm_result: '00',
+        });
+        expect(parsed.transactionId).toBe('abc');
+        expect(parsed.success).toBe(true);
+    });
+});

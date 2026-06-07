@@ -122,6 +122,68 @@ describe('⚖️ Litiges — Workflow + remboursement auto', () => {
         expect(res.body.statut).toBe('en_mediation');
     });
 
+    it('doit rejeter un litige sur commande d\'un autre client (IDOR)', async () => {
+        const intruder = await User.create({
+            nom_complet: 'Intrus Litige',
+            email: 'intrus-litige@bca.gn',
+            telephone: '622000099',
+            mot_de_passe: await bcrypt.hash('SecurePass123!', 10),
+            role: 'client',
+            est_approuve: true,
+        });
+        await Wallet.create({ user_id: intruder.id, solde_virtuel: 0, solde_sequestre: 0 });
+
+        const intruderToken = (await request(app).post('/api/auth/login').send({
+            email: intruder.email,
+            mot_de_passe: 'SecurePass123!',
+        })).body.accessToken;
+
+        const res = await request(app)
+            .post('/api/disputes')
+            .set('Authorization', `Bearer ${intruderToken}`)
+            .send({
+                commande_id: orderId,
+                type: 'qualite',
+                description: 'Tentative IDOR sur commande tierce.',
+                defenseur_id: vendorId,
+            });
+
+        expect(res.status).toBe(403);
+    });
+
+    it('doit rejeter un défenseur non lié à la commande', async () => {
+        const stranger = await User.create({
+            nom_complet: 'Stranger Vendor',
+            email: 'stranger-litige@bca.gn',
+            telephone: '622000098',
+            mot_de_passe: await bcrypt.hash('SecurePass123!', 10),
+            role: 'fournisseur',
+            est_approuve: true,
+        });
+
+        const product = await Product.findOne({ where: { nom_produit: 'Article Litige' } });
+        const order2Res = await request(app)
+            .post('/api/orders')
+            .set('Authorization', `Bearer ${buyerToken}`)
+            .send({
+                items: [{ productId: product.id, quantity: 1 }],
+                paymentMethod: 'wallet',
+                deliveryInfo: { nom: 'Buyer', telephone: '622000003', adresse: 'Kaloum, Conakry' },
+            });
+
+        const res = await request(app)
+            .post('/api/disputes')
+            .set('Authorization', `Bearer ${buyerToken}`)
+            .send({
+                commande_id: order2Res.body.id,
+                type: 'qualite',
+                description: 'Défenseur invalide pour cette commande.',
+                defenseur_id: stranger.id,
+            });
+
+        expect(res.status).toBe(403);
+    });
+
     it('doit rembourser automatiquement lors d\'une résolution intégrale', async () => {
         const orderBefore = await Order.findByPk(orderId);
         const buyerWalletBefore = await Wallet.findOne({

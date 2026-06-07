@@ -360,6 +360,12 @@ const validateCreateOrder = [
     .isLength({ max: 500 })
     .withMessage("Les notes ne doivent pas dépasser 500 caractères.")
     .escape(),
+
+  body("type_livraison")
+    .optional()
+    .isIn(["eco", "standard", "prioritaire"])
+    .withMessage("Type de livraison invalide (eco, standard, prioritaire)."),
+
   validateRequest,
 ];
 
@@ -528,6 +534,10 @@ const validateCreateDispute = [
     .isLength({ min: 10, max: 2000 })
     .withMessage("La description doit faire entre 10 et 2000 caractères.")
     .escape(),
+  body("defenseur_id")
+    .optional()
+    .isUUID()
+    .withMessage("ID défenseur invalide."),
   validateRequest,
 ];
 
@@ -538,6 +548,27 @@ const validateDisputeStatus = [
     .withMessage("Statut requis.")
     .isIn(["ouvert", "en_cours", "en_mediation", "resolu", "ferme"])
     .withMessage("Statut invalide."),
+  validateRequest,
+];
+
+const validateDisputeRespond = [
+  param("id").isUUID().withMessage("ID litige invalide."),
+  body("message")
+    .trim()
+    .isLength({ min: 10, max: 2000 })
+    .withMessage("La réponse doit faire entre 10 et 2000 caractères.")
+    .escape(),
+  validateRequest,
+];
+
+const validateDisputeEscalate = [
+  param("id").isUUID().withMessage("ID litige invalide."),
+  body("motif")
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage("Motif trop long (max 500 caractères).")
+    .escape(),
   validateRequest,
 ];
 
@@ -786,6 +817,8 @@ module.exports = {
   // Disputes
   validateCreateDispute,
   validateDisputeStatus,
+  validateDisputeRespond,
+  validateDisputeEscalate,
   validateUpdateDispute,
   // Delivery
   validateAssignOrder,

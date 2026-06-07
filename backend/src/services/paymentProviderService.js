@@ -6,28 +6,56 @@ const PAYMENT_API_KEY = process.env.PAYMENT_API_KEY;
 const PAYMENT_SITE_ID = process.env.PAYMENT_SITE_ID;
 const PAYMENT_SECRET = process.env.PAYMENT_SECRET;
 const BASE_URL = process.env.PAYMENT_PROVIDER_URL || 'https://api-checkout.cinetpay.com/v2/payment';
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3002';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5001';
+const PAYMENT_MODE = process.env.PAYMENT_MODE || 'simulation';
+
+const CINETPAY_HMAC_FIELDS = [
+    'cpm_site_id',
+    'cpm_trans_id',
+    'cpm_trans_date',
+    'cpm_amount',
+    'cpm_currency',
+    'signature',
+    'payment_method',
+    'cel_phone_num',
+    'cpm_phone_prefixe',
+    'cpm_language',
+    'cpm_version',
+    'cpm_payment_config',
+    'cpm_page_action',
+    'cpm_custom',
+    'cpm_designation',
+    'cpm_error_message',
+];
 
 const paymentProviderService = {
     isConfigured() {
         return !!(PAYMENT_API_KEY && PAYMENT_SITE_ID);
     },
 
+    isLiveMode() {
+        return PAYMENT_MODE === 'live' && this.isConfigured();
+    },
+
+    buildCinetPayHmacPayload(body = {}) {
+        return CINETPAY_HMAC_FIELDS.map((field) => String(body[field] ?? '')).join('');
+    },
+
     /**
      * Génère une URL de paiement CinetPay (Mobile Money, cartes).
-     * En dev sans clés → simulation locale uniquement.
+     * Sans clés → simulation locale (sauf PAYMENT_MODE=live en prod/staging).
      */
-    generatePaymentUrl: async (transactionId, montant, description, userPhone) => {
+    generatePaymentUrl: async (transactionId, montant, description, userPhone, options = {}) => {
         if (!paymentProviderService.isConfigured()) {
-            if (IS_PRODUCTION) {
-                throw new Error('PAYMENT_API_KEY et PAYMENT_SITE_ID requis en production.');
+            if (PAYMENT_MODE === 'live') {
+                throw new Error('PAYMENT_API_KEY et PAYMENT_SITE_ID requis en mode live.');
             }
             console.warn('🟡 [PAYMENT] Mode simulation (clés API absentes).');
             return `${FRONTEND_URL}/payment/simulate/${transactionId}`;
         }
 
+        const returnPath = options.returnPath || `/payment/return?tx=${transactionId}`;
         const payload = {
             apikey: PAYMENT_API_KEY,
             site_id: PAYMENT_SITE_ID,
@@ -36,9 +64,10 @@ const paymentProviderService = {
             currency: 'GNF',
             description: description || `Recharge BCA Connect - ${transactionId}`,
             customer_phone_number: userPhone || '',
-            return_url: `${FRONTEND_URL}/wallet?status=success&tx=${transactionId}`,
+            return_url: `${FRONTEND_URL}${returnPath}`,
             notify_url: `${BACKEND_URL}/api/payments/webhook`,
-            channels: 'ALL'
+            channels: 'ALL',
+            metadata: options.metadata ? JSON.stringify(options.metadata) : undefined,
         };
 
         const response = await axios.post(BASE_URL, payload, { timeout: 15000 });
@@ -52,37 +81,54 @@ const paymentProviderService = {
     },
 
     /**
-     * Vérifie l'authenticité d'un webhook entrant (HMAC SHA256).
+     * Vérifie l'authenticité d'un webhook CinetPay (HMAC SHA256 — header x-token).
+     * @see https://docs.cinetpay.com/api/1.0-fr/checkout/hmac
      */
     verifyWebhookSignature: (req) => {
-        if (!PAYMENT_SECRET) {
-            if (IS_PRODUCTION) {
-                console.error('🔴 [WEBHOOK] PAYMENT_SECRET manquant en production.');
+        const receivedToken = req.headers['x-token'];
+        const body = req.body || {};
+        const paymentSecret = process.env.PAYMENT_SECRET || PAYMENT_SECRET;
+        const paymentMode = process.env.PAYMENT_MODE || PAYMENT_MODE;
+
+        if (!paymentSecret) {
+            if (paymentMode === 'live') {
+                console.error('🔴 [WEBHOOK] PAYMENT_SECRET manquant en mode live.');
                 return false;
             }
-            return true;
+            // Dev simulation : accepter webhook JSON de test sans signature
+            return !receivedToken || receivedToken === 'dev-simulation';
         }
 
-        const signature = req.headers['x-token'] || req.headers['signature'] || req.headers['x-cinetpay-signature'];
-        if (!signature) return false;
+        if (!receivedToken) return false;
 
         try {
-            const payloadString = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
-            const expectedSignature = crypto
-                .createHmac('sha256', PAYMENT_SECRET)
-                .update(payloadString)
+            const data = paymentProviderService.buildCinetPayHmacPayload(body);
+            const expectedToken = crypto
+                .createHmac('sha256', paymentSecret)
+                .update(data)
                 .digest('hex');
 
-            return crypto.timingSafeEqual(
-                Buffer.from(signature),
-                Buffer.from(expectedSignature)
-            );
-        } catch {
-            return signature === crypto
-                .createHmac('sha256', PAYMENT_SECRET)
-                .update(JSON.stringify(req.body))
-                .digest('hex');
+            const received = Buffer.from(String(receivedToken), 'utf8');
+            const expected = Buffer.from(expectedToken, 'utf8');
+            if (received.length !== expected.length) return false;
+            return crypto.timingSafeEqual(received, expected);
+        } catch (error) {
+            console.error('🔴 [WEBHOOK HMAC]', error.message);
+            return false;
         }
+    },
+
+    parseWebhookStatus(body = {}) {
+        const transactionId = body.cpm_trans_id || body.transaction_id;
+        const cpmResult = body.cpm_result;
+        const explicitStatus = body.status;
+
+        let success = false;
+        if (cpmResult === '00') success = true;
+        if (explicitStatus === 'success' || explicitStatus === 'ACCEPTED') success = true;
+        if (body.cpm_error_message === 'SUCCES' || body.cpm_error_message === 'SUCCESS') success = true;
+
+        return { transactionId, success, raw: body };
     },
 
     /**
@@ -97,16 +143,16 @@ const paymentProviderService = {
                 {
                     apikey: PAYMENT_API_KEY,
                     site_id: PAYMENT_SITE_ID,
-                    transaction_id: transactionId
+                    transaction_id: transactionId,
                 },
-                { timeout: 15000 }
+                { timeout: 15000 },
             );
             return response.data?.data?.status || null;
         } catch (error) {
             console.error('🔴 [PAYMENT CHECK]', error.message);
             return null;
         }
-    }
+    },
 };
 
 module.exports = paymentProviderService;

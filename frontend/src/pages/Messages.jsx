@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
 import { useMessages, useConversationMessages } from '../hooks/useDomainData';
@@ -15,6 +15,7 @@ import userService from '../services/userService';
 import socketService from '../services/socketService';
 import { formatDistanceToNow } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 // ── Composant avatar ──────────────────────────────────────────────────────────
 const Avatar = ({ seed, size = 'md', online = false }) => {
@@ -95,6 +96,7 @@ const ConvItem = ({ conv, isActive, onClick, t, locale }) => {
 // ── Page principale ───────────────────────────────────────────────────────────
 const Messages = () => {
     const { user } = useAuth();
+    const location = useLocation();
     const { lang, t } = useLanguage();
     const { data: fetchedConversations = [], loading: convLoading, refetch: refetchConversations } = useMessages();
     const [conversations, setConversations] = useState([]);
@@ -113,6 +115,7 @@ const Messages = () => {
     const [mobileShowChat, setMobileShowChat] = useState(false);
     const [searchParams] = useSearchParams();
     const recipientId = searchParams.get('recipient');
+    const conversationIdParam = searchParams.get('id');
     const messagesEndRef = useRef(null);
     const typingTimeoutRef = useRef(null);
     const inputRef = useRef(null);
@@ -289,7 +292,7 @@ const Messages = () => {
             const conv = await messageService.startConversation(targetUser.id);
             setShowNewConv(false);
             setUserSearch('');
-            await loadConversations();
+            await refetchConversations();
             setSelectedConv(conv);
             setMobileShowChat(true);
         } catch {
@@ -304,6 +307,29 @@ const Messages = () => {
             }
         }
     };
+
+    // ── Conversation passée depuis ProductCard / ProductDetails ─────────────
+    useEffect(() => {
+        const openConv = location.state?.openConversation;
+        if (!openConv?.id) return;
+        setSelectedConv(openConv);
+        setConversations((prev) => (prev.some((c) => c.id === openConv.id) ? prev : [openConv, ...prev]));
+        setMobileShowChat(true);
+    }, [location.state]);
+
+    // ── Ouvrir une conversation via ?id= ─────────────────────────────────────
+    useEffect(() => {
+        if (!conversationIdParam || selectedConv?.id === conversationIdParam) return;
+        const target = conversations.find((c) => c.id === conversationIdParam);
+        if (target) {
+            setSelectedConv(target);
+            setMobileShowChat(true);
+        } else if (!isLoading) {
+            setSelectedConv({ id: conversationIdParam, participants: [] });
+            setMobileShowChat(true);
+            refetchConversations();
+        }
+    }, [conversationIdParam, conversations, isLoading, selectedConv?.id, refetchConversations]);
 
     // ── Gestion automatique du destinataire via URL ───────────────────────────
     useEffect(() => {
@@ -324,17 +350,18 @@ const Messages = () => {
                 // Créer une nouvelle conversation
                 try {
                     const newConv = await messageService.startConversation(recipientId);
-                    await loadConversations();
+                    await refetchConversations();
                     setSelectedConv(newConv);
                     setMobileShowChat(true);
                 } catch (err) {
                     console.error("Impossible de démarrer la conversation avec le destinataire:", err);
+                    toast.error('Impossible de démarrer la conversation.');
                 }
             }
         };
 
         checkRecipient();
-    }, [recipientId, conversations, isLoading, user?.id, selectedConv?.id, loadConversations]);
+    }, [recipientId, conversations, isLoading, user?.id, selectedConv?.id, refetchConversations]);
 
     const handleSelectConv = (conv) => {
         setSelectedConv(conv);

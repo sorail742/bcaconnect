@@ -64,6 +64,18 @@ const TEST_USERS = [
         est_approuve: true,
         statut: 'actif',
     },
+    {
+        nom_complet: 'Technicien Test',
+        email: 'technicien@test.com',
+        telephone: '0600000006',
+        mot_de_passe: 'Technicien@123',
+        role: 'technicien',
+        est_approuve: true,
+        statut: 'actif',
+        specialites: 'Électricité, Plomberie, Climatisation',
+        zone_intervention: 'Conakry & Banlieue',
+        adresse: 'Quartier Technique, Conakry',
+    },
 ];
 
 async function createTestAccounts() {
@@ -88,9 +100,10 @@ async function createTestAccounts() {
             });
 
             // Créer un portefeuille pour chaque utilisateur
-            await Wallet.create({ 
+            await Wallet.create({
                 user_id: user.id,
-                solde: userData.role === 'client' ? 500000 : 0 // Donner un solde initial au client pour les tests
+                solde_virtuel: userData.role === 'client' ? 5000000 : 1000000,
+                solde_sequestre: 0,
             });
 
             // Si c'est un fournisseur, créer une boutique par défaut
