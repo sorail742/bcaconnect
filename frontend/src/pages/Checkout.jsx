@@ -29,7 +29,7 @@ const Field = ({ label, ...props }) => {
     return (
         <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</label>
-            <input className="size-10 w-full px-3 bg-background border border-border rounded-xl text-sm outline-none focus:border-primary/50 transition-all text-foreground placeholder:text-muted-foreground" {...props} />
+            <input className="h-12 w-full px-3 bg-background border border-border rounded-xl text-sm outline-none focus:border-primary/50 transition-all text-foreground placeholder:text-muted-foreground" {...props} />
         </div>
     );
 };
@@ -205,8 +205,8 @@ const Checkout = () => {
     const isBalanceInsufficient = formData.paymentMethod === 'wallet' && wallet && parseFloat(wallet.solde_virtuel) < total;
 
     return (
-        <div className="bg-background min-h-screen text-foreground pb-16">
-            <div className="max-w-6xl mx-auto px-6 md:px-12 pt-24 space-y-8">
+        <div className="bg-background min-h-screen text-foreground pb-24">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-12 pt-8 md:pt-12 space-y-8">
 
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-border">

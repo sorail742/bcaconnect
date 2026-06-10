@@ -56,6 +56,9 @@ const errorHandler = (err, req, res, next) => {
   // Sequelize / JWT — même mapping en dev et prod pour des messages 400 lisibles
   if (error.name === 'SequelizeUniqueConstraintError') error = handleDuplicateFieldsDB(error);
   if (error.name === 'SequelizeValidationError') error = handleValidationErrorDB(error);
+  if (error.name === 'SequelizeDatabaseError' && error.message) {
+    error = new AppError(error.message, 400);
+  }
   if (error.name === 'JsonWebTokenError') error = handleJWTError();
   if (error.name === 'TokenExpiredError') error = handleJWTExpiredError();
 

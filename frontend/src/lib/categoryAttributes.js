@@ -1,15 +1,15 @@
 /**
  * Réexporte les profils partagés + styles UI pour le formulaire vendeur.
  */
-import * as shared from './categoryAttributeProfiles.cjs';
-
-export const CATEGORY_ATTRIBUTES = shared.CATEGORY_ATTRIBUTE_PROFILES;
-export const GENERIC_PROFILE = shared.GENERIC_PROFILE;
-export const ALL_PROFILE_IDS = shared.ALL_PROFILE_IDS;
-export const getAttributesForCategory = shared.getAttributesForCategory;
-export const filterAttributsForProfile = shared.filterAttributsForProfile;
-export const mapAiResponseToAttributs = shared.mapAiResponseToAttributs;
-export const buildAttributePromptBlock = shared.buildAttributePromptBlock;
+export {
+    CATEGORY_ATTRIBUTE_PROFILES as CATEGORY_ATTRIBUTES,
+    GENERIC_PROFILE,
+    ALL_PROFILE_IDS,
+    getAttributesForCategory,
+    filterAttributsForProfile,
+    mapAiResponseToAttributs,
+    buildAttributePromptBlock,
+} from './categoryAttributeProfiles.js';
 
 export const ATTRIBUTE_COLOR_MAP = {
     blue:    { bg: 'bg-blue-50',    border: 'border-blue-100',    text: 'text-blue-600',    label: 'text-blue-500',    badge: 'bg-blue-100 text-blue-700' },

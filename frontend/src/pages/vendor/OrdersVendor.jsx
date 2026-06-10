@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import DataTable from '../../components/ui/DataTable';
-import StatusBadge from '../../components/ui/StatusBadge';
+import VendorOrderCard from '../../components/vendor/VendorOrderCard';
+import { ModalOverlay } from '../../components/ui/ModalOverlay';
 import {
     Search,
     ListOrdered,
@@ -11,303 +12,318 @@ import {
     CheckCircle2,
     XCircle,
     RefreshCw,
-    Activity,
     ShoppingBag,
-    ShieldCheck
+    ShieldCheck,
+    Truck,
+    Activity,
+    Lock,
+    Fingerprint,
+    BadgeCheck,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { useVendorOrders, useUpdateOrderStatus } from '../../hooks/data/useOrderData';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { useVendorOrders, useUpdateOrderStatus, usePrepareVendorOrder } from '../../hooks/data/useOrderData';
+import { groupVendorOrderItems } from '../../lib/orderDisplay';
 
 const OrdersVendor = () => {
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const [activeFilter, setActiveFilter] = useState('Tous');
     const [search, setSearch] = useState('');
     const [selectedIds, setSelectedIds] = useState([]);
+    const [securityOpen, setSecurityOpen] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
-    // React Query Hooks
-    const { data: ordersData, isLoading, refetch } = useVendorOrders();
+    const { data: ordersData, isLoading, isFetching, refetch } = useVendorOrders();
     const orders = ordersData?.orders || [];
-    
+
     const updateStatusMutation = useUpdateOrderStatus();
+    const prepareOrderMutation = usePrepareVendorOrder();
+    const isPending = updateStatusMutation.isPending || prepareOrderMutation.isPending;
 
     const STATUS_FILTERS = [
-        { key: 'Tous', label: 'GLOBAL' },
-        { key: 'en_attente', label: 'ATTENTE' },
-        { key: 'confirme', label: 'CONFIRMÉ' },
-        { key: 'prepare', label: 'PRÉPARÉ' },
-        { key: 'expedie', label: 'EXPÉDIÉ' },
-        { key: 'livre', label: 'LIVRÉ' },
-        { key: 'annule', label: 'ANNULÉ' }
+        { key: 'Tous', label: 'Tous' },
+        { key: 'en_attente', label: 'Attente' },
+        { key: 'confirme', label: 'Confirmé' },
+        { key: 'prepare', label: 'Préparé' },
+        { key: 'expedie', label: 'Expédié' },
+        { key: 'livre', label: 'Livré' },
+        { key: 'annule', label: 'Annulé' },
     ];
 
     const handleStatusUpdate = (itemId, newStatus) => {
         updateStatusMutation.mutate({ id: itemId, status: newStatus });
     };
 
-    const getStatusVariant = (status) => {
-        switch (status) {
-            case 'en_attente': return 'warning';
-            case 'confirme': return 'info';
-            case 'prepare': return 'info';
-            case 'expedie': return 'primary';
-            case 'livre': return 'success';
-            case 'annule': return 'danger';
-            case 'retourne': return 'danger';
-            default: return 'neutral';
+    const filteredItems = useMemo(() => orders.filter((o) => {
+        const matchStatus = activeFilter === 'Tous' || o.statut === activeFilter;
+        const client = o.commande?.client || o.Order?.User;
+        const q = search.toLowerCase();
+        const matchSearch = !q
+            || o.commande_id?.toLowerCase().includes(q)
+            || client?.nom_complet?.toLowerCase().includes(q)
+            || o.produit?.nom_produit?.toLowerCase().includes(q);
+        return matchStatus && matchSearch;
+    }), [orders, activeFilter, search]);
+
+    const groupedOrders = useMemo(
+        () => groupVendorOrderItems(filteredItems),
+        [filteredItems],
+    );
+
+    const toggleSelectOrder = (itemIds) => {
+        const allSelected = itemIds.every((id) => selectedIds.includes(id));
+        if (allSelected) {
+            setSelectedIds((prev) => prev.filter((id) => !itemIds.includes(id)));
+        } else {
+            setSelectedIds((prev) => [...new Set([...prev, ...itemIds])]);
         }
     };
 
-    const filtered = orders.filter((o) => {
-        const matchStatus = activeFilter === 'Tous' || o.statut === activeFilter;
-        const matchSearch =
-            o.commande_id.toLowerCase().includes(search.toLowerCase()) ||
-            o.Order?.User?.nom_complet.toLowerCase().includes(search.toLowerCase()) ||
-            o.produit?.nom_produit.toLowerCase().includes(search.toLowerCase());
-        return matchStatus && matchSearch;
-    });
+    const isOrderSelected = (itemIds) => itemIds.every((id) => selectedIds.includes(id));
 
-    const columns = [
-        {
-            label: 'Produit',
-            render: (row) => (
-                <div className="flex items-center gap-3 py-4 group/item">
-                    <div className="size-6 rounded-2xl bg-foreground/5 border-2 border-foreground/10 flex items-center justify-center overflow-hidden shrink-0 group-hover/item:scale-110 group-hover/item:rotate-6 transition-all shadow-2xl relative">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-[#FFB703]/30 via-transparent to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity duration-700" />
-                        {row.produit?.image_url ? (
-                            <img src={row.produit.image_url} className="w-full h-full object-cover relative z-10" alt="" />
-                        ) : (
-                            <Package className="size-6 text-slate-700" />
-                        )}
-                    </div>
-                    <div className="min-w-0 space-y-2">
-                        <p className="text-[14px] font-black text-foreground uppercase tracking-tighter leading-none pt-1 group-hover/item:text-[#FFB703] transition-colors truncate max-w-[200px]">
-                            {row.produit?.nom_produit}
-                        </p>
-                        <p className="text-[10px] font-black text-[#FFB703]/60 uppercase  leading-none decoration-[#FFB703]/30 underline underline-offset-4 decoration-2">
-                            ID: {row.commande_id.slice(0, 8).toUpperCase()}_SIG
-                        </p>
-                    </div>
-                </div>
-            )
-        },
-        {
-            label: 'Client',
-            render: (row) => (
-                <div className="flex flex-col gap-2 py-1">
-                    <span className="text-[12px] font-black text-foreground uppercase tracking-wider">
-                        {row.Order?.User?.nom_complet?.toUpperCase()}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground font-black uppercase  flex items-center gap-3">
-                        <Activity className="size-4 text-[#FFB703]/50 animate-pulse" />
-                        {row.Order?.User?.telephone}
-                    </span>
-                </div>
-            )
-        },
-        {
-            label: 'Quantité',
-            render: (row) => (
-                <div className="flex items-center gap-3">
-                    <span className="text-[14px] font-black text-foreground tracking-tighter uppercase tabular-nums">X{row.quantite}</span>
-                </div>
-            )
-        },
-        {
-            label: 'Total (GNF)',
-            render: (row) => (
-                <span className="text-[15px] font-black text-foreground tracking-tighter tabular-nums uppercase">
-                    {(row.prix_unitaire_achat * row.quantite).toLocaleString('fr-GN')} <small className="text-[10px] font-black text-[#FFB703] tracking-widest ml-1">GNF</small>
-                </span>
-            )
-        },
-        {
-            label: 'Statut',
-            render: (row) => (
-                <StatusBadge status={row.statut} variant={getStatusVariant(row.statut)} className="text-[9px] font-black uppercase  border-none py-2 px-4 shadow-inner" />
-            )
-        },
-        {
-            label: 'Actions',
-            render: (row) => (
-                <div className="flex items-center justify-end gap-3 pr-8">
-                    {row.statut === 'en_attente' && (
-                        <button onClick={() => handleStatusUpdate(row.id, 'confirme')}
-                            className="size-6 bg-foreground/5 border-2 border-foreground/5 rounded-2xl flex items-center justify-center text-emerald-500 hover:bg-emerald-500 hover:text-foreground transition-all shadow-4xl  group/confirm hover:border-emerald-500/30 border-none"
-                            title="CONFIRMER_FLUX">
-                            <CheckCircle2 className="size-6 group-hover/confirm:scale-110 transition-transform" />
-                        </button>
-                    )}
-                    {row.statut === 'confirme' && (
-                        <button onClick={() => handleStatusUpdate(row.id, 'prepare')}
-                            className="size-6 bg-[#FFB703]/10 border-2 border-[#FFB703]/20 rounded-2xl flex items-center justify-center text-[#FFB703] hover:bg-[#FFB703] hover:text-background transition-all shadow-4xl  group/prepare border-none"
-                            title="PRÉPARER_EXPÉDITION">
-                            <Package className="size-6 group-hover/prepare:animate-pulse" />
-                        </button>
-                    )}
-                    {['en_attente', 'confirme', 'prepare'].includes(row.statut) && (
-                        <button onClick={() => handleStatusUpdate(row.id, 'annule')}
-                            className="size-6 bg-foreground/5 border-2 border-foreground/5 rounded-2xl flex items-center justify-center text-rose-500 hover:bg-rose-500 hover:text-foreground transition-all shadow-4xl  group/cancel hover:border-rose-500/30 border-none"
-                            title="RÉVOQUER_FLUX">
-                            <XCircle className="size-6 group-hover/cancel:rotate-90 transition-transform" />
-                        </button>
-                    )}
-                </div>
-            )
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            await Promise.all([
+                refetch(),
+                queryClient.invalidateQueries({ queryKey: ['vendor-orders'] }),
+            ]);
+            toast.success('Commandes actualisées');
+        } catch {
+            toast.error('Impossible d\'actualiser les commandes');
+        } finally {
+            setIsRefreshing(false);
         }
-    ];
+    };
+
+    const securitySummary = useMemo(() => {
+        const inEscrow = orders.filter((o) => !o.escrow_released && !['livre', 'annule', 'annulé'].includes(o.statut)).length;
+        const inTransit = orders.filter((o) => ['expedie', 'prepare'].includes(o.statut)).length;
+        return { total: groupedOrders.length, inEscrow, inTransit };
+    }, [groupedOrders, orders]);
 
     return (
         <DashboardLayout title="Gestion des Commandes" noPadding>
-            <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0F1219] p-6 lg:p-8 space-y-8 custom-scrollbar">
-
-                {/* Executive Command Bar — Logistics Node */}
-                <div className="bg-white dark:bg-[#0F1219] p-6 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm relative overflow-hidden group/header">
-                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 relative z-10">
+            <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0F1219] p-4 sm:p-6 lg:p-8 space-y-6">
+                {/* En-tête */}
+                <div className="bg-white dark:bg-[#0F1219] p-5 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                            <div className="size-12 rounded-2xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-500 border border-amber-100 dark:border-amber-500/20 transition-all duration-700 group-hover/header:rotate-12 shadow-sm">
-                                <ListOrdered className="size-6" />
+                            <div className="size-11 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-500">
+                                <ListOrdered className="size-5" />
                             </div>
-                            <div className="space-y-1">
-                                <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                    Commandes <span className="text-primary">Reçues</span>
+                            <div>
+                                <h2 className="text-lg font-black text-slate-900 dark:text-white">
+                                    Commandes reçues
                                 </h2>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
-                                    Flux logistique en temps réel
+                                <p className="text-xs text-slate-400">
+                                    {groupedOrders.length} commande{groupedOrders.length !== 1 ? 's' : ''} · {orders.length} ligne{orders.length !== 1 ? 's' : ''}
                                 </p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <button onClick={() => refetch()} className="size-11 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl flex items-center justify-center text-slate-400 hover:text-primary transition-all group/refresh shadow-sm">
-                                <RefreshCw className={cn("size-5 group-hover/refresh:rotate-180 transition-transform duration-1000", isLoading && "animate-spin")} />
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={handleRefresh}
+                                disabled={isRefreshing || isFetching}
+                                title="Actualiser les commandes"
+                                aria-label="Actualiser les commandes"
+                                className="size-10 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 hover:text-primary border border-slate-100 dark:border-white/5 disabled:opacity-60"
+                            >
+                                <RefreshCw className={cn('size-4', (isRefreshing || isFetching) && 'animate-spin')} />
                             </button>
-                            <div className="h-11 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl flex items-center gap-3 shadow-xl shadow-slate-200">
-                                 <ShieldCheck className="size-5 text-amber-400" />
-                                 <span className="text-[10px] font-black uppercase tracking-widest pt-0.5">Proxy Sécurisé</span>
-                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setSecurityOpen(true)}
+                                title="Centre de sécurité des commandes"
+                                className="h-10 px-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl flex items-center gap-2 text-[10px] font-bold uppercase hover:opacity-90 transition-opacity"
+                            >
+                                <ShieldCheck className="size-4 text-amber-400" />
+                                Sécurisé
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                {/* KPI Area — High Density Monitoring */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white dark:bg-[#0F1219] p-6 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm flex flex-col justify-between group/kpi transition-all duration-500 hover:shadow-md h-36">
-                        <div className="size-10 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-slate-400 group-hover/kpi:scale-110 transition-transform duration-500">
-                            <ListOrdered className="size-5" />
+                {/* KPI */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    {[
+                        { label: 'Lignes', value: orders.length, icon: ListOrdered, color: 'text-slate-500' },
+                        { label: 'En attente', value: orders.filter((o) => o.statut === 'en_attente').length, icon: Clock, color: 'text-amber-500' },
+                        { label: 'Prêtes', value: orders.filter((o) => o.statut === 'prepare').length, icon: Truck, color: 'text-primary' },
+                        {
+                            label: 'CA livré',
+                            value: `${orders.filter((o) => o.statut === 'livre').reduce((a, o) => a + o.prix_unitaire_achat * o.quantite, 0).toLocaleString('fr-GN')} GNF`,
+                            icon: Wallet,
+                            color: 'text-emerald-500',
+                        },
+                    ].map((kpi) => (
+                        <div key={kpi.label} className="bg-white dark:bg-[#0F1219] p-4 rounded-2xl border border-slate-100 dark:border-white/5">
+                            <kpi.icon className={cn('size-4 mb-2', kpi.color)} />
+                            <p className="text-[10px] font-bold text-slate-400 uppercase">{kpi.label}</p>
+                            <p className={cn('text-base font-black tabular-nums truncate', kpi.color)}>{kpi.value}</p>
                         </div>
-                        <div className="space-y-1">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Total Commandes</p>
-                            <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter tabular-nums" style={{ fontFamily: "'Outfit', sans-serif" }}>{orders.length}</p>
-                        </div>
-                    </div>
-                    <div className="bg-white dark:bg-[#0F1219] p-6 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm flex flex-col justify-between group/kpi transition-all duration-500 hover:shadow-md h-36">
-                        <div className="size-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-500 group-hover/kpi:scale-110 transition-transform duration-500">
-                            <Clock className="size-5" />
-                        </div>
-                        <div className="space-y-1">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">En Attente</p>
-                            <p className="text-2xl font-black text-amber-500 tracking-tighter tabular-nums" style={{ fontFamily: "'Outfit', sans-serif" }}>{orders.filter(o => o.statut === 'en_attente').length}</p>
-                        </div>
-                    </div>
-                    <div className="bg-white dark:bg-[#0F1219] p-6 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm flex flex-col justify-between group/kpi transition-all duration-500 hover:shadow-md h-36">
-                        <div className="size-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover/kpi:scale-110 transition-transform duration-500">
-                            <Wallet className="size-5" />
-                        </div>
-                        <div className="space-y-1">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">C.A. Filtré</p>
-                            <p className="text-2xl font-black text-emerald-500 tracking-tighter tabular-nums" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                                {orders.filter(o => o.statut === 'livre').reduce((acc, o) => acc + (o.prix_unitaire_achat * o.quantite), 0).toLocaleString('fr-GN')}
-                                <span className="text-xs ml-1 opacity-50">GNF</span>
-                            </p>
-                        </div>
-                    </div>
+                    ))}
                 </div>
 
-                {/* Registry Registry — Alpha Ledger Interface */}
-                <div className="bg-white dark:bg-[#0F1219] rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden">
-                    <div className="p-6 border-b border-slate-50 dark:border-white/5 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-                        <div className="flex items-center gap-2 overflow-x-auto pb-2 xl:pb-0 custom-scrollbar">
-                            {STATUS_FILTERS.map((f) => (
-                                <button
-                                    key={f.key}
-                                    onClick={() => setActiveFilter(f.key)}
-                                    className={cn(
-                                        "px-6 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap",
-                                        activeFilter === f.key
-                                            ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105"
-                                            : "bg-slate-50 dark:bg-white/5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-white/10"
-                                    )}
-                                >
-                                    {f.label}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="relative group w-full xl:w-96">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 size-4 group-focus-within:text-primary transition-all" />
-                            <input
-                                className="w-full pl-12 pr-6 h-11 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl text-xs font-bold uppercase tracking-tight focus:ring-2 focus:ring-primary/20 outline-none transition-all text-slate-900 dark:text-white"
-                                placeholder="CLIENT, PRODUIT, RÉFÉRENCE..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </div>
+                {/* Filtres */}
+                <div className="bg-white dark:bg-[#0F1219] rounded-2xl border border-slate-100 dark:border-white/5 p-4 space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                        {STATUS_FILTERS.map((f) => (
+                            <button
+                                key={f.key}
+                                type="button"
+                                onClick={() => setActiveFilter(f.key)}
+                                className={cn(
+                                    'px-4 h-9 rounded-lg text-xs font-bold transition-all',
+                                    activeFilter === f.key
+                                        ? 'bg-primary text-white shadow-sm'
+                                        : 'bg-slate-50 dark:bg-white/5 text-slate-500 hover:text-slate-700',
+                                )}
+                            >
+                                {f.label}
+                            </button>
+                        ))}
                     </div>
-
-                    <div className="p-2">
-                        <DataTable
-                            selectable
-                            selectedIds={selectedIds}
-                            onSelectionChange={setSelectedIds}
-                            columns={columns}
-                            data={filtered}
-                            isLoading={isLoading}
-                            className="bg-transparent border-0"
+                    <div className="relative max-w-md">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 size-4" />
+                        <input
+                            className="w-full pl-10 pr-4 h-10 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                            placeholder="Client, produit, référence…"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
                         />
-
-                        {!isLoading && filtered.length === 0 && (
-                            <div className="py-24 text-center opacity-40 flex flex-col items-center gap-3">
-                                <div className="relative">
-                                    <ShoppingBag className="size-6 text-slate-800 dark:text-white animate-pulse" />
-                                    <Activity className="absolute -top-4 -right-4 size-6 text-[#FFB703] animate-ping" />
-                                </div>
-                                <p className="text-[12px] font-black uppercase  text-foreground">Aucune commande trouvée</p>
-                                <button onClick={() => refetch()} className="text-[#FFB703] text-[10px] font-black uppercase  border-b-2 border-[#FFB703]/20 pb-2 hover:border-[#FFB703] transition-all border-none bg-transparent">Actualiser</button>
-                            </div>
-                        )}
                     </div>
                 </div>
 
-                {/* Bulk Action Station — Floating HUD Protocol */}
+                {/* Liste par commande */}
+                {isLoading ? (
+                    <div className="py-20 text-center text-slate-400 text-sm">Chargement…</div>
+                ) : groupedOrders.length === 0 ? (
+                    <div className="py-20 text-center text-slate-400 flex flex-col items-center gap-2 bg-white dark:bg-[#0F1219] rounded-2xl border border-slate-100 dark:border-white/5">
+                        <ShoppingBag className="size-8 opacity-40" />
+                        <p className="text-sm font-bold">Aucune commande trouvée</p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {groupedOrders.map((group) => (
+                            <VendorOrderCard
+                                key={group.commande_id}
+                                orderGroup={group}
+                                selected={isOrderSelected(group.items.map((i) => i.id))}
+                                onToggleSelect={toggleSelectOrder}
+                                onStatusUpdate={handleStatusUpdate}
+                                onPrepareOrder={(id) => prepareOrderMutation.mutate(id)}
+                                isPending={isPending}
+                            />
+                        ))}
+                    </div>
+                )}
+
+                {/* Barre actions groupées */}
                 {selectedIds.length > 0 && (
-                    <div className="fixed bottom-16 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-20 duration-1000 font-jakarta">
-                        <div className="bg-background/95 dark:bg-slate-900/95 backdrop-blur-3xl border-2 border-[#FFB703]/40 rounded-2xl p-4 shadow-[0_50px_100px_rgba(0,0,0,0.9)] flex items-center gap-3 group/bulk">
-                             <div className="flex flex-col gap-1">
-                                <span className="text-[12px] font-black text-[#FFB703] uppercase  leading-none">Action groupée</span>
-                                <span className="text-[10px] font-black text-muted-foreground uppercase  leading-none">{selectedIds.length} commande{selectedIds.length > 1 ? 's' : ''} sélectionnée{selectedIds.length > 1 ? 's' : ''}</span>
-                             </div>
-                             <div className="w-[1px] h-10 bg-foreground/10" />
-                             <button
+                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-3 shadow-2xl flex flex-wrap items-center justify-center gap-2">
+                            <span className="text-xs font-bold text-slate-500 w-full text-center sm:w-auto sm:mr-2">
+                                {selectedIds.length} sélectionné(s)
+                            </span>
+                            <button
+                                type="button"
                                 onClick={async () => {
                                     for (const id of selectedIds) {
                                         await updateStatusMutation.mutateAsync({ id, status: 'confirme' });
                                     }
                                     setSelectedIds([]);
                                 }}
-                                disabled={updateStatusMutation.isPending}
-                                className="h-12 px-6 gap-3 rounded-2xl bg-[#FFB703] text-background shadow-2xl font-black text-[10px] uppercase  flex items-center hover:bg-white transition-all  border-none disabled:opacity-50"
+                                disabled={isPending}
+                                className="h-9 px-4 rounded-xl bg-amber-500 text-white text-xs font-bold flex items-center gap-2 border-none"
                             >
-                                {updateStatusMutation.isPending ? <RefreshCw className="size-4 animate-spin" /> : <CheckCircle2 className="size-6" />}
-                                <span>Tout confirmer</span>
+                                <CheckCircle2 className="size-4" /> Confirmer
                             </button>
                             <button
-                                onClick={() => setSelectedIds([])}
-                                className="size-6 rounded-2xl bg-foreground/5 dark:bg-white/5 text-muted-foreground hover:text-rose-500 transition-all border-none flex items-center justify-center"
+                                type="button"
+                                onClick={async () => {
+                                    const orderIds = [...new Set(
+                                        selectedIds.map((id) => orders.find((o) => o.id === id)?.commande_id).filter(Boolean),
+                                    )];
+                                    for (const orderId of orderIds) {
+                                        await prepareOrderMutation.mutateAsync(orderId);
+                                    }
+                                    setSelectedIds([]);
+                                }}
+                                disabled={isPending}
+                                className="h-9 px-4 rounded-xl bg-emerald-500 text-white text-xs font-bold flex items-center gap-2 border-none"
                             >
-                                <XCircle className="size-6" />
+                                <Package className="size-4" /> Prêt livreur
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const first = orders.find((o) => selectedIds.includes(o.id));
+                                    if (first) navigate(`/tracking?orderId=${first.commande_id}`);
+                                }}
+                                className="h-9 px-4 rounded-xl bg-sky-500 text-white text-xs font-bold flex items-center gap-2 border-none"
+                            >
+                                <Activity className="size-4" /> GPS
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedIds([])}
+                                className="size-9 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center border-none"
+                            >
+                                <XCircle className="size-4 text-rose-500" />
                             </button>
                         </div>
                     </div>
                 )}
             </div>
+
+            <ModalOverlay
+                open={securityOpen}
+                onClose={() => setSecurityOpen(false)}
+                title="Centre de sécurité BCA"
+                maxWidth="max-w-md"
+            >
+                <div className="space-y-5">
+                    <p className="text-sm text-muted-foreground">
+                        Vos commandes sont protégées par chiffrement des coordonnées, séquestre (escrow) et validation OTP à la livraison.
+                    </p>
+                    <div className="grid grid-cols-3 gap-3">
+                        {[
+                            { label: 'Commandes', value: securitySummary.total, icon: ShoppingBag },
+                            { label: 'En séquestre', value: securitySummary.inEscrow, icon: Lock },
+                            { label: 'En transit', value: securitySummary.inTransit, icon: Truck },
+                        ].map((item) => (
+                            <div key={item.label} className="rounded-xl bg-muted/50 border border-border p-3 text-center">
+                                <item.icon className="size-4 mx-auto mb-1 text-primary" />
+                                <p className="text-lg font-black tabular-nums">{item.value}</p>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                            </div>
+                        ))}
+                    </div>
+                    <ul className="space-y-3 text-sm">
+                        {[
+                            { icon: Fingerprint, text: 'Données client chiffrées (AES-256) en transit et au repos.' },
+                            { icon: Lock, text: 'Fonds bloqués en séquestre jusqu\'à confirmation de livraison.' },
+                            { icon: BadgeCheck, text: 'Clôture livraison par code OTP unique côté transporteur.' },
+                        ].map((row) => (
+                            <li key={row.text} className="flex gap-3 items-start">
+                                <row.icon className="size-4 text-emerald-500 shrink-0 mt-0.5" />
+                                <span className="text-foreground">{row.text}</span>
+                            </li>
+                        ))}
+                    </ul>
+                    <button
+                        type="button"
+                        onClick={() => setSecurityOpen(false)}
+                        className="w-full h-11 rounded-xl bg-primary text-white font-bold text-sm"
+                    >
+                        Compris
+                    </button>
+                </div>
+            </ModalOverlay>
         </DashboardLayout>
     );
 };

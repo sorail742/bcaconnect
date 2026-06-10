@@ -10,21 +10,18 @@ require("dotenv").config();
 const { validateEnv } = require("./config/envValidation");
 validateEnv();
 
-const app = require("./app");
 const { sequelize } = require("./models");
 const http = require("http");
 const { Server } = require("socket.io");
-const { QueryTypes } = require("sequelize");
 const refreshTokenService = require("./services/refreshTokenService");
 const { startCreditReminders } = require("./cron/creditReminderCron");
 const { runMigrations } = require("./config/runMigrations");
+const { initCategoryAttributes } = require("./constants/categoryAttributes");
 
 // Lancement de la tâche Cron de rappels
 startCreditReminders();
 
-// 🚀 Démarrage du Serveur Node
 const PORT = process.env.PORT || 5000;
-const server = http.createServer(app);
 const ALLOWED_ORIGINS =
   process.env.NODE_ENV === "production"
     ? [
@@ -44,49 +41,51 @@ const ALLOWED_ORIGINS =
         process.env.FRONTEND_URL,
       ].filter(Boolean);
 
-const io = new Server(server, {
-  cors: {
-    origin: process.env.NODE_ENV === "production" ? ALLOWED_ORIGINS : true,
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
-});
-
-// Attacher io à l'app pour y accéder dans les contrôleurs
-app.set("socketio", io);
-
-io.on("connection", (socket) => {
-  console.log("⚡ Un utilisateur s'est connecté :", socket.id);
-
-  // Rejoindre le canal personnel
-  socket.on("join", (userId) => {
-    socket.join(userId);
-    socket.userId = userId;
-    console.log(`👤 Utilisateur ${userId} a rejoint son canal personnel.`);
-  });
-
-  // Rejoindre une room de conversation
-  socket.on("join_conversation", (conversationId) => {
-    socket.join(`conv_${conversationId}`);
-  });
-
-  // Indicateur de frappe
-  socket.on("typing", ({ conversationId, isTyping }) => {
-    socket.to(`conv_${conversationId}`).emit("user_typing", {
-      conversationId,
-      userId: socket.userId,
-      isTyping,
-    });
-  });
-
-  socket.on("disconnect", () => {
-    console.log("🔥 Utilisateur déconnecté :", socket.id);
-  });
-});
-
 const start = async () => {
   try {
-    // 🔐 Initialiser Redis pour la rotation des refresh tokens
+    // Profils partagés (ESM) — avant require('./app') qui charge aiService
+    await initCategoryAttributes();
+    console.log("✅ Profils attributs catégories chargés.");
+
+    const app = require("./app");
+    const server = http.createServer(app);
+
+    const io = new Server(server, {
+      cors: {
+        origin: process.env.NODE_ENV === "production" ? ALLOWED_ORIGINS : true,
+        methods: ["GET", "POST"],
+        credentials: true,
+      },
+    });
+
+    app.set("socketio", io);
+
+    io.on("connection", (socket) => {
+      console.log("⚡ Un utilisateur s'est connecté :", socket.id);
+
+      socket.on("join", (userId) => {
+        socket.join(userId);
+        socket.userId = userId;
+        console.log(`👤 Utilisateur ${userId} a rejoint son canal personnel.`);
+      });
+
+      socket.on("join_conversation", (conversationId) => {
+        socket.join(`conv_${conversationId}`);
+      });
+
+      socket.on("typing", ({ conversationId, isTyping }) => {
+        socket.to(`conv_${conversationId}`).emit("user_typing", {
+          conversationId,
+          userId: socket.userId,
+          isTyping,
+        });
+      });
+
+      socket.on("disconnect", () => {
+        console.log("🔥 Utilisateur déconnecté :", socket.id);
+      });
+    });
+
     if (process.env.REDIS_URL) {
       console.log("🔄 Initialisation de Redis...");
       try {
@@ -106,27 +105,20 @@ const start = async () => {
       );
     }
 
-    // Connexion à la base de données
     await sequelize.authenticate();
     console.log("✅ Connexion base de données établie.");
 
-    // Synchronisation standard (ne modifie pas les tables existantes)
     await sequelize.sync();
     console.log("✅ Modèles synchronisés.");
 
     await runMigrations(sequelize);
 
-    // Démarrer le serveur
     server.listen(PORT, () => {
       console.log(`\n🚀 BCA Connect Real-Time API v2.6 — Port ${PORT}`);
       console.log(`🔐 Sécurité: RS256 JWT + Refresh Token Rotation + Redis`);
       console.log(`📊 Environnement: ${process.env.NODE_ENV}\n`);
     });
 
-    // Handle server errors (e.g., EADDRINUSE)
-    // NOTE: Ne pas basculer automatiquement vers un autre port.
-    // Si le port demandé est occupé, échouer explicitement pour
-    // laisser l'utilisateur relancer le projet sur le port souhaité.
     server.on("error", (err) => {
       if (err.code === "EADDRINUSE") {
         console.error(
@@ -139,11 +131,9 @@ const start = async () => {
       }
     });
 
-    // Gestion de l'arrêt gracieux (Standard BCA v2.6)
     const gracefulShutdown = async (signal) => {
       console.log(`\n⏹️  Signal ${signal} reçu. Arrêt gracieux...`);
 
-      // 1. Arrêter d'accepter de nouvelles connexions
       server.close(async (err) => {
         if (err) {
           console.error("❌ Erreur lors de la fermeture du serveur:", err);
@@ -151,7 +141,6 @@ const start = async () => {
         }
         console.log("✅ Serveur HTTP arrêté.");
 
-        // 2. Déconnexion des services tiers (Redis, DB...)
         try {
           await refreshTokenService.disconnect();
           await sequelize.close();
@@ -166,7 +155,6 @@ const start = async () => {
         process.exit(0);
       });
 
-      // 3. Sécurité : Forcer l'arrêt après 5 secondes si le serveur reste bloqué
       setTimeout(() => {
         console.error("⚠️  Délai d'attente dépassé. Arrêt forcé.");
         process.exit(1);

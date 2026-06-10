@@ -1,8 +1,47 @@
 const { Order, OrderItem, Product, Wallet, Transaction, User, DeliveryLog, DeliveryGroup, Notification, sequelize } = require('../models');
-const { Op } = require('sequelize');
+const { Op, where, fn, col, cast } = require('sequelize');
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** Recherche commande par UUID complet, préfixe ORD-XXXXXXXX ou 8+ caractères */
+async function findOrderByTrackingRef(trackingNumber) {
+    const raw = (trackingNumber || '').trim();
+    const cleanId = raw.replace(/^ORD-/i, '').toLowerCase().trim();
+    if (!cleanId || cleanId.length < 6) return null;
+
+    if (UUID_RE.test(raw)) {
+        return Order.findByPk(raw.toLowerCase());
+    }
+    if (UUID_RE.test(cleanId)) {
+        return Order.findByPk(cleanId);
+    }
+
+    return Order.findOne({
+        where: where(
+            fn('LOWER', cast(col('id'), 'TEXT')),
+            { [Op.like]: `${cleanId}%` },
+        ),
+    });
+}
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
 const escrowService = require('../services/escrowService');
+const { carrierAvailableWhere, isCarrierPickupEligible } = require('../utils/deliveryEligibility');
+const { emitOrderStatusUpdate } = require('../utils/orderSocketEvents');
+
+/** Normalise les timestamps des logs (Sequelize → snake_case pour le frontend) */
+const serializeDeliveryLogs = (logs) => logs.map((log) => {
+    const plain = log?.get ? log.toJSON() : { ...log };
+    const created = plain.created_at ?? plain.createdAt;
+    const updated = plain.updated_at ?? plain.updatedAt;
+    return {
+        ...plain,
+        created_at: created,
+        updated_at: updated,
+        createdAt: created,
+        updatedAt: updated,
+    };
+});
 
 // ─── Utilitaire RGPD ─────────────────────────────────────────────────────────
 // Masque un nom pour l'affichage public : "Jean Dupont" → "J*** D***"
@@ -30,11 +69,15 @@ const deliveryController = {
     // 1. Lister les commandes disponibles pour ramassage
     getAvailableOrders: catchAsync(async (req, res, next) => {
         const orders = await Order.findAll({
-            where: {
-                statut_livraison: 'pret',
-                statut: { [Op.in]: ['payé', 'en_préparation'] }
-            },
-            include: ['details']
+            where: carrierAvailableWhere(),
+            include: [
+                {
+                    model: OrderItem,
+                    as: 'details',
+                    include: [{ model: Product, as: 'produit', attributes: ['id', 'nom_produit', 'image_url'] }],
+                },
+            ],
+            order: [['created_at', 'DESC']],
         });
         res.json(orders);
     }),
@@ -45,8 +88,8 @@ const deliveryController = {
         const transporteur_id = req.user.id;
 
         const order = await Order.findByPk(orderId);
-        if (!order || order.statut_livraison !== 'pret') {
-            return next(new AppError("Commande non disponible.", 400));
+        if (!isCarrierPickupEligible(order)) {
+            return next(new AppError("Commande non disponible pour ramassage.", 400));
         }
 
         // Générer un OTP de 6 chiffres pour la livraison
@@ -56,6 +99,16 @@ const deliveryController = {
         order.statut_livraison = 'ramasse';
         order.delivery_otp = otp;
         await order.save();
+
+        await OrderItem.update(
+            { statut: 'expedie' },
+            {
+                where: {
+                    commande_id: orderId,
+                    statut: { [Op.in]: ['prepare', 'confirme', 'en_attente'] },
+                },
+            },
+        );
 
         // Créer le log initial
         await DeliveryLog.create({
@@ -75,6 +128,7 @@ const deliveryController = {
         });
         if (io) {
             io.to(order.utilisateur_id).emit('notification_received', clientNotif);
+            await emitOrderStatusUpdate(io, order);
         }
 
         res.json({
@@ -151,9 +205,26 @@ const deliveryController = {
                 return next(new AppError("Code OTP incorrect. Livraison non validée.", 400));
             }
 
+            // COD : encaissement à la livraison → séquestre puis libération vendeurs
+            if (order.methode_paiement === 'cod' && order.statut !== 'payé') {
+                await escrowService.depositOrderEscrow(orderId, order.details, t);
+                order.statut = 'payé';
+            }
+
             order.statut_livraison = 'livre';
             order.delivery_otp = null; // Clear OTP après usage
             await order.save({ transaction: t });
+
+            await OrderItem.update(
+                { statut: 'livre' },
+                {
+                    where: {
+                        commande_id: orderId,
+                        statut: { [Op.ne]: 'annule' },
+                    },
+                    transaction: t,
+                },
+            );
 
             // LOGIQUE FINANCIÈRE : Libération idempotente via escrowService
             await escrowService.releaseOrderEscrow(orderId, order.details, t, 'release_escrow');
@@ -192,8 +263,11 @@ const deliveryController = {
             await t.commit();
 
             const io = req.app.get('socketio');
-            if (io && walletBalance !== null) {
-                io.to(transporteur_id).emit('wallet_updated', { amount: fraisPort, balance: walletBalance });
+            if (io) {
+                await emitOrderStatusUpdate(io, orderId);
+                if (walletBalance !== null) {
+                    io.to(transporteur_id).emit('wallet_updated', { amount: fraisPort, balance: walletBalance });
+                }
             }
 
             res.json({
@@ -239,16 +313,20 @@ const deliveryController = {
         const order = await Order.findByPk(orderId, { attributes: ['id', 'utilisateur_id', 'transporteur_id'] });
         if (!order) return next(new AppError('Commande introuvable.', 404));
 
+        const isVendor = await OrderItem.count({
+            where: { commande_id: orderId, fournisseur_id: req.user.id },
+        });
         const allowed = order.utilisateur_id === req.user.id
             || order.transporteur_id === req.user.id
-            || req.user.role === 'admin';
+            || req.user.role === 'admin'
+            || isVendor > 0;
         if (!allowed) return next(new AppError('Accès non autorisé à cet historique.', 403));
 
         const history = await DeliveryLog.findAll({
             where: { order_id: orderId },
             order: [['created_at', 'ASC']]
         });
-        res.json(history);
+        res.json(serializeDeliveryLogs(history));
     }),
 
     // 6b. Livraisons terminées du transporteur
@@ -267,37 +345,33 @@ const deliveryController = {
     trackOrderPublic: catchAsync(async (req, res, next) => {
         const { trackingNumber } = req.params;
 
-        // Normaliser : supprimer le préfixe "ORD-" si présent, et mettre en minuscules
-        const cleanId = trackingNumber.replace(/^ORD-/i, '').toLowerCase().trim();
+        const cleanId = (trackingNumber || '').replace(/^ORD-/i, '').toLowerCase().trim();
 
         if (!cleanId || cleanId.length < 6) {
             return next(new AppError("Numéro de suivi invalide. Format attendu : ORD-XXXXXXXX ou les 8 premiers caractères de l'identifiant.", 400));
         }
 
-        // Recherche par les premiers caractères de l'UUID
-        const order = await Order.findOne({
-            where: {
-                id: { [Op.like]: `${cleanId}%` }
-            }
-        });
+        const order = await findOrderByTrackingRef(trackingNumber);
 
         if (!order) {
             return next(new AppError("Aucune expédition trouvée pour ce numéro de suivi.", 404));
         }
 
         // Récupérer l'historique de livraison
-        const history = await DeliveryLog.findAll({
+        const rawHistory = await DeliveryLog.findAll({
             where: { order_id: order.id },
             order: [['created_at', 'ASC']]
         });
+        const history = serializeDeliveryLogs(rawHistory);
 
         // Dernière position GPS connue
         const gpsLogs = history.filter(h => h.latitude != null && h.longitude != null);
-        const lastPosition = gpsLogs.length > 0
+        const lastGps = gpsLogs[gpsLogs.length - 1];
+        const lastPosition = lastGps
             ? {
-                latitude: parseFloat(gpsLogs[gpsLogs.length - 1].latitude),
-                longitude: parseFloat(gpsLogs[gpsLogs.length - 1].longitude),
-                updated_at: gpsLogs[gpsLogs.length - 1].created_at
+                latitude: parseFloat(lastGps.latitude),
+                longitude: parseFloat(lastGps.longitude),
+                updated_at: lastGps.created_at ?? lastGps.createdAt,
             }
             : null;
 
@@ -333,7 +407,7 @@ const deliveryController = {
             const orders = await Order.findAll({
                 where: {
                     id: { [Op.in]: orderIds },
-                    statut_livraison: 'pret'
+                    ...carrierAvailableWhere(),
                 },
                 transaction: t
             });
@@ -487,7 +561,7 @@ const deliveryController = {
         }));
 
         const pendingOrders = await Order.findAll({
-            where: { statut_livraison: 'pret', statut: { [Op.in]: ['payé', 'en_préparation'] } },
+            where: carrierAvailableWhere(),
             attributes: ['id', 'adresse_livraison', 'frais_port', 'type_livraison', 'created_at'],
             order: [['created_at', 'DESC']],
             limit: 20,
@@ -525,7 +599,7 @@ const deliveryController = {
         });
 
         const available = await Order.count({
-            where: { statut_livraison: 'pret', statut: { [Op.in]: ['payé', 'en_préparation'] } }
+            where: carrierAvailableWhere(),
         });
 
         const groupsCount = await DeliveryGroup.count({ where: { transporteur_id } });

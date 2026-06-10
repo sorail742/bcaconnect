@@ -1,9 +1,26 @@
-const { Order, OrderItem, Product, Wallet, Transaction, User, Notification, sequelize } = require('../models');
+const { Order, OrderItem, Product, Wallet, Transaction, User, Notification, DeliveryLog, sequelize } = require('../models');
+const { Op } = require('sequelize');
 const escrowService = require('../services/escrowService');
 const { calculateShipping, listDeliveryOptions } = require('../services/shippingService');
 const { reserveStockForItems } = require('../services/orderStockService');
+const {
+    syncOrderReadyForPickup,
+    syncOrderLogisticsFromItems,
+    notifyCarriersOrderReady,
+} = require('../services/deliveryNotificationService');
+const {
+    assertVendorItemTransition,
+    canVendorCancelItem,
+} = require('../utils/orderItemTransitions');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
+const { emitOrderStatusUpdate } = require('../utils/orderSocketEvents');
+
+function resolveInitialOrderStatut(paymentMethod) {
+    if (paymentMethod === 'wallet') return 'payé';
+    if (paymentMethod === 'cod') return 'en_préparation';
+    return 'en_attente_paiement';
+}
 
 const orderController = {
     getShippingQuote: catchAsync(async (req, res) => {
@@ -107,7 +124,7 @@ const orderController = {
                 frais_port,
                 type_livraison: shipping.type_livraison,
                 delai_estime_jours: shipping.delai_estime_jours,
-                statut: paymentMethod === 'wallet' ? 'payé' : 'en_attente_paiement',
+                statut: resolveInitialOrderStatut(paymentMethod),
                 methode_paiement: paymentMethod || 'wallet',
                 mode_resilience: Boolean(mode_resilience),
                 nom_destinataire: deliveryInfo?.nom,
@@ -176,7 +193,10 @@ const orderController = {
             console.error("🔴 [ORDER 500] Erreur fatale:", error.message);
             if (t) await t.rollback();
             if (error instanceof AppError) return next(error);
-            return next(new AppError(error.message || 'Erreur création commande.', 400));
+            const msg = error.message?.includes('value too long')
+                ? 'Erreur base de données : champ livraison trop court. Relancez les migrations (npm run migrate).'
+                : (error.message || 'Erreur création commande.');
+            return next(new AppError(msg, 400));
         }
     }),
 
@@ -238,7 +258,7 @@ const orderController = {
     }),
 
     getVendorOrders: catchAsync(async (req, res) => {
-            const { page = 1, limit = 10 } = req.query;
+            const { page = 1, limit = 50 } = req.query;
             const offset = (page - 1) * limit;
 
             const { count, rows: orders } = await OrderItem.findAndCountAll({
@@ -247,21 +267,69 @@ const orderController = {
                     {
                         model: Order,
                         as: 'commande',
-                        include: [{ model: User, as: 'client', attributes: ['nom_complet', 'telephone', 'email'] }]
+                        attributes: [
+                            'id', 'statut', 'statut_livraison', 'transporteur_id',
+                            'frais_port', 'type_livraison', 'methode_paiement',
+                            'nom_destinataire', 'adresse_livraison', 'date_commande', 'total_ttc',
+                        ],
+                        include: [
+                            { model: User, as: 'client', attributes: ['id', 'nom_complet', 'telephone', 'email'] },
+                            { model: User, as: 'transporteur', attributes: ['id', 'nom_complet', 'telephone', 'location'] },
+                        ],
                     },
-                    { model: Product, as: 'produit' }
+                    { model: Product, as: 'produit' },
                 ],
                 order: [['createdAt', 'DESC']],
                 limit: parseInt(limit),
-                offset: parseInt(offset)
+                offset: parseInt(offset),
             });
 
             res.json({
                 total: count,
                 pages: Math.ceil(count / limit),
                 currentPage: parseInt(page),
-                orders
+                orders,
             });
+    }),
+
+    getVendorOrderLogistics: catchAsync(async (req, res, next) => {
+        const { orderId } = req.params;
+        const vendorId = req.user.id;
+
+        const vendorItems = await OrderItem.count({
+            where: { commande_id: orderId, fournisseur_id: vendorId },
+        });
+        if (!vendorItems && req.user.role !== 'admin') {
+            return next(new AppError('Non autorisé à consulter cette commande.', 403));
+        }
+
+        const order = await Order.findByPk(orderId, {
+            attributes: [
+                'id', 'statut', 'statut_livraison', 'transporteur_id',
+                'frais_port', 'type_livraison', 'adresse_livraison', 'nom_destinataire',
+                'date_commande', 'methode_paiement',
+            ],
+            include: [
+                { model: User, as: 'client', attributes: ['id', 'nom_complet', 'telephone', 'email'] },
+                { model: User, as: 'transporteur', attributes: ['id', 'nom_complet', 'telephone', 'location'] },
+            ],
+        });
+        if (!order) return next(new AppError('Commande non trouvée.', 404));
+
+        const history = await DeliveryLog.findAll({
+            where: { order_id: orderId },
+            order: [['created_at', 'ASC']],
+        });
+        const gpsLogs = history.filter((h) => h.latitude != null && h.longitude != null);
+        const lastPosition = gpsLogs.length
+            ? {
+                lat: parseFloat(gpsLogs[gpsLogs.length - 1].latitude),
+                lng: parseFloat(gpsLogs[gpsLogs.length - 1].longitude),
+                updated_at: gpsLogs[gpsLogs.length - 1].created_at,
+            }
+            : null;
+
+        res.json({ order, history, lastPosition });
     }),
 
     getAllOrders: catchAsync(async (req, res) => {
@@ -314,22 +382,27 @@ const orderController = {
             }
 
             const parentOrder = await Order.findByPk(item.commande_id, { transaction: t });
+            if (!parentOrder) {
+                await t.rollback();
+                return next(new AppError('Commande parente introuvable.', 404));
+            }
+
+            if (req.user.role !== 'admin') {
+                assertVendorItemTransition(item.statut, newStatus);
+                if (newStatus === 'annule' && !canVendorCancelItem(item.statut, parentOrder.statut_livraison)) {
+                    throw new AppError('Impossible d\'annuler : le livreur a déjà pris en charge le colis.', 400);
+                }
+                if (newStatus === 'expedie' && !parentOrder.transporteur_id) {
+                    throw new AppError('Aucun livreur assigné. Attendez qu\'un transporteur accepte la mission.', 400);
+                }
+            }
 
             item.statut = newStatus;
             await item.save({ transaction: t });
 
-            // Le séquestre est libéré uniquement à la validation OTP transporteur (delivery/verify).
-
-            // Vérifier si tous les articles de la commande sont préparés pour notifier le transporteur
-            const allItems = await OrderItem.findAll({ where: { commande_id: item.commande_id }, transaction: t });
-            const allPrepared = allItems.every(i => i.statut === 'prepare' || i.statut === 'livre');
-
-            if (allPrepared) {
-                await Order.update(
-                    { statut_livraison: allItems.every(i => i.statut === 'livre') ? 'livre' : 'pret' },
-                    { where: { id: item.commande_id }, transaction: t }
-                );
-            }
+            const syncPickup = await syncOrderReadyForPickup(item.commande_id, t);
+            const syncLogistics = await syncOrderLogisticsFromItems(item.commande_id, t);
+            const orderPrepared = syncPickup.ready || syncLogistics?.readyForCarrier;
 
             await t.commit();
 
@@ -339,10 +412,12 @@ const orderController = {
             // ⚡ NOTIFICATION POUR LE CLIENT
             if (io && order) {
                 const statusLabels = {
-                    'prepare': 'est en cours de préparation',
-                    'expedie': 'a été expédiée',
-                    'livre': 'a été livrée',
-                    'annule': 'a été annulée'
+                    confirme: 'a été confirmée par le vendeur',
+                    prepare: 'est en cours de préparation',
+                    expedie: 'a été remise au livreur',
+                    livre: 'a été livrée',
+                    annule: 'a été annulée',
+                    en_attente: 'est de nouveau en attente',
                 };
 
                 const clientNotif = await Notification.create({
@@ -354,38 +429,99 @@ const orderController = {
                 io.to(order.utilisateur_id).emit('notification_received', clientNotif);
             }
 
-            // ⚡ NOTIFIER LES TRANSPORTEURS quand la commande est prête
-            if (allPrepared && order?.statut_livraison === 'pret' && io) {
-                const carriers = await User.findAll({
-                    where: { role: 'transporteur', statut: 'actif' },
-                    attributes: ['id'],
+            if (orderPrepared) {
+                await notifyCarriersOrderReady(req.app, order);
+            }
+
+            if (io && order) {
+                await emitOrderStatusUpdate(io, order, {
+                    itemId: item.id,
+                    itemStatut: newStatus,
                 });
-                for (const carrier of carriers) {
-                    const carrierNotif = await Notification.create({
-                        utilisateur_id: carrier.id,
-                        titre: 'Nouvelle livraison disponible',
-                        message: `Commande <span class="font-black text-primary">#${order.id.slice(0, 8)}</span> prête à ramasser — ${parseFloat(order.frais_port || 0).toLocaleString('fr-GN')} GNF`,
-                        type: 'delivery',
-                        metadata: { order_id: order.id },
-                    });
-                    io.to(carrier.id).emit('notification_received', carrierNotif);
-                    io.to(carrier.id).emit('delivery_available', {
-                        orderId: order.id,
-                        frais_port: order.frais_port,
-                        adresse: order.adresse_livraison,
-                    });
-                }
             }
 
             res.json({
                 message: "Statut mis à jour avec succès",
                 item,
-                orderPrepared: allPrepared
+                orderPrepared,
             });
         } catch (error) {
             if (t) await t.rollback();
             if (error instanceof AppError) return next(error);
             return next(new AppError(error.message || 'Erreur mise à jour article.', 400));
+        }
+    }),
+
+    /** Préparer en une fois tous les articles du vendeur pour une commande */
+    prepareVendorOrder: catchAsync(async (req, res, next) => {
+        const t = await sequelize.transaction();
+        try {
+            const { orderId } = req.params;
+            const vendorId = req.user.id;
+
+            const vendorItems = await OrderItem.findAll({
+                where: { commande_id: orderId, fournisseur_id: vendorId },
+                transaction: t,
+            });
+
+            if (!vendorItems.length) {
+                await t.rollback();
+                return next(new AppError('Aucun article de cette commande pour votre boutique.', 404));
+            }
+
+            const pendingItems = vendorItems.filter((i) => ['en_attente', 'confirme'].includes(i.statut));
+
+            if (!pendingItems.length) {
+                const allPrepared = vendorItems.every((i) => ['prepare', 'livre'].includes(i.statut));
+                if (!allPrepared) {
+                    await t.rollback();
+                    return next(new AppError('Aucun article en attente de préparation pour cette commande.', 404));
+                }
+                const { ready: orderPrepared } = await syncOrderReadyForPickup(orderId, t);
+                await t.commit();
+                if (orderPrepared) {
+                    const order = await Order.findByPk(orderId);
+                    await notifyCarriersOrderReady(req.app, order).catch((e) => {
+                        console.warn('[vendor-prepare] Notification transporteur:', e.message);
+                    });
+                }
+                const io = req.app.get('socketio');
+                if (io) await emitOrderStatusUpdate(io, orderId);
+                return res.json({
+                    message: 'Vos articles sont déjà préparés.',
+                    prepared: 0,
+                    orderPrepared,
+                    alreadyPrepared: true,
+                });
+            }
+
+            for (const item of pendingItems) {
+                item.statut = 'prepare';
+                await item.save({ transaction: t });
+            }
+
+            const { ready: orderPrepared } = await syncOrderReadyForPickup(orderId, t);
+            await t.commit();
+
+            if (orderPrepared) {
+                const order = await Order.findByPk(orderId);
+                await notifyCarriersOrderReady(req.app, order).catch((e) => {
+                    console.warn('[vendor-prepare] Notification transporteur:', e.message);
+                });
+            }
+
+            const io = req.app.get('socketio');
+            if (io) await emitOrderStatusUpdate(io, orderId);
+
+            res.json({
+                message: `${pendingItems.length} article(s) marqué(s) comme préparé(s).`,
+                prepared: pendingItems.length,
+                orderPrepared,
+            });
+        } catch (error) {
+            if (t) await t.rollback();
+            if (error instanceof AppError) return next(error);
+            return next(new AppError(error.message || 'Erreur préparation commande.', 400));
         }
     }),
 
@@ -410,6 +546,7 @@ const orderController = {
             // Matrice de transition stricte pour ORDER (Global)
             const transitions = {
                 'payé': ['annulé', 'retourné'],
+                'en_préparation': ['annulé'],
                 'en_attente_paiement': ['annulé'],
                 'annulé': [],
                 'retourné': []
@@ -432,7 +569,7 @@ const orderController = {
             }
 
             // Si annulation d'une commande payée ou en attente -> Remboursement
-            if (statut === 'annulé' && (order.statut === 'payé' || order.statut === 'en_attente_paiement')) {
+            if (statut === 'annulé' && ['payé', 'en_attente_paiement', 'en_préparation'].includes(order.statut)) {
                 const buyerWallet = await Wallet.findOne({ where: { user_id: order.utilisateur_id }, transaction: t, lock: t.LOCK.UPDATE });
                 
                 if (buyerWallet && order.statut === 'payé') {

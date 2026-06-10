@@ -384,52 +384,104 @@ const dashboardController = {
             const sixtyDaysAgo = new Date(now.getTime() - (60 * 24 * 60 * 60 * 1000));
             const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
 
-            // On récupère toutes les items vendus par ce vendeur dans des commandes payées
+            const VALID_ORDER_STATUTS = {
+                [Op.notIn]: ['en_attente_paiement', 'annulé', 'annule', 'refuse'],
+            };
+
             const vendorItems = await OrderItem.findAll({
                 where: { fournisseur_id: userId },
-                include: [{
-                    model: Order,
-                    as: 'commande',
-                    where: { statut: 'payé' },
-                    required: true,
-                    attributes: ['created_at']
-                }]
+                include: [
+                    {
+                        model: Order,
+                        as: 'commande',
+                        where: { statut: VALID_ORDER_STATUTS },
+                        required: true,
+                        attributes: ['id', 'created_at', 'createdAt'],
+                    },
+                    {
+                        model: Product,
+                        as: 'produit',
+                        attributes: ['id', 'nom_produit'],
+                        required: false,
+                    },
+                ],
             });
 
-            // Flatten data via la structure des OrderItems
-            const flatData = vendorItems.map(item => ({
-                created_at: item.commande.created_at,
-                revenue: parseFloat(item.prix_unitaire_achat) * item.quantite
+            const getOrderDate = (item) => {
+                const cmd = item.commande;
+                return cmd?.created_at ?? cmd?.createdAt ?? item.created_at ?? item.createdAt;
+            };
+
+            const flatData = vendorItems.map((item) => ({
+                commande_id: item.commande_id,
+                product_id: item.produit_id,
+                product_name: item.produit?.nom_produit || 'Produit',
+                created_at: getOrderDate(item),
+                revenue: parseFloat(item.prix_unitaire_achat || 0) * (item.quantite || 0),
+                quantite: item.quantite || 0,
             }));
 
             const totalRevenue = flatData.reduce((acc, r) => acc + r.revenue, 0);
+            const ordersCount = new Set(flatData.map((r) => r.commande_id)).size;
 
-            // Timeseries des 7 derniers jours
-            const recentItems = flatData.filter(r => new Date(r.created_at) >= sevenDaysAgo);
+            const store = await Store.findOne({ where: { proprietaire_id: userId }, attributes: ['id'] });
+            let productsCount = 0;
+            if (store) {
+                productsCount = await Product.count({
+                    where: { boutique_id: store.id, stock_quantite: { [Op.gt]: 0 } },
+                });
+            }
+
+            const recentItems = flatData.filter((r) => {
+                const d = new Date(r.created_at);
+                return !Number.isNaN(d.getTime()) && d >= sevenDaysAgo;
+            });
             const timeseries = generateTimeseries(recentItems, 'created_at', 'revenue', 7);
+            const sales_chart = timeseries.map((row) => ({
+                month: row.day,
+                sales: Math.round(row.val || 0),
+            }));
 
-            // Croissance
+            const productAgg = {};
+            flatData.forEach((row) => {
+                const key = row.product_id || row.product_name;
+                if (!productAgg[key]) {
+                    productAgg[key] = { name: row.product_name, quantity: 0, revenue: 0 };
+                }
+                productAgg[key].quantity += row.quantite;
+                productAgg[key].revenue += row.revenue;
+            });
+            const top_products = Object.values(productAgg)
+                .sort((a, b) => b.quantity - a.quantity)
+                .slice(0, 8);
+
             const currentRevenue = flatData
-                .filter(r => new Date(r.created_at) >= thirtyDaysAgo)
+                .filter((r) => new Date(r.created_at) >= thirtyDaysAgo)
                 .reduce((acc, r) => acc + r.revenue, 0);
-            
+
             const prevRevenue = flatData
-                .filter(r => {
+                .filter((r) => {
                     const d = new Date(r.created_at);
                     return d >= sixtyDaysAgo && d < thirtyDaysAgo;
                 })
                 .reduce((acc, r) => acc + r.revenue, 0);
 
-            const growth = prevRevenue === 0 ? 100 : ((currentRevenue - prevRevenue) / prevRevenue) * 100;
-            const global_trend = growth >= 0 
-                ? `Analyse IA : Votre boutique est en croissance de +${growth.toFixed(1)}%. Optimisez vos stocks pour maintenir la cadence.`
+            const growth = prevRevenue === 0 ? (currentRevenue > 0 ? 100 : 0) : ((currentRevenue - prevRevenue) / prevRevenue) * 100;
+            const growthLabel = `${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%`;
+            const global_trend = growth >= 0
+                ? `Analyse IA : Votre boutique est en croissance de ${growthLabel}. Optimisez vos stocks pour maintenir la cadence.`
                 : `Analyse IA : Vos ventes sont en baisse de ${Math.abs(growth).toFixed(1)}%. C'est le moment idéal pour lancer une offre spéciale.`;
 
             res.json({
                 totalRevenue,
-                growth: `${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%`,
+                revenue: totalRevenue,
+                orders_count: ordersCount,
+                products_count: productsCount,
+                growth: growthLabel,
                 timeseries,
-                global_trend
+                sales_chart,
+                top_products,
+                global_trend,
             });
         } catch (error) {
             next(error);

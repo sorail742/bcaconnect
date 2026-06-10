@@ -8,6 +8,9 @@ const statusConfig = {
     'en attente':    { style: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20', pulse: true },
     'annulé':        { style: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20', pulse: false },
     'confirmé':      { style: 'bg-primary/10 text-primary border-primary/20', pulse: true },
+    'préparé':       { style: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20', pulse: false },
+    'expédié':       { style: 'bg-violet-500/10 text-violet-600 border-violet-500/20', pulse: true },
+    'prêt livreur':  { style: 'bg-amber-500/10 text-amber-600 border-amber-500/20', pulse: true },
     // Generic
     'success':       { style: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20', pulse: false },
     'warning':       { style: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20', pulse: false },

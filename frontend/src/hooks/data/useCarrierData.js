@@ -6,7 +6,8 @@ export const useAvailableDeliveries = () => {
     const { data, isLoading, error, refetch, isFetching } = useQuery({
         queryKey: ['available-deliveries'],
         queryFn: () => deliveryService.getAvailableOrders(),
-        staleTime: 30_000,
+        staleTime: 5_000,
+        refetchOnWindowFocus: true,
     });
     return { data: data || [], isLoading, error: error?.message || null, refetch, isFetching };
 };
@@ -15,7 +16,8 @@ export const useMyDeliveries = () => {
     const { data, isLoading, error, refetch, isFetching } = useQuery({
         queryKey: ['my-deliveries'],
         queryFn: () => deliveryService.getMyDeliveries(),
-        staleTime: 60_000,
+        staleTime: 5_000,
+        refetchOnWindowFocus: true,
     });
     return { data: data || [], isLoading, error: error?.message || null, refetch, isFetching };
 };
@@ -24,7 +26,8 @@ export const useCompletedDeliveries = () => {
     const { data, isLoading, error, refetch, isFetching } = useQuery({
         queryKey: ['completed-deliveries'],
         queryFn: () => deliveryService.getCompletedDeliveries(),
-        staleTime: 60_000,
+        staleTime: 5_000,
+        refetchOnWindowFocus: true,
     });
     return { data: data || [], isLoading, error: error?.message || null, refetch, isFetching };
 };
@@ -43,7 +46,8 @@ export const useMyGroups = () => {
     const { data, isLoading, error, refetch, isFetching } = useQuery({
         queryKey: ['my-groups'],
         queryFn: () => deliveryService.getMyGroups(),
-        staleTime: 60_000,
+        staleTime: 5_000,
+        refetchOnWindowFocus: true,
     });
     return { data: data || [], isLoading, error: error?.message || null, refetch, isFetching };
 };
@@ -113,7 +117,8 @@ export const useCarrierStats = () => {
     const { data, isLoading, error, refetch, isFetching } = useQuery({
         queryKey: ['carrier-stats'],
         queryFn: () => deliveryService.getCarrierStats(),
-        staleTime: 60_000,
+        staleTime: 5_000,
+        refetchOnWindowFocus: true,
     });
     return { data, isLoading, error: error?.message || null, refetch, isFetching };
 };

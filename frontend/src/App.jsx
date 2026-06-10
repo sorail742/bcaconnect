@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import AppRoutes from './routes/AppRoutes';
 import { cn } from './lib/utils';
-import { shouldHidePublicLayout } from './lib/layoutRoutes';
+import { shouldHidePublicLayout, shouldLockViewport } from './lib/layoutRoutes';
 import OfflineBanner from './components/layout/OfflineBanner';
 import { syncService } from './services/syncService';
 import AIChat from './components/ui/AIChat';
@@ -16,12 +16,14 @@ import authService from './services/authService';
 import useSocket from './hooks/useSocket';
 import { toast, Toaster } from 'sonner';
 import SocketHandler from './components/SocketHandler';
+import RealtimeSync from './components/RealtimeSync';
 import NetworkProgressBar from './components/layout/NetworkProgressBar';
 import ScrollToTop from './components/layout/ScrollToTop';
 
 function App() {
   const location = useLocation();
   const hidePublicLayout = shouldHidePublicLayout(location.pathname);
+  const lockViewport = shouldLockViewport(location.pathname);
   const setAuth = useAuthStore(state => state.setAuth);
   const clearAuth = useAuthStore(state => state.clearAuth);
   const setLoading = useAuthStore(state => state.setLoading);
@@ -66,7 +68,8 @@ function App() {
         <ScrollToTop />
         <div className={cn(
           'bg-background text-foreground selection:bg-primary/30 selection:text-foreground',
-          hidePublicLayout ? 'h-svh overflow-hidden' : 'min-h-svh pb-20',
+          lockViewport ? 'h-svh overflow-hidden' : 'min-h-svh pb-20',
+          hidePublicLayout && !lockViewport && 'overflow-y-auto',
         )}>
           <NetworkProgressBar />
           <Toaster
@@ -81,6 +84,7 @@ function App() {
           />
           <OfflineBanner />
           <SocketHandler />
+          <RealtimeSync />
           <ErrorBoundary>
             <AppRoutes />
           </ErrorBoundary>

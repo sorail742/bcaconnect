@@ -43,7 +43,8 @@ export const useVendorOrders = () => {
             const res = await orderService.getVendorOrders();
             return Array.isArray(res) ? { orders: res, total: res.length } : res;
         },
-        staleTime: 30_000,
+        staleTime: 5_000,
+        refetchOnWindowFocus: true,
         enabled: !!token && isAuthenticated,
     });
     return { data, loading, error: error?.message || null, isFetching, refetch, mutate: refetch };
@@ -59,10 +60,38 @@ export const useUpdateOrderStatus = () => {
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['vendor-orders'] });
             queryClient.invalidateQueries({ queryKey: ['order-stats'] });
-            toast.success(`STATUT_MIS_À_JOUR_ALPHA : ${variables.status.toUpperCase()}`);
+            queryClient.invalidateQueries({ queryKey: ['available-deliveries'] });
+            toast.success(`Statut mis à jour : ${variables.status}`);
         },
-        onError: () => {
-            toast.error("ERREUR_MISE_À_JOUR_STATUT_SYSTÈME.");
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Erreur mise à jour du statut.');
         }
+    });
+};
+
+export const usePrepareVendorOrder = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (orderId) => orderService.prepareVendorOrder(orderId),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['vendor-orders'] });
+            queryClient.invalidateQueries({ queryKey: ['available-deliveries'] });
+            toast.success(data.orderPrepared
+                ? 'Commande prête — visible pour les livreurs.'
+                : `${data.prepared} article(s) préparé(s).`);
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Erreur lors de la préparation.');
+        },
+    });
+};
+
+export const useVendorOrderLogistics = (orderId) => {
+    const { token, isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: ['vendor-order-logistics', orderId],
+        queryFn: () => orderService.getVendorOrderLogistics(orderId),
+        enabled: !!orderId && !!token && isAuthenticated,
+        staleTime: 15_000,
     });
 };

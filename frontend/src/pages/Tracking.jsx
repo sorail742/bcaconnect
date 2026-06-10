@@ -10,6 +10,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useTrackOrder } from '../hooks/data/useDeliveryData';
+import { formatRecordDateTime, formatRecordTime, getRecordTimestamp } from '../lib/dateUtils';
 
 const CONAKRY_DEFAULT = { lat: 9.5350, lng: -13.6773 };
 
@@ -123,7 +124,7 @@ const DeliveryTracking = () => {
                 ...step,
                 done: historyLog || (step.key === 'payé' && trackingData.statut !== 'en_attente_paiement'),
                 active: trackingData.statut_livraison === step.key || trackingData.statut === step.key,
-                date: historyLog ? new Date(historyLog.created_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : null
+                date: historyLog ? formatRecordDateTime(historyLog) : null
             };
         });
     };
@@ -273,8 +274,8 @@ const DeliveryTracking = () => {
                                             <div className="bg-muted/80 backdrop-blur-sm rounded-xl p-3 border border-border">
                                                 <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mb-1">Dernière MAJ</p>
                                                 <p className="text-xs font-black text-foreground font-mono">
-                                                    {trackingData.lastPosition?.updated_at
-                                                        ? new Date(trackingData.lastPosition.updated_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+                                                    {getRecordTimestamp(trackingData.lastPosition)
+                                                        ? formatRecordTime(trackingData.lastPosition)
                                                         : 'En direct'}
                                                 </p>
                                             </div>
@@ -325,10 +326,10 @@ const DeliveryTracking = () => {
                                     <div className="bg-card border border-border rounded-[2rem] p-8 shadow-2xl">
                                         <h4 className="text-xl font-black text-foreground uppercase tracking-tighter pb-4 border-b border-border mb-6">Logs du Système</h4>
                                         <div className="space-y-4">
-                                            {[...trackingData.history].reverse().map((log, idx) => (
-                                                <div key={idx} className="flex gap-5 p-5 rounded-2xl bg-muted/30 border border-border">
+                                            {[...trackingData.history].reverse().map((log) => (
+                                                <div key={log.id || `${log.statut}-${getRecordTimestamp(log)?.getTime()}`} className="flex gap-5 p-5 rounded-2xl bg-muted/30 border border-border">
                                                     <div className="text-sm font-black text-[#FF6600] pt-0.5 w-14 shrink-0">
-                                                        {new Date(log.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                                        {formatRecordTime(log)}
                                                     </div>
                                                     <div>
                                                         <p className="text-base font-black text-foreground uppercase tracking-widest">{log.statut.replace(/_/g, ' ')}</p>

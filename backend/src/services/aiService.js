@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { Order, OrderItem, Product, Store, sequelize } = require('../models');
-const { getAttributesForCategory, buildAttributePromptBlock, ALL_PROFILE_IDS } = require('../constants/categoryAttributes');
+const categoryAttributes = require('../constants/categoryAttributes');
+const { getAttributesForCategory, buildAttributePromptBlock } = categoryAttributes;
 
 // ─── Config Groq HTTP Direct ──────────────────────────────────────────────────
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
@@ -391,7 +392,7 @@ Réponds TOUJOURS en JSON valide:
   "description": "string (Description attractive en français, 2-4 phrases)",
   "prix_suggere": number (GNF, réaliste pour le marché guinéen),
   "categorie_suggeree": "string (catégorie BCA la plus pertinente)",
-  "type_produit": "string (${ALL_PROFILE_IDS.join('|')}|generique)",
+  "type_produit": "string (${categoryAttributes.ALL_PROFILE_IDS.join('|')}|generique)",
   "unite_suggeree": "string (Pièce, Kg, Paire, Carton...)",
   "mots_cles": ["string"],
   "attributs": {
@@ -400,7 +401,7 @@ ${attributeBlock}
 }
 
 Catégories BCA (38 segments) : Vêtements, Électronique, Téléphones, Informatique, Mode, Bijoux, Beauté, Maison & Jardin, Meubles, Sports, Chaussures, Bagages, Jouets, Hygiène, Santé, Animalerie, Bureau, Cadeaux, Alimentation, Véhicules, Pièces auto, Immobilier, Machines industrielles/commerciales/construction, Manutention, Équipements électriques, Sécurité, Énergies renouvelables, Électroménager, Matériaux, Bricolage, Emballage, Services.
-Profils attributs disponibles : ${ALL_PROFILE_IDS.join(', ')}.
+Profils attributs disponibles : ${categoryAttributes.ALL_PROFILE_IDS.join(', ')}.
 Réponds UNIQUEMENT avec le JSON.`;
 
         const userMessage = `Génère les détails pour ce produit:

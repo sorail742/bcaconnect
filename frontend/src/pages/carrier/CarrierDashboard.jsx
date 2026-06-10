@@ -300,7 +300,7 @@ const CarrierDashboard = () => {
                     <button
                         onClick={() => handleAssign(row.id)}
                         disabled={assignMutation.isPending}
-                        className="h-8 px-4 bg-[#FF6600] text-foreground text-[9px] font-black rounded-lg transition-all shadow-md active:scale-95 uppercase tracking-widest hover:brightness-110 flex items-center gap-2 ml-auto disabled:opacity-50"
+                        className="h-8 px-4 bg-[#FF6600] text-white text-[9px] font-black rounded-lg transition-all shadow-md active:scale-95 uppercase tracking-widest hover:brightness-110 flex items-center gap-2 ml-auto disabled:opacity-50"
                     >
                         {assignMutation.isPending ? <RefreshCcw className="size-3 animate-spin" /> : <UserCheck className="size-3" />} 
                         {t('carAccept')}
@@ -350,7 +350,7 @@ const CarrierDashboard = () => {
                         <button
                             onClick={() => handleStartJourney(row.id)}
                             disabled={trackingMutation.isPending}
-                            className="h-8 px-4 bg-slate-900 dark:bg-white text-foreground dark:text-slate-900 text-[9px] font-black rounded-lg transition-all uppercase tracking-widest flex items-center gap-2"
+                            className="h-8 px-4 bg-slate-800 text-white text-[9px] font-black rounded-lg transition-all uppercase tracking-widest flex items-center gap-2 hover:bg-slate-700 shadow-md"
                         >
                             {trackingMutation.isPending ? <RefreshCcw className="size-3 animate-spin" /> : <Play className="size-3" />} 
                             {t('carStart')}
@@ -479,8 +479,8 @@ const CarrierDashboard = () => {
                                 className={cn(
                                     "flex-1 h-12 rounded-xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all",
                                     activeTab === 'AVAILABLE' 
-                                        ? "bg-[#FF6600] text-foreground shadow-lg shadow-[#FF6600]/20" 
-                                        : "text-muted-foreground hover:bg-slate-50 dark:hover:bg-foreground/5"
+                                        ? "bg-[#FF6600] text-white shadow-lg shadow-[#FF6600]/20" 
+                                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"
                                 )}
                             >
                                 <PackageSearch className="size-4" /> {t('carAvailableMissions')}
@@ -490,8 +490,8 @@ const CarrierDashboard = () => {
                                 className={cn(
                                     "flex-1 h-12 rounded-xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all",
                                     activeTab === 'MINE' 
-                                        ? "bg-slate-900 dark:bg-white text-foreground dark:text-slate-900 shadow-xl shadow-black/10" 
-                                        : "text-muted-foreground hover:bg-slate-50 dark:hover:bg-foreground/5"
+                                        ? "bg-slate-800 text-white shadow-lg shadow-slate-800/20" 
+                                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"
                                 )}
                             >
                                 <UserCheck className="size-4" /> {t('carMyLogbook')}
@@ -502,7 +502,7 @@ const CarrierDashboard = () => {
                                     "flex-1 h-12 rounded-xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all",
                                     activeTab === 'COMPLETED'
                                         ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
-                                        : "text-muted-foreground hover:bg-slate-50 dark:hover:bg-foreground/5"
+                                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"
                                 )}
                             >
                                 <CheckCircle2 className="size-4" /> HISTORIQUE ({completedDeliveries.length})
@@ -512,8 +512,8 @@ const CarrierDashboard = () => {
                                 className={cn(
                                     "flex-1 h-12 rounded-xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all",
                                     activeTab === 'GROUPS' 
-                                        ? "bg-slate-700 text-white shadow-lg" 
-                                        : "text-muted-foreground hover:bg-slate-50 dark:hover:bg-foreground/5"
+                                        ? "bg-violet-700 text-white shadow-lg" 
+                                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"
                                 )}
                             >
                                 <Box className="size-4" /> GROUPES ({myGroups.length})
@@ -556,7 +556,11 @@ const CarrierDashboard = () => {
                                     onRetry={refetchAll}
                                     isEmpty={!isLoading && !queryError && activeTabData.length === 0}
                                     loadingVariant="table"
-                                    emptyMessage={t('carEmptyTerminal') || 'Aucune mission disponible'}
+                                    emptyMessage={
+                                        activeTab === 'AVAILABLE'
+                                            ? 'Aucune livraison disponible. Le vendeur doit valider « Prêt livreur » sur chaque commande payée ou COD.'
+                                            : (t('carEmptyTerminal') || 'Aucune mission disponible')
+                                    }
                                 >
                                     <DataTable
                                         columns={
@@ -579,31 +583,40 @@ const CarrierDashboard = () => {
 
                     {/* Side Info Panel — Carte GPS Live */}
                     <div className="lg:col-span-4 space-y-6">
-                         <div className="bg-slate-900 rounded-3xl p-6 border border-slate-800 space-y-4 shadow-2xl relative overflow-hidden">
+                         <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-600 space-y-4 shadow-lg relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-br from-sky-50/80 via-white to-emerald-50/50 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900 pointer-events-none" />
                             <div className="flex items-center justify-between relative z-10">
-                                <Globe className="size-6 text-emerald-500" />
-                                <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                                     <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest animate-pulse">
-                                        {activeJourneyId ? t('carGpsActive') : 'GPS STANDBY'}
+                                <Globe className="size-6 text-emerald-600 dark:text-emerald-400" />
+                                <div className={cn(
+                                    'px-3 py-1 rounded-full border',
+                                    activeJourneyId
+                                        ? 'bg-emerald-500/15 border-emerald-500/30'
+                                        : 'bg-amber-500/10 border-amber-500/25',
+                                )}>
+                                     <span className={cn(
+                                        'text-[8px] font-black uppercase tracking-widest',
+                                        activeJourneyId ? 'text-emerald-600 animate-pulse' : 'text-amber-600',
+                                     )}>
+                                        {activeJourneyId ? (t('carGpsActive') || 'GPS actif') : 'GPS en attente'}
                                      </span>
                                 </div>
                             </div>
                             <div className="space-y-1 relative z-10">
-                                <h4 className="text-sm font-black text-white uppercase">{t('carZoneConakry')}</h4>
-                                <p className="text-[9px] font-mono text-emerald-400/80">
+                                <h4 className="text-sm font-black text-slate-800 dark:text-white uppercase">{t('carZoneConakry') || 'Zone Conakry'}</h4>
+                                <p className="text-[9px] font-mono text-emerald-700 dark:text-emerald-400">
                                     {carrierPosition.lat.toFixed(5)}, {carrierPosition.lng.toFixed(5)}
                                 </p>
                             </div>
-                            <div className="aspect-[4/3] rounded-2xl border border-white/10 overflow-hidden relative z-10">
+                            <div className="aspect-[4/3] rounded-2xl border border-slate-200 dark:border-slate-600 overflow-hidden relative z-10 shadow-inner bg-slate-100">
                                 <MapContainer
                                     center={[carrierPosition.lat, carrierPosition.lng]}
                                     zoom={14}
                                     scrollWheelZoom={false}
-                                    style={{ width: '100%', height: '100%' }}
+                                    style={{ width: '100%', height: '100%', background: '#e8f4f8' }}
                                 >
                                     <TileLayer
-                                        attribution='&copy; CartoDB'
-                                        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                                        attribution='&copy; OpenStreetMap &copy; CARTO'
+                                        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                                     />
                                     <MapRecenter center={[carrierPosition.lat, carrierPosition.lng]} />
                                     {routePoints.length > 1 && (
@@ -615,12 +628,12 @@ const CarrierDashboard = () => {
                                 </MapContainer>
                             </div>
                             {activeMission && (
-                                <p className="text-[9px] text-slate-400 relative z-10 truncate">
+                                <p className="text-[9px] text-slate-600 dark:text-slate-300 relative z-10 truncate">
                                     → {activeMission.adresse_livraison}
                                 </p>
                             )}
                             {carrierStats?.co2_saved_kg && (
-                                <div className="flex items-center gap-2 text-emerald-400 relative z-10">
+                                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 relative z-10">
                                     <Leaf className="size-4" />
                                     <span className="text-[9px] font-black uppercase tracking-widest">
                                         {carrierStats.co2_saved_kg} kg CO₂ économisés
@@ -641,7 +654,7 @@ const CarrierDashboard = () => {
                             <div className="pt-2">
                                 <button
                                     onClick={() => navigate('/messages')}
-                                    className="w-full h-12 bg-slate-900 dark:bg-white text-foreground dark:text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#FF6600] hover:text-foreground"
+                                    className="w-full h-12 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#FF6600] hover:text-white shadow-md"
                                 >
                                     {t('carContactHub')}
                                 </button>

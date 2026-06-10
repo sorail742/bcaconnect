@@ -9,7 +9,7 @@ import {
     Images, ImagePlus, Layout, Monitor,
     ChevronLeft, ChevronRight, MousePointer2, Trash2
 } from 'lucide-react';
-import storeService from '../../services/storeService';
+import { createStore, updateStore } from '../../services/storeService';
 import api from '../../services/api';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
@@ -47,7 +47,7 @@ const StoreSettings = () => {
     
     // React Query Data
     const { data: storeInfo, loading: isLoading, refetch: refreshStore } = useMyStore();
-    const isNew = !storeInfo;
+    const hasStore = Boolean(storeInfo?.id);
     
     const [shopData, setShopData] = useState({
         name: '',
@@ -144,13 +144,21 @@ const StoreSettings = () => {
     };
 
     const { mutate: saveStore, isPending: isSaving } = useApiMutation(
-        (payload) => isNew ? storeService.createStore(payload) : storeService.updateStore(payload),
+        async ({ mode, ...payload }) => {
+            if (mode === 'update') {
+                return updateStore(payload);
+            }
+            return createStore(payload);
+        },
         {
             invalidateKeys: [['my-store']],
-            successMessage: isNew ? t('stoStoreCreated') : t('stoSettingsSaved'),
+            successMessage: (data, { mode }) => (
+                mode === 'update' ? t('stoSettingsSaved') : t('stoStoreCreated')
+            ),
             errorMessage: t('stoSaveError'),
             onSuccess: (data) => {
                 if (data?.slug) setShopData(prev => ({ ...prev, url: data.slug }));
+                refreshStore();
             }
         }
     );
@@ -173,7 +181,7 @@ const StoreSettings = () => {
             banner_images: shopData.banner_images
         };
         
-        saveStore(payload);
+        saveStore({ ...payload, mode: hasStore ? 'update' : 'create' });
     };
 
     if (isLoading) {

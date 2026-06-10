@@ -687,7 +687,7 @@ function buildAttributePromptBlock(profile) {
         .join(',\n');
 }
 
-module.exports = {
+export {
     GENERIC_PROFILE,
     CATEGORY_ATTRIBUTE_PROFILES,
     ALL_PROFILE_IDS,

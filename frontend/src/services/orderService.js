@@ -53,6 +53,16 @@ const orderService = {
         return response.data;
     },
 
+    prepareVendorOrder: async (orderId) => {
+        const response = await api.post(`/orders/${orderId}/vendor-prepare`);
+        return response.data;
+    },
+
+    getVendorOrderLogistics: async (orderId) => {
+        const response = await api.get(`/orders/${orderId}/vendor-logistics`);
+        return response.data;
+    },
+
     getById: async (orderId) => {
         const response = await api.get(`/orders/${orderId}`);
         return response.data;

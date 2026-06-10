@@ -61,6 +61,37 @@ const deliveryService = {
         return response.data;
     },
 
+    /** Suivi authentifié (vendeur, client, transporteur) — données complètes */
+    trackOrderForUser: async (orderId) => {
+        const [orderRes, historyRes] = await Promise.all([
+            api.get(`/orders/${orderId}`),
+            api.get(`/delivery/history/${orderId}`),
+        ]);
+        const order = orderRes.data;
+        const history = historyRes.data || [];
+        const gpsLogs = history.filter((h) => h.latitude != null && h.longitude != null);
+        const last = gpsLogs[gpsLogs.length - 1];
+        const lastTs = last?.created_at ?? last?.createdAt;
+        return {
+            id: order.id,
+            trackingRef: `ORD-${order.id.slice(0, 8).toUpperCase()}`,
+            statut: order.statut,
+            statut_livraison: order.statut_livraison,
+            date_commande: order.date_commande,
+            nom_destinataire: order.nom_destinataire,
+            adresse_livraison: order.adresse_livraison,
+            transporteur: order.transporteur,
+            history,
+            lastPosition: last
+                ? {
+                    latitude: parseFloat(last.latitude),
+                    longitude: parseFloat(last.longitude),
+                    updated_at: lastTs,
+                }
+                : null,
+        };
+    },
+
     // Statistiques dashboard transporteur
     getCarrierStats: async () => {
         const response = await api.get('/delivery/stats');
