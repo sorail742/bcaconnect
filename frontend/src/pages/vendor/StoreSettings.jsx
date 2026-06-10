@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 import { useMyStore } from '../../hooks/useDomainData';
 import useApiMutation from '../../hooks/useApiMutation';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 
 const Toggle = ({ enabled, onChange, label, sublabel }) => (
     <div className="flex items-center justify-between group p-4 bg-white/[0.02] border border-foreground/5 rounded-2xl hover:border-[#FFB703]/20 transition-all duration-700 shadow-inner">

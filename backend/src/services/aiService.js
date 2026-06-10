@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { Order, OrderItem, Product, Store, sequelize } = require('../models');
+const { getAttributesForCategory, buildAttributePromptBlock, ALL_PROFILE_IDS } = require('../constants/categoryAttributes');
 
 // ─── Config Groq HTTP Direct ──────────────────────────────────────────────────
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
@@ -369,39 +370,54 @@ Réponds TOUJOURS en JSON valide:
      * 9. Génère les détails d'un produit (description, prix, catégorie, etc.)
      * à partir d'un nom et/ou d'une description d'image
      */
-    generateProductDetails: async (name, imageAnalysis = '') => {
-        const systemPrompt = `Tu es un assistant de saisie e-commerce expert pour BCA Connect en Guinée.
-Ta mission est d'aider le vendeur à remplir sa fiche produit RAPIDEMENT.
-Basé sur le NOM du produit ou l'ANALYSE D'IMAGE fournie, génère des données réalistes et professionnelles.
+    generateProductDetails: async (name, imageAnalysis = '', categorie = '') => {
+        const profile = getAttributesForCategory(categorie, name);
+        const attributeBlock = profile
+            ? buildAttributePromptBlock(profile)
+            : '  "marque": "...",\n  "modele": "..."';
 
-Réponds TOUJOURS en JSON valide avec la structure suivante:
+        const profileHint = profile
+            ? `Profil détecté : "${profile.label}" (${profile.id}). Remplis UNIQUEMENT les clés attributs listées ci-dessous avec des valeurs réalistes pour ce type de produit.`
+            : 'Déduis le type de produit (téléphone, ordinateur, vêtement, véhicule, etc.) et remplis les attributs correspondants.';
+
+        const systemPrompt = `Tu es un assistant de saisie e-commerce expert pour BCA Connect en Guinée (style Alibaba multi-catégories).
+Ta mission : aider le vendeur à remplir sa fiche produit RAPIDEMENT avec les BONNES caractéristiques selon le type de produit.
+Un téléphone n'a PAS les mêmes champs qu'un ordinateur, qu'un vêtement ou qu'une voiture.
+
+${profileHint}
+
+Réponds TOUJOURS en JSON valide:
 {
-  "description": "string (Description attractive et détaillée en français)",
-  "prix_suggere": number (en GNF, réaliste pour le marché guinéen),
-  "categorie_suggeree": "string (Une des catégories BCA standards)",
-  "unite_suggeree": "string (ex: Pièce, kg, Paire, Carton, Ensemble)",
-  "mots_cles": ["string", "string"],
-  "caracteristiques": [{"nom": "string", "valeur": "string"}]
+  "description": "string (Description attractive en français, 2-4 phrases)",
+  "prix_suggere": number (GNF, réaliste pour le marché guinéen),
+  "categorie_suggeree": "string (catégorie BCA la plus pertinente)",
+  "type_produit": "string (${ALL_PROFILE_IDS.join('|')}|generique)",
+  "unite_suggeree": "string (Pièce, Kg, Paire, Carton...)",
+  "mots_cles": ["string"],
+  "attributs": {
+${attributeBlock}
+  }
 }
 
-Liste des catégories standards autorisées:
-"Vêtements & Accessoires", "Électronique grand public", "Maison & Jardin", "Sports & Loisirs", 
-"Bijoux, Lunettes & Montres", "Produits de beauté", "Chaussures & Accessoires", "Médical & Santé",
-"Machines industrielles", "Équipements et machines commerciaux", "Machines pour le Bâtiment & la Construction",
-"Construction & Immobilier", "Meubles", "Lumière & Éclairage", "Électroménager",
-"Fournitures & Outils auto", "Pièces & Accessoires pour véhicules", "Bricolage & Quincaillerie",
-"Énergies renouvelables", "Équipements & Fournitures Électriques", "Sûreté & sécurité",
-"Manutention", "Instrument & Équipement de test", "Transmission d'énergie",
-"Composants électroniques", "Véhicules et transport", "Agriculture, Aliments & Boissons",
-"Matières premières", "Services de fabrication", "Service"
-
+Catégories BCA (38 segments) : Vêtements, Électronique, Téléphones, Informatique, Mode, Bijoux, Beauté, Maison & Jardin, Meubles, Sports, Chaussures, Bagages, Jouets, Hygiène, Santé, Animalerie, Bureau, Cadeaux, Alimentation, Véhicules, Pièces auto, Immobilier, Machines industrielles/commerciales/construction, Manutention, Équipements électriques, Sécurité, Énergies renouvelables, Électroménager, Matériaux, Bricolage, Emballage, Services.
+Profils attributs disponibles : ${ALL_PROFILE_IDS.join(', ')}.
 Réponds UNIQUEMENT avec le JSON.`;
 
         const userMessage = `Génère les détails pour ce produit:
 Nom: ${name || 'Inconnu'}
+Catégorie sélectionnée: ${categorie || 'Non définie'}
 Analyse Image: ${imageAnalysis || 'Aucune image fournie'}`;
 
-        return await callGroq(systemPrompt, userMessage, 800);
+        const result = await callGroq(systemPrompt, userMessage, 1200);
+
+        if (profile && result.attributs) {
+            const allowed = new Set(profile.fields.map((f) => f.key));
+            result.attributs = Object.fromEntries(
+                Object.entries(result.attributs).filter(([k, v]) => allowed.has(k) && v != null && v !== '')
+            );
+        }
+
+        return result;
     },
 
     /**

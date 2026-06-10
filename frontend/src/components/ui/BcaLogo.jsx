@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Zap } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 
 const BcaLogo = ({ className, size = "h-10", variant = "color", hideText = false }) => {
     const { t } = useLanguage();

@@ -5,6 +5,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "../pages/LandingPage";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
+import ForgotPassword from "../pages/auth/ForgotPassword";
 import ProductCatalogue from "../pages/Catalogue";
 import ProductDetail from "../pages/ProductDetails";
 import CartPage from "../pages/CartPage";
@@ -151,6 +152,9 @@ const AppRoutes = () => {
           </Suspense>
         }
       />
+
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<Navigate to="/forgot-password" replace />} />
 
       <Route
         path="/register"
@@ -336,7 +340,7 @@ const AppRoutes = () => {
         path="/orders"
         element={
           <Suspense fallback={<LazyFallback />}>
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['client']}>
               <OrdersClient />
             </ProtectedRoute>
           </Suspense>
@@ -830,13 +834,15 @@ const AppRoutes = () => {
       />
 
       {/* Redirections vers pages existantes */}
+      <Route path="/legal" element={<Navigate to="/terms" replace />} />
+      <Route path="/report" element={<Navigate to="/contact?subject=report" replace />} />
       <Route path="/ads" element={<Navigate to="/marketplace" replace />} />
       <Route path="/insights" element={<Navigate to="/about" replace />} />
       <Route path="/ai-trends" element={<Navigate to="/education" replace />} />
       <Route path="/logistics" element={<Navigate to="/tracking" replace />} />
-      <Route path="/carrier-join" element={<Navigate to="/register" replace />} />
+      <Route path="/carrier-join" element={<Navigate to="/register?role=transporteur" replace />} />
       <Route path="/download" element={<Navigate to="/help" replace />} />
-      <Route path="/returns" element={<Navigate to="/help" replace />} />
+      <Route path="/returns" element={<Navigate to="/sav/guarantees" replace />} />
 
       {/* Pages en cours de développement */}
       {["/careers", "/consultant", "/blog", "/investors"].map((path) => (

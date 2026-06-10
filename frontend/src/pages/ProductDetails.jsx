@@ -10,7 +10,7 @@ import { Button } from '../components/ui/Button';
 import { cn, getImageUrl } from '../lib/utils';
 import useCart from '../hooks/useCart';
 import { toast } from 'sonner';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../context/useLanguage';
 import useAuthStore from '../store/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedCounter from '../components/ui/AnimatedCounter';

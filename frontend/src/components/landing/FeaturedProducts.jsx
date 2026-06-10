@@ -4,7 +4,7 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import LandingProductCard from './LandingProductCard';
 import productService from '../../services/productService';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 import { cn } from '../../lib/utils';
 
 function useCountdown(targetHours = 6) {

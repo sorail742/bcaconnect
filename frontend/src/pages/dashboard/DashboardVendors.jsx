@@ -3,7 +3,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import DataTable from '../../components/ui/DataTable';
 import StatusBadge from '../../components/ui/StatusBadge';
 import { useVendors } from '../../hooks/useDomainData';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 import { ShieldCheck, MapPin, Star, Building2, ExternalLink, Search, Filter, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 

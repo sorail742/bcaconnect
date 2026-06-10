@@ -171,9 +171,63 @@ const dashboardController = {
     getPublicLandingStats: async (req, res, next) => {
         try {
             const gmv = await Order.sum('total_ttc', { where: { statut: 'payé' } }) || 0;
-            const totalUsers = await User.count();
+            const totalUsers = await User.count({ where: { role: { [Op.ne]: 'admin' } } });
+            const totalFournisseurs = await User.count({ where: { role: 'fournisseur' } });
+            const totalClients = await User.count({ where: { role: 'client' } });
             const activeProducts = await Product.count();
             const storesCount = await Store.count();
+            const totalOrdersPaid = await Order.count({ where: { statut: 'payé' } });
+            const totalDisputes = await Litige.count();
+
+            const avgRatingResult = await Review.findOne({
+                attributes: [[sequelize.fn('AVG', sequelize.col('note')), 'avgNote']],
+                where: { est_approuve: true },
+                raw: true,
+            });
+            const avgRating = parseFloat(avgRatingResult?.avgNote) || 4.8;
+            const totalReviews = await Review.count({ where: { est_approuve: true } });
+
+            let satisfactionRate = 98.0;
+            if (totalOrdersPaid > 0) {
+                const orderSuccessRate = ((totalOrdersPaid - totalDisputes) / totalOrdersPaid) * 100;
+                const ratingRate = (avgRating / 5) * 100;
+                satisfactionRate = (orderSuccessRate * 0.7) + (ratingRate * 0.3);
+            }
+            satisfactionRate = Math.min(99.9, Math.max(92.0, satisfactionRate));
+
+            const featuredReviews = await Review.findAll({
+                where: {
+                    est_approuve: true,
+                    commentaire: { [Op.ne]: '' },
+                },
+                include: [{
+                    model: User,
+                    attributes: ['nom_complet', 'role', 'categorie_activite'],
+                }],
+                order: [['created_at', 'DESC']],
+                limit: 6,
+            });
+
+            const testimonials = featuredReviews
+                .filter((r) => r.commentaire && r.commentaire.trim().length >= 20)
+                .slice(0, 3)
+                .map((r) => {
+                    const roleLabels = {
+                        fournisseur: 'Fournisseur',
+                        client: 'Acheteur',
+                        transporteur: 'Livreur',
+                        technicien: 'Technicien',
+                    };
+                    const roleLabel = roleLabels[r.User?.role] || 'Membre BCA';
+                    return {
+                        name: r.User?.nom_complet || 'Membre BCA',
+                        company: roleLabel,
+                        content: r.commentaire,
+                        rating: r.note,
+                        orders: null,
+                        badge: roleLabel,
+                    };
+                });
 
             const now = new Date();
             const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
@@ -203,16 +257,30 @@ const dashboardController = {
                 recentTransactions: [],
                 overview: {
                     gmv: Math.round(gmv),
-                    total_orders: currentOrdersCount,
+                    total_orders: totalOrdersPaid,
+                    total_orders_30d: currentOrdersCount,
                     growth_rate: growth.toFixed(2),
                     storesCount,
-                    satisfaction_rate: '98.0',
+                    totalFournisseurs,
+                    totalClients,
+                    totalUsers,
+                    totalProducts: activeProducts,
+                    satisfaction_rate: satisfactionRate.toFixed(1),
+                    avg_rating: avgRating.toFixed(1),
+                    total_reviews: totalReviews,
                 },
+                testimonials,
                 weeklyChart: {
                     total: Math.round(gmv),
                     delta: growth.toFixed(1),
                     timeseries,
                 },
+                // Alias plats pour compatibilité frontend
+                totalVolume: Math.round(gmv),
+                totalOrders: totalOrdersPaid,
+                totalUsers,
+                totalProducts: activeProducts,
+                growthRate: growth.toFixed(2),
             });
         } catch (error) {
             next(error);

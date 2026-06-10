@@ -120,9 +120,9 @@ export const aiService = {
     /**
      * Suggérer tous les détails d'un produit (Magic Fill)
      */
-    suggestProductDetails: async (nom, imageAnalysis) => {
+    suggestProductDetails: async (nom, imageAnalysis, categorie = '') => {
         try {
-            const response = await api.post('/ai/suggest-details', { nom, imageAnalysis });
+            const response = await api.post('/ai/suggest-details', { nom, imageAnalysis, categorie });
             return response.data;
         } catch (error) {
             console.error('Erreur suggestion détails IA:', error);

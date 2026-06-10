@@ -16,23 +16,18 @@ const DashboardCard = ({
 }) => {
     return (
         <div className={cn(
-            "group relative overflow-hidden rounded-xl border border-border bg-card text-card-foreground transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
-            "shadow-sm",
+            "group relative overflow-hidden rounded border border-border bg-card text-card-foreground transition-colors hover:border-primary/30",
             className
         )}>
-            <div className="p-4 md:p-5 flex flex-col h-full gap-3">
-                {/* Header */}
-                <div className="flex items-start justify-between">
-                    <div className={cn(
-                        "size-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-105",
-                        "bg-primary/10 text-primary border border-primary/20"
-                    )}>
-                        {Icon && <Icon className="size-5" />}
+            <div className="p-3 flex flex-col h-full gap-2">
+                <div className="flex items-start justify-between gap-2">
+                    <div className="size-7 rounded bg-primary/10 text-primary border border-primary/15 flex items-center justify-center shrink-0">
+                        {Icon && <Icon className="size-3.5" />}
                     </div>
 
                     {badge ? (
                         <span className={cn(
-                            "px-2.5 py-1 rounded-lg text-[11px] font-semibold border",
+                            "px-1.5 py-0.5 rounded text-[10px] font-medium border leading-none",
                             badge.color === 'rose' ? "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20" :
                             badge.color === 'amber' ? "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20" :
                             badge.color === 'emerald' ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" :
@@ -42,44 +37,42 @@ const DashboardCard = ({
                         </span>
                     ) : trendValue && (
                         <span className={cn(
-                            "flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border",
+                            "flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium border leading-none",
                             trend === "up"
                                 ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
                                 : "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20"
                         )}>
-                            {trend === "up" ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
+                            {trend === "up" ? <TrendingUp className="size-2.5" /> : <TrendingDown className="size-2.5" />}
                             {trendValue}
                         </span>
                     )}
                 </div>
 
-                {/* Content */}
-                <div className="space-y-1">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                <div className="space-y-0.5">
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
                         {title}
                     </p>
-                    <p className="text-xl md:text-2xl font-bold text-foreground tracking-tight tabular-nums leading-tight">
+                    <p className="text-base font-bold text-foreground tracking-tight tabular-nums leading-tight">
                         {value}
                     </p>
                 </div>
 
-                {/* Footer */}
                 {(description || impact) && (
-                    <div className="pt-3 border-t border-border space-y-2">
+                    <div className="pt-2 border-t border-border space-y-1.5">
                         {impact && (
                             <div className={cn(
-                                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium border",
+                                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border",
                                 impact.type === 'risk' ? "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20" :
                                 impact.type === 'growth' ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" :
                                 "bg-muted text-muted-foreground border-border"
                             )}>
-                                <Sparkles className="size-3 opacity-60" />
+                                <Sparkles className="size-2.5 opacity-60" />
                                 <span className="opacity-70">{impact.label}:</span>
                                 <span className="font-semibold">{impact.value}</span>
                             </div>
                         )}
                         {description && (
-                            <p className="text-xs text-muted-foreground leading-relaxed">
+                            <p className="text-[11px] text-muted-foreground leading-snug">
                                 {description}
                             </p>
                         )}

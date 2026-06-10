@@ -95,8 +95,8 @@ const paymentProviderService = {
                 console.error('🔴 [WEBHOOK] PAYMENT_SECRET manquant en mode live.');
                 return false;
             }
-            // Dev simulation : accepter webhook JSON de test sans signature
-            return !receivedToken || receivedToken === 'dev-simulation';
+            // Dev simulation uniquement avec jeton explicite
+            return receivedToken === 'dev-simulation';
         }
 
         if (!receivedToken) return false;

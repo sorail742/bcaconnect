@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShieldCheck, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import deliveryService from '../../services/deliveryService';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 
 const OtpVerificationModal = ({ isOpen, onClose, orderId, onSuccess }) => {
     const { t } = useLanguage();

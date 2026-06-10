@@ -362,8 +362,8 @@ Ne réponds qu'avec le JSON, rien d'autre.`
     // 10. Suggérer les détails complets d'un produit pour auto-fill
     suggestProductDetails: async (req, res, next) => {
         try {
-            const { nom, imageAnalysis } = req.body;
-            const details = await aiService.generateProductDetails(nom, imageAnalysis);
+            const { nom, imageAnalysis, categorie } = req.body;
+            const details = await aiService.generateProductDetails(nom, imageAnalysis, categorie || '');
             res.json(details);
         } catch (error) {
             next(error);

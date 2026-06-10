@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import socketService from '../services/socketService';
 import { toast } from 'sonner';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../context/useLanguage';
 import { ProductSkeleton } from '../components/ui/Loader';
 import { getCategoryIconComponent } from '../lib/categoryConstants';
 import BcaTrustBar from '../components/marketplace/BcaTrustBar';

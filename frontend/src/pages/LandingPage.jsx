@@ -9,25 +9,24 @@ import { RolesSection } from "../components/landing/RolesSection"
 import { DashboardPreview } from "../components/landing/DashboardPreview"
 import { TestimonialsSection } from "../components/landing/TestimonialsSection"
 import { CTASection } from "../components/landing/CTASection"
+import { useLandingStats } from "../hooks/useLandingStats"
 
 export default function LandingPage() {
+    const { stats } = useLandingStats()
+
     return (
         <main className="min-h-screen bg-[#f7f7f7] text-[#333] selection:bg-[#FF6600]/20">
-            {/* Carousel — après navbar, avant « Bienvenue sur BCA Connect » */}
             <LandingTopCarousel />
             <Hero />
-
-            {/* Grille produits recommandés — sans boutons achat */}
             <FeaturedProducts />
-
-            <MarketTrendsSection />
-            <SupplierBanner />
+            <MarketTrendsSection stats={stats} />
+            <SupplierBanner stats={stats} />
             <AISection />
             <HowItWorks />
             <RolesSection />
-            <DashboardPreview />
-            <TestimonialsSection />
-            <CTASection />
+            <DashboardPreview stats={stats} />
+            <TestimonialsSection stats={stats} />
+            <CTASection stats={stats} />
         </main>
     )
 }

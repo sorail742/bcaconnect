@@ -5,6 +5,8 @@ import {
     AlertCircle, Sparkles, Landmark, Calendar, RefreshCcw, X, Shield
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import DashboardLayout from '../components/layout/DashboardLayout';
+import ModalOverlay from '../components/ui/ModalOverlay';
 
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -66,9 +68,8 @@ export default function CreditSimulator() {
     };
 
     return (
-        <>
-        <main className="min-h-screen bg-background pt-32 pb-16">
-            <div className="container mx-auto px-4 md:px-8">
+        <DashboardLayout title="Simulateur crédit">
+        <div className="p-4 md:p-8 pb-16">
                 
                 {/* Header Professionnel */}
                 <div className="max-w-4xl mx-auto mb-12 text-center space-y-4">
@@ -332,90 +333,75 @@ export default function CreditSimulator() {
 
                 </div>
             </div>
-        </main>
 
-        {/* ── Modal Confirmation Demande ── */}
-        <AnimatePresence>
-            {showConfirm && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 bg-background/80 backdrop-blur-md"
-                        onClick={() => setShowConfirm(false)}
-                    />
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className="bg-card border-2 border-border rounded-3xl w-full max-w-lg shadow-2xl relative z-10 overflow-hidden"
-                    >
-                        <div className="p-6 border-b border-border bg-muted/50 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-                                    <Shield className="size-5" />
-                                </div>
-                                <h3 className="text-sm font-bold text-foreground uppercase tracking-tight">Détails de la demande</h3>
-                            </div>
-                            <button onClick={() => setShowConfirm(false)} className="size-8 rounded-lg bg-muted hover:bg-rose-500/10 hover:text-rose-500 flex items-center justify-center transition-colors">
-                                <X className="size-4" />
-                            </button>
-                        </div>
-
-                        <div className="p-8 space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="p-4 bg-muted rounded-2xl border border-border">
-                                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">Montant</p>
-                                    <p className="text-sm font-black text-foreground">{amount.toLocaleString()} GNF</p>
-                                </div>
-                                <div className="p-4 bg-muted rounded-2xl border border-border">
-                                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">Durée</p>
-                                    <p className="text-sm font-black text-foreground">{duration} mois</p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-foreground uppercase tracking-widest">Motif du Financement *</label>
-                                    <textarea
-                                        className="w-full h-24 bg-background border border-border rounded-xl p-3 text-sm focus:border-primary transition-all outline-none resize-none text-foreground"
-                                        placeholder="Ex: Achat de stock, Développement boutique..."
-                                        value={motif}
-                                        onChange={e => setMotif(e.target.value)}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-foreground uppercase tracking-widest">Garanties ou Références</label>
-                                    <input
-                                        className="w-full h-10 bg-background border border-border rounded-xl px-3 text-sm focus:border-primary transition-all outline-none text-foreground"
-                                        placeholder="Ex: Titre foncier, Caution solidaire..."
-                                        value={garanties}
-                                        onChange={e => setGaranties(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl flex gap-3">
-                                <AlertCircle className="size-5 text-primary shrink-0" />
-                                <p className="text-[10px] text-primary/80 leading-relaxed font-bold uppercase">
-                                    En soumettant cette demande, vous autorisez BCA Finance à analyser vos données de transactions pour le scoring IA.
-                                </p>
-                            </div>
-
-                            <button
-                                onClick={handleRequest}
-                                disabled={requestCreditMutation.isPending || !motif}
-                                className="w-full h-14 bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-40 border-none"
-                            >
-                                {requestCreditMutation.isPending ? <RefreshCcw className="size-5 animate-spin" /> : <ShieldCheck className="size-5" />}
-                                {requestCreditMutation.isPending ? 'ANALYSE IA EN COURS...' : 'CONFIRMER LA DEMANDE'}
-                            </button>
-                        </div>
-                    </motion.div>
+        <ModalOverlay
+            open={showConfirm}
+            onClose={() => setShowConfirm(false)}
+            maxWidth="max-w-lg"
+        >
+            <div className="p-6 border-b border-border bg-muted/50 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                        <Shield className="size-5" />
+                    </div>
+                    <h3 className="text-sm font-bold text-foreground uppercase tracking-tight">Détails de la demande</h3>
                 </div>
-            )}
-        </AnimatePresence>
-        </>
+                <button type="button" onClick={() => setShowConfirm(false)} className="size-8 rounded-lg bg-muted hover:bg-rose-500/10 hover:text-rose-500 flex items-center justify-center transition-colors">
+                    <X className="size-4" />
+                </button>
+            </div>
+
+            <div className="p-8 space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-muted rounded-2xl border border-border">
+                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">Montant</p>
+                        <p className="text-sm font-black text-foreground">{amount.toLocaleString()} GNF</p>
+                    </div>
+                    <div className="p-4 bg-muted rounded-2xl border border-border">
+                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">Durée</p>
+                        <p className="text-sm font-black text-foreground">{duration} mois</p>
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <label className="text-xs font-black text-foreground uppercase tracking-widest">Motif du Financement *</label>
+                        <textarea
+                            className="w-full h-24 bg-background border border-border rounded-xl p-3 text-sm focus:border-primary transition-all outline-none resize-none text-foreground"
+                            placeholder="Ex: Achat de stock, Développement boutique..."
+                            value={motif}
+                            onChange={e => setMotif(e.target.value)}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-xs font-black text-foreground uppercase tracking-widest">Garanties ou Références</label>
+                        <input
+                            className="w-full h-10 bg-background border border-border rounded-xl px-3 text-sm focus:border-primary transition-all outline-none text-foreground"
+                            placeholder="Ex: Titre foncier, Caution solidaire..."
+                            value={garanties}
+                            onChange={e => setGaranties(e.target.value)}
+                        />
+                    </div>
+                </div>
+
+                <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl flex gap-3">
+                    <AlertCircle className="size-5 text-primary shrink-0" />
+                    <p className="text-[10px] text-primary/80 leading-relaxed font-bold uppercase">
+                        En soumettant cette demande, vous autorisez BCA Finance à analyser vos données de transactions pour le scoring IA.
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={handleRequest}
+                    disabled={requestCreditMutation.isPending || !motif}
+                    className="w-full h-14 bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-40 border-none"
+                >
+                    {requestCreditMutation.isPending ? <RefreshCcw className="size-5 animate-spin" /> : <ShieldCheck className="size-5" />}
+                    {requestCreditMutation.isPending ? 'ANALYSE IA EN COURS...' : 'CONFIRMER LA DEMANDE'}
+                </button>
+            </div>
+        </ModalOverlay>
+        </DashboardLayout>
     );
 }

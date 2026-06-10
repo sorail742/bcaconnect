@@ -17,6 +17,14 @@ const statService = {
             return null;
         }
     },
+    getLandingStats: async () => {
+        try {
+            const response = await api.get('/stats/admin/public', { timeout: 8000, _bg: true });
+            return response.data;
+        } catch {
+            return null;
+        }
+    },
     getFinancialStats: async () => {
         try {
             const response = await api.get('/stats/financial');
@@ -35,10 +43,10 @@ const statService = {
     },
     getTrends: async (params = {}) => {
         try {
-            const response = await api.get('/stats/trends', { params });
+            const response = await api.get('/stats/trends', { params, timeout: 8000, _bg: true });
             return response.data;
-        } catch (error) {
-            throw error;
+        } catch {
+            return null;
         }
     },
     getAiLogs: async () => {

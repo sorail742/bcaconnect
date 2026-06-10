@@ -1,40 +1,48 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useSocket from '../hooks/useSocket';
+import { useAuth } from '../hooks/useAuth';
+import { getDashboardRoute, getOrdersRoute } from '../constants/roles';
 import { toast } from 'sonner';
 
 /**
- * SocketHandler Component
- * Centralizes global socket listeners for notifications and real-time updates.
+ * SocketHandler — notifications et mises à jour temps réel (redirections par rôle)
  */
 const SocketHandler = () => {
     const { on, off } = useSocket();
+    const navigate = useNavigate();
+    const { user } = useAuth();
 
     useEffect(() => {
         if (!on || !off) return;
 
         const handleNotification = (notif) => {
-            toast.success(notif.titre || "Nouvelle notification", {
+            const actionPath = notif.type === 'order' && user?.role
+                ? getOrdersRoute(user.role)
+                : '/notifications';
+
+            toast.success(notif.titre || 'Nouvelle notification', {
                 description: notif.message?.replace(/<[^>]*>?/gm, '') || '',
                 duration: 5000,
                 action: {
                     label: 'Voir',
-                    onClick: () => {
-                        if (notif.type === 'order') window.location.href = '/orders';
-                    }
-                }
+                    onClick: () => navigate(actionPath),
+                },
             });
         };
 
-        const handleNewMessage = (data) => {
-            toast.info("Nouveau message", {
-                description: `Vous avez reçu un message de ${data.message?.expediteur?.nom_complet || 'un utilisateur'}.`,
+        const handleNewMessage = () => {
+            toast.info('Nouveau message', {
+                description: 'Vous avez reçu un nouveau message.',
+                action: {
+                    label: 'Ouvrir',
+                    onClick: () => navigate('/messages'),
+                },
             });
         };
 
         const handleProductAdded = (newProduct) => {
-            toast.info(`🎉 Nouveau produit : ${newProduct.nom_produit}`, {
-                duration: 4000
-            });
+            toast.info(`Nouveau produit : ${newProduct.nom_produit}`, { duration: 4000 });
         };
 
         on('notification_received', handleNotification);
@@ -46,10 +54,9 @@ const SocketHandler = () => {
             off('new_message', handleNewMessage);
             off('product_added', handleProductAdded);
         };
+    }, [on, off, navigate, user?.role]);
 
-    }, [on, off]);
-
-    return null; // This component doesn't render anything visually
+    return null;
 };
 
 export default SocketHandler;

@@ -2,11 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Loader2, Package } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 import categoryService from '../../services/categoryService';
 import productService from '../../services/productService';
 import LandingProductCard from './LandingProductCard';
 import { BCA_CATEGORIES } from '../../lib/categoryConstants';
+import { mergeBackendCategories } from '../../lib/categoryMegaMenu';
 import { BcaCategorySidebar } from './BcaCategorySidebar';
 
 export const CategorySection = () => {
@@ -25,13 +26,7 @@ export const CategorySection = () => {
                 const res = await categoryService.getAll();
                 const raw = Array.isArray(res) ? res : (res?.data || res?.categories || []);
                 if (raw.length > 0) {
-                    const mapped = BCA_CATEGORIES.map((bcaCat) => {
-                        const backendMatch = raw.find((c) => {
-                            const name = (c.nom_categorie || c.nom || c.name || '').toLowerCase();
-                            return bcaCat.filter.toLowerCase().split(' ').some((w) => name.includes(w));
-                        });
-                        return { ...bcaCat, id: backendMatch?.id || bcaCat.id };
-                    });
+                    const mapped = mergeBackendCategories(raw);
                     setCategories(mapped);
                     const firstReal = mapped.find((c) => !String(c.id).startsWith('cat-'));
                     setActiveCategory(firstReal?.id || mapped[0]?.id);

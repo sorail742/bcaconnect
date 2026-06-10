@@ -1,6 +1,6 @@
 import React from 'react';
 import { ShieldCheck, BadgeCheck, Lock, Headphones, Truck } from 'lucide-react';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 
 const TRUST_ITEMS = [
     { icon: ShieldCheck, labelKey: 'pdAuthenticity', fallback: 'Achat protégé (Escrow)' },

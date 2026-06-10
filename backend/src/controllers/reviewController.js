@@ -2,6 +2,7 @@ const { Review, Product, Order, OrderItem, User, sequelize } = require('../model
 const { Op } = require('sequelize');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
+const { SPECIALTY_LABELS } = require('../constants/technicianSpecialties');
 
 const reviewController = {
     create: async (req, res, next) => {
@@ -119,6 +120,76 @@ const reviewController = {
             next(error);
         }
     },
+
+    /** Avis publics pour la landing (100 % dynamique) */
+    getFeaturedReviews: catchAsync(async (req, res) => {
+        const avgRatingResult = await Review.findOne({
+            attributes: [[sequelize.fn('AVG', sequelize.col('note')), 'avgNote']],
+            where: { est_approuve: true },
+            raw: true,
+        });
+        const avgRating = parseFloat(avgRatingResult?.avgNote) || 0;
+        const totalReviews = await Review.count({ where: { est_approuve: true } });
+
+        const reviews = await Review.findAll({
+            where: {
+                est_approuve: true,
+                commentaire: { [Op.and]: [{ [Op.ne]: '' }, { [Op.ne]: null }] },
+            },
+            include: [{
+                model: User,
+                attributes: ['id', 'nom_complet', 'role', 'specialites'],
+            }],
+            order: [['note', 'DESC'], ['created_at', 'DESC']],
+            limit: 12,
+        });
+
+        const roleLabels = {
+            fournisseur: 'Fournisseur',
+            client: 'Acheteur',
+            transporteur: 'Livreur',
+            technicien: 'Technicien',
+        };
+
+        const badgeByRole = {
+            fournisseur: 'Fournisseur vérifié',
+            client: 'Acheteur actif',
+            transporteur: 'Livreur partenaire',
+            technicien: 'Technicien certifié',
+        };
+
+        const testimonials = await Promise.all(
+            reviews.slice(0, 6).map(async (review) => {
+                const userId = review.utilisateur_id;
+                const ordersCount = await Order.count({
+                    where: { utilisateur_id: userId, statut: { [Op.in]: ['payé', 'livré'] } },
+                });
+
+                const userRole = review.User?.role || 'client';
+                let company = roleLabels[userRole] || 'Membre BCA';
+                if (userRole === 'technicien' && review.User?.specialites) {
+                    company = `${SPECIALTY_LABELS[review.User.specialites] || review.User.specialites} · ${company}`;
+                }
+
+                return {
+                    id: review.id,
+                    name: review.User?.nom_complet || 'Membre BCA',
+                    company,
+                    content: review.commentaire,
+                    rating: review.note,
+                    orders: ordersCount > 0 ? `${ordersCount}+` : null,
+                    badge: badgeByRole[userRole] || 'Membre vérifié',
+                    createdAt: review.createdAt || review.created_at,
+                };
+            })
+        );
+
+        res.json({
+            testimonials,
+            avgRating: avgRating.toFixed(1),
+            totalReviews,
+        });
+    }),
 };
 
 module.exports = reviewController;

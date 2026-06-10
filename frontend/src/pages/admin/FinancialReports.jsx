@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 
 const CustomTooltip = ({ active, payload, label }) => {
     const { t } = useLanguage();

@@ -8,7 +8,7 @@ import {
 import useCart from '../hooks/useCart';
 import { cn, getImageUrl } from '../lib/utils';
 import { toast } from 'sonner';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../context/useLanguage';
 import shippingService from '../services/shippingService';
 import useCartStore from '../store/cartStore';
 

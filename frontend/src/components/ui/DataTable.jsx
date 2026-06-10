@@ -11,9 +11,9 @@ const DataTable = ({
     selectable = false,
     selectedIds = [],
     onSelectionChange,
-    compact = false,
+    compact = true,
 }) => {
-    const cellPad = compact ? 'px-3 py-2.5' : 'px-6 py-4';
+    const cellPad = compact ? 'px-3 py-2' : 'px-4 py-2.5';
     const handleSelectAll = (e) => {
         if (e.target.checked) {
             onSelectionChange?.(data.map(item => item.id || item._id));
@@ -33,14 +33,14 @@ const DataTable = ({
     const allSelected = data.length > 0 && selectedIds.length === data.length;
 
     return (
-        <div className={cn("rounded-2xl border border-slate-200 dark:border-foreground/5 bg-white dark:bg-[#0F1219] overflow-hidden transition-all font-jakarta shadow-sm", className)}>
+        <div className={cn("rounded border border-border bg-card overflow-hidden transition-all text-[12px]", className)}>
             {(title || actions || (selectable && selectedIds.length > 0)) && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-6 border-b border-slate-100 dark:border-foreground/5 bg-slate-50/20 dark:bg-white/[0.01] gap-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between px-3 py-2 border-b border-border bg-muted/30 gap-2">
                     <div className="flex items-center gap-4">
                         {title && (
                             <div className="flex items-center gap-3">
                                 <div className="size-1.5 bg-[#FF6600] rounded-full shadow-md" />
-                                <h3 className="text-[9px] font-black text-slate-900 dark:text-foreground tracking-[0.2em] uppercase pt-0.5">{title}</h3>
+                                <h3 className="text-[10px] font-semibold text-foreground tracking-wide uppercase">{title}</h3>
                             </div>
                         )}
                         {selectable && selectedIds.length > 0 && (
@@ -67,7 +67,7 @@ const DataTable = ({
                                 </th>
                             )}
                             {columns.map((col, idx) => (
-                                <th key={idx} className={cn(cellPad, "text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/80 whitespace-nowrap")}>
+                                <th key={idx} className={cn(cellPad, "text-[10px] font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap")}>
                                     {col.label}
                                 </th>
                             ))}
@@ -98,8 +98,8 @@ const DataTable = ({
                                         )}
                                         {columns.map((col, colIdx) => (
                                             <td key={colIdx} className={cn(
-                                                cellPad, "text-[10px] font-bold transition-all duration-300 uppercase tracking-widest",
-                                                isSelected ? "text-[#FF6600]" : "text-slate-600 dark:text-muted-foreground/80 group-hover:text-slate-900 dark:group-hover:text-foreground"
+                                                cellPad, "text-[11px] font-medium transition-colors",
+                                                isSelected ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                                             )}>
                                                 {col.render ? col.render(row) : <span>{row[col.key]}</span>}
                                             </td>
@@ -109,7 +109,7 @@ const DataTable = ({
                             })
                         ) : (
                             <tr>
-                                <td colSpan={columns.length + (selectable ? 1 : 0)} className="px-8 py-20 text-center">
+                                <td colSpan={columns.length + (selectable ? 1 : 0)} className="px-4 py-10 text-center">
                                     <div className="flex flex-col items-center gap-4 opacity-20">
                                         <div className="size-1 w-px h-10 bg-slate-400 animate-pulse" />
                                         <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">

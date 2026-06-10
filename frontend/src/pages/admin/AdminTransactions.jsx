@@ -9,9 +9,13 @@ import {
 import { useAllTransactions } from '../../hooks/useDomainData';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
+import { getTransactionDirection, getTransactionLabel } from '../../lib/walletUtils';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
+/** Statut transaction réussi (API utilise `complete`, legacy `terminé`) */
+const isTxComplete = (statut) => statut === 'complete' || statut === 'terminé';
 
 const StatCard = ({ title, value, icon: Icon, color, subtitle }) => (
     <motion.div
@@ -47,12 +51,12 @@ const AdminTransactions = () => {
         const user = t.Wallet?.User?.nom_complet || '';
         const id = t.id || '';
         const matchesSearch = id.toLowerCase().includes(search.toLowerCase()) || user.toLowerCase().includes(search.toLowerCase());
-        const matchesStatus = filterStatus === 'ALL' || (filterStatus === 'SUCCESS' && t.statut === 'terminé') || (filterStatus === 'PENDING' && t.statut === 'en_attente');
+        const matchesStatus = filterStatus === 'ALL' || (filterStatus === 'SUCCESS' && isTxComplete(t.statut)) || (filterStatus === 'PENDING' && t.statut === 'en_attente');
         return matchesSearch && matchesStatus;
     });
 
     const totalVolume = transactions.reduce((acc, t) => acc + parseFloat(t.montant || 0), 0);
-    const successfulCount = transactions.filter(t => t.statut === 'terminé').length;
+    const successfulCount = transactions.filter(t => isTxComplete(t.statut)).length;
     const pendingCount = transactions.filter(t => t.statut === 'en_attente').length;
 
     const getExportData = () => {
@@ -272,7 +276,7 @@ const AdminTransactions = () => {
                                     ))
                                 ) : filtered.map((tx, idx) => {
                                     const user = tx.Wallet?.User;
-                                    const isDeposit = tx.type === 'depot';
+                                    const isDeposit = getTransactionDirection(tx) === 'credit';
                                     return (
                                         <motion.tr 
                                             key={tx.id || idx}
@@ -301,7 +305,7 @@ const AdminTransactions = () => {
                                                         {user?.role || 'CLIENT'}
                                                     </span>
                                                     <div className="flex items-center gap-1 text-[8px] font-bold text-slate-300 uppercase">
-                                                        <CreditCard className="size-2.5" /> {tx.type?.toUpperCase() || 'TX'}
+                                                        <CreditCard className="size-2.5" /> {(tx.type_transaction || tx.type || 'TX').toUpperCase()}
                                                     </div>
                                                 </div>
                                             </td>
@@ -323,13 +327,13 @@ const AdminTransactions = () => {
                                                 <div className="flex items-center gap-2">
                                                     <div className={cn(
                                                         "size-1.5 rounded-full",
-                                                        tx.statut === 'terminé' ? "bg-emerald-500" : tx.statut === 'en_attente' ? "bg-amber-500 animate-pulse" : "bg-rose-500"
+                                                        tx.statut === 'complete' || tx.statut === 'terminé' ? "bg-emerald-500" : tx.statut === 'en_attente' ? "bg-amber-500 animate-pulse" : "bg-rose-500"
                                                     )} />
                                                     <span className={cn(
                                                         "text-[9px] font-black uppercase tracking-widest",
-                                                        tx.statut === 'terminé' ? "text-emerald-500" : tx.statut === 'en_attente' ? "text-amber-500" : "text-rose-500"
+                                                        tx.statut === 'complete' || tx.statut === 'terminé' ? "text-emerald-500" : tx.statut === 'en_attente' ? "text-amber-500" : "text-rose-500"
                                                     )}>
-                                                        {tx.statut === 'terminé' ? 'Validé' : tx.statut === 'en_attente' ? 'Revue' : 'Échoué'}
+                                                        {isTxComplete(tx.statut) ? 'Validé' : tx.statut === 'en_attente' ? 'Revue' : 'Échoué'}
                                                     </span>
                                                 </div>
                                             </td>

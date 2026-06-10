@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useUserProfile } from '../hooks/useDomainData';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../context/useLanguage';
 import DashboardLayout from '../components/layout/DashboardLayout';
+import ModalOverlay from '../components/ui/ModalOverlay';
 import { DataStateWrapper } from '../components/ui/DataStates';
 import { cn } from '../lib/utils';
 import {
@@ -508,87 +509,69 @@ const UserProfile = () => {
                 </DataStateWrapper>
             </div>
 
-            {/* ── Modal {t('prof2FAConfigTitle')} ── */}
-            <AnimatePresence>
-                {show2FASetup && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-background/80 backdrop-blur-md"
-                            onClick={() => setShow2FASetup(false)}
-                        />
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-card border-2 border-border rounded-3xl w-full max-w-md shadow-2xl relative z-10 overflow-hidden"
-                        >
-                            <div className="p-6 border-b border-border bg-muted/50 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                                        <QrCode className="size-5 text-primary" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-sm font-bold text-foreground uppercase tracking-tight">{t('prof2FAConfigTitle')}</h3>
-                                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('prof2FASecurityLevel')}</p>
-                                    </div>
-                                </div>
-                                <button onClick={() => setShow2FASetup(false)} className="size-8 rounded-lg bg-muted hover:bg-rose-500/10 hover:text-rose-500 flex items-center justify-center transition-colors">
-                                    <X className="size-4" />
-                                </button>
-                            </div>
-
-                            <div className="p-8 space-y-8 text-center">
-                                <div className="space-y-3">
-                                    <p className="text-xs text-muted-foreground leading-relaxed uppercase font-bold px-4">
-                                        {t('prof2FAScanQR')}
-                                    </p>
-                                </div>
-
-                                <div className="flex justify-center">
-                                    <div className="p-4 bg-white rounded-2xl border-4 border-slate-100 dark:border-white/5 shadow-inner group">
-                                        <img
-                                            src={twoFactorData?.qrCode}
-                                            alt="QR Code 2FA"
-                                            className="size-48 object-contain"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div className="p-3 bg-muted rounded-xl border border-border">
-                                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">{t('prof2FASecretFallback')}</p>
-                                        <p className="text-xs font-mono font-bold text-primary tracking-[0.2em]">{twoFactorData?.secret}</p>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-black text-foreground uppercase tracking-widest">{t('prof2FAEnterCode')}</label>
-                                        <input
-                                            type="text"
-                                            maxLength={6}
-                                            placeholder="000000"
-                                            className="w-full h-12 bg-background border-2 border-border rounded-xl text-center text-xl font-mono tracking-[0.5em] focus:border-primary transition-all outline-none"
-                                            value={otpCode}
-                                            onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                                        />
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={handleConfirm2FA}
-                                    disabled={otpCode.length < 6 || isConfiguring2FA}
-                                    className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl font-bold text-sm transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-40"
-                                >
-                                    {isConfiguring2FA ? <RefreshIcon className="size-5 animate-spin" /> : <Shield className="size-5" />}
-                                    {t('prof2FAActivate')}
-                                </button>
-                            </div>
-                        </motion.div>
+            <ModalOverlay open={show2FASetup} onClose={() => setShow2FASetup(false)} maxWidth="max-w-md">
+                <div className="p-6 border-b border-border bg-muted/50 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                            <QrCode className="size-5 text-primary" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-foreground uppercase tracking-tight">{t('prof2FAConfigTitle')}</h3>
+                            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('prof2FASecurityLevel')}</p>
+                        </div>
                     </div>
-                )}
-            </AnimatePresence>
+                    <button type="button" onClick={() => setShow2FASetup(false)} className="size-8 rounded-lg bg-muted hover:bg-rose-500/10 hover:text-rose-500 flex items-center justify-center transition-colors">
+                        <X className="size-4" />
+                    </button>
+                </div>
+
+                <div className="p-8 space-y-8 text-center">
+                    <div className="space-y-3">
+                        <p className="text-xs text-muted-foreground leading-relaxed uppercase font-bold px-4">
+                            {t('prof2FAScanQR')}
+                        </p>
+                    </div>
+
+                    <div className="flex justify-center">
+                        <div className="p-4 bg-white rounded-2xl border-4 border-slate-100 dark:border-white/5 shadow-inner group">
+                            <img
+                                src={twoFactorData?.qrCode}
+                                alt="QR Code 2FA"
+                                className="size-48 object-contain"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="p-3 bg-muted rounded-xl border border-border">
+                            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">{t('prof2FASecretFallback')}</p>
+                            <p className="text-xs font-mono font-bold text-primary tracking-[0.2em]">{twoFactorData?.secret}</p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-black text-foreground uppercase tracking-widest">{t('prof2FAEnterCode')}</label>
+                            <input
+                                type="text"
+                                maxLength={6}
+                                placeholder="000000"
+                                className="w-full h-12 bg-background border-2 border-border rounded-xl text-center text-xl font-mono tracking-[0.5em] focus:border-primary transition-all outline-none"
+                                value={otpCode}
+                                onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                            />
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={handleConfirm2FA}
+                        disabled={otpCode.length < 6 || isConfiguring2FA}
+                        className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-2xl font-bold text-sm transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-40"
+                    >
+                        {isConfiguring2FA ? <RefreshIcon className="size-5 animate-spin" /> : <Shield className="size-5" />}
+                        {t('prof2FAActivate')}
+                    </button>
+                </div>
+            </ModalOverlay>
         </DashboardLayout>
     );
 };

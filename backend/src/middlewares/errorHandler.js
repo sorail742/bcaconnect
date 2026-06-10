@@ -47,22 +47,21 @@ const sendErrorProd = (err, req, res) => {
 };
 
 const errorHandler = (err, req, res, next) => {
-  err.statusCode = err.statusCode || 500;
-  err.status = err.status || 'error';
+  let error = { ...err };
+  error.message = err.message;
+  error.name = err.name;
+  error.statusCode = err.statusCode || 500;
+  error.status = err.status || 'error';
+
+  // Sequelize / JWT — même mapping en dev et prod pour des messages 400 lisibles
+  if (error.name === 'SequelizeUniqueConstraintError') error = handleDuplicateFieldsDB(error);
+  if (error.name === 'SequelizeValidationError') error = handleValidationErrorDB(error);
+  if (error.name === 'JsonWebTokenError') error = handleJWTError();
+  if (error.name === 'TokenExpiredError') error = handleJWTExpiredError();
 
   if (process.env.NODE_ENV === 'development') {
-    sendErrorDev(err, req, res);
+    sendErrorDev(error, req, res);
   } else {
-    let error = { ...err };
-    error.message = err.message;
-    error.name = err.name;
-    
-    // Sequelize specific errors
-    if (error.name === 'SequelizeUniqueConstraintError') error = handleDuplicateFieldsDB(error);
-    if (error.name === 'SequelizeValidationError') error = handleValidationErrorDB(error);
-    if (error.name === 'JsonWebTokenError') error = handleJWTError();
-    if (error.name === 'TokenExpiredError') error = handleJWTExpiredError();
-
     sendErrorProd(error, req, res);
   }
 };

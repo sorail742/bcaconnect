@@ -23,7 +23,7 @@ const Message = sequelize.define('Message', {
         type: DataTypes.STRING(10),
         defaultValue: 'text',
         validate: {
-            isIn: [['text', 'image', 'file']]
+            isIn: [['text', 'image', 'file', 'audio']]
         }
     },
     est_lu: {

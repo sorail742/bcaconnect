@@ -53,12 +53,10 @@ const validateRegister = [
       "client",
       "fournisseur",
       "transporteur",
-      "admin",
-      "banque",
       "technicien",
     ])
     .withMessage(
-      "Rôle invalide. Choisissez client, fournisseur, transporteur, banque ou technicien.",
+      "Rôle invalide. Choisissez client, fournisseur, transporteur ou technicien.",
     ),
   body("mot_de_passe")
     .isLength({ min: 8 })
@@ -133,11 +131,10 @@ const validateRegister = [
   body("specialites")
     .if(body("role").equals("technicien"))
     .notEmpty()
-    .withMessage("Spécialités requises pour les techniciens.")
-    .isLength({ min: 2, max: 255 })
-    .withMessage("Spécialité doit contenir entre 2 et 255 caractères.")
-    .trim()
-    .escape(),
+    .withMessage("Spécialité requise pour les techniciens.")
+    .isIn(require("../constants/technicianSpecialties").TECHNICIAN_SPECIALTIES)
+    .withMessage("Spécialité invalide. Veuillez choisir dans la liste proposée.")
+    .trim(),
   body("zone_intervention")
     .if(body("role").equals("technicien"))
     .notEmpty()

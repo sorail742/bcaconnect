@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../context/useLanguage';
 import { useMessages, useConversationMessages } from '../hooks/useDomainData';
+import useSocket from '../hooks/useSocket';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import {
     Search, Send, Phone, Video, MoreHorizontal,
@@ -12,17 +13,18 @@ import {
 import { cn } from '../lib/utils';
 import messageService from '../services/messageService';
 import userService from '../services/userService';
-import socketService from '../services/socketService';
 import { formatDistanceToNow } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 import { toast } from 'sonner';
+import ModalOverlay from '../components/ui/ModalOverlay';
+import { ROLE_LABELS } from '../constants/roles';
 
 // ── Composant avatar ──────────────────────────────────────────────────────────
 const Avatar = ({ seed, size = 'md', online = false }) => {
-    const sizes = { sm: 'size-8', md: 'size-10', lg: 'size-12' };
+    const sizes = { sm: 'size-8', md: 'size-9', lg: 'size-10' };
     return (
         <div className="relative shrink-0">
-            <div className={cn("rounded-xl overflow-hidden bg-muted border border-border", sizes[size])}>
+            <div className={cn('rounded-lg overflow-hidden bg-muted border border-border', sizes[size])}>
                 <img
                     src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${seed || 'default'}`}
                     alt=""
@@ -30,24 +32,23 @@ const Avatar = ({ seed, size = 'md', online = false }) => {
                 />
             </div>
             {online && (
-                <div className="absolute -bottom-0.5 -right-0.5 size-3 bg-emerald-500 rounded-full border-2 border-background" />
+                <div className="absolute -bottom-0.5 -right-0.5 size-2.5 bg-emerald-500 rounded-full border-2 border-background" />
             )}
         </div>
     );
 };
 
-// ── Composant bulle de message ────────────────────────────────────────────────
 const MessageBubble = ({ msg, isMe, locale }) => (
-    <div className={cn("flex flex-col gap-1 max-w-[70%] animate-in fade-in slide-in-from-bottom-2 duration-300", isMe ? "ml-auto items-end" : "items-start")}>
+    <div className={cn('flex flex-col gap-1 max-w-[72%]', isMe ? 'ml-auto items-end' : 'items-start')}>
         <div className={cn(
-            "px-4 py-2.5 rounded-2xl text-sm leading-relaxed",
+            'px-3 py-2 rounded-lg text-sm leading-snug',
             isMe
-                ? "bg-primary text-primary-foreground rounded-br-sm"
-                : "bg-card border border-border text-foreground rounded-bl-sm"
+                ? 'bg-primary text-primary-foreground rounded-br-sm'
+                : 'bg-muted border border-border text-foreground rounded-bl-sm',
         )}>
             {msg.contenu}
         </div>
-        <div className="flex items-center gap-1 px-1">
+        <div className="flex items-center gap-1 px-0.5">
             <span className="text-[10px] text-muted-foreground">
                 {formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true, locale })}
             </span>
@@ -60,33 +61,42 @@ const MessageBubble = ({ msg, isMe, locale }) => (
 const ConvItem = ({ conv, isActive, onClick, t, locale }) => {
     const partner = conv.participants?.[0];
     const lastDate = conv.date_dernier_message ? new Date(conv.date_dernier_message) : null;
+    const preview = conv.dernier_message
+        ? conv.dernier_message
+        : (t('msgStartPreview') || 'Commencer à écrire…');
+
     return (
         <button
+            type="button"
             onClick={onClick}
             className={cn(
-                "w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-left group",
-                isActive ? "bg-primary/10 border border-primary/20" : "hover:bg-muted border border-transparent"
+                'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-colors text-left relative',
+                isActive ? 'bg-primary/10' : 'hover:bg-muted/80',
             )}
         >
-            <Avatar seed={partner?.id} online />
+            {isActive && <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-primary" />}
+            <Avatar seed={partner?.id} size="sm" online={!!partner} />
             <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                    <p className={cn("text-sm font-semibold truncate", isActive ? "text-primary" : "text-foreground")}>
+                    <p className={cn('text-sm font-medium truncate', isActive ? 'text-primary' : 'text-foreground')}>
                         {partner?.nom_complet || t('user')}
                     </p>
                     {lastDate && (
-                        <span className="text-[10px] text-muted-foreground shrink-0">
-                            {formatDistanceToNow(lastDate, { locale })}
+                        <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
+                            {formatDistanceToNow(lastDate, { locale, addSuffix: false })}
                         </span>
                     )}
                 </div>
-                <p className="text-xs text-muted-foreground truncate mt-0.5">
-                    {conv.dernier_message || t('msgNoConvTitle')}
+                <p className={cn(
+                    'text-xs truncate mt-0.5',
+                    conv.dernier_message ? 'text-muted-foreground' : 'text-primary/80 italic',
+                )}>
+                    {preview}
                 </p>
             </div>
             {conv.unread_count > 0 && (
-                <span className="size-5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
-                    {conv.unread_count}
+                <span className="min-w-[16px] h-4 px-1 bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center shrink-0">
+                    {conv.unread_count > 9 ? '9+' : conv.unread_count}
                 </span>
             )}
         </button>
@@ -96,6 +106,7 @@ const ConvItem = ({ conv, isActive, onClick, t, locale }) => {
 // ── Page principale ───────────────────────────────────────────────────────────
 const Messages = () => {
     const { user } = useAuth();
+    const { emit, on, off } = useSocket();
     const location = useLocation();
     const { lang, t } = useLanguage();
     const { data: fetchedConversations = [], loading: convLoading, refetch: refetchConversations } = useMessages();
@@ -134,8 +145,20 @@ const Messages = () => {
     }, [fetchedConversations, convLoading]);
 
     useEffect(() => {
-        if (!selectedConv?.id) return;
-        setMessages(fetchedMessages);
+        if (!selectedConv?.id) {
+            setMessages([]);
+            return;
+        }
+        setMessages((prev) => {
+            const fetched = Array.isArray(fetchedMessages) ? fetchedMessages : [];
+            if (prev.length === 0) return fetched;
+            const fetchedIds = new Set(fetched.map((m) => m.id));
+            const pending = prev.filter((m) => m.temp || !fetchedIds.has(m.id));
+            if (pending.length === 0) return fetched;
+            return [...fetched, ...pending].sort(
+                (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+            );
+        });
         setTimeout(scrollToBottom, 100);
         messageService.markAsRead(selectedConv.id).catch(() => {});
     }, [selectedConv?.id, fetchedMessages, scrollToBottom]);
@@ -143,21 +166,14 @@ const Messages = () => {
     // ── Socket.io setup ───────────────────────────────────────────────────────
     useEffect(() => {
         refetchConversations();
-        socketService.connect();
 
-        // Rejoindre la room utilisateur
-        if (user?.id) {
-            socketService.socket?.emit('join', user.id);
-            socketService.on('connect', () => {
-                socketService.socket?.emit('join', user.id);
-            });
-        }
-
-        // Nouveau message reçu
         const handleNewMessage = (data) => {
-            // Mettre à jour la liste des conversations
+            const incoming = data?.message;
+            const conversationId = data?.conversation_id;
+            if (!incoming?.id || !conversationId) return;
+
             setConversations(prev => {
-                const idx = prev.findIndex(c => c.id === data.conversation_id);
+                const idx = prev.findIndex(c => c.id === conversationId);
                 if (idx === -1) {
                     refetchConversations();
                     return prev;
@@ -165,53 +181,51 @@ const Messages = () => {
                 const updated = [...prev];
                 updated[idx] = {
                     ...updated[idx],
-                    dernier_message: data.message.contenu,
-                    date_dernier_message: data.message.createdAt,
-                    unread_count: (updated[idx].unread_count || 0) + 1
+                    dernier_message: incoming.contenu,
+                    date_dernier_message: incoming.createdAt,
+                    unread_count: (updated[idx].unread_count || 0) + (incoming.expediteur_id === user?.id ? 0 : 1)
                 };
-                // Remonter la conversation en haut
                 return [updated[idx], ...updated.filter((_, i) => i !== idx)];
             });
 
-            // Ajouter le message si la conversation est ouverte
             setSelectedConv(current => {
-                if (current?.id === data.conversation_id) {
+                if (current?.id === conversationId) {
                     setMessages(prev => {
-                        if (prev.find(m => m.id === data.message.id)) return prev;
-                        return [...prev, data.message];
+                        if (prev.find(m => m.id === incoming.id)) return prev;
+                        return [...prev, incoming];
                     });
                     setTimeout(scrollToBottom, 100);
-                    messageService.markAsRead(data.conversation_id);
-                    // Reset unread count
-                    setConversations(c => c.map(conv =>
-                        conv.id === data.conversation_id ? { ...conv, unread_count: 0 } : conv
-                    ));
+                    if (incoming.expediteur_id !== user?.id) {
+                        messageService.markAsRead(conversationId);
+                        setConversations(c => c.map(conv =>
+                            conv.id === conversationId ? { ...conv, unread_count: 0 } : conv
+                        ));
+                    }
                 }
                 return current;
             });
         };
 
-        // Indicateur de frappe
         const handleTyping = ({ conversationId, userId, isTyping }) => {
             if (userId === user?.id) return;
             setTypingUsers(prev => ({ ...prev, [conversationId]: isTyping ? userId : null }));
         };
 
-        socketService.on('new_message', handleNewMessage);
-        socketService.on('user_typing', handleTyping);
+        on('new_message', handleNewMessage);
+        on('user_typing', handleTyping);
 
         return () => {
-            socketService.off('new_message', handleNewMessage);
-            socketService.off('user_typing', handleTyping);
+            off('new_message', handleNewMessage);
+            off('user_typing', handleTyping);
         };
-    }, [refetchConversations, scrollToBottom, user?.id]);
+    }, [refetchConversations, scrollToBottom, user?.id, on, off]);
 
     // ── Rejoindre room conversation ───────────────────────────────────────────
     useEffect(() => {
-        if (selectedConv) {
-            socketService.socket?.emit('join_conversation', selectedConv.id);
+        if (selectedConv?.id) {
+            emit('join_conversation', selectedConv.id);
         }
-    }, [selectedConv]);
+    }, [selectedConv?.id, emit]);
 
     // ── Envoyer un message ────────────────────────────────────────────────────
     const handleSend = async (e) => {
@@ -223,7 +237,6 @@ const Messages = () => {
         setMessageInput('');
         setIsSending(true);
 
-        // Optimistic update
         const tempMsg = {
             id: `temp-${Date.now()}`,
             contenu: content,
@@ -236,22 +249,23 @@ const Messages = () => {
 
         try {
             const newMsg = await messageService.sendMessage({
+                conversation_id: selectedConv.id,
                 destinataire_id: partner?.id,
                 contenu: content,
-                conversation_id: selectedConv.id
             });
-            // Remplacer le message temporaire
             setMessages(prev => prev.map(m => m.id === tempMsg.id ? newMsg : m));
             setConversations(prev => prev.map(c =>
                 c.id === selectedConv.id
-                    ? { ...c, dernier_message: content, date_dernier_message: new Date() }
+                    ? { ...c, dernier_message: content, date_dernier_message: new Date().toISOString() }
                     : c
             ));
-            // Arrêter l'indicateur de frappe
-            socketService.socket?.emit('typing', { conversationId: selectedConv.id, isTyping: false });
-        } catch {
+            emit('typing', { conversationId: selectedConv.id, isTyping: false });
+            refetchMessages();
+            refetchConversations();
+        } catch (err) {
             setMessages(prev => prev.filter(m => m.id !== tempMsg.id));
             setMessageInput(content);
+            toast.error(err?.standardized?.message || err?.response?.data?.message || t('msgSendError'));
         } finally {
             setIsSending(false);
         }
@@ -261,10 +275,10 @@ const Messages = () => {
     const handleTypingInput = (e) => {
         setMessageInput(e.target.value);
         if (!selectedConv) return;
-        socketService.socket?.emit('typing', { conversationId: selectedConv.id, isTyping: true });
+        emit('typing', { conversationId: selectedConv.id, isTyping: true });
         clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(() => {
-            socketService.socket?.emit('typing', { conversationId: selectedConv.id, isTyping: false });
+            emit('typing', { conversationId: selectedConv.id, isTyping: false });
         }, 2000);
     };
 
@@ -278,14 +292,25 @@ const Messages = () => {
         } catch (err) {
             console.error("Erreur lors de la recherche d'utilisateurs:", err);
             setUsers([]);
+            toast.error(t('msgLoadUsersError'));
         } finally {
             setIsLoadingUsers(false);
         }
-    }, [user?.id]);
+    }, [user?.id, t]);
 
     useEffect(() => {
-        if (showNewConv) loadUsers(userSearch);
+        if (!showNewConv) return undefined;
+        setIsLoadingUsers(true);
+        const timer = setTimeout(() => loadUsers(userSearch.trim()), userSearch.trim() ? 300 : 0);
+        return () => clearTimeout(timer);
     }, [showNewConv, userSearch, loadUsers]);
+
+    const openNewConversationModal = () => {
+        setUserSearch('');
+        setUsers([]);
+        setIsLoadingUsers(true);
+        setShowNewConv(true);
+    };
 
     const handleStartConversation = async (targetUser) => {
         try {
@@ -371,6 +396,14 @@ const Messages = () => {
         ));
     };
 
+    // Sélection auto de la 1ère conversation sur grand écran
+    useEffect(() => {
+        if (recipientId || conversationIdParam || selectedConv || isLoading || conversations.length === 0) return;
+        if (typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches) {
+            setSelectedConv(conversations[0]);
+        }
+    }, [conversations, isLoading, recipientId, conversationIdParam, selectedConv]);
+
     const filteredConvs = conversations.filter(c =>
         c.participants?.[0]?.nom_complet?.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -380,39 +413,41 @@ const Messages = () => {
     const totalUnread = conversations.reduce((acc, c) => acc + (c.unread_count || 0), 0);
 
     return (
-        <DashboardLayout title={t('msgTitle')} noPadding>
-            <div className="flex h-[calc(100vh-56px)] overflow-hidden bg-background">
+        <DashboardLayout title={t('msgTitle')} noFooter noPadding>
+            <div className="bca-messenger-page">
+                <div className="bca-messenger-shell">
 
-                {/* ── Sidebar conversations ─────────────────────────────────── */}
+                {/* ── Liste conversations ── */}
                 <aside className={cn(
-                    "flex flex-col border-r border-border bg-card shrink-0 transition-all",
-                    "w-full md:w-80",
-                    mobileShowChat ? "hidden md:flex" : "flex"
+                    'flex flex-col border-r border-border bg-card shrink-0 min-h-0',
+                    'w-full lg:w-[272px]',
+                    mobileShowChat ? 'hidden lg:flex' : 'flex',
                 )}>
-                    {/* Header sidebar */}
-                    <div className="p-4 border-b border-border space-y-3">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <MessageSquare className="size-5 text-primary" />
-                                <h2 className="text-sm font-bold text-foreground">{t('msgTitle')}</h2>
-                                {totalUnread > 0 && (
-                                    <span className="size-5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
-                                        {totalUnread > 9 ? '9+' : totalUnread}
-                                    </span>
-                                )}
+                    <div className="h-11 px-3 border-b border-border flex items-center justify-between shrink-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <MessageSquare className="size-4 text-primary shrink-0" />
+                            <div className="min-w-0">
+                                <h2 className="text-sm font-semibold text-foreground leading-none">{t('msgTitle')}</h2>
+                                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                                    {filteredConvs.length} conversation{filteredConvs.length !== 1 ? 's' : ''}
+                                </p>
                             </div>
-                            <button
-                                onClick={() => setShowNewConv(true)}
-                                className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all"
-                                title={t('msgNewMessage')}
-                            >
-                                <Plus className="size-4" />
-                            </button>
                         </div>
+                        <button
+                            type="button"
+                            onClick={openNewConversationModal}
+                            className="size-8 rounded-md bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 shrink-0"
+                            title={t('msgNewMessage')}
+                        >
+                            <Plus className="size-4" />
+                        </button>
+                    </div>
+
+                    <div className="px-2 py-2 border-b border-border shrink-0">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
                             <input
-                                className="w-full h-9 pl-9 pr-3 bg-background border border-border rounded-xl text-sm outline-none focus:border-primary/50 transition-all text-foreground placeholder:text-muted-foreground"
+                                className="w-full h-8 pl-8 pr-2 text-sm bg-muted/50 border border-border rounded-md text-foreground placeholder:text-muted-foreground outline-none focus:border-primary/50"
                                 placeholder={t('msgSearchPlaceholder')}
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
@@ -420,8 +455,7 @@ const Messages = () => {
                         </div>
                     </div>
 
-                    {/* Liste conversations */}
-                    <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                    <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5 custom-scrollbar">
                         {isLoading ? (
                             <div className="py-12 flex flex-col items-center gap-3">
                                 <Loader2 className="size-6 text-primary animate-spin" />
@@ -435,7 +469,7 @@ const Messages = () => {
                                     <p className="text-xs text-muted-foreground mt-1">{t('msgNoConvDesc')}</p>
                                 </div>
                                 <button
-                                    onClick={() => setShowNewConv(true)}
+                                    onClick={openNewConversationModal}
                                     className="h-8 px-4 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 transition-colors flex items-center gap-1.5"
                                 >
                                     <Plus className="size-3.5" /> {t('msgNewMessage')}
@@ -454,48 +488,47 @@ const Messages = () => {
                     </div>
                 </aside>
 
-                {/* ── Zone de chat ──────────────────────────────────────────── */}
+                {/* ── Zone de chat ── */}
                 <main className={cn(
-                    "flex-1 flex flex-col h-full overflow-hidden",
-                    !mobileShowChat && "hidden md:flex"
+                    'flex flex-col flex-1 min-h-0 min-w-0 bg-background',
+                    mobileShowChat ? 'flex' : 'hidden lg:flex',
                 )}>
                     {selectedConv ? (
                         <>
-                            {/* Header chat */}
-                            <header className="flex items-center justify-between p-4 border-b border-border bg-card shrink-0">
-                                <div className="flex items-center gap-3">
-                                    <button onClick={() => setMobileShowChat(false)} className="md:hidden size-8 rounded-lg bg-muted flex items-center justify-center">
+                            <header className="h-11 flex items-center justify-between px-3 border-b border-border bg-card shrink-0">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => setMobileShowChat(false)}
+                                        className="lg:hidden size-8 rounded-md bg-muted flex items-center justify-center shrink-0"
+                                    >
                                         <ArrowLeft className="size-4" />
                                     </button>
-                                    <Avatar seed={partner?.id} size="md" online />
-                                    <div>
-                                        <h3 className="text-sm font-bold text-foreground">{partner?.nom_complet || 'Utilisateur'}</h3>
-                                        <div className="flex items-center gap-1.5 mt-0.5">
-                                            <div className="size-1.5 rounded-full bg-emerald-500" />
-                                            <span className="text-xs text-muted-foreground">{t('msgOnline')}</span>
-                                        </div>
+                                    <Avatar seed={partner?.id} size="sm" online />
+                                    <div className="min-w-0">
+                                        <h3 className="text-sm font-semibold text-foreground truncate">
+                                            {partner?.nom_complet || 'Utilisateur'}
+                                        </h3>
+                                        <p className="text-[10px] text-muted-foreground truncate">
+                                            {ROLE_LABELS[partner?.role] || t('msgOnline')}
+                                        </p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <button className="size-8 rounded-lg bg-muted border border-border text-muted-foreground hover:text-foreground flex items-center justify-center transition-all">
-                                        <MoreHorizontal className="size-4" />
-                                    </button>
-                                </div>
+                                <button type="button" className="size-8 rounded-md bg-muted border border-border text-muted-foreground hover:text-foreground flex items-center justify-center shrink-0">
+                                    <MoreHorizontal className="size-4" />
+                                </button>
                             </header>
 
-                            {/* Messages */}
-                            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-background/50">
+                            <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 custom-scrollbar bg-background">
                                 {messages.length === 0 ? (
-                                    <div className="h-full flex flex-col items-center justify-center gap-3 text-center">
-                                        <div className="size-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                                            <MessageSquare className="size-7 text-primary" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-semibold text-foreground">{t('msgNoConvTitle')}</p>
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                                {t('msgStartWith', { name: partner?.nom_complet })}
-                                            </p>
-                                        </div>
+                                    <div className="h-full flex flex-col items-center justify-center gap-2 text-center px-4 py-8">
+                                        <MessageSquare className="size-10 text-primary/70" />
+                                        <p className="text-sm font-medium text-foreground">
+                                            {t('msgStartChat') || 'Démarrez la discussion'}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground max-w-[280px]">
+                                            {t('msgStartWith', { name: partner?.nom_complet || 'ce contact' })}
+                                        </p>
                                     </div>
                                 ) : (
                                     messages.map(msg => (
@@ -520,16 +553,12 @@ const Messages = () => {
                                 <div ref={messagesEndRef} />
                             </div>
 
-                            {/* Input */}
-                            <form
-                                onSubmit={handleSend}
-                                className="p-3 border-t border-border bg-card shrink-0"
-                            >
-                                <div className="flex items-center gap-2 bg-background border border-border rounded-2xl px-3 py-2 focus-within:border-primary/50 transition-all">
+                            <form onSubmit={handleSend} className="px-3 py-2.5 border-t border-border bg-card shrink-0">
+                                <div className="flex items-center gap-2 bg-muted/40 border border-border rounded-md px-3 py-1.5 focus-within:border-primary/50 focus-within:bg-background transition-colors">
                                     <input
                                         ref={inputRef}
                                         className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-                                        placeholder={t('msgInputPlaceholder', { name: partner?.nom_complet })}
+                                        placeholder={t('msgInputPlaceholder', { name: partner?.nom_complet || '' })}
                                         value={messageInput}
                                         onChange={handleTypingInput}
                                         onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) handleSend(e); }}
@@ -537,98 +566,75 @@ const Messages = () => {
                                     <button
                                         type="submit"
                                         disabled={!messageInput.trim() || isSending}
-                                        className="size-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                                        className="size-8 rounded-md bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 disabled:opacity-40 shrink-0"
                                     >
-                                        {isSending
-                                            ? <Loader2 className="size-4 animate-spin" />
-                                            : <Send className="size-4" />
-                                        }
+                                        {isSending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
                                     </button>
                                 </div>
-                                <p className="text-[10px] text-muted-foreground text-center mt-1.5">
-                                    {t('msgEnterToSend')}
-                                </p>
+                                <p className="text-[10px] text-muted-foreground text-center mt-1.5">{t('msgEnterToSend')}</p>
                             </form>
                         </>
                     ) : (
-                        /* État vide */
-                        <div className="flex-1 flex flex-col items-center justify-center gap-5 text-center p-8">
-                            <div className="size-20 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                                <MessageSquare className="size-10 text-primary" />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-foreground">{t('msgTitle')}</h3>
-                                <p className="text-sm text-muted-foreground mt-1 max-w-xs">
-                                    {t('msgSelectConv')}
-                                </p>
-                            </div>
+                        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center p-6 bg-background">
+                            <MessageSquare className="size-10 text-primary/70" />
+                            <p className="text-sm font-medium text-foreground">{t('msgSelectConv')}</p>
                             <button
-                                onClick={() => setShowNewConv(true)}
-                                className="h-10 px-6 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors flex items-center gap-2"
+                                type="button"
+                                onClick={openNewConversationModal}
+                                className="h-9 px-4 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 flex items-center gap-2"
                             >
                                 <Plus className="size-4" /> {t('msgNewMessage')}
                             </button>
                         </div>
                     )}
                 </main>
+                </div>
             </div>
 
-            {/* ── Modal nouvelle conversation ───────────────────────────────── */}
-            {showNewConv && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setShowNewConv(false)} />
-                    <div className="bg-card border border-border rounded-2xl w-full max-w-md shadow-xl relative z-10">
-                        <div className="flex items-center justify-between p-4 border-b border-border">
-                            <div className="flex items-center gap-3">
-                                <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-                                    <Users className="size-4 text-primary" />
+            <ModalOverlay
+                open={showNewConv}
+                onClose={() => { setShowNewConv(false); setUserSearch(''); }}
+                title={t('msgNewMessage')}
+                maxWidth="max-w-md"
+            >
+                <div className="px-6 pb-6 space-y-3">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                        <input
+                            autoFocus
+                            className="w-full h-10 pl-9 pr-3 bg-background border border-border rounded-xl text-sm outline-none focus:border-primary/50 transition-all text-foreground placeholder:text-muted-foreground"
+                            placeholder={t('msgSearchUser')}
+                            value={userSearch}
+                            onChange={(e) => setUserSearch(e.target.value)}
+                        />
+                    </div>
+                    <div className="space-y-1 max-h-64 overflow-y-auto scrollbar-none">
+                        {isLoadingUsers ? (
+                            <div className="py-8 flex justify-center">
+                                <Loader2 className="size-5 text-primary animate-spin" />
+                            </div>
+                        ) : users.length === 0 ? (
+                            <div className="py-8 text-center">
+                                <p className="text-sm text-muted-foreground">{t('noResults')}</p>
+                            </div>
+                        ) : users.map((u) => (
+                            <button
+                                key={u.id}
+                                type="button"
+                                onClick={() => handleStartConversation(u)}
+                                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors text-left"
+                            >
+                                <Avatar seed={u.id} size="md" online />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-foreground truncate">{u.nom_complet}</p>
+                                    <p className="text-xs text-muted-foreground capitalize">{u.role}</p>
                                 </div>
-                                <h3 className="text-sm font-bold text-foreground">{t('msgNewMessage')}</h3>
-                            </div>
-                            <button onClick={() => setShowNewConv(false)}
-                                className="size-7 rounded-lg bg-muted hover:bg-rose-500/10 hover:text-rose-500 flex items-center justify-center text-muted-foreground transition-colors">
-                                <X className="size-4" />
+                                <Check className="size-4 text-muted-foreground/30" />
                             </button>
-                        </div>
-                        <div className="p-4 space-y-3">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                                <input
-                                    autoFocus
-                                    className="w-full h-10 pl-9 pr-3 bg-background border border-border rounded-xl text-sm outline-none focus:border-primary/50 transition-all text-foreground placeholder:text-muted-foreground"
-                                    placeholder={t('msgSearchUser')}
-                                    value={userSearch}
-                                    onChange={e => setUserSearch(e.target.value)}
-                                />
-                            </div>
-                            <div className="space-y-1 max-h-64 overflow-y-auto">
-                                {isLoadingUsers ? (
-                                    <div className="py-8 flex justify-center">
-                                        <Loader2 className="size-5 text-primary animate-spin" />
-                                    </div>
-                                ) : users.length === 0 ? (
-                                    <div className="py-8 text-center">
-                                        <p className="text-sm text-muted-foreground">{t('noResults')}</p>
-                                    </div>
-                                ) : users.map(u => (
-                                    <button
-                                        key={u.id}
-                                        onClick={() => handleStartConversation(u)}
-                                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors text-left"
-                                    >
-                                        <Avatar seed={u.id} size="md" online />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-foreground truncate">{u.nom_complet}</p>
-                                            <p className="text-xs text-muted-foreground capitalize">{u.role}</p>
-                                        </div>
-                                        <Check className="size-4 text-muted-foreground/30" />
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                        ))}
                     </div>
                 </div>
-            )}
+            </ModalOverlay>
         </DashboardLayout>
     );
 };

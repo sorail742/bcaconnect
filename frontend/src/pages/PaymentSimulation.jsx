@@ -4,35 +4,51 @@ import { motion } from 'framer-motion';
 import { ShieldCheck, Smartphone, ArrowRight, Loader2, CheckCircle2, AlertTriangle, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import walletService from '../services/walletService';
-import { cn } from '../lib/utils';
+import { getOrdersRoute } from '../constants/roles';
+import useAuthStore from '../store/authStore';
 
 const PaymentSimulation = () => {
     const { transactionId } = useParams();
     const navigate = useNavigate();
-    const [status, setStatus] = useState('pending'); // pending, processing, success, error
+    const user = useAuthStore((s) => s.user);
+    const [status, setStatus] = useState('pending');
     const [amount, setAmount] = useState(0);
+    const [isOrderPayment, setIsOrderPayment] = useState(false);
 
-    // Simulation de récupération des détails de la transaction
     useEffect(() => {
-        // En prod, on appellerait une API pour vérifier l'existence de la transaction
-        // Ici on simule
-        setAmount(150000); // Montant par défaut pour la démo
+        if (!transactionId) return;
+        walletService.getPaymentStatus(transactionId)
+            .then((data) => {
+                if (data.montant) setAmount(data.montant);
+                setIsOrderPayment(Boolean(data.order_id || data.type === 'order'));
+            })
+            .catch(() => {
+                setAmount(150000);
+            });
     }, [transactionId]);
+
+    const successRoute = isOrderPayment
+        ? getOrdersRoute(user?.role)
+        : (user?.role === 'technicien' ? '/technician/wallet' : '/wallet');
 
     const handleConfirm = async () => {
         try {
             setStatus('processing');
-            // Appel au backend pour simuler le succès du paiement
-            await walletService.captureSimulation(transactionId);
-            
+            const result = await walletService.captureSimulation(transactionId);
+            const paidOrder = Boolean(result.order_id);
+
             setTimeout(() => {
                 setStatus('success');
-                toast.success("Paiement confirmé ! Votre portefeuille a été crédité.");
-                setTimeout(() => navigate('/wallet'), 3000);
-            }, 2000);
-        } catch (error) {
+                toast.success(
+                    paidOrder
+                        ? 'Paiement commande confirmé — séquestre activé !'
+                        : 'Paiement confirmé ! Votre portefeuille a été crédité.',
+                );
+                setTimeout(() => navigate(paidOrder ? getOrdersRoute(user?.role) : successRoute), 2500);
+            }, 1500);
+        } catch {
             setStatus('error');
-            toast.error("Erreur lors de la confirmation du paiement.");
+            toast.error('Erreur lors de la confirmation du paiement.');
         }
     };
 
@@ -45,7 +61,6 @@ const PaymentSimulation = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="w-full max-w-md bg-white rounded-[2rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative z-10"
             >
-                {/* Header Style "Fintech" */}
                 <div className="bg-[#FF6600] p-8 text-white relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
                         <Zap className="size-24 rotate-12" />
@@ -77,13 +92,12 @@ const PaymentSimulation = () => {
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Méthode</p>
-                                        <p className="text-xs font-black text-slate-700">Mobile Money</p>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Type</p>
+                                        <p className="text-xs font-black text-slate-700">{isOrderPayment ? 'Commande' : 'Recharge wallet'}</p>
                                     </div>
                                 </div>
                                 <p className="text-sm text-slate-500 leading-relaxed px-2 text-center">
-                                    Ceci est une <strong>simulation de passerelle de paiement</strong>. 
-                                    En cliquant sur confirmer, vous simulez un succès de transaction Orange Money / Wave.
+                                    Simulation de passerelle Mobile Money (Orange / Wave).
                                 </p>
                             </div>
 
@@ -99,13 +113,10 @@ const PaymentSimulation = () => {
 
                     {status === 'processing' && (
                         <div className="py-12 flex flex-col items-center justify-center space-y-6 text-center">
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-orange-200 blur-2xl rounded-full opacity-20 animate-pulse" />
-                                <Loader2 className="size-16 text-orange-500 animate-spin relative z-10" />
-                            </div>
+                            <Loader2 className="size-16 text-orange-500 animate-spin" />
                             <div className="space-y-2">
                                 <h2 className="text-xl font-black text-slate-800 tracking-tight">Traitement en cours</h2>
-                                <p className="text-sm text-slate-500">Vérification de la transaction avec l'opérateur...</p>
+                                <p className="text-sm text-slate-500">Vérification avec l&apos;opérateur...</p>
                             </div>
                         </div>
                     )}
@@ -120,16 +131,18 @@ const PaymentSimulation = () => {
                                 <CheckCircle2 className="size-10" />
                             </div>
                             <div className="space-y-2">
-                                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Paiement Réussi !</h2>
+                                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Paiement réussi !</h2>
                                 <p className="text-sm text-slate-500 px-8">
-                                    Votre transaction a été validée. Votre portefeuille BCA est désormais crédité.
+                                    {isOrderPayment
+                                        ? 'Votre commande est confirmée.'
+                                        : 'Votre portefeuille BCA est crédité.'}
                                 </p>
                             </div>
                             <button 
-                                onClick={() => navigate('/wallet')}
+                                onClick={() => navigate(successRoute)}
                                 className="px-8 h-12 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors"
                             >
-                                Retour au Portefeuille
+                                {isOrderPayment ? 'Voir mes commandes' : 'Retour au portefeuille'}
                             </button>
                         </motion.div>
                     )}
@@ -141,15 +154,13 @@ const PaymentSimulation = () => {
                             </div>
                             <div className="space-y-2">
                                 <h2 className="text-xl font-black text-slate-800">Échec du paiement</h2>
-                                <p className="text-sm text-slate-500">
-                                    Une erreur technique est survenue lors de la communication avec le service de paiement.
-                                </p>
+                                <p className="text-sm text-slate-500">Une erreur technique est survenue.</p>
                             </div>
                             <button
                                 onClick={() => setStatus('pending')}
                                 className="text-sm font-bold text-orange-600 hover:underline"
                             >
-                                Réessayer la simulation
+                                Réessayer
                             </button>
                         </div>
                     )}
@@ -157,7 +168,7 @@ const PaymentSimulation = () => {
 
                 <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-center gap-2">
                     <div className="size-1.5 rounded-full bg-emerald-500" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Certifié BCA Connect Logistics</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Certifié BCA Connect</p>
                 </div>
             </motion.div>
         </div>

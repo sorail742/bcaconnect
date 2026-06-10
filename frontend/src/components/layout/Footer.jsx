@@ -4,7 +4,7 @@ import {
     Share2, Globe, Mail, ShieldCheck, Send, Zap, Satellite, Activity, 
     Truck, CreditCard, Headphones, Shield, Smartphone, ArrowRight
 } from 'lucide-react';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../lib/utils';
 import BcaLogo from '../ui/BcaLogo';
@@ -74,9 +74,9 @@ const Footer = () => {
             title: t('footerEcosystemTitle') || "Écosystème",
             links: [
                 { label: "BCA Wallet", href: "/wallet" },
-                { label: "BCA Ads", href: "/ads" },
-                { label: "BCA Insights", href: "/insights" },
-                { label: "BCA AI Engine", href: "/ai-trends" }
+                { label: "BCA Ads", href: "/marketplace" },
+                { label: "BCA Insights", href: "/about" },
+                { label: "BCA AI Engine", href: "/education" }
             ]
         }
     ], [t]);

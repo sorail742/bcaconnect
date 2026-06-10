@@ -1,7 +1,10 @@
-const { User } = require('../models');
+const { User, Wallet } = require('../models');
 const { Op } = require('sequelize');
 const sequelize = require('../config/database');
 const bcrypt = require('bcryptjs');
+const { deleteUserCompletely } = require('../services/userDeletionService');
+
+const ALLOWED_ROLES = ['client', 'fournisseur', 'transporteur', 'technicien', 'banque', 'admin'];
 
 const userController = {
     // Liste paginée avec recherche et filtre par rôle
@@ -10,12 +13,14 @@ const userController = {
             const { page = 1, limit = 10, search = '', role = '' } = req.query;
             const offset = (page - 1) * limit;
 
-            const where = {};
+            const where = {
+                statut: { [Op.ne]: 'supprime' },
+            };
             const likeOp = sequelize.getDialect() === 'postgres' ? Op.iLike : Op.like;
             if (search) {
                 where[Op.or] = [
                     { nom_complet: { [likeOp]: `%${search}%` } },
-                    { email: { [likeOp]: `%${search}%` } }
+                    { email: { [likeOp]: `%${search}%` } },
                 ];
             }
             if (role) {
@@ -36,10 +41,16 @@ const userController = {
             const sixtyDaysAgo = new Date(now.getTime() - (60 * 24 * 60 * 60 * 1000));
             const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
 
-            const currentCount = await User.count({ where: { createdAt: { [Op.gte]: thirtyDaysAgo } } });
-            const previousCount = await User.count({ where: { createdAt: { [Op.between]: [sixtyDaysAgo, thirtyDaysAgo] } } });
+            const currentCount = await User.count({
+                where: { createdAt: { [Op.gte]: thirtyDaysAgo }, statut: { [Op.ne]: 'supprime' } },
+            });
+            const previousCount = await User.count({
+                where: { createdAt: { [Op.between]: [sixtyDaysAgo, thirtyDaysAgo] }, statut: { [Op.ne]: 'supprime' } },
+            });
             const growth = previousCount === 0 ? 100 : ((currentCount - previousCount) / previousCount) * 100;
-            const newLast7Days = await User.count({ where: { createdAt: { [Op.gte]: sevenDaysAgo } } });
+            const newLast7Days = await User.count({
+                where: { createdAt: { [Op.gte]: sevenDaysAgo }, statut: { [Op.ne]: 'supprime' } },
+            });
 
             res.json({
                 total: count,
@@ -63,16 +74,17 @@ const userController = {
             const { search = '' } = req.query;
             // Include both 'actif' and 'en_attente' so users can be found even if not fully validated yet
             const where = {
-                statut: { [Op.in]: ['actif', 'en_attente'] },
-                id: { [Op.ne]: req.user.id } // Ne pas se voir soi-même
+                statut: { [Op.notIn]: ['bloque', 'supprime', 'suspendu'] },
+                id: { [Op.ne]: req.user.id },
             };
 
+            const term = String(search || '').trim();
             const likeOp = sequelize.getDialect() === 'postgres' ? Op.iLike : Op.like;
-            if (search) {
+            if (term) {
                 where[Op.or] = [
-                    { nom_complet: { [likeOp]: `%${search}%` } },
-                    { email: { [likeOp]: `%${search}%` } },
-                    sequelize.where(sequelize.cast(sequelize.col('id'), 'varchar'), { [likeOp]: `%${search}%` })
+                    { nom_complet: { [likeOp]: `%${term}%` } },
+                    { email: { [likeOp]: `%${term}%` } },
+                    { role: { [likeOp]: `%${term}%` } },
                 ];
             }
 
@@ -91,15 +103,23 @@ const userController = {
 
     // Création par un admin
     create: async (req, res, next) => {
+        const t = await sequelize.transaction();
         try {
             const { nom_complet, email, mot_de_passe, role, telephone } = req.body;
 
             if (!mot_de_passe || mot_de_passe.length < 6) {
+                await t.rollback();
                 return res.status(422).json({ message: "Mot de passe trop court (min 6 caractères)." });
+            }
+
+            if (role && !ALLOWED_ROLES.includes(role)) {
+                await t.rollback();
+                return res.status(422).json({ message: "Rôle invalide." });
             }
 
             const existingUser = await User.findOne({ where: { email } });
             if (existingUser) {
+                await t.rollback();
                 return res.status(400).json({ message: "Cet email est déjà utilisé." });
             }
 
@@ -112,13 +132,18 @@ const userController = {
                 role: role || 'client',
                 telephone,
                 statut: 'actif'
-            });
+            }, { transaction: t });
+
+            await Wallet.create({ user_id: user.id }, { transaction: t });
+
+            await t.commit();
 
             const userJson = user.toJSON();
             delete userJson.mot_de_passe;
 
             res.status(201).json(userJson);
         } catch (error) {
+            await t.rollback();
             next(error);
         }
     },
@@ -157,7 +182,7 @@ const userController = {
         }
     },
 
-    // Suppression par un admin (anonymisation RGPD)
+    // Suppression définitive (admin) — retire l'utilisateur de la base
     delete: async (req, res, next) => {
         try {
             const { id } = req.params;
@@ -166,23 +191,12 @@ const userController = {
                 return res.status(400).json({ message: "Vous ne pouvez pas supprimer votre propre compte admin." });
             }
 
-            const user = await User.findByPk(id);
-            if (!user) {
-                return res.status(404).json({ message: "Utilisateur non trouvé." });
+            const result = await deleteUserCompletely(id);
+            if (!result.ok) {
+                return res.status(result.status || 500).json({ message: result.message });
             }
 
-            // Anonymisation RGPD pour préserver l'intégrité référentielle
-            await user.update({
-                nom_complet: '[Compte supprimé]',
-                email: `deleted_${user.id}@bca.invalid`,
-                telephone: `000_${user.id.slice(0, 8)}`,
-                mot_de_passe: 'DELETED',
-                statut: 'supprime',
-                metadata_securite: null,
-                preferences_ia: null
-            });
-
-            res.json({ message: "Utilisateur anonymisé conformément au RGPD." });
+            res.json({ message: result.message, id });
         } catch (error) {
             next(error);
         }

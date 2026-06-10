@@ -1,7 +1,9 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import { translations } from './translations';
 
 const LanguageContext = createContext();
+
+export { LanguageContext };
 
 export const LanguageProvider = ({ children }) => {
     const [lang, setLang] = useState(() => {
@@ -32,12 +34,4 @@ export const LanguageProvider = ({ children }) => {
             {children}
         </LanguageContext.Provider>
     );
-};
-
-export const useLanguage = () => {
-    const context = useContext(LanguageContext);
-    if (!context) {
-        throw new Error('useLanguage must be used within a LanguageProvider');
-    }
-    return context;
 };

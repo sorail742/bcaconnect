@@ -82,8 +82,6 @@ const productController = {
 
     getAll: catchAsync(async (req, res, next) => {
         const { 
-            page = 1, 
-            limit = 20, 
             search = '', 
             categorie_id = '', 
             min_price = 0, 
@@ -94,8 +92,13 @@ const productController = {
             is_verified = 'false',
             featured = 'false'
         } = req.query;
+
+        const page = req.pagination?.page
+            ?? Math.max(1, parseInt(req.query.page, 10) || 1);
+        const limit = req.pagination?.limit
+            ?? Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
         
-        const offset = (parseInt(page) - 1) * parseInt(limit);
+        const offset = (page - 1) * limit;
         const where = {};
         
         // Filtres textuels
@@ -145,14 +148,14 @@ const productController = {
                 { model: Review, as: 'avis', attributes: ['note'] }
             ],
             order,
-            limit: parseInt(limit),
+            limit,
             offset
         });
 
         res.json({
             total: count,
-            pages: Math.ceil(count / parseInt(limit)),
-            currentPage: parseInt(page),
+            pages: Math.ceil(count / limit),
+            currentPage: page,
             products
         });
     }),

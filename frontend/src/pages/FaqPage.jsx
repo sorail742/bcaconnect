@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/ui/Button';
 import { ChevronDown, Search, MessageSquare, ArrowRight, ShieldCheck, CreditCard, LifeBuoy } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../context/useLanguage';
 
 const FaqItem = ({ question, answer }) => {
     const [isOpen, setIsOpen] = useState(false);

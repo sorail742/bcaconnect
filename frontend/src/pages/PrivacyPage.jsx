@@ -1,6 +1,6 @@
 import React from 'react';
 import { Shield, Lock, Eye, Sparkles, ShieldCheck } from 'lucide-react';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../context/useLanguage';
 
 const PrivacyPage = () => {
     const { t, lang } = useLanguage();

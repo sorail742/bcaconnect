@@ -2,11 +2,13 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Store, Zap, ShieldCheck, Globe, LayoutDashboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useLanguage } from "../../context/LanguageContext";
+import { useLanguage } from '../../context/useLanguage';
 import { useAuth } from "../../hooks/useAuth";
 import { ROLES } from "../../constants/roles";
 
-export function CTASection() {
+import { formatCompact } from '../../lib/landingStats';
+
+export function CTASection({ stats }) {
     const { t } = useLanguage();
     const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
@@ -53,7 +55,9 @@ export function CTASection() {
                         <p className="text-slate-400 text-base sm:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0">
                             {isAuthenticated
                                 ? t('ctaContinueActivity') || "Continuez à gérer votre activité depuis votre espace personnel dédié."
-                                : t('ctaConnectedActors') || "Acheteurs, fournisseurs, transporteurs — une plateforme unique pour connecter tous les acteurs du commerce guinéen."}
+                                : (stats?.totalUsers
+                                    ? `${formatCompact(stats.totalUsers)} ${t('ctaConnectedActorsDynamic') || 'membres actifs — acheteurs, fournisseurs, livreurs et techniciens sur une plateforme unique.'}`
+                                    : t('ctaConnectedActors') || "Acheteurs, fournisseurs, transporteurs — une plateforme unique pour connecter tous les acteurs du commerce guinéen.")}
                         </p>
  
                         <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">

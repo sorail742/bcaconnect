@@ -11,7 +11,7 @@ import {
 import { useAuth } from "../../hooks/useAuth"
 import ThemeToggle from "../ui/ThemeToggle"
 import { cn } from "../../lib/utils"
-import { useLanguage } from "../../context/LanguageContext"
+import { useLanguage } from '../../context/useLanguage'
 import BcaLogo from "../ui/BcaLogo"
 import useCart from "../../hooks/useCart"
 

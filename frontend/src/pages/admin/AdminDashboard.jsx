@@ -12,7 +12,7 @@ import socketService from '../../services/socketService';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {

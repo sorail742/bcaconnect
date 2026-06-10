@@ -11,13 +11,9 @@ const messageService = {
     },
 
     getMessages: async (conversationId) => {
-        try {
-            if (!conversationId) return [];
-            const response = await api.get(`/messages/${conversationId}/messages`);
-            return Array.isArray(response.data) ? response.data : [];
-        } catch {
-            return [];
-        }
+        if (!conversationId) return [];
+        const response = await api.get(`/messages/${conversationId}/messages`);
+        return Array.isArray(response.data) ? response.data : [];
     },
 
     // Supporte texte seul ou fichier (image, document, audio)

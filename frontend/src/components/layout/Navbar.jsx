@@ -9,7 +9,7 @@ import {
     Star, Shirt, Headphones, Home, Trophy, Diamond, Palette, Flame
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 import useCart from '../../hooks/useCart';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -26,19 +26,9 @@ import productService from '../../services/productService';
 import { getCategoryIconComponent } from '../../lib/categoryConstants';
 import aiService from '../../services/aiService';
 import { toast } from 'sonner';
-import { ROLES } from '../../constants/roles';
+import { ROLES, getDashboardRoute, getOrdersRoute, getWalletRoute, canUseCart } from '../../constants/roles';
 import AiSourcingModal from '../ui/AiSourcingModal';
 import { BcaMegaMenu } from '../landing/BcaMegaMenu';
-
-// ─── Role-aware dashboard link ────────────────────────────────────────────────
-function getDashboardLink(user) {
-    if (!user) return '/dashboard';
-    if (user.role === ROLES.ADMIN) return '/admin/dashboard';
-    if (user.role === ROLES.FOURNISSEUR) return '/vendor/dashboard';
-    if (user.role === ROLES.TRANSPORTEUR) return '/carrier/dashboard';
-    if (user.role === ROLES.BANQUE) return '/bank/dashboard';
-    return '/dashboard';
-}
 
 // ─── Role badge ───────────────────────────────────────────────────────────────
 function RoleBadge({ role, t }) {
@@ -90,17 +80,10 @@ const Navbar = () => {
 const isDark = theme === 'dark';
     const hideLayout = ['/login', '/register', '/onboarding', '/forgot-password', '/reset-password', '/ai-mode'].includes(location.pathname);
 
-    const getDashboardLink = () => {
-        if (!user) return '/login';
-        switch (user.role) {
-            case 'admin': return '/admin';
-            case 'fournisseur': return '/vendor';
-            case 'transporteur': return '/carrier';
-            case 'banque': return '/bank';
-            default: return '/dashboard';
-        }
-    };
-    const dashboardLink = getDashboardLink();
+    const dashboardLink = user ? getDashboardRoute(user.role) : '/login';
+    const ordersLink = user ? getOrdersRoute(user.role) : '/orders';
+    const walletLink = user ? getWalletRoute(user.role) : '/wallet';
+    const isBuyerLike = user && [ROLES.CLIENT, ROLES.ADMIN].includes(user.role);
 
     // ── Scroll shadow ──────────────────────────────────────────────────────
     useEffect(() => {
@@ -416,22 +399,24 @@ const isDark = theme === 'dark';
                         </Link>
                     )}
 
-                    {/* Cart */}
-                    <Link to="/cart" className="relative flex items-center group cursor-pointer" title="Mon panier">
-                        <ShoppingCart className="size-6 text-foreground/70 group-hover:text-[#FF6600] transition-colors" />
-                        <AnimatePresence>
-                            {cartCount > 0 && (
-                                <motion.span
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    exit={{ scale: 0 }}
-                                    className="absolute -top-1.5 -right-2 bg-[#FF6600] text-white text-[10px] font-bold px-1.5 rounded-full border-2 border-background tabular-nums"
-                                >
-                                    {cartCount}
-                                </motion.span>
-                            )}
-                        </AnimatePresence>
-                    </Link>
+                    {/* Cart — clients uniquement */}
+                    {(!user || canUseCart(user.role)) && (
+                        <Link to="/cart" className="relative flex items-center group cursor-pointer" title="Mon panier">
+                            <ShoppingCart className="size-6 text-foreground/70 group-hover:text-[#FF6600] transition-colors" />
+                            <AnimatePresence>
+                                {cartCount > 0 && (
+                                    <motion.span
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        exit={{ scale: 0 }}
+                                        className="absolute -top-1.5 -right-2 bg-[#FF6600] text-white text-[10px] font-bold px-1.5 rounded-full border-2 border-background tabular-nums"
+                                    >
+                                        {cartCount}
+                                    </motion.span>
+                                )}
+                            </AnimatePresence>
+                        </Link>
+                    )}
 
                     {/* ── Auth Section ──────────────────────────────────────── */}
                     {user ? (
@@ -509,8 +494,14 @@ const isDark = theme === 'dark';
                                         <div className="p-3 space-y-0.5">
                                             {[
                                                 { to: dashboardLink, icon: LayoutDashboard, label: t('dashboard') },
-                                                { to: '/orders', icon: Package, label: t('myOrders') || 'Mes commandes' },
-                                                { to: '/wallet', icon: CreditCard, label: t('myWallet') || 'Mon portefeuille' },
+                                                ...(isBuyerLike ? [
+                                                    { to: ordersLink, icon: Package, label: t('myOrders') || 'Mes commandes' },
+                                                    { to: walletLink, icon: CreditCard, label: t('myWallet') || 'Mon portefeuille' },
+                                                ] : user?.role === ROLES.FOURNISSEUR ? [
+                                                    { to: '/vendor/orders', icon: Package, label: 'Mes commandes' },
+                                                ] : user?.role === ROLES.TECHNICIEN ? [
+                                                    { to: '/technician/wallet', icon: CreditCard, label: 'Mon portefeuille' },
+                                                ] : []),
                                                 { to: '/notifications', icon: Bell, label: t('notifications') || 'Notifications', badge: notificationCount },
                                                 { to: '/profile', icon: Settings, label: t('accountSettings') || 'Paramètres du compte' },
                                                 { to: '/help', icon: HelpCircle, label: t('helpCenter') || "Centre d'assistance" },
@@ -575,21 +566,21 @@ const isDark = theme === 'dark';
                 </div>
             </div>
 
-            {/* ── Bottom Nav Row ────────────────────────────────────────────── */}
-            <div className="hidden md:flex flex-wrap border-t border-border/5 relative">
-                <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-12 flex flex-wrap items-center justify-center h-12 gap-4 lg:gap-12">
-                    <div 
-                        className="h-full flex items-center"
+            {/* ── Bottom Nav Row — alignée sous le header fixe (style Alibaba) ─ */}
+            <div className="hidden md:block border-t border-border/5 bg-white dark:bg-gray-900">
+                <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-12 flex items-center h-12">
+                    <div
+                        className="relative shrink-0 h-full flex items-center border-r border-border/10 pr-5 mr-5 lg:mr-8"
                         onMouseEnter={handleMegaMenuOpen}
                         onMouseLeave={handleMegaMenuClose}
                     >
                         <div className={cn(
-                            "flex items-center gap-2 cursor-pointer group pr-4 border-r border-border/10 h-full transition-colors",
-                            isMegaMenuOpen && "text-[#FF6600]"
+                            'flex items-center gap-2 cursor-pointer group h-full transition-colors',
+                            isMegaMenuOpen && 'text-[#FF6600]',
                         )}>
-                            <Menu className={cn("size-5 transition-colors", isMegaMenuOpen ? "text-[#FF6600]" : "text-foreground group-hover:text-[#FF6600]")} />
-                            <span className={cn("font-bold text-sm transition-colors whitespace-nowrap", isMegaMenuOpen ? "text-[#FF6600]" : "text-foreground group-hover:text-[#FF6600]")}>
-                                {t('allCategories') || "Toutes les catégories"}
+                            <Menu className={cn('size-5 transition-colors', isMegaMenuOpen ? 'text-[#FF6600]' : 'text-foreground group-hover:text-[#FF6600]')} />
+                            <span className={cn('font-bold text-sm transition-colors whitespace-nowrap', isMegaMenuOpen ? 'text-[#FF6600]' : 'text-foreground group-hover:text-[#FF6600]')}>
+                                {t('allCategories') || 'Toutes les catégories'}
                             </span>
                         </div>
 
@@ -601,8 +592,7 @@ const isDark = theme === 'dark';
                         />
                     </div>
 
-
-                    <nav className="flex items-center gap-6 lg:gap-8">
+                    <nav className="flex items-center gap-5 lg:gap-8 flex-1 min-w-0 overflow-x-auto scrollbar-none">
                         <PrefetchLink
                             to="/vendors"
                             queryKey={['products']}
@@ -652,15 +642,13 @@ const isDark = theme === 'dark';
                         </Link>
                     </nav>
 
-                    <div className="flex items-center shrink-0">
-                        <Link
-                            to="/register?role=fournisseur"
-                            className="text-sm font-bold text-[#FF6600] hover:underline whitespace-nowrap transition-colors flex items-center gap-1"
-                        >
-
-                            <span className="lg:hidden">{t('sellOnBca') || "Vendre sur BCA"}</span>
-                        </Link>
-                    </div>
+                    <Link
+                        to="/register?role=fournisseur"
+                        className="shrink-0 ml-4 text-sm font-bold text-[#FF6600] hover:underline whitespace-nowrap transition-colors hidden lg:flex items-center gap-1"
+                    >
+                        {t('sellOnBca') || 'Vendre sur BCA'}
+                        <ArrowRight className="size-3.5" />
+                    </Link>
                 </div>
             </div>
 
@@ -779,7 +767,11 @@ const isDark = theme === 'dark';
                                         { to: '/marketplace?filter=flash', icon: TrendingUp, label: 'Meilleures Offres' },
                                         ...(user ? [
                                             { to: dashboardLink, icon: LayoutDashboard, label: 'Mon Tableau de bord' },
-                                            { to: '/orders', icon: Package, label: 'Mes commandes' },
+                                            ...(isBuyerLike ? [
+                                                { to: ordersLink, icon: Package, label: 'Mes commandes' },
+                                            ] : user.role === ROLES.FOURNISSEUR ? [
+                                                { to: '/vendor/orders', icon: Package, label: 'Mes commandes' },
+                                            ] : []),
                                             { to: '/notifications', icon: Bell, label: 'Notifications', badge: notificationCount },
                                         ] : []),
                                     ].map(item => (

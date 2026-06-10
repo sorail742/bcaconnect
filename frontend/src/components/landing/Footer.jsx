@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Send, Mail, MapPin, Phone, ShieldCheck, Zap, Star, Globe, Share2, Activity } from 'lucide-react';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 import { toast } from 'sonner';
 
 export function Footer() {

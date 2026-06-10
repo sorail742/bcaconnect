@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Cpu, Terminal, Zap, Search, MessageSquare, Database, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 
 
 

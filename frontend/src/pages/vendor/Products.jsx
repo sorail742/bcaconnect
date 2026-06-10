@@ -8,7 +8,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 import ProductCard from '../../components/produits/ProductCard';
 import { useVendorProducts, useUpdateStock, useDeleteProduct } from '../../hooks/data/useProductData';
 

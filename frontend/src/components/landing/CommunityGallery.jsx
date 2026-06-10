@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 import { Activity, Globe, Zap, Cpu } from "lucide-react";
 import LazyImage from '../ui/LazyImage';
 

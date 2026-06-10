@@ -6,7 +6,7 @@ import {
     ShieldCheck, Zap, Users, Heart,
     Globe, ArrowRight, Star, Award, Building2
 } from 'lucide-react';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../context/useLanguage';
 import BcaLogo from '../components/ui/BcaLogo';
 import { cn } from '../lib/utils';
 import statService from '../services/statService';

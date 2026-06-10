@@ -1,5 +1,8 @@
 import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import AppRoutes from './routes/AppRoutes';
+import { cn } from './lib/utils';
+import { shouldHidePublicLayout } from './lib/layoutRoutes';
 import OfflineBanner from './components/layout/OfflineBanner';
 import { syncService } from './services/syncService';
 import AIChat from './components/ui/AIChat';
@@ -17,6 +20,8 @@ import NetworkProgressBar from './components/layout/NetworkProgressBar';
 import ScrollToTop from './components/layout/ScrollToTop';
 
 function App() {
+  const location = useLocation();
+  const hidePublicLayout = shouldHidePublicLayout(location.pathname);
   const setAuth = useAuthStore(state => state.setAuth);
   const clearAuth = useAuthStore(state => state.clearAuth);
   const setLoading = useAuthStore(state => state.setLoading);
@@ -59,7 +64,10 @@ function App() {
   return (
       <MainLayout>
         <ScrollToTop />
-        <div className="min-h-svh bg-background text-foreground selection:bg-primary/30 selection:text-foreground pb-20">
+        <div className={cn(
+          'bg-background text-foreground selection:bg-primary/30 selection:text-foreground',
+          hidePublicLayout ? 'h-svh overflow-hidden' : 'min-h-svh pb-20',
+        )}>
           <NetworkProgressBar />
           <Toaster
             position="bottom-right"

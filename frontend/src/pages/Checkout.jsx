@@ -12,7 +12,7 @@ import cartService from '../services/cartService';
 import api from '../services/api';
 import { useWallet } from '../hooks/useDomainData';
 import useApiMutation from '../hooks/useApiMutation';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../context/useLanguage';
 import { checkoutStep1Schema } from '../lib/validation';
 import shippingService from '../services/shippingService';
 import { syncService } from '../services/syncService';

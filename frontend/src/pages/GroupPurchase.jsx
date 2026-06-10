@@ -6,7 +6,7 @@ import {
   CheckCircle2, X, LogOut, Lock,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useProducts } from '../hooks/useDomainData';
+import { useProducts, useWallet } from '../hooks/useDomainData';
 import {
   useGroupPurchases,
   useCreateGroupPurchase,
@@ -16,6 +16,7 @@ import {
 } from '../hooks/useDomainData';
 import { formatCurrency, formatDate } from '../utils/helpers';
 import { ROLES } from '../constants/roles';
+import ModalOverlay from '../components/ui/ModalOverlay';
 
 const ORGANIZER_TYPES = [
   { value: 'ong', label: 'ONG' },
@@ -171,44 +172,60 @@ const CampaignCard = ({
   );
 };
 
-const JoinModal = ({ campaign, onClose, onConfirm, pending }) => {
+const FRAIS_PORT_GROUPE = 15000;
+
+const JoinModal = ({ campaign, onClose, onConfirm, pending, walletBalance }) => {
   const [qty, setQty] = useState(1);
-  const total = (campaign?.prix_unitaire_groupe || 0) * qty;
+  const unitPrice = campaign?.prix_unitaire_groupe || 0;
+  const subtotal = unitPrice * qty;
+  const total = subtotal + FRAIS_PORT_GROUPE;
+  const insufficient = walletBalance != null && walletBalance < total;
 
   if (!campaign) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl">
-        <div className="flex justify-between items-start mb-4">
-          <h3 className="font-bold text-lg">Rejoindre la campagne</h3>
-          <button onClick={onClose} className="p-1 hover:bg-muted rounded-lg"><X className="size-5" /></button>
-        </div>
+    <ModalOverlay open onClose={onClose} title="Rejoindre la campagne" maxWidth="max-w-md">
+      <div className="px-6 pb-6">
         <p className="text-sm text-muted-foreground mb-4">{campaign.titre}</p>
         <label className="block text-sm font-bold mb-2">Quantité</label>
         <input
           type="number"
           min={1}
-          max={campaign.quantite_cible - campaign.quantite_actuelle}
+          max={Math.max(1, campaign.quantite_cible - campaign.quantite_actuelle)}
           value={qty}
           onChange={(e) => setQty(Math.max(1, parseInt(e.target.value, 10) || 1))}
           className="w-full px-4 py-2 border border-border rounded-xl bg-background mb-4"
         />
-        <p className="text-sm mb-4">
-          Total estimé : <strong className="text-primary">{formatGnf(total)}</strong>
+        <p className="text-sm mb-4 space-y-1">
+          <span className="block text-muted-foreground">
+            {qty} × {formatGnf(unitPrice)} = <strong>{formatGnf(subtotal)}</strong>
+          </span>
+          <span className="block text-muted-foreground">
+            Frais de livraison groupée : <strong>{formatGnf(FRAIS_PORT_GROUPE)}</strong>
+          </span>
+          <span className="block pt-1">
+            Total à débiter : <strong className="text-primary">{formatGnf(total)}</strong>
+          </span>
+          {walletBalance != null && (
+            <span className={`block text-xs ${insufficient ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>
+              Solde wallet : {formatGnf(walletBalance)}
+              {insufficient && ' — solde insuffisant'}
+            </span>
+          )}
         </p>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2 border border-border rounded-xl font-medium">Annuler</button>
+          <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-border rounded-xl font-medium">Annuler</button>
           <button
+            type="button"
             onClick={() => onConfirm(campaign.id, qty)}
-            disabled={pending}
-            className="flex-1 py-2 bg-primary text-primary-foreground rounded-xl font-bold disabled:opacity-50"
+            disabled={pending || insufficient}
+            className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold disabled:opacity-50"
           >
-            Confirmer
+            Confirmer l&apos;engagement
           </button>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 };
 
@@ -230,24 +247,27 @@ const CreateModal = ({ open, onClose, products, onSubmit, pending }) => {
     type_organisateur: 'ong',
   });
 
-  if (!open) return null;
+  const selectedProduct = (products || []).find((p) => p.id === form.produit_id);
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-lg shadow-2xl my-8">
-        <div className="flex justify-between items-start mb-4">
-          <h3 className="font-bold text-lg">Nouvelle campagne groupée</h3>
-          <button onClick={onClose} className="p-1 hover:bg-muted rounded-lg"><X className="size-5" /></button>
-        </div>
+  const handleProductChange = (productId) => {
+    const product = (products || []).find((p) => p.id === productId);
+    setForm((f) => ({
+      ...f,
+      produit_id: productId,
+      titre: f.titre || (product ? `Campagne groupée — ${product.nom_produit || product.name}` : ''),
+    }));
+  };
 
-        <div className="space-y-4">
+  return (
+    <ModalOverlay open={open} onClose={onClose} title="Nouvelle campagne groupée" maxWidth="max-w-lg">
+      <div className="px-6 pb-6 space-y-4 max-h-[min(75vh,640px)] overflow-y-auto">
           <div>
             <label className="text-sm font-bold">Produit *</label>
             <select
               value={form.produit_id}
-              onChange={(e) => set('produit_id', e.target.value)}
+              onChange={(e) => handleProductChange(e.target.value)}
               className="w-full mt-1 px-4 py-2 border border-border rounded-xl bg-background"
             >
               <option value="">Sélectionner un produit</option>
@@ -274,6 +294,19 @@ const CreateModal = ({ open, onClose, products, onSubmit, pending }) => {
               className="w-full mt-1 px-4 py-2 border border-border rounded-xl bg-background"
             />
           </div>
+          {selectedProduct && (
+            <div className="rounded-xl bg-primary/5 border border-primary/20 p-4 text-sm space-y-1">
+              <p className="font-bold text-foreground">Aperçu tarif groupé</p>
+              <p className="text-muted-foreground">
+                Prix catalogue : {formatGnf(selectedProduct.prix_unitaire || selectedProduct.price)}
+              </p>
+              <p className="text-primary font-bold">
+                Prix groupé estimé (-{form.remise_pct}%) :{' '}
+                {formatGnf((selectedProduct.prix_unitaire || selectedProduct.price || 0) * (1 - form.remise_pct / 100))}
+                {' '}/ unité + {formatGnf(FRAIS_PORT_GROUPE)} port/participant
+              </p>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-bold">Quantité cible *</label>
@@ -328,20 +361,20 @@ const CreateModal = ({ open, onClose, products, onSubmit, pending }) => {
               className="w-full mt-1 px-4 py-2 border border-border rounded-xl bg-background"
             />
           </div>
-        </div>
 
-        <div className="flex gap-3 mt-6">
-          <button onClick={onClose} className="flex-1 py-2 border border-border rounded-xl font-medium">Annuler</button>
+        <div className="flex gap-3 pt-2 sticky bottom-0 bg-card pb-1">
+          <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-border rounded-xl font-medium">Annuler</button>
           <button
+            type="button"
             onClick={() => onSubmit(form)}
             disabled={pending || !form.produit_id || !form.titre}
-            className="flex-1 py-2 bg-primary text-primary-foreground rounded-xl font-bold disabled:opacity-50"
+            className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold disabled:opacity-50"
           >
             Créer la campagne
           </button>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 };
 
@@ -355,6 +388,8 @@ const GroupPurchase = () => {
 
   const { data: campaigns, loading, error, refetch } = useGroupPurchases(discoverParams);
   const { data: productsData } = useProducts({ limit: 100 });
+  const { data: walletData } = useWallet();
+  const walletBalance = walletData ? parseFloat(walletData.solde_virtuel || 0) : null;
   const products = productsData?.products || (Array.isArray(productsData) ? productsData : []);
   const createMutation = useCreateGroupPurchase();
   const joinMutation = useJoinGroupPurchase();
@@ -370,16 +405,21 @@ const GroupPurchase = () => {
   ];
 
   const handleCreate = (form) => {
-    createMutation.mutate(form, { onSuccess: () => setShowCreate(false) });
+    createMutation.mutate(form, {
+      onSuccess: () => {
+        setShowCreate(false);
+        setTab('organized');
+      },
+    });
   };
 
   const handleJoin = (id, quantite) => {
     joinMutation.mutate({ id, quantite }, { onSuccess: () => setJoinTarget(null) });
   };
 
-  return (
-    <DashboardLayout title="Achats Groupés">
-      <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+    return (
+    <DashboardLayout title="Achats Groupés" noFooter>
+      <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
@@ -461,6 +501,7 @@ const GroupPurchase = () => {
         onClose={() => setJoinTarget(null)}
         onConfirm={handleJoin}
         pending={joinMutation.isPending}
+        walletBalance={walletBalance}
       />
 
       <CreateModal

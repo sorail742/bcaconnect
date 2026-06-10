@@ -23,7 +23,7 @@ const Notification = sequelize.define('Notification', {
         type: DataTypes.STRING(20),
         defaultValue: 'system',
         validate: {
-            isIn: [['order', 'payment', 'message', 'system', 'dispute', 'delivery', 'sav']]
+            isIn: [['order', 'payment', 'message', 'system', 'dispute', 'delivery', 'sav', 'credit']]
         }
     },
     est_lu: {

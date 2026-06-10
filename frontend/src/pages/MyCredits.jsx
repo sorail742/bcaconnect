@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import DashboardLayout from '../components/layout/DashboardLayout';
 import {
     Landmark, Clock, CheckCircle2, AlertCircle, ArrowRight,
     CreditCard, Calendar, TrendingUp, RefreshCcw, Sparkles
@@ -8,7 +9,7 @@ import {
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
 import { DataStateWrapper } from '../components/ui/DataStates';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../context/useLanguage';
 import { useMyCredits, usePayInstallment } from '../hooks/useDomainData';
 
 export default function MyCredits() {
@@ -34,8 +35,8 @@ export default function MyCredits() {
     };
 
     return (
-        <main className="min-h-screen bg-background pt-32 pb-16">
-            <div className="container mx-auto px-4 md:px-8">
+        <DashboardLayout title={t('myFinancing') || 'Mes Crédits'}>
+            <div className="p-4 md:p-8 pb-16 max-w-5xl mx-auto">
 
                 {/* Header */}
                 <div className="max-w-4xl mx-auto mb-12 text-center space-y-4">
@@ -200,6 +201,6 @@ export default function MyCredits() {
                     </DataStateWrapper>
                 </div>
             </div>
-        </main>
+        </DashboardLayout>
     );
 }

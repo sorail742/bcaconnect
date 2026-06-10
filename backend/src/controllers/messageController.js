@@ -60,6 +60,9 @@ const messageController = {
         try {
             const { destinataire_id } = req.body;
             if (!destinataire_id) return res.status(400).json({ message: 'destinataire_id requis' });
+            if (destinataire_id === req.user.id) {
+                return res.status(400).json({ message: 'Impossible de démarrer une conversation avec soi-même' });
+            }
 
             // Chercher une conversation existante entre les deux
             const existing = await ConversationParticipant.findAll({
@@ -140,6 +143,17 @@ const messageController = {
             const { destinataire_id, contenu, conversation_id } = req.body;
             const file = req.file;
 
+            const resolveRecipientId = async (convId, explicitRecipientId) => {
+                if (explicitRecipientId) return explicitRecipientId;
+                const other = await ConversationParticipant.findOne({
+                    where: { conversation_id: convId, user_id: { [Op.ne]: req.user.id } },
+                    attributes: ['user_id'],
+                    raw: true,
+                    transaction: t,
+                });
+                return other?.user_id || null;
+            };
+
             // Déterminer le type et le contenu
             let msgType = 'text';
             let msgContenu = contenu || '';
@@ -169,9 +183,13 @@ const messageController = {
             if (!msgContenu) return res.status(400).json({ message: 'Contenu ou fichier requis' });
 
             let convId = conversation_id;
+            let recipientId = destinataire_id || null;
 
             if (!convId) {
                 if (!destinataire_id) return res.status(400).json({ message: 'destinataire_id requis' });
+                if (destinataire_id === req.user.id) {
+                    return res.status(400).json({ message: 'Impossible de s\'envoyer un message à soi-même' });
+                }
                 const existingParticipants = await ConversationParticipant.findAll({
                     where: { user_id: [req.user.id, destinataire_id] },
                     attributes: ['conversation_id'],
@@ -185,6 +203,7 @@ const messageController = {
 
                 if (sharedConvId) {
                     convId = sharedConvId;
+                    recipientId = destinataire_id;
                 } else {
                     const newConv = await Conversation.create({
                         dernier_message: msgType === 'text' ? msgContenu : `[ ${msgType} ]`,
@@ -195,7 +214,18 @@ const messageController = {
                         { conversation_id: newConv.id, user_id: destinataire_id }
                     ], { transaction: t });
                     convId = newConv.id;
+                    recipientId = destinataire_id;
                 }
+            } else {
+                const participation = await ConversationParticipant.findOne({
+                    where: { conversation_id: convId, user_id: req.user.id },
+                    transaction: t,
+                });
+                if (!participation) {
+                    await t.rollback();
+                    return res.status(403).json({ message: 'Non autorisé pour cette conversation' });
+                }
+                recipientId = await resolveRecipientId(convId, recipientId);
             }
 
             const message = await Message.create({
@@ -215,8 +245,10 @@ const messageController = {
             await t.commit();
 
             const io = req.app.get('socketio');
+            const payload = { message: message.toJSON(), conversation_id: convId };
             if (io) {
-                io.to(destinataire_id || '').emit('new_message', { message, conversation_id: convId });
+                if (recipientId) io.to(String(recipientId)).emit('new_message', payload);
+                io.to(`conv_${convId}`).emit('new_message', payload);
             }
 
             res.status(201).json(message);

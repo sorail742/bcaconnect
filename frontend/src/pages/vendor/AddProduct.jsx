@@ -17,7 +17,7 @@ import { cn } from '../../lib/utils';
 import { productSchema } from '../../lib/validation';
 import { getCategoryIconComponent } from '../../lib/categoryConstants';
 import { offlineStorage } from '../../lib/db';
-import { getAttributesForCategory, ATTRIBUTE_COLOR_MAP } from '../../lib/categoryAttributes';
+import { getAttributesForCategory, ATTRIBUTE_COLOR_MAP, mapAiResponseToAttributs, filterAttributsForProfile } from '../../lib/categoryAttributes';
 import { Settings2 } from 'lucide-react';
 const FormField = ({ label, required, children, error }) => (
     <div className="space-y-2.5">
@@ -145,39 +145,80 @@ const AddProduct = () => {
     const [isSuggestingPrice, setIsSuggestingPrice] = useState(false);
     const [priceSuggestion, setPriceSuggestion] = useState(null);
 
-    const handleMagicFill = async (name = formData.nom_produit, analysis = '') => {
+    const handleMagicFill = async (name = formData.nom_produit, analysis = '', options = {}) => {
         if (!name && !analysis) return;
-        
+
+        const cat = categories.find(c => c.id === formData.categorie_id);
+        const categoryName = options.categorie || cat?.nom_categorie || '';
+        const attrProfile = getAttributesForCategory(categoryName, name);
+
         setIsAiLoading(true);
         try {
-            const result = await aiService.suggestProductDetails(name, analysis);
-            
-            setFormData(prev => ({
-                ...prev,
-                nom_produit: name || prev.nom_produit,
-                description: result.description || prev.description,
-                prix_unitaire: result.prix_suggere?.toString() || prev.prix_unitaire,
-                unite_mesure: result.unite_suggeree || prev.unite_mesure,
-                mots_cles: Array.isArray(result.mots_cles) ? result.mots_cles.join(', ') : (result.mots_cles || prev.mots_cles)
-            }));
+            const result = await aiService.suggestProductDetails(name, analysis, categoryName);
+            const mappedAttributs = mapAiResponseToAttributs(attrProfile, result);
 
-            // Auto-select category if found
+            setFormData(prev => {
+                const nextCatId = (() => {
+                    if (result.categorie_suggeree) {
+                        const foundCat = categories.find(c =>
+                            c.nom_categorie.toLowerCase().includes(result.categorie_suggeree.toLowerCase())
+                            || result.categorie_suggeree.toLowerCase().includes(c.nom_categorie.toLowerCase())
+                        );
+                        if (foundCat) return foundCat.id;
+                    }
+                    return prev.categorie_id;
+                })();
+
+                const selectedCat = categories.find(c => c.id === nextCatId);
+                const profile = getAttributesForCategory(selectedCat?.nom_categorie || categoryName, name || prev.nom_produit);
+                const mergedAttributs = {
+                    ...filterAttributsForProfile(prev.attributs, profile),
+                    ...mappedAttributs,
+                };
+
+                return {
+                    ...prev,
+                    nom_produit: name || prev.nom_produit,
+                    description: result.description || prev.description,
+                    prix_unitaire: result.prix_suggere?.toString() || prev.prix_unitaire,
+                    unite_mesure: result.unite_suggeree || prev.unite_mesure,
+                    mots_cles: Array.isArray(result.mots_cles) ? result.mots_cles.join(', ') : (result.mots_cles || prev.mots_cles),
+                    categorie_id: nextCatId,
+                    attributs: mergedAttributs,
+                };
+            });
+
             if (result.categorie_suggeree) {
-                const foundCat = categories.find(c => 
+                const foundCat = categories.find(c =>
                     c.nom_categorie.toLowerCase().includes(result.categorie_suggeree.toLowerCase())
                 );
                 if (foundCat) {
-                    setFormData(prev => ({ ...prev, categorie_id: foundCat.id }));
-                    toast.info(`IA : CATÉGORIE "${foundCat.nom_categorie.toUpperCase()}" DÉTECTÉE.`);
+                    toast.info(`IA : CATÉGORIE « ${foundCat.nom_categorie.toUpperCase()} » DÉTECTÉE.`);
                 }
             }
 
-            toast.success("IA : FICHE PRODUIT AUTO-COMPLÉTÉE.");
+            const filledCount = Object.keys(mappedAttributs).length;
+            if (filledCount > 0) {
+                toast.success(`IA : ${filledCount} CARACTÉRISTIQUE${filledCount > 1 ? 'S' : ''} COMPLÉTÉE${filledCount > 1 ? 'S' : ''}.`);
+            } else {
+                toast.success('IA : FICHE PRODUIT AUTO-COMPLÉTÉE.');
+            }
         } catch (err) {
             console.error('Magic Fill error:', err);
+            toast.error("L'IA N'A PAS PU COMPLÉTER LA FICHE. RÉESSAYEZ.");
         } finally {
             setIsAiLoading(false);
         }
+    };
+
+    const handleCategoryChange = (categorieId) => {
+        const selectedCat = categories.find(c => c.id === categorieId);
+        const profile = getAttributesForCategory(selectedCat?.nom_categorie, formData.nom_produit);
+        setFormData(prev => ({
+            ...prev,
+            categorie_id: categorieId,
+            attributs: filterAttributsForProfile(prev.attributs, profile),
+        }));
     };
 
     // DEBOUNCED AI FILL FOR NAME
@@ -524,7 +565,7 @@ const AddProduct = () => {
                                         <CreatableSelect
                                             options={categories.map(c => ({ id: c.id, label: c.nom_categorie }))}
                                             value={formData.categorie_id}
-                                            onChange={(val) => setFormData(prev => ({ ...prev, categorie_id: val }))}
+                                            onChange={handleCategoryChange}
                                             placeholder="Sélectionner une catégorie..."
                                             onCreate={async (newCatName) => {
                                                 try {
@@ -533,7 +574,14 @@ const AddProduct = () => {
                                                         description: "Catégorie créée automatiquement lors de l'ajout d'un produit."
                                                     });
                                                     setCategories(prev => [...prev, newCat]);
-                                                    setFormData(prev => ({ ...prev, categorie_id: newCat.id }));
+                                                    setFormData(prev => {
+                                                        const profile = getAttributesForCategory(newCat.nom_categorie, prev.nom_produit);
+                                                        return {
+                                                            ...prev,
+                                                            categorie_id: newCat.id,
+                                                            attributs: filterAttributsForProfile(prev.attributs, profile),
+                                                        };
+                                                    });
                                                     toast.success(`NOUVELLE CATÉGORIE "${newCatName.toUpperCase()}" CRÉÉE.`);
                                                 } catch (err) {
                                                     toast.error("ÉCHEC DE LA CRÉATION DE LA CATÉGORIE.");
@@ -547,7 +595,7 @@ const AddProduct = () => {
                                                 <button
                                                     key={cat.id}
                                                     type="button"
-                                                    onClick={() => setFormData(prev => ({ ...prev, categorie_id: cat.id }))}
+                                                    onClick={() => handleCategoryChange(cat.id)}
                                                     className={cn(
                                                         "px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-1.5",
                                                         formData.categorie_id === cat.id
@@ -626,23 +674,36 @@ const AddProduct = () => {
                                 {/* ✨ DYNAMIC ATTRIBUTES SECTION */}
                                 {(() => {
                                     const selectedCat = categories.find(c => c.id === formData.categorie_id);
-                                    const attrConfig = getAttributesForCategory(selectedCat?.nom_categorie);
+                                    const attrConfig = getAttributesForCategory(selectedCat?.nom_categorie, formData.nom_produit);
                                     if (!attrConfig) return null;
                                     const colors = ATTRIBUTE_COLOR_MAP[attrConfig.color] || ATTRIBUTE_COLOR_MAP.blue;
                                     return (
                                         <div className={cn('rounded-3xl border p-6 space-y-6 transition-all duration-500 animate-in fade-in slide-in-from-top-4', colors.bg, colors.border)}>
                                             {/* Header */}
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-3 flex-wrap">
                                                 <div className={cn('size-10 rounded-2xl flex items-center justify-center border', colors.bg, colors.border)}>
                                                     <Settings2 className={cn('size-5', colors.text)} />
                                                 </div>
-                                                <div>
+                                                <div className="flex-1 min-w-0">
                                                     <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{attrConfig.label}</h4>
                                                     <p className={cn('text-[10px] font-bold uppercase tracking-widest', colors.label)}>
                                                         {attrConfig.fields.length} caractéristiques spécifiques à renseigner
                                                     </p>
                                                 </div>
-                                                <span className={cn('ml-auto px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest', colors.badge)}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleMagicFill(formData.nom_produit, '', { categorie: selectedCat?.nom_categorie })}
+                                                    disabled={isAiLoading || !formData.nom_produit}
+                                                    className={cn(
+                                                        'h-9 px-4 rounded-xl flex items-center gap-2 text-[9px] font-black uppercase tracking-widest border transition-all disabled:opacity-40',
+                                                        colors.badge, 'hover:opacity-80'
+                                                    )}
+                                                    title="Compléter les caractéristiques avec l'IA"
+                                                >
+                                                    {isAiLoading ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+                                                    IA
+                                                </button>
+                                                <span className={cn('px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest', colors.badge)}>
                                                     {selectedCat?.nom_categorie}
                                                 </span>
                                             </div>

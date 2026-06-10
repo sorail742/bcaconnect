@@ -87,6 +87,10 @@ const Order = sequelize.define('Order', {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
     },
+    methode_paiement: {
+        type: DataTypes.STRING(32),
+        allowNull: true,
+    },
 }, {
     tableName: 'commandes',
     timestamps: true,

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search, BadgeCheck } from 'lucide-react';
 import { cn, getImageUrl } from '../../lib/utils';
 import LazyImage from '../ui/LazyImage';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 
 const FALLBACK = 'https://images.unsplash.com/photo-1523275319145-80b01958f7a2?auto=format&fit=crop&q=80&w=400';
 

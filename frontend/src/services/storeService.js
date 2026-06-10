@@ -6,7 +6,7 @@ const storeService = {
         return response.data;
     },
 
-    create: async (storeData) => {
+    createStore: async (storeData) => {
         const response = await api.post('/stores', storeData);
         return response.data;
     },

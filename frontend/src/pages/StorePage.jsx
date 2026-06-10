@@ -5,7 +5,7 @@ import { Button } from '../components/ui/Button';
 import { Store, Star, ShieldCheck, Package, ArrowRight, MapPin, Phone, Mail, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import storeService from '../services/storeService';
 import { cn } from '../lib/utils';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../context/useLanguage';
 import { ProductSkeleton } from '../components/ui/Loader';
 import { useVendorBySlug } from '../hooks/useDomainData';
 import LazyImage from '../components/ui/LazyImage';

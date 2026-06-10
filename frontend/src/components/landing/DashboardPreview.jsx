@@ -1,39 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { LayoutDashboard, TrendingUp, Users, Package, ShoppingCart, ArrowRight, Zap, MoreHorizontal, Wallet } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { useLanguage } from '../../context/LanguageContext';
-import statService from '../../services/statService';
+import { useLanguage } from '../../context/useLanguage';
 import { ROLES } from '../../constants/roles';
+import { formatGmvLabel, formatGrowth, formatCount } from '../../lib/landingStats';
 
-export const DashboardPreview = () => {
+export const DashboardPreview = ({ stats }) => {
     const { t } = useLanguage();
     const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
-    const [stats, setStats] = useState({
-        revenue: '124.5M',
-        orders: '1,240',
-        activeUsers: '8,420',
-        listings: '342'
-    });
 
-    useEffect(() => {
-        const fetch = async () => {
-            try {
-                const data = await statService.getAdminStats();
-                if (data) {
-                    setStats({
-                        revenue: `${(data.totalVolume / 1000000).toFixed(1)}M`,
-                        orders: data.totalOrders?.toLocaleString() || '1,240',
-                        activeUsers: data.totalUsers?.toLocaleString() || '8,420',
-                        listings: data.totalProducts?.toLocaleString() || '342'
-                    });
-                }
-            } catch (error) { console.error(error); }
-        };
-        fetch();
-    }, []);
+    const displayStats = useMemo(() => ({
+        revenue: formatGmvLabel(stats?.gmv ?? 0),
+        orders: formatCount(stats?.totalOrders ?? 0),
+        activeUsers: formatCount(stats?.totalUsers ?? 0),
+        listings: formatCount(stats?.totalProducts ?? 0),
+    }), [stats]);
+
+    const growthLabel = formatGrowth(stats?.growthRate ?? 0);
 
     const getDashboardLink = () => {
         if (!isAuthenticated) return '/register';
@@ -51,11 +37,9 @@ export const DashboardPreview = () => {
         <section className="bg-slate-50 py-12 sm:py-16 border-t border-slate-100 mb-[-1px]">
             <div className="container px-3 sm:px-6 lg:px-8">
                 
-                {/* Layout Container */}
                 <div className="bg-slate-900 rounded-[2.5rem] sm:rounded-[3.5rem] overflow-hidden border border-white/5 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)]">
                     <div className="flex flex-col lg:flex-row min-h-[500px]">
                         
-                        {/* Left: Interactive Preview */}
                         <div className="flex-1 p-6 sm:p-10 lg:p-12 space-y-8">
                             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-white text-[10px] font-black uppercase tracking-widest">
                                 <LayoutDashboard className="size-3.5" /> {t('predictiveSystem') || "Système de gestion prédictive"}
@@ -67,10 +51,10 @@ export const DashboardPreview = () => {
                             
                             <div className="grid grid-cols-2 gap-4">
                                 {[
-                                    { label: t('revenue') || 'Volume (GNF)', val: `${stats.revenue}`, icon: TrendingUp, color: 'text-emerald-400' },
-                                    { label: t('orders') || 'Commandes', val: stats.orders, icon: ShoppingCart, color: 'text-blue-400' },
-                                    { label: t('buyers') || 'Acheteurs', val: stats.activeUsers, icon: Users, color: 'text-orange-400' },
-                                    { label: t('referenced') || 'Référencés', val: stats.listings, icon: Package, color: 'text-violet-400' },
+                                    { label: t('revenue') || 'Volume (GNF)', val: displayStats.revenue, icon: TrendingUp, color: 'text-emerald-400' },
+                                    { label: t('orders') || 'Commandes', val: displayStats.orders, icon: ShoppingCart, color: 'text-blue-400' },
+                                    { label: t('buyers') || 'Acheteurs', val: displayStats.activeUsers, icon: Users, color: 'text-orange-400' },
+                                    { label: t('referenced') || 'Référencés', val: displayStats.listings, icon: Package, color: 'text-violet-400' },
                                 ].map((s, i) => (
                                     <div key={i} className="bg-white/5 border border-white/10 p-4 rounded-2xl">
                                         <div className="flex items-center justify-between mb-2">
@@ -92,13 +76,10 @@ export const DashboardPreview = () => {
                             </button>
                         </div>
 
-                        {/* Right: Glassmorphism Card Stack */}
                         <div className="lg:w-[45%] bg-white/5 border-l border-white/5 p-6 sm:p-10 flex items-center justify-center relative overflow-hidden">
-                            {/* Decorative Blur */}
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-64 bg-[#FF6600]/20 blur-[100px] pointer-events-none" />
 
                             <div className="w-full max-w-sm space-y-4 relative z-10">
-                                {/* Wallet Card */}
                                 <motion.div 
                                     initial={{ x: 20, opacity: 0 }}
                                     whileInView={{ x: 0, opacity: 1 }}
@@ -111,16 +92,18 @@ export const DashboardPreview = () => {
                                         <MoreHorizontal className="size-5 text-slate-500" />
                                     </div>
                                     <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">{t('accountBalance') || "Solde de Compte"}</p>
-                                    <p className="text-2xl font-black text-white mb-2">42.580.000 GNF</p>
+                                    <p className="text-2xl font-black text-white mb-2">{formatGmvLabel(stats?.gmv ?? 0)}</p>
                                     <div className="flex items-center gap-2">
                                         <div className="h-1.5 flex-1 bg-white/10 rounded-full overflow-hidden">
-                                            <div className="w-[70%] h-full bg-[#FF6600]" />
+                                            <div
+                                                className="h-full bg-[#FF6600] transition-all"
+                                                style={{ width: `${Math.min(100, Math.max(5, stats?.satisfactionRate ?? 0))}%` }}
+                                            />
                                         </div>
-                                        <span className="text-[10px] font-black text-[#FF6600]">+12.4%</span>
+                                        <span className="text-[10px] font-black text-[#FF6600]">{growthLabel}</span>
                                     </div>
                                 </motion.div>
 
-                                {/* Mini Chart Card */}
                                 <motion.div 
                                     initial={{ x: -20, opacity: 0 }}
                                     whileInView={{ x: 0, opacity: 1 }}

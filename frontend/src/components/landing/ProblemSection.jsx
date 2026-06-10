@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { AlertCircle, ArrowRight, ShieldCheck, Zap, Lock, Globe, Coins, Route, Activity, TrendingUp } from "lucide-react";
-import { useLanguage } from "../../context/LanguageContext";
+import { useLanguage } from '../../context/useLanguage';
 import imgBg from '../../assets/guinea_bg_faded.png';
 import TiltWrapper from '../ui/TiltWrapper';
 import GeometricBackground from '../ui/GeometricBackground';

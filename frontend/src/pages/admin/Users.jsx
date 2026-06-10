@@ -19,7 +19,16 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
 
-const ROLES = ['TOUS', 'client', 'vendeur', 'transporteur', 'banque', 'admin'];
+const ROLES = ['TOUS', 'client', 'fournisseur', 'transporteur', 'technicien', 'banque', 'admin'];
+
+const ROLE_LABELS = {
+    client: 'Client (Acheteur)',
+    fournisseur: 'Fournisseur',
+    transporteur: 'Livreur / Transport',
+    technicien: 'Technicien',
+    banque: 'Banque',
+    admin: 'Administrateur',
+};
 
 const StatCard = ({ title, value, icon: Icon, color, growth }) => (
     <motion.div
@@ -64,7 +73,7 @@ const AdminUsers = () => {
         mot_de_passe: ''
     });
 
-    const roleFilter = selectedRole === 'TOUS' ? '' : (selectedRole === 'vendeur' ? 'fournisseur' : selectedRole);
+    const roleFilter = selectedRole === 'TOUS' ? '' : selectedRole;
     const { data, isLoading, refetch } = useQuery({
         queryKey: ['admin-users', page, search, roleFilter],
         queryFn: () => userService.getAll(page, 15, search, roleFilter),
@@ -81,7 +90,22 @@ const AdminUsers = () => {
 
     const { mutate: deleteMutation } = useApiMutation(
         (id) => userService.delete(id),
-        { invalidateKeys: ['admin-users'], successMessage: "Accès révoqué avec succès." }
+        {
+            invalidateKeys: ['admin-users', 'stats'],
+            successMessage: 'Utilisateur supprimé définitivement.',
+            optimistic: {
+                queryKey: ['admin-users', page, search, roleFilter],
+                updater: (old, deletedId) => {
+                    if (!old?.users) return old;
+                    const nextUsers = old.users.filter((u) => u.id !== deletedId);
+                    return {
+                        ...old,
+                        users: nextUsers,
+                        total: Math.max(0, (old.total || nextUsers.length) - 1),
+                    };
+                },
+            },
+        }
     );
 
     const { mutate: crudMutation, isPending: isSaving } = useApiMutation(
@@ -100,7 +124,7 @@ const AdminUsers = () => {
     );
 
     const handleDelete = (id) => {
-        if (!window.confirm("CONFIRMER LA RÉVOCATION DE CET ACCÈS ?")) return;
+        if (!window.confirm('Supprimer définitivement cet utilisateur ? Cette action est irréversible.')) return;
         deleteMutation(id);
     };
 
@@ -212,7 +236,7 @@ const AdminUsers = () => {
                     "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border w-fit",
                     u.role === 'admin' ? "bg-primary/5 border-primary/10 text-primary" : "bg-slate-50 border-slate-100 text-slate-500"
                 )}>
-                    {u.role === 'fournisseur' ? 'VENDEUR' : u.role?.toUpperCase()}
+                    {u.role === 'fournisseur' ? 'FOURNISSEUR' : u.role === 'technicien' ? 'TECHNICIEN' : u.role?.toUpperCase()}
                 </div>
             )
         },
@@ -356,9 +380,9 @@ const AdminUsers = () => {
                                         "px-8 h-11 rounded-[1.25rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all",
                                         selectedRole === r ? "bg-slate-900 text-white shadow-2xl shadow-slate-900/20" : "bg-white border border-slate-100 text-slate-400 hover:bg-slate-50"
                                     )}
-                                >
-                                    {r}
-                                </button>
+                                    >
+                                        {r === 'TOUS' ? r : (ROLE_LABELS[r] || r.toUpperCase())}
+                                    </button>
                             ))}
                         </div>
 
@@ -457,11 +481,9 @@ const AdminUsers = () => {
                                         onChange={(e) => setFormData({...formData, role: e.target.value})} 
                                         className="w-full h-16 px-14 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-xs font-black text-slate-900 outline-none focus:ring-4 focus:ring-primary/10 transition-all appearance-none cursor-pointer uppercase tracking-[0.1em] shadow-inner"
                                     >
-                                        <option value="client">Client (End User)</option>
-                                        <option value="fournisseur">Fournisseur (Provider)</option>
-                                        <option value="transporteur">Transport (Logistics)</option>
-                                        <option value="banque">Bank Access</option>
-                                        <option value="admin">Root Admin</option>
+                                        {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                                            <option key={value} value={value}>{label}</option>
+                                        ))}
                                     </select>
                                     <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 size-5 text-slate-500 pointer-events-none" />
                                 </div>

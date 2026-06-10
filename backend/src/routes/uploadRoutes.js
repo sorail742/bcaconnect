@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { protect } = require('../middlewares/authMiddleware');
 
 // Configuration du stockage
 const storage = multer.diskStorage({
@@ -36,7 +37,7 @@ const upload = multer({
     }
 });
 
-router.post('/', upload.single('file'), (req, res) => {
+router.post('/', protect, upload.single('file'), (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ message: "Aucun fichier n'a été envoyé." });

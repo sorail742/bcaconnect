@@ -40,7 +40,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMyStore, useVendorOrders, useVendorStats, useTrustScore } from '../../hooks/useDomainData';
 import socketService from '../../services/socketService';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 
 const VendorDashboard = () => {
     const { t } = useLanguage();

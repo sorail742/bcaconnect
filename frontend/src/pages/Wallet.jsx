@@ -13,6 +13,7 @@ import { useSocket } from '../hooks/useSocket';
 import { Button } from '../components/ui/Button';
 import { cn } from '../lib/utils';
 import { useAIScore } from '../hooks/useAIScore';
+import { getTransactionDirection, getTransactionLabel } from '../lib/walletUtils';
 
 const Wallet = () => {
     const { data: wallet, loading, error, mutate } = useWallet();
@@ -221,21 +222,24 @@ const Wallet = () => {
                                     <div className="p-4 sm:p-6">
                                         {transactions.length > 0 ? (
                                             <div className="space-y-3">
-                                                {transactions.slice(0, 10).map((tx, idx) => (
+                                                {transactions.slice(0, 10).map((tx, idx) => {
+                                                    const direction = getTransactionDirection(tx);
+                                                    const isCredit = direction === 'credit';
+                                                    return (
                                                     <div key={tx.id || idx} className="flex items-center justify-between p-4 bg-muted/50 hover:bg-muted rounded-2xl border border-border transition-colors">
                                                         <div className="flex items-center gap-4">
                                                             <div className={cn(
                                                                 "size-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm border",
-                                                                tx.type === 'credit' ? "bg-emerald-50 border-emerald-100 text-emerald-500 dark:bg-emerald-900/30 dark:border-emerald-800" : "bg-rose-50 border-rose-100 text-rose-500 dark:bg-rose-900/30 dark:border-rose-800"
+                                                                isCredit ? "bg-emerald-50 border-emerald-100 text-emerald-500 dark:bg-emerald-900/30 dark:border-emerald-800" : "bg-rose-50 border-rose-100 text-rose-500 dark:bg-rose-900/30 dark:border-rose-800"
                                                             )}>
-                                                                {tx.type === 'credit' ? <ArrowDownRight className="size-5" /> : <ArrowUpRight className="size-5" />}
+                                                                {isCredit ? <ArrowDownRight className="size-5" /> : <ArrowUpRight className="size-5" />}
                                                             </div>
                                                             <div className="min-w-0">
                                                                 <p className="text-sm font-bold text-foreground truncate">
-                                                                    {tx.description || (tx.type === 'credit' ? 'Dépôt' : 'Paiement')}
+                                                                    {getTransactionLabel(tx)}
                                                                 </p>
                                                                 <p className="text-xs text-muted-foreground">
-                                                                    {new Date(tx.createdAt || tx.date).toLocaleString('fr-FR', {
+                                                                    {new Date(tx.createdAt || tx.created_at || tx.date).toLocaleString('fr-FR', {
                                                                         day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit'
                                                                     })}
                                                                 </p>
@@ -244,16 +248,17 @@ const Wallet = () => {
                                                         <div className="text-right shrink-0 ml-4">
                                                             <p className={cn(
                                                                 "text-base font-black tabular-nums tracking-tight",
-                                                                tx.type === 'credit' ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"
+                                                                isCredit ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"
                                                             )}>
-                                                                {tx.type === 'credit' ? '+' : '-'}{parseFloat(tx.montant).toLocaleString('fr-GN')}
+                                                                {isCredit ? '+' : '-'}{parseFloat(tx.montant).toLocaleString('fr-GN')}
                                                             </p>
                                                             <span className="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-muted text-muted-foreground">
                                                                 {tx.statut || 'Terminé'}
                                                             </span>
                                                         </div>
                                                     </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         ) : (
                                             <div className="py-16 text-center flex flex-col items-center">

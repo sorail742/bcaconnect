@@ -212,3 +212,68 @@
   outline: 2px solid #ff6600;
   outline-offset: -2px;
 }
+
+/* ── Mega-menu navbar (portal, centré type Alibaba) ── */
+.bca-mega-menu {
+  width: 100%;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.dark .bca-mega-menu {
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.dark .bca-category-panel {
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
+}
+
+/* ── Widget messagerie centré (Alibaba / Amazon seller center) ── */
+.bca-messenger-page {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: calc(100vh - 7.5rem);
+  padding: 1.25rem 1rem 2rem;
+  background: hsl(var(--muted) / 0.35);
+}
+
+.bca-messenger-shell {
+  display: flex;
+  width: 100%;
+  max-width: 980px;
+  height: 580px;
+  max-height: min(580px, calc(100vh - 10rem));
+  min-height: 460px;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  background: hsl(var(--card));
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.dark .bca-messenger-shell {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+}
+
+@media (max-width: 1023px) {
+  .bca-messenger-page {
+    min-height: calc(100vh - 6rem);
+    padding: 0.75rem;
+  }
+
+  .bca-messenger-shell {
+    max-width: 100%;
+    height: calc(100vh - 8.5rem);
+    max-height: none;
+    min-height: 420px;
+  }
+}

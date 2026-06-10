@@ -1,6 +1,6 @@
 import React from 'react';
 import { BadgeCheck, Award, ShieldCheck, Sparkles, ShieldAlert, FileText } from 'lucide-react';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../context/useLanguage';
 
 const TermsPage = () => {
     const { t, lang } = useLanguage();

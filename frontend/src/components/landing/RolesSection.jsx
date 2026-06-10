@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingBag, Store, ArrowRight, ShieldCheck, Zap, Star, LayoutDashboard, Truck, Landmark } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useLanguage } from "../../context/LanguageContext";
+import { useLanguage } from '../../context/useLanguage';
 import { useAuth } from "../../hooks/useAuth";
 import { ROLES } from "../../constants/roles";
 import { cn } from "../../lib/utils";

@@ -7,13 +7,16 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { getDashboardRoute } from '../../constants/roles';
 import { toast } from 'sonner';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 
+import { TECHNICIAN_SPECIALTIES } from '../../constants/technicianSpecialties';
 import { getRegisterSchema } from '../../lib/validation';
+import { useLandingStats } from '../../hooks/useLandingStats';
+import { formatPlusDe, formatPercent } from '../../lib/landingStats';
 import GeometricBackground from '../../components/ui/GeometricBackground';
-import BcaLogo from '../../components/ui/BcaLogo';
+import GoogleSignIn from '../../components/auth/GoogleSignIn';
 import marketImg from '../../assets/auth/market.png';
 import logisticsImg from '../../assets/auth/logistics.png';
 import entrepreneurImg from '../../assets/auth/entrepreneur.png';
@@ -100,6 +103,7 @@ const FormSelect = ({ icon: Icon, label, options, placeholder, error, ...props }
 
 const Register = () => {
     const { t } = useLanguage();
+    const { stats: landingStats } = useLandingStats();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const { register, loading: authLoading, error: authError, isAuthenticated, user } = useAuth();
@@ -259,10 +263,17 @@ const Register = () => {
         }
     };
 
+    const showcaseStats = [
+        { val: formatPlusDe(landingStats.totalUsers), label: 'Utilisateurs' },
+        { val: formatPlusDe(landingStats.storesCount || landingStats.totalFournisseurs), label: 'Entreprises' },
+        { val: '24h/24 et 7j/7', label: 'Support' },
+        { val: formatPercent(landingStats.satisfactionRate), label: 'Satisfaction client' },
+    ];
+
     return (
-        <div className="flex min-h-screen bg-white">
+        <div className="flex h-full min-h-0 bg-white">
             {/* Left Side: Immersive Showcase */}
-            <div className="hidden lg:flex flex-1 relative items-center justify-center p-12 overflow-hidden bg-[#0A0F1C]">
+            <div className="hidden lg:flex flex-1 relative items-center justify-center p-12 overflow-hidden bg-[#0A0F1C] shrink-0">
                 <GeometricBackground />
                 <AnimatePresence mode="wait">
                     <motion.div
@@ -292,12 +303,7 @@ const Register = () => {
                         </p>
                         
                         <div className="grid grid-cols-2 gap-4">
-                            {[
-                                { val: 'Plus de 10 000', label: 'Utilisateurs' },
-                                { val: 'Plus de 500', label: 'Entreprises' },
-                                { val: '24h/24 et 7j/7', label: 'Soutenir le local' },
-                                { val: '99%', label: 'Sécurité' },
-                            ].map((s, i) => (
+                            {showcaseStats.map((s, i) => (
                                 <div key={i} className="p-5 rounded-2xl bg-[#151B2B] border border-white/5 opacity-80 backdrop-blur-md">
                                     <p className="text-lg font-black text-primary mb-1">{s.val}</p>
                                     <p className="text-xs font-bold text-white/50">{s.label}</p>
@@ -308,9 +314,9 @@ const Register = () => {
                 </div>
             </div>
 
-            {/* Right Side: Single Page Form */}
-            <div className="flex-1 flex flex-col p-8 md:p-12 overflow-y-auto">
-                <div className="max-w-xl w-full mx-auto">
+            {/* Right Side: Single Page Form — scroll interne (layout auth en h-svh) */}
+            <div className="flex-1 min-h-0 flex flex-col overflow-y-auto overscroll-contain">
+                <div className="max-w-xl w-full mx-auto p-8 md:p-12 pb-16">
                     
                     <></>
 
@@ -326,7 +332,7 @@ const Register = () => {
                         {/* Role Tabs */}
                         <div className="space-y-3">
                             <label className="text-[13px] font-bold text-slate-800">{t('regProfileType')}</label>
-                            <div className="grid grid-cols-3 gap-3">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 {[
                                     { id: 'client', icon: User, label: t('roleBuyer') },
                                     { id: 'fournisseur', icon: Store, label: t('roleSeller') },
@@ -390,8 +396,8 @@ const Register = () => {
 
                             {formData.role === 'technicien' && (
                                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-5 pt-2">
-                                    <FormInput icon={Wrench} label="Spécialités (ex: Plomberie, Électricité...)" name="specialites" value={formData.specialites} onChange={handleChange} placeholder="Vos compétences" error={fieldErrors.specialites} />
-                                    <FormInput icon={Globe} label="Zone d'Intervention" name="zone_intervention" value={formData.zone_intervention} onChange={handleChange} placeholder="Commune, Quartier..." error={fieldErrors.zone_intervention} />
+                                    <FormSelect icon={Wrench} label="Spécialité principale" name="specialites" value={formData.specialites} onChange={handleChange} options={TECHNICIAN_SPECIALTIES} placeholder="Sélectionnez votre spécialité" error={fieldErrors.specialites} />
+                                    <FormSelect icon={Globe} label="Zone d'Intervention" name="zone_intervention" value={formData.zone_intervention} onChange={handleChange} options={ZONES_COUVERTURE} placeholder="Sélectionnez votre zone" error={fieldErrors.zone_intervention} />
                                     <FormInput icon={Shield} label="Numéro d'Agrément (Optionnel)" name="numero_agrement" value={formData.numero_agrement} onChange={handleChange} placeholder="Ex: AGR-2024-XXXX" error={fieldErrors.numero_agrement} />
                                 </motion.div>
                             )}
@@ -411,6 +417,8 @@ const Register = () => {
                             {authLoading ? <Loader2 className="size-5 animate-spin" /> : <>{t('registerTitleText')} <ArrowRight className="size-5" /></>}
                         </button>
                     </form>
+
+                    <GoogleSignIn containerId="google-button-register" className="mt-6" />
 
                     <p className="mt-8 text-center text-sm font-medium text-slate-500 pb-12">
                         {t('loginHasAccount')} <Link to="/login" className="text-primary font-bold hover:underline">{t('login')}</Link>

@@ -32,7 +32,7 @@ async function runMigrations(sequelize) {
         await migration.up(qi, Sequelize);
         await sequelize.query(
             'INSERT INTO sequelize_meta (name, executed_at) VALUES (?, ?)',
-            { replacements: [file, new Date()] },
+            { replacements: [file, new Date()], type: sequelize.QueryTypes.INSERT },
         );
         console.log(`✅ Migration appliquée : ${file}`);
     }

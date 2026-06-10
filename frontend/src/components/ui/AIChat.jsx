@@ -7,6 +7,7 @@ import {
 import { cn } from '../../lib/utils';
 import aiService from '../../services/aiService';
 import { useAuth } from '../../hooks/useAuth';
+import { useLocation } from 'react-router-dom';
 
 // ── Markdown renderer minimal (sans dépendance) ───────────────────────────
 const renderMarkdown = (text) => {
@@ -135,6 +136,8 @@ const CODE_QUICK_SCANS = [
 // ─────────────────────────────────────────────────────────────────────────
 const AIChat = () => {
     const { user } = useAuth();
+    const location = useLocation();
+    const hideOnPage = location.pathname.startsWith('/messages');
     const [isOpen, setIsOpen] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
     const [mode, setMode] = useState('chat'); // 'chat' | 'code'
@@ -203,6 +206,8 @@ const AIChat = () => {
         setCodeInput(scan.code);
         setMode('code');
     };
+
+    if (hideOnPage) return null;
 
     return (
         <>

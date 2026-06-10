@@ -30,6 +30,7 @@ module.exports = {
         await addColumnIfMissing('utilisateurs', 'specialites', { type: Sequelize.STRING(255), allowNull: true });
         await addColumnIfMissing('utilisateurs', 'numero_agrement', { type: Sequelize.STRING(100), allowNull: true });
         await addColumnIfMissing('utilisateurs', 'zone_intervention', { type: Sequelize.STRING(255), allowNull: true });
+        await addColumnIfMissing('utilisateurs', 'location', { type: Sequelize.JSON, allowNull: true });
 
         await addColumnIfMissing('produits', 'condition', { type: Sequelize.STRING(20), defaultValue: 'neuf' });
         await addColumnIfMissing('produits', 'marque', { type: Sequelize.STRING(100), allowNull: true });

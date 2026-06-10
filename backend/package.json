@@ -5,6 +5,7 @@
   "scripts": {
     "start": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first node src/index.js",
     "dev": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first nodemon src/index.js",
+    "migrate": "node scripts/run-migrations.js",
     "test:api": "node test-api.js",
     "test:rotation": "node test-refresh-rotation.js",
     "test:validation": "node test-global-validation.js",

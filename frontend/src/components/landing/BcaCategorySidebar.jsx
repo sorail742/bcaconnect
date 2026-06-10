@@ -2,10 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 import { BCA_ICONS, BCA_CATEGORIES } from '../../lib/categoryConstants';
+import { FOR_YOU_ID } from '../../lib/categoryMegaMenu';
 
-export const FOR_YOU_ID = 'for-you';
+export { FOR_YOU_ID };
 
 /** Sidebar catégories BCA Connect */
 export function BcaCategorySidebar({

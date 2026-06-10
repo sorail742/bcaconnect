@@ -6,7 +6,7 @@ import {
     MessageSquare, Package, Award, Zap, Building2, BarChart3,
     ArrowUpRight, Info, Mail, Phone, HelpCircle
 } from 'lucide-react';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../context/useLanguage';
 import { cn, getImageUrl } from '../lib/utils';
 import { useVendors } from '../hooks/useDomainData';
 import LazyImage from '../components/ui/LazyImage';

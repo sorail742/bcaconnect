@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Store, Shield, Truck, Smartphone, Cpu, Zap, Activity, Globe, Zap as ZapIcon } from "lucide-react";
-import { useLanguage } from "../../context/LanguageContext";
+import { useLanguage } from '../../context/useLanguage';
 import TiltWrapper from '../ui/TiltWrapper';
 import GeometricBackground from '../ui/GeometricBackground';
 

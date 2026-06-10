@@ -53,6 +53,16 @@ const authController = {
                     await t.rollback();
                     return res.status(400).json({ message: "Spécialités et zone d'intervention sont requises pour les techniciens." });
                 }
+                const { TECHNICIAN_SPECIALTIES } = require('../constants/technicianSpecialties');
+                if (!TECHNICIAN_SPECIALTIES.includes(specialites)) {
+                    await t.rollback();
+                    return res.status(400).json({ message: "Spécialité invalide. Veuillez choisir dans la liste proposée." });
+                }
+            }
+
+            if (['admin', 'banque'].includes(role)) {
+                await t.rollback();
+                return res.status(403).json({ message: "Ce rôle ne peut pas s'inscrire publiquement." });
             }
 
             // ── Hachage du mot de passe ──

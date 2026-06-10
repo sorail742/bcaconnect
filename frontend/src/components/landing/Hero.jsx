@@ -1,6 +1,6 @@
 import BcaTrustBar from "../marketplace/BcaTrustBar"
 import { CategorySection } from "./CategorySection"
-import { useLanguage } from "../../context/LanguageContext"
+import { useLanguage } from '../../context/useLanguage'
 
 export function Hero() {
     const { t } = useLanguage()

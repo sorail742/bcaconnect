@@ -1,82 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '../../lib/utils';
 import { Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Globe, Zap, Database, Activity, Loader2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Zap, Database, Activity } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../context/useLanguage';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
 import { getDashboardRoute } from '../../constants/roles';
 import { loginSchema } from '../../lib/validation';
+import { useLandingStats } from '../../hooks/useLandingStats';
+import { formatCompact, formatPercent } from '../../lib/landingStats';
 import GeometricBackground from '../../components/ui/GeometricBackground';
 import BcaLogo from '../../components/ui/BcaLogo';
+import GoogleSignIn from '../../components/auth/GoogleSignIn';
 import marketImg from '../../assets/auth/market.png';
 import logisticsImg from '../../assets/auth/logistics.png';
 import entrepreneurImg from '../../assets/auth/entrepreneur.png';
-import authService from '../../services/authService';
-import { initGoogleSSO } from '../../utils/googleInit';
 
 
 const SHOWCASE_IMAGES = [marketImg, logisticsImg, entrepreneurImg];
 
 const Login = () => {
     const { t, lang } = useLanguage();
+    const { stats: landingStats } = useLandingStats();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [localError, setLocalError] = useState('');
     const [fieldErrors, setFieldErrors] = useState({});
-    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     
     const [step, setStep] = useState('LOGIN'); // 'LOGIN' | '2FA'
     const [verificationCode, setVerificationCode] = useState('');
     const [twoFactorUserId, setTwoFactorUserId] = useState(null);
     
-    const { login, verify2FA, isAuthenticated, user, loading: authLoading, error: authError, setAuth } = useAuth();
+    const { login, verify2FA, isAuthenticated, user, loading: authLoading, error: authError } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-    useEffect(() => {
-        const handleGoogleResponse = async (response) => {
-            try {
-                setIsGoogleLoading(true);
-                const data = await authService.googleLogin(response.credential);
-                setAuth(data.user, data.accessToken);
-                toast.success('Connexion Google réussie !');
-                const dashboardRoute = getDashboardRoute(data.user.role);
-                navigate(dashboardRoute);
-            } catch (error) {
-                const errorMsg = error?.response?.data?.message || error?.message || 'Erreur inconnue';
-                console.error('❌ Google Auth Error:', error?.response?.data || error?.message);
-                toast.error(`Échec de la connexion Google : ${errorMsg}`);
-            } finally {
-                setIsGoogleLoading(false);
-            }
-        };
-
-        // Utilisation de l'utilitaire centralisé pour éviter les initialisations multiples
-        const cleanup = initGoogleSSO((response) => {
-            handleGoogleResponse(response);
-            // Rendu du bouton officiel après initialisation
-            setTimeout(() => {
-                const buttonDiv = document.getElementById('google-button-container');
-                if (buttonDiv && window.google) {
-                    window.google.accounts.id.renderButton(buttonDiv, {
-                        theme: 'outline',
-                        size: 'large',
-                        width: buttonDiv.offsetWidth || 400,
-                        text: 'continue_with',
-                        shape: 'rectangular',
-                        logo_alignment: 'left'
-                    });
-                }
-            }, 100);
-        });
-
-        return cleanup;
-    }, [navigate, setAuth]);
-
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -147,14 +106,15 @@ const Login = () => {
     const displayError = localError || authError;
 
     return (
-        <div className="flex min-h-screen bg-background text-foreground overflow-hidden">
-            {/* Left Side: Form */}
-            <div className="flex-1 flex flex-col justify-center px-8 md:px-16 lg:px-24 py-20 overflow-y-auto">
+        <div className="flex h-full min-h-0 bg-background text-foreground">
+            {/* Left Side: Form — scroll interne (layout auth en h-svh) */}
+            <div className="flex-1 min-h-0 flex flex-col overflow-y-auto overscroll-contain">
+                <div className="flex-1 flex flex-col justify-center px-8 md:px-16 lg:px-24 py-12 max-w-xl w-full mx-auto">
                 <motion.div 
                     initial={{ opacity: 0, x: -40 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.8 }}
-                    className="max-w-md w-full mx-auto space-y-12"
+                    className="w-full space-y-10"
                 >
                     {/* Logo */}
                     <Link to="/" className="w-fit">
@@ -278,10 +238,10 @@ const Login = () => {
 
                         <button
                             type="submit"
-                            disabled={isSubmitting || isGoogleLoading || (step === '2FA' && verificationCode.length < 6)}
+                            disabled={isSubmitting || (step === '2FA' && verificationCode.length < 6)}
                             className="w-full h-14 rounded-xl bg-primary text-primary-foreground font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:shadow-xl hover:translate-y-[-2px] hover:bg-primary/90 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                         >
-                            {isSubmitting || isGoogleLoading ? (
+                            {isSubmitting ? (
                                 <div className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : (
                                 <>
@@ -292,30 +252,22 @@ const Login = () => {
                         </button>
                     </form>
 
-                    {/* Divider */}
-                    <div className="relative flex items-center">
-                        <div className="flex-1 border-t border-border"></div>
-                        <span className="px-3 text-xs text-muted-foreground">{t('loginOr') || "Ou continuer avec"}</span>
-                        <div className="flex-1 border-t border-border"></div>
-                    </div>
+                    {step === 'LOGIN' && <GoogleSignIn containerId="google-button-login" />}
 
-                    {/* Social Buttons */}
-                    <div className="grid grid-cols-1 gap-3">
-                        {/* Conteneur pour le bouton Google officiel */}
-                        <div 
-                            id="google-button-container" 
-                            className="w-full h-[50px] overflow-hidden rounded-xl flex justify-center"
-                        />
+                    {/* Lien inscription — visible après le formulaire */}
+                    <div className="pt-2 pb-8 space-y-4">
+                        <p className="text-center text-sm font-medium text-muted-foreground">
+                            Pas encore de compte ?{' '}
+                            <Link to="/register" className="text-primary font-bold hover:underline">
+                                {t('register') || "Créer un compte"}
+                            </Link>
+                        </p>
+                        <p className="text-center text-xs text-muted-foreground/80">
+                            Acheteur · Fournisseur · Livreur · Technicien
+                        </p>
                     </div>
-
-                    {/* Sign Up Link */}
-                    <p className="text-center text-sm text-muted-foreground">
-                        {t('loginNoAccount') ? t('loginNoAccount').split('?')[0] + '?' : "Pas de compte?"}{' '}
-                        <Link to="/register" className="text-primary hover:text-primary/80 font-semibold">
-                            {t('register') || "S'inscrire"}
-                        </Link>
-                    </p>
                 </motion.div>
+                </div>
             </div>
 
             {/* Right Side: Showcase (Carousel + Fixed Content) */}
@@ -363,13 +315,13 @@ const Login = () => {
                         <div className="grid grid-cols-2 gap-6 pt-12">
                             <div className="group p-6 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 space-y-3 hover:border-primary/30 transition-all duration-500">
                                 <Database className="size-6 text-primary mx-auto" />
-                                <p className="font-black text-2xl text-white tracking-tighter">12.8K+</p>
+                                <p className="font-black text-2xl text-white tracking-tighter">{formatCompact(landingStats.totalUsers)}</p>
                                 <p className="text-[10px] font-black text-white/50 uppercase tracking-widest">Utilisateurs</p>
                             </div>
                             <div className="group p-6 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 space-y-3 hover:border-primary/30 transition-all duration-500">
                                 <Activity className="size-6 text-emerald-500 mx-auto" />
-                                <p className="font-black text-2xl text-white tracking-tighter">99.9%</p>
-                                <p className="text-[10px] font-black text-white/50 uppercase tracking-widest">Disponibilité</p>
+                                <p className="font-black text-2xl text-white tracking-tighter">{formatPercent(landingStats.satisfactionRate, 1)}</p>
+                                <p className="text-[10px] font-black text-white/50 uppercase tracking-widest">Satisfaction</p>
                             </div>
                         </div>
 

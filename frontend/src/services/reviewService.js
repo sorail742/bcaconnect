@@ -20,6 +20,15 @@ const reviewService = {
         const response = await api.get(`/reviews/product/${productId}`);
         return response.data;
     },
+
+    getFeatured: async () => {
+        try {
+            const response = await api.get('/reviews/featured', { timeout: 8000, _bg: true });
+            return response.data;
+        } catch {
+            return { testimonials: [], avgRating: '0', totalReviews: 0 };
+        }
+    },
 };
 
 export default reviewService;
