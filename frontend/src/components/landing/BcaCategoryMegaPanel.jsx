@@ -34,14 +34,14 @@ export function BcaCategoryMegaPanel({ category, categoryId }) {
                 </Link>
             </div>
 
-            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-y-8 gap-x-4">
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-y-8 gap-x-6">
                 {subItems.map((item, idx) => (
                     <Link
                         key={idx}
                         to={`/search?q=${encodeURIComponent(item.name)}`}
-                        className="flex flex-col items-center gap-3 group"
+                        className="flex flex-col items-center gap-3 group min-w-0"
                     >
-                        <div className="relative size-20 sm:size-24 rounded-full bg-white border border-[#f0f0f0] flex items-center justify-center group-hover:border-[#ffd591] group-hover:shadow-md transition-all">
+                        <div className="relative size-20 sm:size-24 rounded-full bg-white border border-[#f0f0f0] flex items-center justify-center group-hover:border-[#ffd591] group-hover:shadow-md transition-all shrink-0">
                             <span className="text-3xl sm:text-4xl group-hover:scale-110 transition-transform duration-300">
                                 {item.icon || '📦'}
                             </span>
@@ -55,7 +55,7 @@ export function BcaCategoryMegaPanel({ category, categoryId }) {
                                 </div>
                             )}
                         </div>
-                        <span className="text-[12px] sm:text-[13px] text-center text-[#666] group-hover:text-[#FF6600] transition-colors leading-tight max-w-[100px]">
+                        <span className="text-[11px] sm:text-[12px] text-center text-[#666] group-hover:text-[#FF6600] transition-colors leading-tight w-full px-1 line-clamp-2">
                             {item.name}
                         </span>
                     </Link>

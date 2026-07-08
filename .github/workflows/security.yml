@@ -30,6 +30,7 @@ jobs:
           export JWT_PRIVATE_KEY="$(openssl genrsa 2048 2>/dev/null)"
           export JWT_PUBLIC_KEY="$(printf '%s' "$JWT_PRIVATE_KEY" | openssl rsa -pubout 2>/dev/null)"
           npm run test:security
+          npm run test:phase1
         env:
           NODE_ENV: test
           JWT_SECRET: test_jwt_secret_minimum_32_characters_long_for_bca_ci

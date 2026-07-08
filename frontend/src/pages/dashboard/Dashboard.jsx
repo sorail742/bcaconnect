@@ -124,7 +124,7 @@ const Dashboard = () => {
             <div className="space-y-4 animate-in fade-in duration-700 pb-24">
 
                 {/* Compact Command Bar — Modernized v2.7 */}
-                <div className="sticky top-0 z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#FF6600]/[0.05] to-[#0F1219] p-5 rounded-3xl border border-slate-200 dark:border-foreground/5 shadow-xl shadow-black/[0.02] overflow-hidden relative group">
+                <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#FF6600]/[0.05] to-[#0F1219] p-5 rounded-3xl border border-slate-200 dark:border-foreground/5 shadow-xl shadow-black/[0.02] overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-r from-[#FF6600]/[0.03] to-transparent pointer-events-none" />
                     
                     <div className="flex items-center gap-5 relative z-10">
@@ -146,8 +146,8 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        <div className="space-y-1.5">
-                            <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none">
+                        <div className="space-y-1.5 min-w-0">
+                            <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none truncate max-w-[200px] sm:max-w-[400px]">
                                 BIENVENUE, <span className="text-[#FF6600]">{user?.nom_complet || 'MEMBRE'}</span>
                             </h2>
                             <div className="flex items-center gap-3">
@@ -182,7 +182,7 @@ const Dashboard = () => {
                         [1, 2, 3].map(i => <CardSkeleton key={i} />)
                     ) : (
                         stats.map((stat, idx) => (
-                            <DashboardCard key={idx} {...stat} className="h-40" />
+                            <DashboardCard key={idx} {...stat} className="h-full min-h-[10rem]" />
                         ))
                     )}
                 </div>

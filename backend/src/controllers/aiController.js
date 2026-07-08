@@ -232,7 +232,9 @@ Réponds toujours en français, de manière concise et très professionnelle.`;
                 return res.status(400).json({ message: "Image requise." });
             }
 
-            const VISION_MODEL = 'llama-3.2-11b-vision-preview';
+            // Modèle vision Groq actuel (les llama-3.2-*-vision-preview sont décommissionnés).
+            // Llama 4 Scout est multimodal et supporté ; surchargeable via GROQ_VISION_MODEL.
+            const VISION_MODEL = process.env.GROQ_VISION_MODEL || 'meta-llama/llama-4-scout-17b-16e-instruct';
             const imageBase64 = req.file.buffer.toString('base64');
 
             let parsed = null;
@@ -246,10 +248,10 @@ Réponds toujours en français, de manière concise et très professionnelle.`;
                             content: [
                                 {
                                     type: 'text',
-                                    text: `Tu es un expert en analyse d'images pour e-commerce.
-Analyse l'image et retourne UNIQUEMENT un JSON brut avec:
-{"description": "description détaillée de l'objet en français", "keywords": ["mot1", "mot2", "mot3"]}
-Ne réponds qu'avec le JSON, rien d'autre.`
+                                    text: `Tu es un expert en analyse d'images pour une marketplace B2B.
+Analyse l'objet principal de l'image et retourne UNIQUEMENT un JSON brut :
+{"description": "description courte de l'objet en français", "keywords": ["6 à 8 mots-clés français, du plus spécifique au plus général : nom de l'objet, synonymes courants, catégorie marchande (ex: électronique, meuble, véhicule, vêtement, outil, agriculture)"]}
+Utilise des termes génériques susceptibles d'apparaître dans un catalogue (ex: pour une berline -> "voiture, véhicule, automobile, transport"). Ne réponds qu'avec le JSON, rien d'autre.`
                                 },
                                 {
                                     type: 'image_url',
@@ -282,19 +284,18 @@ Ne réponds qu'avec le JSON, rien d'autre.`
                     }
                 }
             } catch (visionError) {
+                // Le détail technique reste dans les logs serveur, jamais renvoyé au client.
                 console.warn('[Vision AI Error]', visionError.response?.data?.error?.message || visionError.message);
-                // Fallback : continuer sans analyse IA (on recherche tous les produits)
-                parsed = {
-                    description: "Désolé, je n'ai pas pu analyser cette image à cause d'une erreur technique (" + (visionError.response?.data?.error?.message || visionError.message) + ").",
-                    keywords: []
-                };
+                parsed = { description: null, keywords: [], visionUnavailable: true };
             }
 
-            // Si l'IA n'a pas pu analyser, on retourne un résultat générique
-            if (!parsed || !parsed.description) {
+            // Si l'IA n'a pas pu analyser, on renvoie un message neutre (pas d'erreur brute affichée).
+            const visionFailed = !parsed || !parsed.description;
+            if (visionFailed) {
                 parsed = {
-                    description: "Je n'ai pas pu analyser l'image. Le format est peut-être non supporté.",
-                    keywords: []
+                    description: "Analyse d'image indisponible pour le moment.",
+                    keywords: [],
+                    visionUnavailable: true
                 };
             }
 
@@ -311,14 +312,28 @@ Ne réponds qu'avec le JSON, rien d'autre.`
             // Dédupliquer et ajouter "voiture" si le modèle a trouvé "automobile" etc (optionnel mais robuste)
             searchWords = [...new Set(searchWords)];
 
+            // Correspondance par CATÉGORIE : un mot-clé large (ex. "véhicule") remonte
+            // les produits de la catégorie correspondante même si le nom ne le contient pas.
+            let matchedCategoryIds = [];
+            if (searchWords.length > 0) {
+                try {
+                    const catConds = searchWords.map(kw =>
+                        Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('nom_categorie')), { [Op.like]: `%${kw}%` })
+                    );
+                    const cats = await Category.findAll({ where: { [Op.or]: catConds }, attributes: ['id'] });
+                    matchedCategoryIds = cats.map(c => c.id);
+                } catch (e) { /* non bloquant */ }
+            }
+
             const isPostgres = Product.sequelize.getDialect() === 'postgres';
             const searchConditions = searchWords.flatMap(kw => {
+                // On matche le NOM, la MARQUE et les MOTS-CLÉS (précis), pas la description
+                // (souvent générique/boilerplate → faux positifs). La catégorie est gérée à part.
                 const condition = [
                     Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('Product.nom_produit')), { [Op.like]: `%${kw}%` }),
-                    Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('Product.description')), { [Op.like]: `%${kw}%` }),
                     Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('Product.marque')), { [Op.like]: `%${kw}%` })
                 ];
-                
+
                 // Mots clés (JSON column)
                 if (isPostgres) {
                     condition.push(Sequelize.where(Sequelize.cast(Sequelize.col('Product.mots_cles'), 'TEXT'), { [Op.iLike]: `%${kw}%` }));
@@ -328,6 +343,11 @@ Ne réponds qu'avec le JSON, rien d'autre.`
                 
                 return condition;
             });
+
+            // Ajouter les produits des catégories correspondantes.
+            if (matchedCategoryIds.length > 0) {
+                searchConditions.push({ categorie_id: { [Op.in]: matchedCategoryIds } });
+            }
 
             let products = [];
             if (searchConditions.length > 0) {

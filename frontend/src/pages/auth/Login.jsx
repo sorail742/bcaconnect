@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '../../lib/utils';
 import { Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Globe, Zap, Database, Activity, Loader2 } from 'lucide-react';
@@ -14,7 +14,7 @@ import marketImg from '../../assets/auth/market.png';
 import logisticsImg from '../../assets/auth/logistics.png';
 import entrepreneurImg from '../../assets/auth/entrepreneur.png';
 import authService from '../../services/authService';
-import { initGoogleSSO } from '../../utils/googleInit';
+import { initGoogleSSO, isGoogleAuthConfigured, renderGoogleButtonWithRetry, openGoogleSignInPopup } from '../../utils/googleInit';
 
 
 const SHOWCASE_IMAGES = [marketImg, logisticsImg, entrepreneurImg];
@@ -27,6 +27,10 @@ const Login = () => {
     const [localError, setLocalError] = useState('');
     const [fieldErrors, setFieldErrors] = useState({});
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+    const [googleGsiReady, setGoogleGsiReady] = useState(false);
+    const [googleButtonVisible, setGoogleButtonVisible] = useState(false);
+    const googleConfigured = isGoogleAuthConfigured();
+    const googleRenderRef = useRef(null);
     
     const [step, setStep] = useState('LOGIN'); // 'LOGIN' | '2FA'
     const [verificationCode, setVerificationCode] = useState('');
@@ -47,32 +51,31 @@ const Login = () => {
                 const dashboardRoute = getDashboardRoute(data.user.role);
                 navigate(dashboardRoute);
             } catch (error) {
-                const errorMsg = error?.response?.data?.message || error?.message || 'Erreur inconnue';
-                console.error('❌ Google Auth Error:', error?.response?.data || error?.message);
+                const isNetworkError = error?.code === 'ERR_NETWORK' || !error?.response;
+                const errorMsg = isNetworkError
+                    ? "Impossible de joindre l'API. Vérifiez que le backend tourne sur le port 5001 (npm run dev dans backend/)."
+                    : (error?.response?.data?.message || error?.message || 'Erreur inconnue');
+                console.error('❌ Google Auth Error:', error?.response?.data || error?.message || error?.code);
                 toast.error(`Échec de la connexion Google : ${errorMsg}`);
             } finally {
                 setIsGoogleLoading(false);
             }
         };
 
-        // Utilisation de l'utilitaire centralisé pour éviter les initialisations multiples
-        const cleanup = initGoogleSSO((response) => {
-            handleGoogleResponse(response);
-            // Rendu du bouton officiel après initialisation
-            setTimeout(() => {
-                const buttonDiv = document.getElementById('google-button-container');
-                if (buttonDiv && window.google) {
-                    window.google.accounts.id.renderButton(buttonDiv, {
-                        theme: 'outline',
-                        size: 'large',
-                        width: buttonDiv.offsetWidth || 400,
-                        text: 'continue_with',
-                        shape: 'rectangular',
-                        logo_alignment: 'left'
-                    });
-                }
-            }, 100);
-        });
+        const cleanup = initGoogleSSO(
+            (response) => handleGoogleResponse(response),
+            ({ configured, renderButton }) => {
+                googleRenderRef.current = renderButton;
+                setGoogleGsiReady(configured);
+                if (!configured || !renderButton) return;
+
+                renderGoogleButtonWithRetry('google-button-container', (id) => {
+                    const ok = renderButton(id);
+                    if (ok) setGoogleButtonVisible(true);
+                    return ok;
+                });
+            }
+        );
 
         return cleanup;
     }, [navigate, setAuth]);
@@ -292,21 +295,65 @@ const Login = () => {
                         </button>
                     </form>
 
-                    {/* Divider */}
-                    <div className="relative flex items-center">
-                        <div className="flex-1 border-t border-border"></div>
-                        <span className="px-3 text-xs text-muted-foreground">{t('loginOr') || "Ou continuer avec"}</span>
-                        <div className="flex-1 border-t border-border"></div>
-                    </div>
+                    {step === 'LOGIN' && googleConfigured && (
+                        <>
+                            <div className="relative flex items-center">
+                                <div className="flex-1 border-t border-border"></div>
+                                <span className="px-3 text-xs text-muted-foreground">{t('loginOr') || 'Ou continuer avec'}</span>
+                                <div className="flex-1 border-t border-border"></div>
+                            </div>
 
-                    {/* Social Buttons */}
-                    <div className="grid grid-cols-1 gap-3">
-                        {/* Conteneur pour le bouton Google officiel */}
-                        <div 
-                            id="google-button-container" 
-                            className="w-full h-[50px] overflow-hidden rounded-xl flex justify-center"
-                        />
-                    </div>
+                            <div className="grid grid-cols-1 gap-3">
+                                {!googleGsiReady && (
+                                    <div className="flex h-[50px] items-center justify-center text-xs text-muted-foreground gap-2">
+                                        <Loader2 className="size-4 animate-spin" />
+                                        Chargement Google…
+                                    </div>
+                                )}
+                                <div
+                                    id="google-button-container"
+                                    className={cn(
+                                        'w-full min-h-[50px] flex justify-center items-center',
+                                        !googleGsiReady && 'hidden'
+                                    )}
+                                />
+                                {googleGsiReady && !googleButtonVisible && (
+                                    <button
+                                        type="button"
+                                        disabled={isGoogleLoading}
+                                        onClick={() => {
+                                            const renderFn = googleRenderRef.current || null;
+                                            if (renderFn) {
+                                                renderGoogleButtonWithRetry('google-button-container', (id) => {
+                                                    const ok = renderFn(id);
+                                                    if (ok) setGoogleButtonVisible(true);
+                                                    return ok;
+                                                });
+                                            } else {
+                                                openGoogleSignInPopup();
+                                            }
+                                        }}
+                                        className="w-full h-[50px] rounded-xl border border-border bg-white hover:bg-muted/50 flex items-center justify-center gap-3 text-sm font-semibold text-foreground transition-colors disabled:opacity-50"
+                                    >
+                                        <svg className="size-5" viewBox="0 0 24 24" aria-hidden>
+                                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                                        </svg>
+                                        Continuer avec Google
+                                    </button>
+                                )}
+                            </div>
+                        </>
+                    )}
+
+                    {step === 'LOGIN' && !googleConfigured && import.meta.env.DEV && (
+                        <p className="text-[10px] text-muted-foreground text-center">
+                            Connexion Google : définir <code className="bg-muted px-1 rounded">VITE_GOOGLE_CLIENT_ID</code> dans{' '}
+                            <code className="bg-muted px-1 rounded">frontend/.env.local</code>
+                        </p>
+                    )}
 
                     {/* Sign Up Link */}
                     <p className="text-center text-sm text-muted-foreground">

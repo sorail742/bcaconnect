@@ -23,7 +23,7 @@ export function BcaMegaMenu({ isOpen, onMouseEnter, onMouseLeave, top = 140 }) {
                             const name = (c.nom_categorie || c.nom || c.name || '').toLowerCase();
                             return bcaCat.filter.toLowerCase().split(' ').some((w) => name.includes(w));
                         });
-                        return { ...bcaCat, id: backendMatch?.id || bcaCat.id };
+                        return { ...bcaCat, id: backendMatch?.id || bcaCat.id, originalId: bcaCat.id };
                     }));
                 }
             })
@@ -40,7 +40,7 @@ export function BcaMegaMenu({ isOpen, onMouseEnter, onMouseLeave, top = 140 }) {
                     transition={{ duration: 0.2, ease: 'easeOut' }}
                     onMouseEnter={onMouseEnter}
                     onMouseLeave={onMouseLeave}
-                    className="fixed left-1/2 -translate-x-1/2 w-[min(calc(100vw-24px),1180px)] bg-white rounded-b-2xl border border-[#ebebeb] shadow-[0_24px_80px_rgba(0,0,0,0.15)] z-[200] flex overflow-hidden max-h-[min(70vh,560px)]"
+                    className="fixed left-[max(12px,calc(50vw-590px))] w-[min(calc(100vw-24px),1180px)] bg-white rounded-b-2xl border border-[#ebebeb] shadow-[0_24px_80px_rgba(0,0,0,0.15)] z-[200] flex overflow-hidden max-h-[min(70vh,560px)]"
                     style={{ top }}
                 >
                     <div className="w-[260px] lg:w-[280px] shrink-0 border-r border-[#f0f0f0] overflow-hidden">

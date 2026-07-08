@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Rapport BCA Connect — Juin 2026</title>
+  <title>Rapport BCA Connect — Juin 2026 (Complet)</title>
   <style>
     @page { margin: 2cm 2.2cm; size: A4; }
     * { box-sizing: border-box; }
@@ -16,7 +16,7 @@
     .cover {
       page-break-after: always;
       text-align: center;
-      padding-top: 6cm;
+      padding-top: 5.5cm;
     }
     .cover h1 {
       font-size: 28pt;
@@ -28,13 +28,23 @@
     .cover .meta { font-size: 11pt; color: #666; line-height: 1.8; }
     .cover .badge {
       display: inline-block;
-      margin-top: 2em;
+      margin-top: 1.5em;
       padding: 8px 24px;
       background: #fff3eb;
       border: 2px solid #e85d04;
       border-radius: 8px;
       font-weight: 600;
       color: #c44d00;
+    }
+    .cover .badge2 {
+      display: inline-block;
+      margin-top: 0.8em;
+      padding: 6px 18px;
+      background: #eff6ff;
+      border: 1px solid #3b82f6;
+      border-radius: 8px;
+      font-size: 10pt;
+      color: #1d4ed8;
     }
     h2 {
       color: #e85d04;
@@ -63,6 +73,7 @@
     .ok { color: #15803d; font-weight: 600; }
     .partial { color: #b45309; font-weight: 600; }
     .no { color: #b91c1c; font-weight: 600; }
+    .progress { color: #1d4ed8; font-weight: 600; }
     .summary-box {
       background: #f8f9fa;
       border-left: 4px solid #e85d04;
@@ -92,6 +103,13 @@
     .toc { font-size: 10pt; }
     .toc li { margin: 0.35em 0; }
     code { font-size: 9pt; background: #f0f0f0; padding: 1px 4px; border-radius: 3px; }
+    pre {
+      background: #f5f5f5;
+      padding: 10px;
+      font-size: 9pt;
+      border-radius: 4px;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
@@ -101,88 +119,129 @@
   <p class="subtitle">Rapport complet d'état du projet</p>
   <p class="meta">
     <strong>Date :</strong> 7 juin 2026<br />
-    <strong>Version :</strong> Pilote bêta — Phases 1 &amp; 2 clôturées<br />
-    <strong>Référence :</strong> Cahier des charges Readme.md §13<br />
-    <strong>Dépôt :</strong> bcaconnect — branche main
+    <strong>Version :</strong> Pilote bêta — Phases 1 &amp; 2 clôturées · Phase 3 en cours<br />
+    <strong>Équipe :</strong> 2 développeurs<br />
+    <strong>Commit de référence :</strong> <code>9fece84</code> — branche main<br />
+    <strong>Référence :</strong> Cahier des charges Readme.md §13
   </p>
-  <div class="badge">Plateforme pilote fonctionnelle — Non prête lancement national</div>
+  <div class="badge">Plateforme pilote fonctionnelle — Lancement national en préparation</div>
+  <div class="badge2">69 tests automatisés validés · 24 modules API · 6 rôles</div>
 </div>
 
 <h2>Table des matières</h2>
 <ol class="toc">
   <li>Synthèse exécutive</li>
   <li>Contexte et vision</li>
+  <li>Organisation équipe (2 développeurs)</li>
   <li>Stack technique</li>
   <li>Phase 1 — Conception &amp; prototypage</li>
   <li>Phase 2 — Développement pilote</li>
+  <li>Phase 3 — Lancement (en cours)</li>
   <li>État par module fonctionnel</li>
   <li>État par rôle utilisateur</li>
   <li>Tests et qualité</li>
   <li>Sécurité</li>
-  <li>Écarts et Phase 3</li>
-  <li>Recommandations</li>
+  <li>Écarts, risques et recommandations</li>
   <li>Parcours de démonstration</li>
   <li>Annexes</li>
 </ol>
 
 <h2>1. Synthèse exécutive</h2>
 <div class="summary-box">
-  <p><strong>BCA Connect</strong> est une marketplace fintech/logistique pour les chaînes d'approvisionnement en Guinée et en Afrique. Le parcours principal est opérationnel de bout en bout :</p>
-  <p><em>Catalogue → commande → paiement/séquestre → livraison GPS → litige → crédit → SAV</em></p>
+  <p><strong>BCA Connect</strong> est une marketplace fintech/logistique pour les chaînes d'approvisionnement en Guinée et en Afrique de l'Ouest. Le parcours principal est opérationnel de bout en bout :</p>
+  <p><em>Catalogue → commande → paiement/séquestre → livraison GPS → litige → crédit → SAV → achats groupés</em></p>
+  <p>Le projet est porté par une <strong>équipe de 2 développeurs</strong> travaillant en parallèle sur des postes locaux indépendants, synchronisés via Git.</p>
 </div>
 
 <table>
   <tr><th>Indicateur</th><th>Valeur</th></tr>
   <tr><td>Phase 1 (Prototype)</td><td class="ok">100 % — Clôturée</td></tr>
-  <tr><td>Phase 2 (Pilote bêta)</td><td class="ok">~95 % — Clôturée*</td></tr>
-  <tr><td>Backend API</td><td>24 modules, ~130 endpoints, 35 modèles</td></tr>
-  <tr><td>Frontend</td><td>66 pages, 6 rôles opérationnels</td></tr>
+  <tr><td>Phase 2 (Pilote bêta)</td><td class="ok">~95 % — Clôturée</td></tr>
+  <tr><td>Phase 3 (Lancement)</td><td class="progress">~20 % — En cours</td></tr>
+  <tr><td>Backend API</td><td>24 modules routes, ~148 endpoints, 35 modèles, 23 contrôleurs</td></tr>
+  <tr><td>Frontend</td><td>66 pages React, 6 rôles opérationnels, PWA</td></tr>
+  <tr><td>Migrations SQL</td><td>7 fichiers versionnés</td></tr>
   <tr><td>Tests automatisés vérifiés</td><td class="ok">69 / 69</td></tr>
-  <tr><td>Prêt lancement national (Phase 3)</td><td class="no">Non</td></tr>
+  <tr><td>Commit principal Phases 1+2</td><td class="ok"><code>9fece84</code> (7 juin 2026)</td></tr>
+  <tr><td>Prêt lancement national</td><td class="no">Non — Phase 3 requise</td></tr>
 </table>
-<p><em>*95 % : seul blocage externe = clés CinetPay production + infra PostgreSQL/Redis prod.</em></p>
+<p><em>Phase 2 à 95 % : seul blocage externe = clés CinetPay production. Phase 3 démarrée : infra Postgres, SMS, exports, UAT.</em></p>
 
 <h2>2. Contexte et vision</h2>
 <p>BCA Connect vise à devenir une centrale d'achat virtuelle reliant ménages, TPE/PME, fournisseurs, banques, transporteurs et techniciens. Les piliers du projet sont :</p>
 <ul>
-  <li>Centralisation du catalogue multicatégorie</li>
-  <li>Paiements sécurisés avec séquestre (escrow)</li>
-  <li>Logistique GPS et livraisons optimisées</li>
+  <li>Centralisation du catalogue multicatégorie (38 catégories BCA)</li>
+  <li>Paiements sécurisés avec séquestre (escrow) et Mobile Money Guinée</li>
+  <li>Logistique GPS, livraisons groupées et 3 tiers de livraison</li>
   <li>Crédit et financement partenaire banque</li>
-  <li>Litiges et médiation</li>
-  <li>SAV et maintenance terrain</li>
+  <li>Litiges interactifs et médiation IA</li>
+  <li>SAV, garanties et maintenance terrain (technicien)</li>
+  <li>Achats groupés ONG/B2B</li>
 </ul>
 
 <h3>Phases de développement (Readme §13)</h3>
 <table>
   <tr><th>Phase</th><th>Objectif</th><th>État</th></tr>
-  <tr><td>Phase 1</td><td>Prototype : catalogue, commandes, paiements</td><td class="ok">Terminée</td></tr>
-  <tr><td>Phase 2</td><td>Bêta pilote : fonctionnalités principales + tests</td><td class="ok">Terminée</td></tr>
-  <tr><td>Phase 3</td><td>Lancement officiel à grande échelle</td><td class="no">Non démarrée</td></tr>
-  <tr><td>Phase 4</td><td>IoT, blockchain, ERP, USSD</td><td class="no">Non démarrée</td></tr>
+  <tr><td>Phase 1</td><td>Prototype : catalogue, commandes, paiements</td><td class="ok">Terminée ✅</td></tr>
+  <tr><td>Phase 2</td><td>Bêta pilote : logistique, litiges, crédit, SAV, achats groupés</td><td class="ok">Terminée ✅</td></tr>
+  <tr><td>Phase 3</td><td>Lancement : Postgres/Redis prod, SMS, UAT, CinetPay live</td><td class="progress">En cours 🚀</td></tr>
+  <tr><td>Phase 4</td><td>IoT, blockchain, ERP, USSD, ML géolocalisé</td><td class="no">Non démarrée</td></tr>
 </table>
 
-<h2>3. Stack technique</h2>
+<h2>3. Organisation équipe (2 développeurs)</h2>
+<div class="summary-box">
+  <p>Chaque développeur dispose de <strong>sa propre machine</strong>, de <strong>sa base SQLite locale</strong> et de <strong>son fichier .env non versionné</strong>. Le dépôt Git est le seul point de synchronisation du code.</p>
+</div>
+
 <table>
-  <tr><th>Composant</th><th>Technologie</th><th>Port / remarque</th></tr>
-  <tr><td>Frontend</td><td>React 18, Vite, Tailwind, shadcn/ui</td><td>3002</td></tr>
-  <tr><td>Backend</td><td>Express 5, Sequelize</td><td>5000 / 5001</td></tr>
-  <tr><td>Base de données (dev)</td><td>SQLite</td><td>backend/src/data/</td></tr>
-  <tr><td>Base de données (prod cible)</td><td>PostgreSQL</td><td>docker-compose :5433</td></tr>
-  <tr><td>Cache / sessions</td><td>Redis</td><td>Rotation refresh tokens</td></tr>
-  <tr><td>Temps réel</td><td>Socket.IO</td><td>Même port API</td></tr>
-  <tr><td>Offline</td><td>Dexie (IndexedDB) + syncService</td><td>COD + mode_resilience</td></tr>
-  <tr><td>Cartes</td><td>Leaflet</td><td>Suivi GPS</td></tr>
+  <tr><th>Élément</th><th>Partagé (Git)</th><th>Local (chaque dev)</th></tr>
+  <tr><td>Code source &amp; migrations</td><td class="ok">Oui</td><td>—</td></tr>
+  <tr><td><code>backend/.env.example</code></td><td class="ok">Oui</td><td>Copier → <code>.env</code></td></tr>
+  <tr><td>Base SQLite <code>backend/data/</code></td><td class="no">Non</td><td>Oui</td></tr>
+  <tr><td>Docker / Postgres</td><td>Optionnel</td><td>Selon la machine</td></tr>
+  <tr><td>Journal collaboratif</td><td class="ok"><code>DEVELOPMENT_LOG.md</code></td><td>Mise à jour en fin de session</td></tr>
+</table>
+
+<h3>Workflow recommandé</h3>
+<ol>
+  <li><code>git pull</code> avant chaque session</li>
+  <li>Démarrage : <code>./scripts/dev-backend.sh</code> (SQLite auto) + <code>cd frontend && npm run dev</code></li>
+  <li>Coordination via <code>DEVELOPMENT_LOG.md</code> et <code>EQUIPE_DEV.md</code></li>
+  <li>Commits petits ; jamais de <code>.env</code> ni de <code>database.sqlite</code></li>
+</ol>
+
+<h3>Ports standard équipe</h3>
+<table>
+  <tr><th>Service</th><th>Port</th></tr>
+  <tr><td>Frontend Vite</td><td>3002</td></tr>
+  <tr><td>Backend API</td><td>5001</td></tr>
+  <tr><td>Postgres Docker (optionnel)</td><td>5433</td></tr>
+  <tr><td>Redis Docker (optionnel)</td><td>6379</td></tr>
+</table>
+
+<h2>4. Stack technique</h2>
+<table>
+  <tr><th>Composant</th><th>Technologie</th><th>Remarque</th></tr>
+  <tr><td>Frontend</td><td>React 18, Vite 7, Tailwind, Framer Motion, Zustand</td><td>Port 3002, proxy /api → 5001</td></tr>
+  <tr><td>Backend</td><td>Node.js, Express 5, Sequelize</td><td>Port 5001 (standard équipe)</td></tr>
+  <tr><td>Base de données (dev)</td><td>SQLite persistant</td><td><code>backend/data/database.sqlite</code></td></tr>
+  <tr><td>Base de données (prod cible)</td><td>PostgreSQL 15</td><td>docker-compose port 5433</td></tr>
+  <tr><td>Cache / sessions</td><td>Redis 7</td><td>Rotation refresh tokens</td></tr>
+  <tr><td>Temps réel</td><td>Socket.IO</td><td>Notifications, messages, missions SAV</td></tr>
+  <tr><td>Offline</td><td>Dexie (IndexedDB) + syncService</td><td>COD + <code>mode_resilience</code></td></tr>
+  <tr><td>Cartes GPS</td><td>Leaflet</td><td>Suivi transporteur</td></tr>
   <tr><td>PWA</td><td>vite-plugin-pwa</td><td>Service worker en production</td></tr>
-  <tr><td>Paiements</td><td>CinetPay v2 + wallet interne</td><td>Mode simulation par défaut</td></tr>
+  <tr><td>Paiements</td><td>CinetPay v2 + wallet interne</td><td>Simulation par défaut ; staging documenté</td></tr>
+  <tr><td>IA</td><td>Groq API</td><td>Assistant achat, scoring crédit, litiges</td></tr>
+  <tr><td>CI</td><td>GitHub Actions</td><td>npm audit + test:security + test:phase1</td></tr>
 </table>
 
 <div class="page-break"></div>
 
-<h2>4. Phase 1 — Conception &amp; prototypage</h2>
-<p><strong>Référence :</strong> Readme.md §13.1 — Livrables : prototype interactif catalogue/commandes/paiements.</p>
+<h2>5. Phase 1 — Conception &amp; prototypage ✅</h2>
+<p><strong>Référence :</strong> <code>backend/phase du developpement.md</code> — Livrables : prototype catalogue/commandes/paiements.</p>
 
-<h3>4.1 Fondations livrées</h3>
+<h3>5.1 Fondations</h3>
 <ul>
   <li>Architecture backend/frontend structurée</li>
   <li>Schéma SQL Phase 1 (UUID, séquestre, split payment par fournisseur)</li>
@@ -190,87 +249,61 @@
   <li>Table <code>verifications_otp</code> + service OTP (inscription, paiement, retrait)</li>
 </ul>
 
-<h3>4.2 Authentification (Phase 1.1)</h3>
+<h3>5.2 Authentification</h3>
 <ul>
-  <li>Inscription &amp; connexion JWT RS256</li>
-  <li>Google OAuth, 2FA TOTP, rotation refresh token</li>
-  <li>Middlewares RBAC : <code>authMiddleware</code>, <code>grantAccess</code>, <code>authorize</code></li>
+  <li>JWT RS256, Google OAuth, 2FA TOTP, rotation refresh token</li>
+  <li>RBAC : <code>authMiddleware</code>, <code>grantAccess</code>, <code>authorize</code></li>
   <li>Routes OTP : <code>POST /auth/otp/request</code>, <code>POST /auth/otp/verify</code></li>
 </ul>
 
-<h3>4.3 CRUD &amp; catalogue (Phase 1.2)</h3>
+<h3>5.3 Catalogue &amp; commandes</h3>
 <ul>
-  <li>CRUD produits fournisseur avec vérification ownership</li>
-  <li>Gestion boutique (create/read/update)</li>
-  <li>Admin catégories</li>
-  <li>Catalogue public, recherche, fiche produit, panier Zustand</li>
-</ul>
-
-<h3>4.4 Prototype commandes &amp; paiements</h3>
-<ul>
-  <li>Checkout : wallet, Mobile Money (simulation), COD</li>
-  <li>RBAC : seuls client et admin peuvent passer commande</li>
-  <li>Séquestre automatique à l'achat wallet ; libération à l'OTP livraison</li>
-  <li>Stock MM différé jusqu'à confirmation paiement</li>
+  <li>CRUD produits fournisseur (ownership), gestion boutique, admin catégories</li>
+  <li>Panier Zustand, checkout wallet / MM (simulation) / COD</li>
+  <li>RBAC : seuls client et admin passent commande</li>
+  <li>Séquestre automatique ; stock MM différé jusqu'à confirmation paiement</li>
   <li>Mode hors ligne : COD + flag <code>mode_resilience</code></li>
-  <li>Tests : <code>tests/orders.test.js</code> (5 tests intégration)</li>
+  <li>Tests : <code>tests/orders.test.js</code></li>
 </ul>
 
-<h2>5. Phase 2 — Développement pilote</h2>
-<p><strong>Référence :</strong> Readme.md §13.2 — Version bêta testable en environnement pilote contrôlé.</p>
+<h2>6. Phase 2 — Développement pilote ✅</h2>
+<p><strong>Référence :</strong> <code>backend/phase2 du developpement.md</code> — Version bêta testable en environnement pilote.</p>
 
-<h3>5.1 Logistique &amp; livraison</h3>
-<ul>
-  <li>3 tiers livraison : économique / standard / prioritaire (<code>shippingService.js</code>)</li>
-  <li>Suivi GPS transporteur (throttle 30s/50m), polyline Leaflet</li>
-  <li>OTP livraison → paiement wallet transporteur (<code>frais_port</code>)</li>
-  <li>Livraisons groupées</li>
-  <li>Dashboard admin logistique : <code>/admin/logistics</code></li>
-</ul>
+<table>
+  <tr><th>Domaine</th><th>Livrables clés</th><th>Statut</th></tr>
+  <tr><td>Logistique</td><td>3 tiers livraison, GPS, OTP, livraisons groupées, admin logistique</td><td class="ok">OK</td></tr>
+  <tr><td>Litiges</td><td>Workflow interactif, LitigeEvenement, médiation IA, remboursement escrow</td><td class="ok">OK</td></tr>
+  <tr><td>Crédit &amp; banque</td><td>Simulateur, approve/reject, /bank/credits, cron rappels in-app</td><td class="ok">OK</td></tr>
+  <tr><td>Achats groupés</td><td>Campagnes ONG/B2B, wallet engagement, clôture stock+séquestre</td><td class="ok">OK</td></tr>
+  <tr><td>SAV &amp; technicien</td><td>Garanties, interventions, missions, notifications socket</td><td class="ok">OK</td></tr>
+  <tr><td>Paiements</td><td>CinetPay simulation, webhook HMAC, staging doc</td><td class="partial">Staging prêt</td></tr>
+  <tr><td>UX pilote</td><td>Avis, notifications, ads fournisseur, éducation admin, PWA</td><td class="ok">OK</td></tr>
+</table>
 
-<h3>5.2 Litiges</h3>
-<ul>
-  <li>Workflow interactif : réponse, escalade, acceptation proposition IA</li>
-  <li>Historique événements (<code>LitigeEvenement</code>)</li>
-  <li>Remboursement escrow à la résolution</li>
-  <li>Tests Jest : 14/14</li>
-</ul>
+<h2>7. Phase 3 — Lancement (en cours) 🚀</h2>
+<p><strong>Référence :</strong> <code>backend/phase3 du developpement.md</code> — Démarrage après commit <code>9fece84</code>.</p>
 
-<h3>5.3 Crédit &amp; banque</h3>
-<ul>
-  <li>Simulateur crédit + score IA</li>
-  <li>Approbation banque → active commande liée + séquestre</li>
-  <li>Page <code>/bank/credits</code> — crédits en attente</li>
-  <li>Rappels échéances cron → notifications in-app (type credit)</li>
-  <li>Protection IDOR sur paiement échéances</li>
-</ul>
-
-<h3>5.4 Achats groupés (ONG/B2B)</h3>
-<ul>
-  <li>Module complet : campagnes, join/leave wallet, clôture avec stock + séquestre</li>
-  <li>Page <code>/group-purchase</code></li>
-  <li>Tests script : 22/22</li>
-</ul>
-
-<h3>5.5 SAV &amp; technicien</h3>
-<ul>
-  <li>Garanties client, demandes maintenance, suivi interventions</li>
-  <li>Dashboard technicien : missions, équipements, wallet</li>
-  <li>Notifications socket missions SAV</li>
-</ul>
-
-<h3>5.6 Expérience utilisateur pilote</h3>
-<ul>
-  <li>Avis produits post-achat (<code>ReviewForm</code> + <code>GET /reviews/eligible</code>)</li>
-  <li>Notifications corrigées (titre/est_lu, mark-read, delete)</li>
-  <li>Publicités fournisseur <code>/vendor/ads</code> + <code>GET /ads/:id</code></li>
-  <li>BCA Academy : CRUD admin + seed éducation</li>
-  <li>PWA configurée (vite-plugin-pwa)</li>
-</ul>
+<table>
+  <tr><th>Item Phase 3</th><th>Statut</th><th>Détail</th></tr>
+  <tr><td>docker-compose.yml</td><td class="ok">Prêt</td><td>Postgres 15 + Redis 7 + backend + frontend</td></tr>
+  <tr><td>scripts/docker-dev.sh</td><td class="ok">Prêt</td><td>Infra db+redis ; détection erreurs Docker</td></tr>
+  <tr><td>scripts/dev-backend.sh</td><td class="ok">Prêt</td><td>Fallback SQLite automatique</td></tr>
+  <tr><td>verify-postgres.js</td><td class="ok">Prêt</td><td>Test connexion + migrations</td></tr>
+  <tr><td>Export PDF/Excel/CSV admin</td><td class="ok">Prêt</td><td>FinancialReports.jsx (xlsx, jsPDF)</td></tr>
+  <tr><td>SMS rappels crédit</td><td class="partial">Stub prêt</td><td>smsService.js (console/http) + cron</td></tr>
+  <tr><td>CI test:phase1</td><td class="ok">Ajouté</td><td>40 tests CI (security + phase1)</td></tr>
+  <tr><td>EQUIPE_DEV.md</td><td class="ok">Prêt</td><td>Guide équipe 2 devs</td></tr>
+  <tr><td>backend/.env.example</td><td class="ok">Prêt</td><td>Template onboarding</td></tr>
+  <tr><td>Postgres prod déployé</td><td class="no">À faire</td><td>Validation migrations prod</td></tr>
+  <tr><td>CinetPay live</td><td class="no">Bloqué</td><td>Clés API marchand externes</td></tr>
+  <tr><td>Provider SMS réel</td><td class="no">À faire</td><td>Africa's Talking / Twilio / Orange</td></tr>
+  <tr><td>Plan UAT formalisé</td><td class="no">À faire</td><td>docs/UAT_PLAN.md</td></tr>
+  <tr><td>Playwright en CI</td><td class="no">Optionnel</td><td>20 scénarios documentés</td></tr>
+</table>
 
 <div class="page-break"></div>
 
-<h2>6. État par module fonctionnel</h2>
+<h2>8. État par module fonctionnel</h2>
 
 <div class="bar-row"><span class="bar-label">Catalogue &amp; commandes</span><span class="bar-fill" style="width:92px"></span> 92%</div>
 <div class="bar-row"><span class="bar-label">Paiements &amp; wallet</span><span class="bar-fill" style="width:78px"></span> 78%</div>
@@ -280,38 +313,40 @@
 <div class="bar-row"><span class="bar-label">SAV &amp; technicien</span><span class="bar-fill" style="width:85px"></span> 85%</div>
 <div class="bar-row"><span class="bar-label">Achats groupés ONG</span><span class="bar-fill" style="width:90px"></span> 90%</div>
 <div class="bar-row"><span class="bar-label">Offline / PWA</span><span class="bar-fill" style="width:60px"></span> 60%</div>
-<div class="bar-row"><span class="bar-label">Analytics &amp; rapports</span><span class="bar-fill" style="width:70px"></span> 70%</div>
+<div class="bar-row"><span class="bar-label">Analytics &amp; rapports</span><span class="bar-fill" style="width:75px"></span> 75%</div>
 <div class="bar-row"><span class="bar-label">Éducation</span><span class="bar-fill" style="width:65px"></span> 65%</div>
-<div class="bar-row"><span class="bar-label">Sécurité &amp; infra prod</span><span class="bar-fill" style="width:40px"></span> 40%</div>
+<div class="bar-row"><span class="bar-label">Sécurité &amp; infra prod</span><span class="bar-fill" style="width:45px"></span> 45%</div>
 <div class="bar-row"><span class="bar-label">IoT / blockchain</span><span class="bar-fill" style="width:5px"></span> 5%</div>
 
 <table>
   <tr><th>Module</th><th>Statut</th><th>Commentaire</th></tr>
-  <tr><td>Marketplace &amp; catalogue</td><td class="ok">Opérationnel</td><td>CRUD, panier, recherche</td></tr>
-  <tr><td>Commandes &amp; checkout</td><td class="ok">Opérationnel</td><td>3 tiers livraison, RBAC</td></tr>
-  <tr><td>Paiements wallet</td><td class="ok">Opérationnel</td><td>Séquestre testé</td></tr>
-  <tr><td>CinetPay production</td><td class="partial">Staging prêt</td><td>Clés API marchand requises</td></tr>
-  <tr><td>Logistique GPS</td><td class="ok">Opérationnel</td><td>OTP, admin logistique</td></tr>
-  <tr><td>Litiges</td><td class="ok">Opérationnel</td><td>Workflow complet</td></tr>
-  <tr><td>Crédit banque</td><td class="ok">Opérationnel</td><td>Approve → commande payée</td></tr>
-  <tr><td>Achats groupés</td><td class="ok">Opérationnel</td><td>22/22 tests</td></tr>
-  <tr><td>SAV technicien</td><td class="ok">Opérationnel</td><td>Missions + wallet</td></tr>
+  <tr><td>Marketplace &amp; catalogue</td><td class="ok">Opérationnel</td><td>38 catégories, mega-menu BCA, fiche produit B2B</td></tr>
+  <tr><td>Commandes &amp; checkout</td><td class="ok">Opérationnel</td><td>3 tiers livraison, RBAC place_orders</td></tr>
+  <tr><td>Paiements wallet</td><td class="ok">Opérationnel</td><td>Séquestre testé Jest</td></tr>
+  <tr><td>CinetPay production</td><td class="partial">Staging prêt</td><td>DEPLOYMENT_STAGING.md ; clés marchand requises</td></tr>
+  <tr><td>Logistique GPS</td><td class="ok">Opérationnel</td><td>OTP livraison, admin /admin/logistics</td></tr>
+  <tr><td>Litiges</td><td class="ok">Opérationnel</td><td>14 tests Jest ; événements litige</td></tr>
+  <tr><td>Crédit banque</td><td class="ok">Opérationnel</td><td>Approve → commande + séquestre</td></tr>
+  <tr><td>Achats groupés</td><td class="ok">Opérationnel</td><td>22/22 tests script</td></tr>
+  <tr><td>SAV technicien</td><td class="ok">Opérationnel</td><td>Missions, équipements, wallet</td></tr>
+  <tr><td>Export rapports admin</td><td class="ok">Opérationnel</td><td>Excel, CSV, PDF — FinancialReports</td></tr>
+  <tr><td>SMS crédit</td><td class="partial">Stub</td><td>Console/http ; provider prod à brancher</td></tr>
   <tr><td>Offline PWA</td><td class="partial">Partiel</td><td>COD sync OK ; cache catalogue partiel</td></tr>
   <tr><td>IoT / blockchain</td><td class="no">Stub</td><td>Phase 4</td></tr>
 </table>
 
-<h2>7. État par rôle utilisateur</h2>
+<h2>9. État par rôle utilisateur</h2>
 <table>
   <tr><th>Rôle</th><th>Complétude</th><th>Parcours principal</th></tr>
-  <tr><td>Client</td><td>~92 %</td><td>Achat, wallet, SAV, litiges, crédit, achats groupés</td></tr>
-  <tr><td>Fournisseur</td><td>~88 %</td><td>Produits, commandes, litiges, publicités</td></tr>
-  <tr><td>Admin</td><td>~90 %</td><td>11 modules + logistique + litiges</td></tr>
+  <tr><td>Client</td><td>~92 %</td><td>Achat, wallet, SAV, litiges, crédit, achats groupés, avis</td></tr>
+  <tr><td>Fournisseur</td><td>~88 %</td><td>Produits, commandes, litiges, publicités, rapports</td></tr>
+  <tr><td>Admin</td><td>~90 %</td><td>11+ modules, logistique, litiges, éducation, rapports financiers</td></tr>
   <tr><td>Transporteur</td><td>~88 %</td><td>Missions → GPS → OTP → wallet</td></tr>
-  <tr><td>Banque</td><td>~80 %</td><td>Dashboard + crédits en attente</td></tr>
+  <tr><td>Banque</td><td>~80 %</td><td>Dashboard + /bank/credits</td></tr>
   <tr><td>Technicien</td><td>~85 %</td><td>Missions, équipements, wallet</td></tr>
 </table>
 
-<h3>Comptes de test</h3>
+<h3>Comptes de test (<code>npm run seed:accounts</code>)</h3>
 <table>
   <tr><th>Rôle</th><th>Email</th><th>Mot de passe</th></tr>
   <tr><td>Admin</td><td>admin@test.com</td><td>Admin@123</td></tr>
@@ -321,11 +356,10 @@
   <tr><td>Banque</td><td>banque@test.com</td><td>Banque@123</td></tr>
   <tr><td>Technicien</td><td>technicien@test.com</td><td>Technicien@123</td></tr>
 </table>
-<p>Création : <code>cd backend && npm run seed:accounts</code></p>
 
 <div class="page-break"></div>
 
-<h2>8. Tests et qualité</h2>
+<h2>10. Tests et qualité</h2>
 <table>
   <tr><th>Suite</th><th>Commande</th><th>Résultat</th><th>Date</th></tr>
   <tr><td>Sécurité Jest</td><td>npm run test:security</td><td class="ok">24/24</td><td>7 juin 2026</td></tr>
@@ -338,104 +372,121 @@
 
 <h3>Couverture tests par domaine</h3>
 <ul>
-  <li>Auth, refresh token, 2FA</li>
+  <li>Auth, refresh token, 2FA, OTP</li>
   <li>Escrow / séquestre (wallet, libération OTP)</li>
-  <li>Litiges (workflow, IDOR, remboursement)</li>
-  <li>Webhook HMAC paiement</li>
-  <li>Commandes Phase 1 (RBAC, stock MM, OTP, mode_resilience)</li>
-  <li>Achats groupés E2E (join, leave, close, wallet)</li>
+  <li>Litiges (workflow, IDOR, remboursement) — 14 tests</li>
+  <li>Webhook HMAC paiement CinetPay</li>
+  <li>Commandes Phase 1 (RBAC, stock MM, mode_resilience)</li>
+  <li>Achats groupés E2E (join, leave, close, wallet) — 22 tests</li>
 </ul>
 
-<h2>9. Sécurité</h2>
+<h3>Scripts npm utiles</h3>
+<table>
+  <tr><th>Script</th><th>Usage</th></tr>
+  <tr><td>npm run test:security</td><td>Suite sécurité complète (24 tests)</td></tr>
+  <tr><td>npm run test:phase1</td><td>Parcours Phase 1 (16 tests)</td></tr>
+  <tr><td>npm run test:phase2</td><td>Security + achats groupés</td></tr>
+  <tr><td>npm run verify:postgres</td><td>Connexion + migrations Postgres</td></tr>
+  <tr><td>npm run seed:accounts</td><td>Comptes test 6 rôles</td></tr>
+  <tr><td>npm run seed:group-purchases</td><td>Données demo achats groupés</td></tr>
+</table>
+
+<h2>11. Sécurité</h2>
 <table>
   <tr><th>Mesure</th><th>État</th></tr>
-  <tr><td>JWT RS256 + rotation refresh token</td><td class="ok">Implémenté</td></tr>
-  <tr><td>Validation DTO (express-validator)</td><td class="ok">Routes critiques</td></tr>
+  <tr><td>JWT RS256 + rotation refresh token (Redis)</td><td class="ok">Implémenté</td></tr>
+  <tr><td>Validation DTO (express-validator + Joi env)</td><td class="ok">Routes critiques</td></tr>
   <tr><td>Helmet, CORS, rate limiting</td><td class="ok">Actif</td></tr>
-  <tr><td>RBAC backend + frontend</td><td class="ok">6 rôles</td></tr>
+  <tr><td>RBAC backend + frontend (6 rôles)</td><td class="ok">Aligné</td></tr>
+  <tr><td>Chiffrement AES-256-GCM</td><td class="ok">Données sensibles</td></tr>
   <tr><td>Séquestre anti-fraude</td><td class="ok">Testé Jest</td></tr>
-  <tr><td>IDOR litiges, crédit, commandes</td><td class="ok">Corrigé</td></tr>
-  <tr><td>CI GitHub Actions</td><td class="ok">npm audit + test:security</td></tr>
-  <tr><td>PostgreSQL/Redis prod</td><td class="partial">Docker compose local</td></tr>
+  <tr><td>IDOR litiges, crédit, commandes, paiements</td><td class="ok">Corrigé</td></tr>
+  <tr><td>CI GitHub Actions</td><td class="ok">audit + test:security + test:phase1</td></tr>
+  <tr><td>PostgreSQL/Redis production</td><td class="partial">Docker compose local ; déploiement Phase 3</td></tr>
 </table>
 
-<h2>10. Écarts et Phase 3</h2>
+<h2>12. Écarts, risques et recommandations</h2>
 
-<h3>Bloquants externes (hors code)</h3>
+<h3>Bloquants externes</h3>
 <table>
   <tr><th>Item</th><th>Statut</th><th>Action</th></tr>
-  <tr><td>CinetPay production</td><td class="partial">Staging documenté</td><td>Clés API + tunnel ngrok</td></tr>
-  <tr><td>PostgreSQL + Redis prod</td><td class="partial">docker-compose prêt</td><td>Déploiement Phase 3</td></tr>
-  <tr><td>Travail Git non commité</td><td class="partial">~136 fichiers locaux</td><td>Commit avant déploiement partagé</td></tr>
+  <tr><td>CinetPay production</td><td class="partial">Staging documenté</td><td>Clés API marchand + HTTPS webhook</td></tr>
+  <tr><td>Provider SMS</td><td class="partial">Stub intégré</td><td>Contrat Africa's Talking / Twilio</td></tr>
+  <tr><td>PostgreSQL prod</td><td class="partial">Scripts prêts</td><td>Déploiement + verify:postgres</td></tr>
 </table>
 
-<h3>Phase 3 — Lancement officiel (à planifier)</h3>
+<h3>Risques équipe (2 devs)</h3>
 <ul>
-  <li>Migration SQLite → PostgreSQL production</li>
-  <li>Redis production pour sessions</li>
-  <li>Export rapports PDF/Excel admin</li>
-  <li>SMS rappels crédit (in-app déjà actif)</li>
-  <li>Documentation UAT formalisée</li>
-  <li>Campagne pilote utilisateurs réels</li>
+  <li><strong>Divergence .env</strong> — utiliser <code>.env.example</code> comme référence unique</li>
+  <li><strong>Conflits Git</strong> — <code>git pull</code> systématique ; noter les changements dans DEVELOPMENT_LOG</li>
+  <li><strong>Docker optionnel</strong> — ne pas bloquer le dev sur Postgres ; SQLite par défaut</li>
+  <li><strong>Travail Phase 3 local</strong> — committer régulièrement (smsService, scripts, CI)</li>
 </ul>
 
-<h3>Phase 4 — Évolutivité</h3>
-<ul>
-  <li>IoT (stub backend)</li>
-  <li>Blockchain / crypto</li>
-  <li>ERP (SAP/Odoo)</li>
-  <li>USSD / SMS rural</li>
-  <li>Multilingue complet (Soussou, Peul…)</li>
-</ul>
+<h3>Recommandations par priorité</h3>
+<table>
+  <tr><th>Priorité</th><th>Action</th><th>Responsable suggéré</th></tr>
+  <tr><td>Immédiat</td><td>Committer travail Phase 3 (scripts, SMS, CI, EQUIPE_DEV)</td><td>Les 2</td></tr>
+  <tr><td>Immédiat</td><td>Valider dev avec <code>./scripts/dev-backend.sh</code> sur les 2 postes</td><td>Les 2</td></tr>
+  <tr><td>Court terme</td><td>Rédiger plan UAT par rôle (docs/UAT_PLAN.md)</td><td>Dev B</td></tr>
+  <tr><td>Court terme</td><td>Valider migrations Postgres (verify:postgres)</td><td>Dev A (Docker)</td></tr>
+  <tr><td>Moyen terme</td><td>Obtenir clés CinetPay + test staging ngrok</td><td>Les 2</td></tr>
+  <tr><td>Moyen terme</td><td>Pilote utilisateurs restreint (Conakry)</td><td>Product</td></tr>
+  <tr><td>Communication</td><td>Positionner comme « pilote bêta fonctionnel »</td><td>Les 2</td></tr>
+</table>
 
 <div class="page-break"></div>
 
-<h2>11. Recommandations</h2>
-<table>
-  <tr><th>Priorité</th><th>Action</th></tr>
-  <tr><td>Immédiat</td><td>Committer et pousser le travail Phases 1 &amp; 2 (136 fichiers locaux)</td></tr>
-  <tr><td>Immédiat</td><td>Obtenir clés CinetPay et valider staging (DEPLOYMENT_STAGING.md)</td></tr>
-  <tr><td>Court terme</td><td>Pilote utilisateurs restreint (Conakry)</td></tr>
-  <tr><td>Moyen terme</td><td>Migrer vers PostgreSQL + Redis prod</td></tr>
-  <tr><td>Communication</td><td>Positionner comme « pilote bêta fonctionnel », pas production nationale</td></tr>
-</table>
-
-<h2>12. Parcours de démonstration</h2>
+<h2>13. Parcours de démonstration</h2>
 <ol>
   <li><strong>Client</strong> : marketplace → panier → checkout wallet → /orders → /tracking</li>
   <li><strong>Fournisseur</strong> : valider commande → marquer « prêt »</li>
   <li><strong>Transporteur</strong> : accepter mission → GPS → OTP → vérifier wallet</li>
-  <li><strong>Banque</strong> : /bank/credits → approuver (seed:pending-credits)</li>
+  <li><strong>Banque</strong> : /bank/credits → approuver (<code>npm run seed:pending-credits</code>)</li>
   <li><strong>Litige</strong> : signalement → réponse → résolution admin</li>
   <li><strong>SAV</strong> : garanties → maintenance → technicien complète mission</li>
-  <li><strong>Achats groupés</strong> : /group-purchase → join → close</li>
-  <li><strong>Admin</strong> : /admin/logistics + /admin/disputes</li>
+  <li><strong>Achats groupés</strong> : /group-purchase → join wallet → clôture</li>
+  <li><strong>Admin</strong> : /admin/logistics, /admin/disputes, /admin/financial-reports (export PDF)</li>
   <li><strong>Hors ligne</strong> : couper réseau → checkout COD → reconnecter → sync</li>
 </ol>
 
-<h3>Démarrage local</h3>
-<pre style="background:#f5f5f5;padding:10px;font-size:9pt;border-radius:4px;">
-# Terminal 1 — Backend
-cd backend
-env -u REDIS_URL PORT=5001 npm run dev
+<h3>Démarrage local (équipe — recommandé)</h3>
+<pre># Terminal 1 — Backend (SQLite auto)
+cd bcaconnect
+./scripts/dev-backend.sh
 
 # Terminal 2 — Frontend
-cd frontend
-npm run dev
+cd frontend && npm run dev
 
-# Seeds
+# Seeds (première fois ou après migration)
 cd backend && npm run seed:accounts
-npm run seed:recharge-wallets   # pour achats groupés
-</pre>
+npm run seed:recharge-wallets</pre>
 
-<h2>13. Annexes</h2>
+<h3>Démarrage Postgres (optionnel — Phase 3)</h3>
+<pre>./scripts/docker-dev.sh          # nécessite accès Docker
+cd backend
+export DATABASE_URL=postgresql://bca_user:bca_password@localhost:5433/bcaconnect
+npm run verify:postgres
+PORT=5001 npm run dev</pre>
 
-<h3>13.1 API — modules montés (/api)</h3>
+<h2>14. Annexes</h2>
+
+<h3>14.1 Historique Git récent</h3>
+<table>
+  <tr><th>Commit</th><th>Description</th></tr>
+  <tr><td><code>9fece84</code></td><td>Ajout nouvelles fonctionnalités et corrections (Phases 1+2)</td></tr>
+  <tr><td><code>aca1112</code></td><td>Documentation présentation Readme.md</td></tr>
+  <tr><td><code>0cc55a0</code></td><td>Fusion main + livraisons BCA Connect</td></tr>
+</table>
+<p><em>Travail Phase 3 local non encore commité : smsService, docker-dev, dev-backend, verify-postgres, EQUIPE_DEV.md, CI test:phase1.</em></p>
+
+<h3>14.2 API — modules montés (/api)</h3>
 <p>auth, categories, stores, users, products, orders, payments, wallet, delivery, ai, ads, disputes, credits, stats, support, upload, notifications, messages, reviews, sav, education, iot (stub), technician, group-purchases</p>
 
-<h3>13.2 Migrations récentes</h3>
+<h3>14.3 Migrations SQL</h3>
 <table>
   <tr><th>Fichier</th><th>Contenu</th></tr>
+  <tr><td>20231201_add_technicien_fields.js</td><td>Champs rôle technicien</td></tr>
   <tr><td>20260602_escrow_and_disputes.js</td><td>Séquestre + litiges</td></tr>
   <tr><td>20260605_schema_columns.js</td><td>Colonnes schéma</td></tr>
   <tr><td>20260606_achats_groupes.js</td><td>Tables achats groupés</td></tr>
@@ -444,25 +495,32 @@ npm run seed:recharge-wallets   # pour achats groupés
   <tr><td>20260609_verifications_otp.js</td><td>OTP Phase 1</td></tr>
 </table>
 
-<h3>13.3 Documents connexes</h3>
+<h3>14.4 Documents connexes</h3>
 <ul>
-  <li>Readme.md — Cahier des charges</li>
+  <li>Readme.md — Cahier des charges complet</li>
+  <li>EQUIPE_DEV.md — Guide équipe 2 développeurs</li>
+  <li>DEVELOPMENT_LOG.md — Journal collaboratif</li>
   <li>STATUS_CONSOLIDE.md — État consolidé</li>
   <li>backend/phase du developpement.md — Phase 1</li>
   <li>backend/phase2 du developpement.md — Phase 2</li>
+  <li>backend/phase3 du developpement.md — Phase 3</li>
   <li>DEPLOYMENT_STAGING.md — Staging CinetPay</li>
+  <li>backend/DEPLOYMENT_PROD.md — Production</li>
   <li>backend/API_DOCUMENTATION.md — Référence API</li>
   <li>RBAC_MATRIX.md — Matrice permissions</li>
 </ul>
 
-<h3>13.4 Verdict final</h3>
+<h3>14.5 Verdict final</h3>
 <div class="summary-box">
-  <p><strong>BCA Connect est une plateforme pilote bêta fonctionnelle.</strong> Les Phases 1 et 2 du cahier des charges sont clôturées côté développement. Le parcours métier principal est validé par 69 tests automatisés. Le lancement national (Phase 3) nécessite la consolidation Git, les clés CinetPay production et l'infrastructure PostgreSQL/Redis.</p>
+  <p><strong>BCA Connect est une plateforme pilote bêta fonctionnelle et documentée.</strong></p>
+  <p>Les Phases 1 et 2 du cahier des charges sont clôturées côté développement (commit <code>9fece84</code>). Le parcours métier principal est validé par <strong>69 tests automatisés</strong>. La Phase 3 (lancement national) est amorcée : scripts infra, SMS stub, exports admin, guide équipe.</p>
+  <p>Le lancement production nécessite encore : clés CinetPay live, provider SMS, déploiement PostgreSQL/Redis, plan UAT et campagne pilote utilisateurs réels.</p>
 </div>
 
 <p class="footer-note">
-  Rapport généré le 7 juin 2026 — BCA Connect · Projet bcaconnect · Document interne de pilotage.<br />
-  Méthode : audit code, tests automatisés, revue cahier des charges Readme.md §13.
+  Rapport complet généré le 7 juin 2026 — BCA Connect · Projet bcaconnect · Document interne de pilotage.<br />
+  Équipe : 2 développeurs · Méthode : audit code, tests automatisés (69/69), revue cahier des charges Readme.md §13.<br />
+  Fichiers : docs/RAPPORT_BCA_CONNECT.html · docs/RAPPORT_BCA_CONNECT_2026.pdf
 </p>
 
 </body>

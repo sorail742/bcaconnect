@@ -9,12 +9,6 @@ import './styles/design.css';
 import App from './App.jsx';
 import { syncService } from './services/syncService';
 import { registerSW } from 'virtual:pwa-register';
-import { initGoogleSSO } from './utils/googleInit';
-
-// Initialize Google SSO (optional callback placeholder)
-initGoogleSSO(() => {
-  console.log('Google SSO initialized');
-});
 
 const queryClient = new QueryClient({
   defaultOptions: {

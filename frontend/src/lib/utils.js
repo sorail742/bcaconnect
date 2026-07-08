@@ -25,19 +25,29 @@ export const PUBLIC_PRODUCT_IMAGE_MAP = {
 };
 
 export const getImageUrl = (url, keyword = 'default') => {
-    // If a keyword maps to a local asset, prefer it when URL is missing or fallback
-    if (!url || url.includes('unsplash.com')) {
+    // If a keyword maps to a local asset, prefer it when URL is missing
+    if (!url) {
         const mappedImage = PUBLIC_PRODUCT_IMAGE_MAP[keyword.toLowerCase()] || PUBLIC_PRODUCT_IMAGE_MAP['default'];
         return mappedImage;
     }
     
     let processedUrl = url;
+    // Already a full URL — return as-is
     if (processedUrl.startsWith('http')) return processedUrl;
     
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-    const serverUrl = apiUrl.replace('/api', '');
+    // Build the server origin from VITE_API_URL.
+    // If it is a relative path like "/api", fall back to the known dev backend port.
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+    let serverUrl;
+    if (apiUrl.startsWith('http')) {
+        serverUrl = apiUrl.replace(/\/api$/, '');
+    } else {
+        // relative path (/api) — use the Vite proxy target directly
+        serverUrl = 'http://localhost:5001';
+    }
     
-    // S'assurer que le chemin pointe vers /uploads/
+    // Ensure the path points to /uploads/
     const cleanPath = processedUrl.startsWith('/uploads') ? processedUrl : `/uploads/${processedUrl.replace(/^\//, '')}`;
-    return `${serverUrl}${cleanPath.startsWith('/') ? '' : '/'}${cleanPath}`;
+    return `${serverUrl}${cleanPath}`;
 };
+

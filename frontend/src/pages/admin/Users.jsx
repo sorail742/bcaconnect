@@ -268,19 +268,23 @@ const AdminUsers = () => {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center justify-end gap-4 w-full md:w-auto shrink-0">
                         <button 
                             onClick={() => setShowExportMenu(!showExportMenu)}
-                            className="h-16 px-10 bg-slate-900 text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] flex items-center gap-4 shadow-[0_20px_40px_-15px_rgba(15,23,42,0.3)] hover:opacity-90 active:scale-95 transition-all text-white"
+                            className="h-16 px-10 bg-slate-900 text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] flex items-center gap-4 shadow-[0_20px_40px_-15px_rgba(15,23,42,0.3)] hover:opacity-90 active:scale-95 transition-all shrink-0"
                         >
                             <Download className="size-5" />
                             Générer Rapport
                         </button>
-                        <button onClick={() => handleOpenModal()} className="h-16 px-10 bg-primary text-foreground rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center gap-4">
+                        <button
+                            type="button"
+                            onClick={() => handleOpenModal()}
+                            className="h-16 px-10 bg-primary text-primary-foreground rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center gap-4 shrink-0"
+                        >
                             <Plus className="size-5" />
                             Accréditer
                         </button>
-                        <button onClick={() => refetch()} className="size-16 rounded-[1.5rem] bg-white border border-slate-100 flex items-center justify-center hover:bg-slate-50 transition-all shadow-xl shadow-slate-200/40">
+                        <button onClick={() => refetch()} className="size-16 rounded-[1.5rem] bg-white border border-slate-100 flex items-center justify-center hover:bg-slate-50 transition-all shadow-xl shadow-slate-200/40 shrink-0">
                             <RefreshCcw className={cn("size-6", isLoading && "animate-spin")} />
                         </button>
                     </div>

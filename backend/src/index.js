@@ -11,13 +11,14 @@ const { validateEnv } = require("./config/envValidation");
 validateEnv();
 
 const app = require("./app");
-const { sequelize } = require("./models");
+const { sequelize, Category } = require("./models");
 const http = require("http");
 const { Server } = require("socket.io");
 const { QueryTypes } = require("sequelize");
 const refreshTokenService = require("./services/refreshTokenService");
 const { startCreditReminders } = require("./cron/creditReminderCron");
 const { runMigrations } = require("./config/runMigrations");
+const { ensureDefaultCategories } = require("./config/defaultCategories");
 
 // Lancement de la tâche Cron de rappels
 startCreditReminders();
@@ -115,6 +116,10 @@ const start = async () => {
     console.log("✅ Modèles synchronisés.");
 
     await runMigrations(sequelize);
+
+    if (process.env.NODE_ENV !== 'production') {
+        await ensureDefaultCategories(Category);
+    }
 
     // Démarrer le serveur
     server.listen(PORT, () => {

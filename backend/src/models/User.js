@@ -121,6 +121,11 @@ const User = sequelize.define('User', {
         allowNull: true,
         comment: 'Dernière position GPS du transporteur { type: Point, coordinates: [lng, lat] }',
     },
+    code_pin_offline: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        comment: 'Hash bcrypt du code PIN pour l\'authentification hors ligne (mode résilience)',
+    },
 
 }, {
     tableName: 'utilisateurs',

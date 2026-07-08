@@ -1,0 +1,452 @@
+<style>
+  :root{
+    --accent:#FF6B1A; --accent-soft:#FF8A47; --accent-ink:#B8480C;
+    --good:#12805C; --good-soft:#E4F3EC;
+    --info:#2D6BE0;
+    --bg:#F5F2EC; --surface:#FFFFFF; --surface-2:#FBF8F3;
+    --ink:#1B2130; --ink-soft:#495066; --muted:#7A8095;
+    --line:#E4DED3; --line-strong:#D2C9B9;
+    --chip:#2A2F3D; --chip-ink:#F3EFE7;
+    --shadow:0 1px 2px rgba(28,25,20,.05),0 6px 20px rgba(28,25,20,.06);
+    --mono:"SF Mono","JetBrains Mono","DejaVu Sans Mono",ui-monospace,Menlo,monospace;
+    --sans:"Helvetica Neue",Arial,system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0E141F; --surface:#161E2C; --surface-2:#131A26;
+      --ink:#EAECF3; --ink-soft:#AEB6C6; --muted:#7E879B;
+      --line:#25303F; --line-strong:#324055;
+      --good:#3FD6A0; --good-soft:#152C26; --info:#6AA0FF;
+      --chip:#0A0F18; --chip-ink:#E7ECF5; --accent-ink:#FFB183;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#F5F2EC; --surface:#FFFFFF; --surface-2:#FBF8F3;
+    --ink:#1B2130; --ink-soft:#495066; --muted:#7A8095;
+    --line:#E4DED3; --line-strong:#D2C9B9; --good:#12805C; --good-soft:#E4F3EC;
+    --info:#2D6BE0; --chip:#2A2F3D; --chip-ink:#F3EFE7; --accent-ink:#B8480C;
+    --shadow:0 1px 2px rgba(28,25,20,.05),0 6px 20px rgba(28,25,20,.06);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E141F; --surface:#161E2C; --surface-2:#131A26;
+    --ink:#EAECF3; --ink-soft:#AEB6C6; --muted:#7E879B;
+    --line:#25303F; --line-strong:#324055; --good:#3FD6A0; --good-soft:#152C26;
+    --info:#6AA0FF; --chip:#0A0F18; --chip-ink:#E7ECF5; --accent-ink:#FFB183;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0}
+  .wrap{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;
+    -webkit-font-smoothing:antialiased;font-size:16px;padding-bottom:5rem}
+  .container{max-width:1060px;margin:0 auto;padding:0 clamp(1rem,4vw,2.4rem)}
+
+  /* header */
+  header.hero{border-bottom:1px solid var(--line);background:
+    radial-gradient(120% 140% at 88% -20%, color-mix(in srgb,var(--accent) 16%,transparent), transparent 55%),
+    var(--surface-2)}
+  .hero-inner{padding:clamp(2rem,5vw,3.4rem) 0 clamp(1.6rem,4vw,2.4rem)}
+  .kicker{font-family:var(--mono);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--accent-ink);display:flex;align-items:center;gap:.6rem;margin:0 0 1rem}
+  .kicker::before{content:"";width:26px;height:2px;background:var(--accent)}
+  h1{font-size:clamp(1.9rem,4.6vw,3rem);line-height:1.05;margin:.2rem 0 .7rem;letter-spacing:-.02em;
+    text-wrap:balance;font-weight:800}
+  h1 .o{color:var(--accent)}
+  .lede{font-size:clamp(1rem,1.6vw,1.15rem);color:var(--ink-soft);max-width:64ch;margin:0}
+  .hero-meta{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.4rem}
+  .badge{font-family:var(--mono);font-size:.72rem;padding:.34rem .6rem;border:1px solid var(--line-strong);
+    border-radius:999px;color:var(--ink-soft);background:var(--surface);display:inline-flex;gap:.4rem;align-items:center}
+  .badge b{color:var(--ink)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--good)}
+
+  /* sticky nav */
+  nav.toc{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--surface-2) 88%,transparent);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .toc-inner{display:flex;gap:.3rem;overflow-x:auto;padding:.55rem clamp(1rem,4vw,2.4rem);scrollbar-width:thin}
+  .toc a{white-space:nowrap;font-size:.82rem;color:var(--ink-soft);text-decoration:none;padding:.4rem .7rem;
+    border-radius:8px;font-weight:600}
+  .toc a:hover{color:var(--ink);background:var(--surface)}
+  .toc a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  section{padding:clamp(2rem,4vw,3rem) 0;border-bottom:1px solid var(--line)}
+  .sec-head{display:flex;align-items:baseline;gap:.8rem;margin-bottom:.4rem;flex-wrap:wrap}
+  .sec-num{font-family:var(--mono);font-size:.8rem;color:var(--accent-ink);font-weight:700}
+  h2{font-size:clamp(1.35rem,2.6vw,1.85rem);margin:0;letter-spacing:-.015em;font-weight:800;text-wrap:balance}
+  .sec-sub{color:var(--ink-soft);margin:.5rem 0 1.6rem;max-width:70ch}
+  .role-pill{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;
+    padding:.26rem .55rem;border-radius:6px;font-weight:700;border:1px solid transparent}
+  .rp-public{background:color-mix(in srgb,var(--info) 14%,transparent);color:var(--info);border-color:color-mix(in srgb,var(--info) 30%,transparent)}
+  .rp-client{background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent-ink);border-color:color-mix(in srgb,var(--accent) 32%,transparent)}
+  .rp-admin{background:color-mix(in srgb,var(--ink) 10%,transparent);color:var(--ink);border-color:var(--line-strong)}
+
+  /* step cards */
+  .steps{display:flex;flex-direction:column;gap:.9rem}
+  .step{display:grid;grid-template-columns:auto 1fr;gap:1rem;background:var(--surface);border:1px solid var(--line);
+    border-radius:14px;padding:1.05rem 1.2rem;box-shadow:var(--shadow)}
+  .step-n{font-family:var(--mono);font-weight:700;font-size:.9rem;color:var(--surface);background:var(--accent);
+    width:2rem;height:2rem;border-radius:8px;display:grid;place-items:center;align-self:start}
+  .step-b{min-width:0}
+  .step-t{font-weight:700;font-size:1.02rem;margin:.15rem 0 .5rem;letter-spacing:-.01em}
+  .routes{display:flex;flex-wrap:wrap;gap:.4rem;margin:0 0 .6rem}
+  .route{font-family:var(--mono);font-size:.78rem;background:var(--chip);color:var(--chip-ink);
+    padding:.24rem .55rem;border-radius:6px}
+  .kv{margin:.35rem 0;color:var(--ink-soft);font-size:.94rem}
+  .kv b{color:var(--ink);font-weight:650}
+  .kv .lab{display:inline-block;font-family:var(--mono);font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--muted);min-width:5.4rem;vertical-align:top}
+  .cahier{margin-top:.6rem;display:inline-flex;align-items:center;gap:.45rem;font-size:.78rem;color:var(--good);
+    background:var(--good-soft);border:1px solid color-mix(in srgb,var(--good) 30%,transparent);
+    padding:.24rem .6rem;border-radius:999px;font-weight:600}
+  .cahier::before{content:"§";font-family:var(--mono);opacity:.7}
+
+  /* accounts table */
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+  table{border-collapse:collapse;width:100%;min-width:620px;font-size:.9rem;background:var(--surface)}
+  th,td{text-align:left;padding:.7rem .9rem;border-bottom:1px solid var(--line)}
+  thead th{background:var(--surface-2);font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;
+    color:var(--muted);font-weight:700}
+  tbody tr:last-child td{border-bottom:none}
+  td .mono,.mono{font-family:var(--mono);font-size:.83rem}
+  .tag-role{font-family:var(--mono);font-size:.72rem;padding:.16rem .5rem;border-radius:5px;
+    background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--accent-ink)}
+
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1.15rem 1.25rem;box-shadow:var(--shadow)}
+  .panel h3{margin:.1rem 0 .7rem;font-size:1rem;letter-spacing:-.01em}
+  .panel ul{margin:.2rem 0 0;padding-left:1.05rem}
+  .panel li{margin:.4rem 0;color:var(--ink-soft)}
+  .panel li b{color:var(--ink)}
+  .callout{border-left:3px solid var(--accent);background:var(--surface-2);padding:.8rem 1rem;border-radius:0 10px 10px 0;
+    margin:1rem 0;color:var(--ink-soft);font-size:.92rem}
+  .callout b{color:var(--ink)}
+  .warn{border-left-color:#D98A1E}
+  .note-tip{font-size:.86rem;color:var(--muted);margin-top:.5rem}
+  a.link{color:var(--accent-ink);text-decoration:underline;text-underline-offset:2px}
+  footer{padding:2.2rem 0;color:var(--muted);font-size:.85rem}
+  @media (max-width:560px){.step{grid-template-columns:1fr}.step-n{display:none}}
+  @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+  html{scroll-behavior:smooth}
+</style>
+
+<div class="wrap">
+<header class="hero">
+  <div class="container hero-inner">
+    <p class="kicker">Guide de démonstration · Navigateur</p>
+    <h1><span class="o">BCA Connect</span> — présenter les fonctionnalités développées, de A à Z</h1>
+    <p class="lede">Parcours à suivre en direct dans le navigateur pour montrer aux propriétaires ce qui est déjà construit, aligné sur le cahier des charges. Chaque étape indique <b>quoi ouvrir</b>, <b>quoi faire</b>, <b>quoi dire</b> et le <b>chapitre du cahier</b> concerné.</p>
+    <div class="hero-meta">
+      <span class="badge"><span class="dot"></span> App&nbsp;: <b>localhost:3002</b></span>
+      <span class="badge"><b>12</b>&nbsp;fournisseurs</span>
+      <span class="badge"><b>309</b>&nbsp;produits imagés</span>
+      <span class="badge"><b>8</b>&nbsp;commandes payées</span>
+      <span class="badge"><b>4</b>&nbsp;livraisons + tournée optimisée</span>
+      <span class="badge">Testé <b>Playwright + Chrome</b></span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sommaire">
+  <div class="toc-inner">
+    <a href="#prep">0 · Préparation</a>
+    <a href="#public">1 · Vitrine publique</a>
+    <a href="#client">2 · Acheteur</a>
+    <a href="#vendor">3 · Fournisseur</a>
+    <a href="#carrier">4 · Transporteur</a>
+    <a href="#tech">5 · Technicien / SAV</a>
+    <a href="#bank">6 · Banque</a>
+    <a href="#admin">7 · Administrateur</a>
+    <a href="#closing">8 · Conclusion</a>
+  </div>
+</nav>
+
+<main class="container">
+
+<!-- 0 PREP -->
+<section id="prep">
+  <div class="sec-head"><span class="sec-num">00</span><h2>Préparation — avant de commencer</h2></div>
+  <p class="sec-sub">L'application tourne déjà et la base est peuplée de données réalistes. Ouvre Chrome sur l'adresse ci-dessous, puis garde ce tableau de comptes à portée de main. Astuce présentation&nbsp;: garde chaque rôle dans une <b>fenêtre / profil séparé</b> pour basculer sans te reconnecter.</p>
+
+  <div class="callout"><b>Lancer si besoin.</b> Backend&nbsp;: dans <span class="mono">bcaconnect/backend</span> → <span class="mono">npm run dev</span> (port 5001). Frontend&nbsp;: dans <span class="mono">bcaconnect/frontend</span> → <span class="mono">npm run dev</span> (port 3002). Puis ouvrir <span class="mono">http://localhost:3002</span>.</div>
+
+  <div class="tablewrap" style="margin:1.2rem 0">
+    <table>
+      <thead><tr><th>Rôle</th><th>Email</th><th>Mot de passe</th><th>Sert à démontrer</th></tr></thead>
+      <tbody>
+        <tr><td><span class="tag-role">client</span></td><td class="mono">client@bca.com</td><td class="mono">Client@123</td><td>Achat, escrow, crédit, litige, wallet</td></tr>
+        <tr><td><span class="tag-role">fournisseur</span></td><td class="mono">guinee-electronique-sarl@fournisseurs.bca.gn</td><td class="mono">Fournisseur@123</td><td>Boutique, produits, commandes reçues, pub</td></tr>
+        <tr><td><span class="tag-role">transporteur</span></td><td class="mono">transporteur@bca.com</td><td class="mono">Transport@123</td><td>Missions, carte GPS, tournée optimisée</td></tr>
+        <tr><td><span class="tag-role">technicien</span></td><td class="mono">technicien@test.com</td><td class="mono">Tech@123</td><td>Missions SAV, équipements</td></tr>
+        <tr><td><span class="tag-role">banque</span></td><td class="mono">banque@test.com</td><td class="mono">Bank@123</td><td>Partenaire financement / crédits</td></tr>
+        <tr><td><span class="tag-role">admin</span></td><td class="mono">admin@bca.com</td><td class="mono">Admin@123</td><td>Command Center, users, litiges, KPI, IA</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note-tip">Les 11 autres fournisseurs utilisent le même mot de passe <span class="mono">Fournisseur@123</span> (emails en <span class="mono">…@fournisseurs.bca.gn</span>). Bascule clair/sombre et langue (FR·GNF) disponibles en haut à droite.</p>
+</section>
+
+<!-- 1 PUBLIC -->
+<section id="public">
+  <div class="sec-head"><span class="sec-num">01</span><h2>Vitrine publique</h2><span class="role-pill rp-public">Sans connexion</span></div>
+  <p class="sec-sub">Le premier contact&nbsp;: montrer que BCA Connect est une <b>centrale d'achat digitale</b> crédible, riche en produits et fournisseurs. À faire avant de se connecter.</p>
+  <div class="steps">
+
+    <div class="step"><div class="step-n">1</div><div class="step-b">
+      <div class="step-t">Page d'accueil — l'identité BCA</div>
+      <div class="routes"><span class="route">/</span></div>
+      <p class="kv"><span class="lab">Faire</span> Faire défiler&nbsp;: carrousel promo, barre de confiance (Authenticité, Marchands certifiés, Mobile Money, Logistique, Support 24/7), «&nbsp;Parcourir par catégorie&nbsp;», mega-menu «&nbsp;Toutes les catégories&nbsp;».</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Une seule plateforme reliant ménages, entreprises, fournisseurs, transporteurs et banques — la centrale d'achat virtuelle de la Guinée.&nbsp;»</p>
+      <span class="cahier">1 Vision · 3.1 Interface</span>
+    </div></div>
+
+    <div class="step"><div class="step-n">2</div><div class="step-b">
+      <div class="step-t">Marketplace — catalogue & recherche avancée</div>
+      <div class="routes"><span class="route">/marketplace</span></div>
+      <p class="kv"><span class="lab">Faire</span> Montrer le compteur «&nbsp;308 résultats&nbsp;», le <b>filtrage intelligent</b> (catégorie, prix, condition, fournisseur vérifié), le tri, et les badges <b>Vérifié</b> + <b>Escrow</b> sur chaque carte. Cliquer une catégorie dans la sidebar pour filtrer.</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Catalogue multicatégorie (38 catégories), chaque produit rattaché à un fournisseur certifié, paiement protégé par séquestre.&nbsp;»</p>
+      <span class="cahier">3.2 Recherche · 6.1 Catalogue dynamique</span>
+    </div></div>
+
+    <div class="step"><div class="step-n">3</div><div class="step-b">
+      <div class="step-t">Recherche & découverte produit</div>
+      <div class="routes"><span class="route">/search</span><span class="route">/product/:id</span></div>
+      <p class="kv"><span class="lab">Faire</span> Taper un mot dans la barre (ex.&nbsp;«&nbsp;solaire&nbsp;», «&nbsp;ciment&nbsp;»). Ouvrir une fiche produit depuis le marketplace&nbsp;: prix «&nbsp;à partir de&nbsp;», quantité/MOQ, badges, onglets description/spécifications/avis, bouton <b>chat fournisseur</b>.</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Recherche full-text + fiche B2B pensée pour la décision d'achat (comparaison, avis, contact direct fournisseur — moins d'intermédiaires).&nbsp;»</p>
+      <span class="cahier">3.2 Matchmaking · 2.4 Réduction intermédiaires</span>
+    </div></div>
+
+    <div class="step"><div class="step-n">4</div><div class="step-b">
+      <div class="step-t">Centre d'éducation</div>
+      <div class="routes"><span class="route">/education</span></div>
+      <p class="kv"><span class="lab">Faire</span> Parcourir les ressources / guides. Mentionner FAQ &amp; aide contextuelle (<span class="mono">/faq</span>, <span class="mono">/help</span>).</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Sensibilisation aux bonnes pratiques commerciales et à l'usage du crédit — un pilier d'inclusion.&nbsp;»</p>
+      <span class="cahier">11 Éducation & sensibilisation</span>
+    </div></div>
+
+  </div>
+</section>
+
+<!-- 2 CLIENT -->
+<section id="client">
+  <div class="sec-head"><span class="sec-num">02</span><h2>Parcours acheteur — Client</h2><span class="role-pill rp-client">client@bca.com</span></div>
+  <p class="sec-sub">Le cœur de la démo&nbsp;: du panier au paiement sécurisé, jusqu'au crédit et au litige. Le compte client dispose déjà d'un <b>portefeuille de 50 M GNF</b> et de <b>8 commandes</b> pour montrer des écrans peuplés.</p>
+  <div class="steps">
+
+    <div class="step"><div class="step-n">5</div><div class="step-b">
+      <div class="step-t">Connexion sécurisée</div>
+      <div class="routes"><span class="route">/login</span></div>
+      <p class="kv"><span class="lab">Faire</span> Se connecter avec <span class="mono">client@bca.com / Client@123</span>. Montrer la page «&nbsp;Votre espace fintech&nbsp;» (design, 2FA disponible).</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Authentification JWT, double authentification (2FA/TOTP) et chiffrement AES des données sensibles.&nbsp;»</p>
+      <span class="cahier">5.3 Authentification & MFA</span>
+    </div></div>
+
+    <div class="step"><div class="step-n">6</div><div class="step-b">
+      <div class="step-t">Tableau de bord & annuaire fournisseurs</div>
+      <div class="routes"><span class="route">/dashboard</span><span class="route">/dashboard/vendors</span></div>
+      <p class="kv"><span class="lab">Faire</span> Montrer le tableau de bord personnalisé, puis <b>Fournisseurs</b>&nbsp;: liste des 12 partenaires avec logo, <b>localisation</b> (Kaloum, Madina, Labé…), <b>note</b> et badge <b>vérifié</b>.</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Transparence&nbsp;: notation, certification et localisation de chaque fournisseur — la confiance est visible.&nbsp;»</p>
+      <span class="cahier">3.1 Tableaux par rôle · 6.4 Fournisseurs & certifications</span>
+    </div></div>
+
+    <div class="step"><div class="step-n">7</div><div class="step-b">
+      <div class="step-t">Achat → Panier → Paiement (escrow + Mobile Money)</div>
+      <div class="routes"><span class="route">/product/:id</span><span class="route">/cart</span><span class="route">/checkout</span></div>
+      <p class="kv"><span class="lab">Faire</span> Ajouter un produit au panier → aller au checkout. Montrer les <b>3 options de livraison</b> (Économique / Standard / Prioritaire, avec frais calculés), le choix <b>Mobile Money / Portefeuille</b>, et l'indicateur <b>Escrow</b> (fonds bloqués jusqu'à livraison). Valider avec le portefeuille.</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Paiement multicanal, fonds mis sous séquestre&nbsp;: le fournisseur n'est payé qu'à la livraison confirmée — sécurité pour les deux parties.&nbsp;»</p>
+      <span class="cahier">3.3 Paiements · 7.1 Mobile Money · 8.3 Transport</span>
+    </div></div>
+
+    <div class="step"><div class="step-n">8</div><div class="step-b">
+      <div class="step-t">Mes commandes & suivi de livraison</div>
+      <div class="routes"><span class="route">/orders</span><span class="route">/tracking</span></div>
+      <p class="kv"><span class="lab">Faire</span> Ouvrir «&nbsp;Mes commandes&nbsp;»&nbsp;: 8 commandes <b>Payées</b> avec montant, type de livraison, adresse. Cliquer <b>Suivre</b> pour le suivi temps réel. Montrer aussi les boutons <b>Contact</b> et <b>Litige</b>.</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Traçabilité de bout en bout&nbsp;: statut de chaque commande, suivi de livraison, contact fournisseur.&nbsp;»</p>
+      <span class="cahier">3.4 Livraisons · 8.1 Suivi temps réel</span>
+    </div></div>
+
+    <div class="step"><div class="step-n">9</div><div class="step-b">
+      <div class="step-t">Simulateur de crédit & paiement échelonné</div>
+      <div class="routes"><span class="route">/credits/simulate</span><span class="route">/dashboard/credits</span><span class="route">/dashboard/credit-calendar</span></div>
+      <p class="kv"><span class="lab">Faire</span> Dans le simulateur, saisir un <b>montant</b>, une <b>durée</b> et un <b>taux</b> → montrer mensualités, coût total, intérêts. Puis «&nbsp;Mes crédits&nbsp;» et le <b>calendrier d'échéances</b> (rappels automatiques).</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Inclusion financière&nbsp;: micro-crédit et paiement échelonné avec échéances flexibles et rappels — pensé pour les TPE/PME sous-bancarisées.&nbsp;»</p>
+      <span class="cahier">7.3 Simulateur · 16 Crédit · 2.5 Inclusion</span>
+    </div></div>
+
+    <div class="step"><div class="step-n">10</div><div class="step-b">
+      <div class="step-t">Portefeuille électronique</div>
+      <div class="routes"><span class="route">/wallet</span><span class="route">/payments</span></div>
+      <p class="kv"><span class="lab">Faire</span> Montrer le solde (50 M GNF), l'historique des transactions, et le bouton de <b>dépôt Mobile Money</b> (CinetPay / Orange · MTN).</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Un portefeuille intégré pour recharger, payer les échéances et régler les commandes en un clic.&nbsp;»</p>
+      <span class="cahier">7.2 Portefeuille électronique</span>
+    </div></div>
+
+    <div class="step"><div class="step-n">11</div><div class="step-b">
+      <div class="step-t">Litiges, achats groupés & assistant IA</div>
+      <div class="routes"><span class="route">/disputes</span><span class="route">/group-purchase</span><span class="route">/ai-mode</span></div>
+      <p class="kv"><span class="lab">Faire</span> <b>Litiges</b>&nbsp;: montrer le signalement depuis une commande + suivi. <b>Achats groupés</b>&nbsp;: mutualiser une commande (utile ONG/PME). <b>Mode IA</b>&nbsp;: poser une question à l'assistant d'achat.</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Résolution des conflits, achats mutualisés pour réduire les coûts, et un assistant IA qui guide l'acheteur.&nbsp;»</p>
+      <span class="cahier">9.1 Litiges · 8.2 Groupées · 3.1 Assistance IA</span>
+    </div></div>
+
+  </div>
+</section>
+
+<!-- 3 VENDOR -->
+<section id="vendor">
+  <div class="sec-head"><span class="sec-num">03</span><h2>Parcours fournisseur</h2><span class="role-pill rp-client">Fournisseur@123</span></div>
+  <p class="sec-sub">Se déconnecter, puis se connecter avec un compte fournisseur (ex. <span class="mono">guinee-electronique-sarl@fournisseurs.bca.gn</span>) — il possède déjà une boutique vérifiée et un catalogue.</p>
+  <div class="steps">
+
+    <div class="step"><div class="step-n">12</div><div class="step-b">
+      <div class="step-t">Espace boutique & gestion produits</div>
+      <div class="routes"><span class="route">/vendor/dashboard</span><span class="route">/vendor/products</span><span class="route">/vendor/products/add</span><span class="route">/vendor/store</span></div>
+      <p class="kv"><span class="lab">Faire</span> Montrer le dashboard vendeur (ventes, KPI), la liste des produits, l'ajout d'un produit (nom, prix, stock, image, catégorie), et la page boutique (branding).</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Un fournisseur gère son catalogue, ses prix et stocks en temps réel, et personnalise sa vitrine.&nbsp;»</p>
+      <span class="cahier">6.1 Gestion produits · 6.5 Branding fournisseur</span>
+    </div></div>
+
+    <div class="step"><div class="step-n">13</div><div class="step-b">
+      <div class="step-t">Commandes reçues, publicité & rapports</div>
+      <div class="routes"><span class="route">/vendor/orders</span><span class="route">/vendor/ads</span><span class="route">/vendor/reports</span></div>
+      <p class="kv"><span class="lab">Faire</span> Montrer les commandes à confirmer/préparer, la création d'une <b>campagne publicitaire</b>, et les <b>rapports</b> de performance (ventes, produits).</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Confirmation des commandes, visibilité payante et rapports KPI — les outils pour faire croître son activité.&nbsp;»</p>
+      <span class="cahier">3.4 Traitement commandes · 10.2 KPI · 6.5 Publicité</span>
+    </div></div>
+
+  </div>
+</section>
+
+<!-- 4 CARRIER -->
+<section id="carrier">
+  <div class="sec-head"><span class="sec-num">04</span><h2>Parcours transporteur — logistique</h2><span class="role-pill rp-client">Transport@123</span></div>
+  <p class="sec-sub">Le transporteur a déjà <b>4 livraisons assignées</b> vers des adresses variées de Conakry — de quoi montrer la logistique réelle et l'optimisation de tournée.</p>
+  <div class="steps">
+
+    <div class="step"><div class="step-n">14</div><div class="step-b">
+      <div class="step-t">Centre logistique & carte GPS</div>
+      <div class="routes"><span class="route">/carrier/dashboard</span></div>
+      <p class="kv"><span class="lab">Faire</span> Montrer les KPI (<b>Mes assignations&nbsp;: 4</b>, En transit, Historique), la <b>carte Leaflet</b> «&nbsp;Zone Conakry Alpha&nbsp;» avec coordonnées GPS, le compteur CO₂ économisé, et l'onglet «&nbsp;Missions disponibles / Groupes&nbsp;».</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Chaque transporteur voit ses missions et sa position sur carte, avec suivi temps réel et livraisons groupées.&nbsp;»</p>
+      <span class="cahier">8.1 Suivi GPS · 8.2 Livraisons groupées</span>
+    </div></div>
+
+    <div class="step"><div class="step-n">15</div><div class="step-b">
+      <div class="step-t">Optimisation de tournée</div>
+      <div class="routes"><span class="route">GET /api/delivery/optimize-route</span></div>
+      <p class="kv"><span class="lab">Faire</span> Fonctionnalité back-end démontrable&nbsp;: l'algorithme ordonne les arrêts depuis l'entrepôt (Kaloum) et calcule distance + durée. Résultat réel testé&nbsp;: <b>Kaloum → Dixinn → Matam → Ratoma, 14,69 km / 35 min</b>.</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Optimisation d'itinéraire (plus proche voisin + distances GPS réelles) pour réduire coûts et délais de livraison.&nbsp;»</p>
+      <span class="cahier">2.1 Optimisation itinéraires · 2.2 Coûts logistiques</span>
+      <p class="note-tip">Pour le montrer visuellement&nbsp;: ouvrir l'URL API avec le token transporteur, ou l'intégrer au bouton «&nbsp;Optimiser ma tournée&nbsp;» du dashboard.</p>
+    </div></div>
+
+  </div>
+</section>
+
+<!-- 5 TECH -->
+<section id="tech">
+  <div class="sec-head"><span class="sec-num">05</span><h2>Technicien & SAV</h2><span class="role-pill rp-client">Tech@123</span></div>
+  <p class="sec-sub">Connexion <span class="mono">technicien@test.com / Tech@123</span>. Montre le volet maintenance / après-vente du cahier des charges.</p>
+  <div class="steps">
+    <div class="step"><div class="step-n">16</div><div class="step-b">
+      <div class="step-t">Missions SAV, équipements & portefeuille technicien</div>
+      <div class="routes"><span class="route">/technician/dashboard</span><span class="route">/technician/missions</span><span class="route">/technician/equipment</span><span class="route">/sav/interventions</span><span class="route">/sav/guarantees</span></div>
+      <p class="kv"><span class="lab">Faire</span> Montrer le tableau de bord technicien, la liste des missions d'intervention, le suivi des équipements/garanties, et le paiement du technicien via portefeuille.</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Après-vente intégré&nbsp;: un technicien reçoit une mission, consulte l'historique de l'équipement, intervient et est payé instantanément.&nbsp;»</p>
+      <span class="cahier">3.6 SAV & maintenance · 4.5 Prestataires</span>
+    </div></div>
+  </div>
+</section>
+
+<!-- 6 BANK -->
+<section id="bank">
+  <div class="sec-head"><span class="sec-num">06</span><h2>Banque & financement</h2><span class="role-pill rp-client">Bank@123</span></div>
+  <p class="sec-sub">Connexion <span class="mono">banque@test.com / Bank@123</span>. Le partenaire financier qui adosse le crédit.</p>
+  <div class="steps">
+    <div class="step"><div class="step-n">17</div><div class="step-b">
+      <div class="step-t">Espace partenaire financement</div>
+      <div class="routes"><span class="route">/bank/dashboard</span><span class="route">/bank/credits</span></div>
+      <p class="kv"><span class="lab">Faire</span> Montrer le tableau de bord banque et les dossiers de crédit à évaluer / suivre.</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Les banques et microfinances sont intégrées à la plateforme pour financer les achats — inclusion des sous-bancarisés.&nbsp;»</p>
+      <span class="cahier">7.4 Solvabilité · 16.4 Banques & microfinances</span>
+    </div></div>
+  </div>
+</section>
+
+<!-- 7 ADMIN -->
+<section id="admin">
+  <div class="sec-head"><span class="sec-num">07</span><h2>Administrateur — Command Center</h2><span class="role-pill rp-admin">admin@bca.com</span></div>
+  <p class="sec-sub">La vue de pilotage. Grâce aux données réelles, les KPI sont vivants&nbsp;: <b>GMV 20,8 M GNF</b>, <b>23 utilisateurs</b>, <b>12 boutiques vérifiées</b>, index intégrité <b>98,8 %</b>.</p>
+  <div class="steps">
+
+    <div class="step"><div class="step-n">18</div><div class="step-b">
+      <div class="step-t">Tableau de bord global & KPI</div>
+      <div class="routes"><span class="route">/admin/dashboard</span></div>
+      <p class="kv"><span class="lab">Faire</span> Montrer les cartes KPI (Volume d'affaires, Réseau utilisateurs, Partenaires boutiques, Index intégrité), le graphique «&nbsp;Performance marché&nbsp;», les «&nbsp;Derniers flux&nbsp;» (commandes en temps réel), et les onglets Logistique / Flux finance / Litiges / Taxonomie / Gouvernance.</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Un poste de pilotage temps réel&nbsp;: volume d'affaires, croissance, santé du réseau, tout en un écran.&nbsp;»</p>
+      <span class="cahier">10 Analyse & rapports · 10.2 KPI</span>
+    </div></div>
+
+    <div class="step"><div class="step-n">19</div><div class="step-b">
+      <div class="step-t">Utilisateurs, rôles & catalogue</div>
+      <div class="routes"><span class="route">/admin/users</span><span class="route">/admin/products</span><span class="route">/admin/categories</span></div>
+      <p class="kv"><span class="lab">Faire</span> Gérer les utilisateurs (approbation, rôles/permissions RBAC), modérer le catalogue produits et la taxonomie des 38 catégories.</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Contrôle d'accès par rôle&nbsp;: chaque profil (client, fournisseur, transporteur, technicien, banque) a des droits précis.&nbsp;»</p>
+      <span class="cahier">5.3 Permissions · 6 Gestion produits</span>
+    </div></div>
+
+    <div class="step"><div class="step-n">20</div><div class="step-b">
+      <div class="step-t">Litiges, logistique & finances</div>
+      <div class="routes"><span class="route">/admin/disputes</span><span class="route">/admin/logistics</span><span class="route">/admin/financial</span><span class="route">/admin/transactions</span></div>
+      <p class="kv"><span class="lab">Faire</span> Montrer le hub de <b>médiation des litiges</b> (timeline, preuves, décision, remboursement escrow), la supervision <b>logistique</b>, et les <b>rapports financiers</b> / transactions.</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;L'admin arbitre les litiges avec médiation assistée par IA, supervise les livraisons et suit les flux financiers.&nbsp;»</p>
+      <span class="cahier">9 Litiges · 9.4 Tableau litiges · 10 Rapports</span>
+    </div></div>
+
+    <div class="step"><div class="step-n">21</div><div class="step-b">
+      <div class="step-t">Tendances IA & publicités</div>
+      <div class="routes"><span class="route">/admin/trends</span><span class="route">/admin/ads</span></div>
+      <p class="kv"><span class="lab">Faire</span> Montrer les <b>tendances marché IA</b> (insights, croissance par segment) et la gestion des <b>campagnes publicitaires</b> avec statistiques.</p>
+      <p class="kv"><span class="lab">Dire</span> «&nbsp;Analyse prédictive des tendances et régie publicitaire ciblée — la couche intelligence de la plateforme.&nbsp;»</p>
+      <span class="cahier">10.3 Tendances · 3.9 Technologies · 6.5 Publicité</span>
+    </div></div>
+
+  </div>
+</section>
+
+<!-- 8 CLOSING -->
+<section id="closing">
+  <div class="sec-head"><span class="sec-num">08</span><h2>Conclusion — cadrer le message</h2></div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>Points forts à mettre en avant</h3>
+      <ul>
+        <li><b>6 rôles</b> fonctionnels avec tableaux de bord dédiés.</li>
+        <li><b>Escrow + Mobile Money</b> : paiement sécurisé de bout en bout (testé).</li>
+        <li><b>Crédit & paiement échelonné</b> : simulateur, échéancier, rappels.</li>
+        <li><b>Logistique réelle</b> : carte GPS + optimisation de tournée.</li>
+        <li><b>Command Center admin</b> avec KPI temps réel.</li>
+        <li><b>Couche IA</b> : assistant, tendances, médiation, anti-fraude.</li>
+        <li>Base peuplée&nbsp;: 12 fournisseurs, 309 produits, commandes réelles.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>À présenter comme « feuille de route »</h3>
+      <ul>
+        <li><b>IoT & Blockchain</b> : preuves de concept, pas encore en production.</li>
+        <li><b>Cartes bancaires</b> : supportées via CinetPay, à tester en sandbox réel.</li>
+        <li><b>Cryptomonnaies</b> : prévues (chapitre 7.5), non activées.</li>
+        <li><b>Stocks partenaires externes</b> (API) : à connecter.</li>
+        <li><b>Biométrie</b> : 2FA en place ; biométrie mobile à venir.</li>
+      </ul>
+      <p class="note-tip">Annoncer ces points comme des jalons planifiés évite les mauvaises surprises et montre la vision long terme.</p>
+    </div>
+  </div>
+
+  <div class="callout"><b>Astuce de démo.</b> Montrer le <b>mode hors ligne</b>&nbsp;: dans Chrome DevTools → onglet «&nbsp;Réseau&nbsp;» → passer en <b>Offline</b>, naviguer dans le catalogue en cache, puis repasser <b>Online</b> pour illustrer la synchronisation automatique (chapitre 5.4).</p></div>
+  <div class="callout warn"><b>Ordre conseillé pour une démo de 15 min.</b> Vitrine (2&nbsp;min) → Client&nbsp;: achat+escrow+crédit (6&nbsp;min) → Transporteur&nbsp;: carte+tournée (2&nbsp;min) → Admin&nbsp;: Command Center+litiges (4&nbsp;min) → conclusion &amp; feuille de route (1&nbsp;min).</div>
+</section>
+
+<footer class="container">
+  BCA Connect — guide de démonstration navigateur · comptes de démo et données de test préchargés · testé de bout en bout.
+</footer>
+</main>
+</div>

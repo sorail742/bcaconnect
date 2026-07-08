@@ -101,8 +101,8 @@ const DashboardLayout = ({ children, title, noPadding, noFooter }) => {
             {/* Central Intelligence Grid */}
             <div className="flex-1 flex flex-col min-w-0 relative h-full z-10">
 
-                {/* Executive Command Bar — Glass High-Density */}
-                <header className="h-14 shrink-0 border-b border-border bg-background/90 backdrop-blur-md z-40 px-4 md:px-6 flex items-center justify-between sticky top-0 shadow-sm">
+                {/* Executive Command Bar — Fully Opaque Sticky Header */}
+                <header className="h-14 shrink-0 border-b border-border bg-background z-50 px-4 md:px-6 flex items-center justify-between sticky top-0 shadow-sm">
                     <div className="flex items-center gap-5 relative z-10">
                         {/* Intelligent Toggle Hub */}
                         <button
@@ -177,8 +177,8 @@ const DashboardLayout = ({ children, title, noPadding, noFooter }) => {
                                     </div>
                                 )}
                             </div>
-                            <div className="hidden sm:flex flex-col items-start text-left">
-                                <p className="text-[10px] font-black text-slate-900 dark:text-foreground leading-none mb-1">
+                            <div className="hidden sm:flex flex-col items-start text-left max-w-[140px]">
+                                <p className="text-[10px] font-black text-slate-900 dark:text-foreground leading-none mb-1 w-full truncate">
                                     {user?.nom_complet || 'Utilisateur'}
                                 </p>
                                 <span className="text-[8px] font-black text-primary uppercase tracking-widest opacity-80 leading-none">

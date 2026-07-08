@@ -19,6 +19,22 @@ import { getCategoryIconComponent } from '../../lib/categoryConstants';
 import { offlineStorage } from '../../lib/db';
 import { getAttributesForCategory, ATTRIBUTE_COLOR_MAP } from '../../lib/categoryAttributes';
 import { Settings2 } from 'lucide-react';
+import { useRBAC } from '../../hooks/useRBAC';
+
+/** Aplatit parents + sous-catégories pour le sélecteur produit */
+const flattenCategories = (categories = []) => {
+    const flat = [];
+    for (const cat of categories) {
+        flat.push(cat);
+        for (const sub of cat.sous_categories || []) {
+            flat.push({
+                ...sub,
+                nom_categorie: `${cat.nom_categorie} › ${sub.nom_categorie}`,
+            });
+        }
+    }
+    return flat.sort((a, b) => a.nom_categorie.localeCompare(b.nom_categorie, 'fr'));
+};
 const FormField = ({ label, required, children, error }) => (
     <div className="space-y-2.5">
         <label className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground/80 ml-1 flex items-center gap-2">
@@ -122,6 +138,8 @@ const AddProduct = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const isEditMode = !!id;
+    const { can } = useRBAC();
+    const canManageCategories = can('manage_categories');
 
     const [formData, setFormData] = useState({
         nom_produit: '',
@@ -138,6 +156,7 @@ const AddProduct = () => {
     });
 
     const [categories, setCategories] = useState([]);
+    const categoryOptions = flattenCategories(categories);
     const [isLoading, setIsLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isInitializing, setIsInitializing] = useState(true);
@@ -199,7 +218,7 @@ const AddProduct = () => {
         const init = async () => {
             try {
                 const cats = await categoryService.getAll();
-                setCategories(cats || []);
+                setCategories(Array.isArray(cats) ? cats : []);
 
                 if (isEditMode) {
                     const p = await productService.getById(id);
@@ -521,48 +540,34 @@ const AddProduct = () => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     <FormField label="Catégorie" required error={errors.categorie_id}>
-                                        <CreatableSelect
-                                            options={categories.map(c => ({ id: c.id, label: c.nom_categorie }))}
-                                            value={formData.categorie_id}
-                                            onChange={(val) => setFormData(prev => ({ ...prev, categorie_id: val }))}
-                                            placeholder="Sélectionner une catégorie..."
-                                            onCreate={async (newCatName) => {
-                                                try {
-                                                    const newCat = await categoryService.create({ 
-                                                        nom_categorie: newCatName,
-                                                        description: "Catégorie créée automatiquement lors de l'ajout d'un produit."
-                                                    });
-                                                    setCategories(prev => [...prev, newCat]);
-                                                    setFormData(prev => ({ ...prev, categorie_id: newCat.id }));
-                                                    toast.success(`NOUVELLE CATÉGORIE "${newCatName.toUpperCase()}" CRÉÉE.`);
-                                                } catch (err) {
-                                                    toast.error("ÉCHEC DE LA CRÉATION DE LA CATÉGORIE.");
-                                                }
-                                            }}
-                                        />
-
-                                        {/* QUICK CATEGORY GRID */}
-                                        <div className="mt-3 flex flex-wrap gap-2">
-                                            {categories.slice(0, 12).map(cat => (
-                                                <button
-                                                    key={cat.id}
-                                                    type="button"
-                                                    onClick={() => setFormData(prev => ({ ...prev, categorie_id: cat.id }))}
-                                                    className={cn(
-                                                        "px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-1.5",
-                                                        formData.categorie_id === cat.id
-                                                            ? "bg-primary text-white border-primary shadow-lg shadow-primary/20"
-                                                            : "bg-white text-slate-400 border-slate-100 hover:border-primary/30 hover:text-primary"
-                                                    )}
-                                                >
-                                                    <span className="scale-[0.6] flex items-center justify-center">{getCategoryIconComponent(cat.nom_categorie)}</span>
-                                                    {cat.nom_categorie}
-                                                </button>
-                                            ))}
-                                            {categories.length > 12 && (
-                                                <span className="text-[8px] font-bold text-slate-300 py-1.5 px-2">+{categories.length - 12} PLUS</span>
-                                            )}
-                                        </div>
+                                        {categoryOptions.length === 0 ? (
+                                            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-amber-700">
+                                                Aucune catégorie disponible. Contactez l&apos;administrateur ou relancez le backend.
+                                            </div>
+                                        ) : (
+                                            <CreatableSelect
+                                                options={categoryOptions.map(c => ({ id: c.id, label: c.nom_categorie }))}
+                                                value={formData.categorie_id}
+                                                onChange={(val) => {
+                                                    setFormData(prev => ({ ...prev, categorie_id: val }));
+                                                    if (errors.categorie_id) setErrors(prev => ({ ...prev, categorie_id: null }));
+                                                }}
+                                                placeholder="Sélectionner une catégorie..."
+                                                onCreate={canManageCategories ? async (newCatName) => {
+                                                    try {
+                                                        const newCat = await categoryService.create({
+                                                            nom_categorie: newCatName,
+                                                            description: "Catégorie créée lors de l'ajout d'un produit.",
+                                                        });
+                                                        setCategories(prev => [...prev, newCat]);
+                                                        setFormData(prev => ({ ...prev, categorie_id: newCat.id }));
+                                                        toast.success(`NOUVELLE CATÉGORIE "${newCatName.toUpperCase()}" CRÉÉE.`);
+                                                    } catch {
+                                                        toast.error("ÉCHEC DE LA CRÉATION DE LA CATÉGORIE.");
+                                                    }
+                                                } : undefined}
+                                            />
+                                        )}
                                     </FormField>
 
                                     <FormField label="Ancien Prix (optionnel)">
@@ -836,7 +841,7 @@ const AddProduct = () => {
                     </div>
 
                     <div className="xl:col-span-4">
-                        <ProductPreview data={formData} categories={categories} />
+                        <ProductPreview data={formData} categories={categoryOptions} />
                     </div>
                 </div>
             </div>

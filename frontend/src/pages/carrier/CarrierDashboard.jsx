@@ -300,7 +300,7 @@ const CarrierDashboard = () => {
                     <button
                         onClick={() => handleAssign(row.id)}
                         disabled={assignMutation.isPending}
-                        className="h-8 px-4 bg-[#FF6600] text-foreground text-[9px] font-black rounded-lg transition-all shadow-md active:scale-95 uppercase tracking-widest hover:brightness-110 flex items-center gap-2 ml-auto disabled:opacity-50"
+                        className="h-8 px-4 bg-[#FF6600] text-white text-[9px] font-black rounded-lg transition-all shadow-md active:scale-95 uppercase tracking-widest hover:brightness-110 flex items-center gap-2 ml-auto disabled:opacity-50"
                     >
                         {assignMutation.isPending ? <RefreshCcw className="size-3 animate-spin" /> : <UserCheck className="size-3" />} 
                         {t('carAccept')}
@@ -332,7 +332,7 @@ const CarrierDashboard = () => {
                             status === 'en_route' ? "bg-amber-500 animate-pulse" : "bg-blue-500"
                         )} />
                         <span className={cn(
-                            "text-[8px] font-black uppercase tracking-widest",
+                            "text-[8px] font-black uppercase tracking-widest truncate max-w-[100px] sm:max-w-none",
                             status === 'livre' ? "text-emerald-500" :
                             status === 'en_route' ? "text-amber-500" : "text-blue-500"
                         )}>
@@ -350,7 +350,7 @@ const CarrierDashboard = () => {
                         <button
                             onClick={() => handleStartJourney(row.id)}
                             disabled={trackingMutation.isPending}
-                            className="h-8 px-4 bg-slate-900 dark:bg-white text-foreground dark:text-slate-900 text-[9px] font-black rounded-lg transition-all uppercase tracking-widest flex items-center gap-2"
+                            className="h-8 px-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[9px] font-black rounded-lg transition-all uppercase tracking-widest flex items-center gap-2"
                         >
                             {trackingMutation.isPending ? <RefreshCcw className="size-3 animate-spin" /> : <Play className="size-3" />} 
                             {t('carStart')}
@@ -479,7 +479,7 @@ const CarrierDashboard = () => {
                                 className={cn(
                                     "flex-1 h-12 rounded-xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all",
                                     activeTab === 'AVAILABLE' 
-                                        ? "bg-[#FF6600] text-foreground shadow-lg shadow-[#FF6600]/20" 
+                                        ? "bg-[#FF6600] text-white shadow-lg shadow-[#FF6600]/20" 
                                         : "text-muted-foreground hover:bg-slate-50 dark:hover:bg-foreground/5"
                                 )}
                             >
@@ -490,7 +490,7 @@ const CarrierDashboard = () => {
                                 className={cn(
                                     "flex-1 h-12 rounded-xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all",
                                     activeTab === 'MINE' 
-                                        ? "bg-slate-900 dark:bg-white text-foreground dark:text-slate-900 shadow-xl shadow-black/10" 
+                                        ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xl shadow-black/10" 
                                         : "text-muted-foreground hover:bg-slate-50 dark:hover:bg-foreground/5"
                                 )}
                             >
@@ -641,7 +641,7 @@ const CarrierDashboard = () => {
                             <div className="pt-2">
                                 <button
                                     onClick={() => navigate('/messages')}
-                                    className="w-full h-12 bg-slate-900 dark:bg-white text-foreground dark:text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#FF6600] hover:text-foreground"
+                                    className="w-full h-12 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#FF6600] hover:text-white"
                                 >
                                     {t('carContactHub')}
                                 </button>

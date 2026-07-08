@@ -14,38 +14,86 @@ const AppError = require('../utils/AppError');
 
 
 
+/**
+ * Moteur de scoring anti-fraude (règles pondérées).
+ * Retourne { suspect, score (0-100), reasons[] } plutôt qu'un simple booléen,
+ * pour tracer *pourquoi* une transaction est signalée.
+ *
+ * Règles :
+ *  - Montant élevé (seuils progressifs)
+ *  - Vélocité : nombre de transactions sur la journée
+ *  - Vélocité rapide : plusieurs transactions dans la dernière heure
+ *  - Compte récent (moins de 24h) effectuant un gros dépôt
+ *  - Cumul journalier dépassant un plafond
+ */
+const FRAUD_THRESHOLD = 50; // score >= 50 => suspect
+
 const checkFraudIA = async (user_id, montant) => {
+    const amount = parseFloat(montant || 0);
+    const reasons = [];
+    let score = 0;
 
-    const today = new Date();
-
-    today.setHours(0, 0, 0, 0);
-
-
+    const now = new Date();
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
 
     const wallet = await Wallet.findOne({ where: { user_id } });
+    if (!wallet) {
+        // Pas de portefeuille = première opération : neutre, on évalue le montant seul.
+        if (amount > 5000000) { score += 40; reasons.push('Montant très élevé sur un compte sans portefeuille'); }
+        return { suspect: score >= FRAUD_THRESHOLD, score, reasons };
+    }
 
-    if (!wallet) return false;
+    // 1) Seuils de montant progressifs
+    if (amount > 10000000) { score += 50; reasons.push('Montant exceptionnel (> 10M GNF)'); }
+    else if (amount > 5000000) { score += 30; reasons.push('Montant élevé (> 5M GNF)'); }
+    else if (amount > 2000000) { score += 15; reasons.push('Montant important (> 2M GNF)'); }
 
-
-
-    const recentTransactions = await Transaction.count({
-
+    // 2) Vélocité journalière
+    const txToday = await Transaction.count({
         where: {
-
             portefeuille_id: wallet.id,
-
-            created_at: { [Op.gte]: today },
-
-            statut: 'complete'
-
-        }
-
+            created_at: { [Op.gte]: startOfDay },
+            statut: { [Op.in]: ['complete', 'en_attente'] },
+        },
     });
+    if (txToday > 15) { score += 40; reasons.push(`Vélocité anormale : ${txToday} transactions aujourd'hui`); }
+    else if (txToday > 8) { score += 20; reasons.push(`Vélocité élevée : ${txToday} transactions aujourd'hui`); }
 
+    // 3) Rafale sur la dernière heure
+    const txLastHour = await Transaction.count({
+        where: {
+            portefeuille_id: wallet.id,
+            created_at: { [Op.gte]: oneHourAgo },
+        },
+    });
+    if (txLastHour >= 5) { score += 30; reasons.push(`Rafale : ${txLastHour} transactions en 1h`); }
 
+    // 4) Cumul journalier des montants
+    const cumulToday = await Transaction.sum('montant', {
+        where: {
+            portefeuille_id: wallet.id,
+            created_at: { [Op.gte]: startOfDay },
+            statut: { [Op.in]: ['complete', 'en_attente'] },
+        },
+    }) || 0;
+    if ((cumulToday + amount) > 20000000) { score += 25; reasons.push('Cumul journalier > 20M GNF'); }
 
-    return parseFloat(montant || 0) > 5000000 || recentTransactions > 10;
+    // 5) Compte récent réalisant une grosse opération
+    try {
+        const { User } = require('../models');
+        const user = await User.findByPk(user_id, { attributes: ['created_at'] });
+        if (user && user.created_at) {
+            const accountAgeH = (now - new Date(user.created_at)) / 36e5;
+            if (accountAgeH < 24 && amount > 1000000) {
+                score += 25;
+                reasons.push('Compte créé il y a moins de 24h avec grosse transaction');
+            }
+        }
+    } catch (_) { /* champ optionnel */ }
 
+    return { suspect: score >= FRAUD_THRESHOLD, score: Math.min(100, score), reasons };
 };
 
 
@@ -102,7 +150,8 @@ exports.initiateDeposit = catchAsync(async (req, res, next) => {
 
 
 
-    const isSuspect = await checkFraudIA(req.user.id, montant);
+    const fraud = await checkFraudIA(req.user.id, montant);
+    const isSuspect = fraud.suspect;
 
     const paymentType = orderId ? 'order_payment' : 'wallet_deposit';
 
@@ -132,7 +181,11 @@ exports.initiateDeposit = catchAsync(async (req, res, next) => {
 
             type: paymentType,
 
-            commande_id: orderId || undefined
+            commande_id: orderId || undefined,
+
+            fraud_score: fraud.score,
+
+            fraud_reasons: fraud.reasons
 
         }
 
@@ -176,6 +229,8 @@ exports.initiateDeposit = catchAsync(async (req, res, next) => {
         order_id: orderId || null,
 
         is_suspect: isSuspect,
+
+        fraud_score: fraud.score,
 
         provider: paymentProviderService.isConfigured() ? 'cinetpay' : 'simulation'
 

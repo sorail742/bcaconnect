@@ -31,4 +31,9 @@ router.delete('/delete', authMiddleware, authController.deleteAccount);
 router.get('/setup-2fa', authMiddleware, authController.setup2FA);
 router.post('/confirm-2fa', authMiddleware, validateConfirm2FA, authController.confirm2FA);
 
+// 📴 Mode résilience hors ligne — PIN d'authentification locale
+router.post('/offline-pin/set', authMiddleware, authController.setOfflinePin);
+router.post('/offline-pin/verify', authMiddleware, authController.verifyOfflinePin);
+router.get('/offline-credentials', authMiddleware, authController.getOfflineCredentials);
+
 module.exports = router;

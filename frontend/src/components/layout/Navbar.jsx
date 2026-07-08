@@ -26,19 +26,9 @@ import productService from '../../services/productService';
 import { getCategoryIconComponent } from '../../lib/categoryConstants';
 import aiService from '../../services/aiService';
 import { toast } from 'sonner';
-import { ROLES } from '../../constants/roles';
+import { ROLES, getDashboardRoute } from '../../constants/roles';
 import AiSourcingModal from '../ui/AiSourcingModal';
 import { BcaMegaMenu } from '../landing/BcaMegaMenu';
-
-// ─── Role-aware dashboard link ────────────────────────────────────────────────
-function getDashboardLink(user) {
-    if (!user) return '/dashboard';
-    if (user.role === ROLES.ADMIN) return '/admin/dashboard';
-    if (user.role === ROLES.FOURNISSEUR) return '/vendor/dashboard';
-    if (user.role === ROLES.TRANSPORTEUR) return '/carrier/dashboard';
-    if (user.role === ROLES.BANQUE) return '/bank/dashboard';
-    return '/dashboard';
-}
 
 // ─── Role badge ───────────────────────────────────────────────────────────────
 function RoleBadge({ role, t }) {
@@ -90,17 +80,7 @@ const Navbar = () => {
 const isDark = theme === 'dark';
     const hideLayout = ['/login', '/register', '/onboarding', '/forgot-password', '/reset-password', '/ai-mode'].includes(location.pathname);
 
-    const getDashboardLink = () => {
-        if (!user) return '/login';
-        switch (user.role) {
-            case 'admin': return '/admin';
-            case 'fournisseur': return '/vendor';
-            case 'transporteur': return '/carrier';
-            case 'banque': return '/bank';
-            default: return '/dashboard';
-        }
-    };
-    const dashboardLink = getDashboardLink();
+    const dashboardLink = user ? getDashboardRoute(user.role) : '/login';
 
     // ── Scroll shadow ──────────────────────────────────────────────────────
     useEffect(() => {
@@ -257,11 +237,11 @@ const isDark = theme === 'dark';
     return (
         <>
             <header ref={headerRef} className={cn(
-                "w-full font-sans bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-[100] transition-shadow duration-300",
-                isScrolled && "shadow-[0_4px_30px_rgba(0,0,0,0.06)]"
+                "w-full font-sans bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-[100] transition-all duration-300 shadow-sm",
+                isScrolled && "shadow-md"
             )}>
             {/* ── Promotional Banner ───────────────────────────────────────── */}
-            <div className="banner-gradient glass h-10 flex items-center justify-center relative overflow-hidden">
+            <div className="banner-gradient h-10 flex items-center justify-center relative overflow-hidden bg-[#FF6600]">
                 <div className="flex items-center gap-4 z-10 relative text-white">
                     <span className="font-extrabold text-sm">BCA Work</span>
                     <span className="opacity-40 hidden sm:block">|</span>
@@ -277,7 +257,7 @@ const isDark = theme === 'dark';
             </div>
 
             {/* ── Main Header Row ──────────────────────────────────────────── */}
-            <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-12 flex flex-wrap items-center gap-4 lg:gap-5">
+            <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-12 flex flex-wrap items-center gap-4 lg:gap-5 bg-white dark:bg-slate-900 z-10 relative py-2">
 
                 {/* Logo */}
                 <Link to="/" className="flex-shrink-0">
@@ -576,8 +556,8 @@ const isDark = theme === 'dark';
             </div>
 
             {/* ── Bottom Nav Row ────────────────────────────────────────────── */}
-            <div className="hidden md:flex flex-wrap border-t border-border/5 relative">
-                <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-12 flex flex-wrap items-center justify-center h-12 gap-4 lg:gap-12">
+            <div className="hidden md:flex flex-nowrap border-t border-border/10 relative bg-white dark:bg-slate-900 z-10 w-full shadow-sm overflow-x-auto no-scrollbar">
+                <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-12 flex flex-nowrap items-center justify-center min-h-[48px] py-2 gap-4 lg:gap-8 whitespace-nowrap">
                     <div 
                         className="h-full flex items-center"
                         onMouseEnter={handleMegaMenuOpen}

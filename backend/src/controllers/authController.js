@@ -1,6 +1,7 @@
 const { User, Wallet, Store, sequelize } = require('../models');
 const bcrypt = require('bcryptjs');
 const { OAuth2Client } = require('google-auth-library');
+const AppError = require('../utils/AppError');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const tokenService = require('../services/tokenService');
@@ -532,6 +533,65 @@ const authController = {
             const { telephone, code, type_action } = req.body;
             const result = await otpService.verifyOtp(telephone, code, type_action);
             res.json({ message: 'Code OTP validé.', ...result });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // ─── Mode résilience hors ligne : PIN d'authentification locale ───────────
+    // L'utilisateur définit un code PIN (4-6 chiffres) haché côté serveur.
+    // La PWA récupère le hash au login et l'utilise pour déverrouiller l'app
+    // hors ligne (vérification locale), avec aussi une vérification serveur.
+    setOfflinePin: async (req, res, next) => {
+        try {
+            const { pin } = req.body;
+            if (!/^\d{4,6}$/.test(String(pin || ''))) {
+                return next(new AppError('Le code PIN doit contenir 4 à 6 chiffres.', 400));
+            }
+            const user = await User.findByPk(req.user.id);
+            if (!user) return next(new AppError('Utilisateur introuvable.', 404));
+
+            const salt = await bcrypt.genSalt(10);
+            user.code_pin_offline = await bcrypt.hash(String(pin), salt);
+            await user.save();
+
+            res.json({ message: 'Code PIN hors ligne défini avec succès.', pin_defini: true });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // Vérifie le PIN (utilisable en ligne ; le hash sert aussi à la vérif offline côté PWA).
+    verifyOfflinePin: async (req, res, next) => {
+        try {
+            const { pin } = req.body;
+            const user = await User.findByPk(req.user.id);
+            if (!user || !user.code_pin_offline) {
+                return next(new AppError('Aucun code PIN hors ligne défini.', 400));
+            }
+            const isMatch = await bcrypt.compare(String(pin || ''), user.code_pin_offline);
+            if (!isMatch) return next(new AppError('Code PIN incorrect.', 401));
+
+            res.json({ message: 'Code PIN validé.', verified: true });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // Expose le hash du PIN pour cache local PWA (permet la vérif 100% hors ligne).
+    getOfflineCredentials: async (req, res, next) => {
+        try {
+            const user = await User.findByPk(req.user.id, {
+                attributes: ['id', 'nom_complet', 'role', 'code_pin_offline'],
+            });
+            if (!user) return next(new AppError('Utilisateur introuvable.', 404));
+            res.json({
+                user_id: user.id,
+                nom_complet: user.nom_complet,
+                role: user.role,
+                pin_hash: user.code_pin_offline || null,
+                pin_defini: !!user.code_pin_offline,
+            });
         } catch (error) {
             next(error);
         }
