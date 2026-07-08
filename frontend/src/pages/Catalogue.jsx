@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProductCard from '../components/produits/ProductCard';
 import { Button } from '../components/ui/Button';
@@ -19,10 +19,11 @@ import BcaTrustBar from '../components/marketplace/BcaTrustBar';
 
 const ProductCatalogue = () => {
     const { t, lang } = useLanguage();
+    const [searchParams, setSearchParams] = useSearchParams();
     
     const [page, setPage] = useState(1);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [activeCategory, setActiveCategory] = useState("Tous");
+    const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+    const [activeCategory, setActiveCategory] = useState(searchParams.get("category") || "Tous");
     const [priceRange, setPriceRange] = useState([0, 1000000000]);
     const [sortBy, setSortBy] = useState('newest');
     const [viewMode, setViewMode] = useState('grid');
@@ -78,6 +79,14 @@ const ProductCatalogue = () => {
         socketService.on('product_added', handleNewProduct);
         return () => socketService.off('product_added', handleNewProduct);
     }, []);
+
+    // Synchroniser l'URL avec l'état local
+    useEffect(() => {
+        const params = new URLSearchParams();
+        if (activeCategory !== 'Tous') params.set('category', activeCategory);
+        if (searchQuery.trim()) params.set('q', searchQuery.trim());
+        setSearchParams(params, { replace: true });
+    }, [activeCategory, searchQuery, setSearchParams]);
 
     useEffect(() => {
         if (displaySlides.length <= 1) return;

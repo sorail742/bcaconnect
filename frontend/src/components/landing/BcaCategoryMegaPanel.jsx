@@ -35,10 +35,12 @@ export function BcaCategoryMegaPanel({ category, categoryId }) {
             </div>
 
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-y-8 gap-x-6">
-                {subItems.map((item, idx) => (
+                {subItems.map((item, idx) => {
+                    const categoryParam = categoryId && categoryId !== FOR_YOU_ID ? `?category=${categoryId}` : '';
+                    return (
                     <Link
                         key={idx}
-                        to={`/search?q=${encodeURIComponent(item.name)}`}
+                        to={`/marketplace${categoryParam}`}
                         className="flex flex-col items-center gap-3 group min-w-0"
                     >
                         <div className="relative size-20 sm:size-24 rounded-full bg-white border border-[#f0f0f0] flex items-center justify-center group-hover:border-[#ffd591] group-hover:shadow-md transition-all shrink-0">
@@ -59,7 +61,8 @@ export function BcaCategoryMegaPanel({ category, categoryId }) {
                             {item.name}
                         </span>
                     </Link>
-                ))}
+                    );
+                })}
             </div>
         </motion.div>
     );
