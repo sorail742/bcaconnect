@@ -257,7 +257,7 @@ const isDark = theme === 'dark';
             </div>
 
             {/* ── Main Header Row ──────────────────────────────────────────── */}
-            <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-12 flex flex-wrap items-center gap-4 lg:gap-5 bg-white dark:bg-slate-900 z-10 relative py-2">
+            <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-12 flex flex-wrap items-center gap-4 lg:gap-5 bg-white dark:bg-slate-900 z-40 relative py-2">
 
                 {/* Logo */}
                 <Link to="/" className="flex-shrink-0">
