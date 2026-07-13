@@ -59,13 +59,13 @@ export function BcaCategorySidebar({
                 className={cn('bca-category-scroll overflow-y-auto overflow-x-hidden py-1', showSeeMore && 'pb-14')}
                 style={{ maxHeight }}
             >
-                {listItems.map((cat) => {
+                {listItems.map((cat, index) => {
                     const highlighted = isHighlighted(cat.id);
                     const Icon = cat.icon || BCA_ICONS.default;
 
                     return (
                         <button
-                            key={cat.id}
+                            key={cat.originalId || cat.id || index}
                             type="button"
                             onMouseEnter={() => handleEnter(cat)}
                             onClick={() => handleClick(cat)}

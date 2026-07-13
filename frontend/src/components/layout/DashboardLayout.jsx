@@ -99,10 +99,17 @@ const DashboardLayout = ({ children, title, noPadding, noFooter, fullHeight, hid
             {/* Central Intelligence Grid */}
             <div className="flex-1 flex flex-col min-w-0 relative h-full z-10">
 
+<<<<<<< HEAD
                 {/* Executive Command Bar — masqué sur pages immersives (Messages, etc.) */}
                 {!hideHeader && (
                 <header className="h-14 shrink-0 border-b border-border bg-background/90 backdrop-blur-md z-40 px-4 md:px-6 flex items-center justify-between sticky top-0 shadow-sm">
                     <div className="flex items-center gap-4 relative z-10 min-w-0">
+=======
+                {/* Executive Command Bar — Fully Opaque Sticky Header */}
+                <header className="h-14 shrink-0 border-b border-border bg-background z-50 px-4 md:px-6 flex items-center justify-between sticky top-0 shadow-sm">
+                    <div className="flex items-center gap-5 relative z-10">
+                        {/* Intelligent Toggle Hub */}
+>>>>>>> cc9e8c22a12230e3e9d0244ad41cdcde74833070
                         <button
                             id="btn-sidebar-toggle"
                             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -162,8 +169,13 @@ const DashboardLayout = ({ children, title, noPadding, noFooter, fullHeight, hid
                                     </div>
                                 )}
                             </div>
+<<<<<<< HEAD
                             <div className="hidden sm:flex flex-col items-start text-left min-w-0">
                                 <p className="text-xs font-semibold text-foreground leading-none truncate max-w-[120px]">
+=======
+                            <div className="hidden sm:flex flex-col items-start text-left max-w-[140px]">
+                                <p className="text-[10px] font-black text-slate-900 dark:text-foreground leading-none mb-1 w-full truncate">
+>>>>>>> cc9e8c22a12230e3e9d0244ad41cdcde74833070
                                     {user?.nom_complet || 'Utilisateur'}
                                 </p>
                                 <span className="text-[10px] font-medium text-primary uppercase tracking-wide leading-none truncate max-w-[120px]">

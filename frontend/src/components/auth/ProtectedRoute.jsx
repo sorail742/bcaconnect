@@ -40,8 +40,10 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     }
 
     // Vérifier les permissions par rôle (RBAC)
-    if (allowedRoles.length > 0 && user && !allowedRoles.includes(user.role)) {
-        return <Navigate to="/unauthorized" replace />;
+    if (allowedRoles.length > 0) {
+        if (!user || !user.role || !allowedRoles.includes(user.role)) {
+            return <Navigate to="/unauthorized" replace />;
+        }
     }
 
     return children;

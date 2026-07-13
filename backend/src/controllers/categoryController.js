@@ -5,7 +5,14 @@ const AppError = require('../utils/AppError');
 const categoryController = {
     getAll: catchAsync(async (req, res, next) => {
         const categories = await Category.findAll({
-            include: [{ model: Category, as: 'sous_categories' }]
+            where: { parent_id: null },
+            include: [{
+                model: Category,
+                as: 'sous_categories',
+                separate: true,
+                order: [['nom_categorie', 'ASC']],
+            }],
+            order: [['nom_categorie', 'ASC']],
         });
         res.json(categories);
     }),

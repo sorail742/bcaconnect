@@ -332,7 +332,7 @@ const CarrierDashboard = () => {
                             status === 'en_route' ? "bg-amber-500 animate-pulse" : "bg-blue-500"
                         )} />
                         <span className={cn(
-                            "text-[8px] font-black uppercase tracking-widest",
+                            "text-[8px] font-black uppercase tracking-widest truncate max-w-[100px] sm:max-w-none",
                             status === 'livre' ? "text-emerald-500" :
                             status === 'en_route' ? "text-amber-500" : "text-blue-500"
                         )}>
@@ -350,7 +350,11 @@ const CarrierDashboard = () => {
                         <button
                             onClick={() => handleStartJourney(row.id)}
                             disabled={trackingMutation.isPending}
+<<<<<<< HEAD
                             className="h-8 px-4 bg-slate-800 text-white text-[9px] font-black rounded-lg transition-all uppercase tracking-widest flex items-center gap-2 hover:bg-slate-700 shadow-md"
+=======
+                            className="h-8 px-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[9px] font-black rounded-lg transition-all uppercase tracking-widest flex items-center gap-2"
+>>>>>>> cc9e8c22a12230e3e9d0244ad41cdcde74833070
                         >
                             {trackingMutation.isPending ? <RefreshCcw className="size-3 animate-spin" /> : <Play className="size-3" />} 
                             {t('carStart')}
@@ -480,7 +484,11 @@ const CarrierDashboard = () => {
                                     "flex-1 h-12 rounded-xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all",
                                     activeTab === 'AVAILABLE' 
                                         ? "bg-[#FF6600] text-white shadow-lg shadow-[#FF6600]/20" 
+<<<<<<< HEAD
                                         : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"
+=======
+                                        : "text-muted-foreground hover:bg-slate-50 dark:hover:bg-foreground/5"
+>>>>>>> cc9e8c22a12230e3e9d0244ad41cdcde74833070
                                 )}
                             >
                                 <PackageSearch className="size-4" /> {t('carAvailableMissions')}
@@ -490,8 +498,13 @@ const CarrierDashboard = () => {
                                 className={cn(
                                     "flex-1 h-12 rounded-xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all",
                                     activeTab === 'MINE' 
+<<<<<<< HEAD
                                         ? "bg-slate-800 text-white shadow-lg shadow-slate-800/20" 
                                         : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"
+=======
+                                        ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xl shadow-black/10" 
+                                        : "text-muted-foreground hover:bg-slate-50 dark:hover:bg-foreground/5"
+>>>>>>> cc9e8c22a12230e3e9d0244ad41cdcde74833070
                                 )}
                             >
                                 <UserCheck className="size-4" /> {t('carMyLogbook')}
@@ -654,7 +667,11 @@ const CarrierDashboard = () => {
                             <div className="pt-2">
                                 <button
                                     onClick={() => navigate('/messages')}
+<<<<<<< HEAD
                                     className="w-full h-12 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#FF6600] hover:text-white shadow-md"
+=======
+                                    className="w-full h-12 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#FF6600] hover:text-white"
+>>>>>>> cc9e8c22a12230e3e9d0244ad41cdcde74833070
                                 >
                                     {t('carContactHub')}
                                 </button>

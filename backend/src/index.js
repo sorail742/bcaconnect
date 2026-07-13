@@ -10,13 +10,22 @@ require("dotenv").config();
 const { validateEnv } = require("./config/envValidation");
 validateEnv();
 
+<<<<<<< HEAD
 const { sequelize } = require("./models");
+=======
+const app = require("./app");
+const { sequelize, Category } = require("./models");
+>>>>>>> cc9e8c22a12230e3e9d0244ad41cdcde74833070
 const http = require("http");
 const { Server } = require("socket.io");
 const refreshTokenService = require("./services/refreshTokenService");
 const { startCreditReminders } = require("./cron/creditReminderCron");
 const { runMigrations } = require("./config/runMigrations");
+<<<<<<< HEAD
 const { initCategoryAttributes } = require("./constants/categoryAttributes");
+=======
+const { ensureDefaultCategories } = require("./config/defaultCategories");
+>>>>>>> cc9e8c22a12230e3e9d0244ad41cdcde74833070
 
 // Lancement de la tâche Cron de rappels
 startCreditReminders();
@@ -113,6 +122,14 @@ const start = async () => {
 
     await runMigrations(sequelize);
 
+<<<<<<< HEAD
+=======
+    if (process.env.NODE_ENV !== 'production') {
+        await ensureDefaultCategories(Category);
+    }
+
+    // Démarrer le serveur
+>>>>>>> cc9e8c22a12230e3e9d0244ad41cdcde74833070
     server.listen(PORT, () => {
       console.log(`\n🚀 BCA Connect Real-Time API v2.6 — Port ${PORT}`);
       console.log(`🔐 Sécurité: RS256 JWT + Refresh Token Rotation + Redis`);

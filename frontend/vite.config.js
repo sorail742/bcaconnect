@@ -79,6 +79,10 @@ export default defineConfig(({ mode }) => {
         target: backendUrl,
         changeOrigin: true,
       },
+      '/uploads': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+      },
     },
   },
   }

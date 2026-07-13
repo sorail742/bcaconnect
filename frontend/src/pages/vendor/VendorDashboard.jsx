@@ -225,8 +225,8 @@ const VendorDashboard = () => {
                             <div className="size-12 rounded-2xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10 transition-all duration-700 group-hover:rotate-12 shadow-sm">
                                 <Store className="size-6" />
                             </div>
-                            <div className="space-y-1">
-                                <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                            <div className="space-y-1 min-w-0">
+                                <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter leading-none truncate max-w-[200px] sm:max-w-[400px]" style={{ fontFamily: "'Outfit', sans-serif" }}>
                                     {t('vdGreeting')}, <span className="text-primary">{user?.nom_complet?.split(' ')[0] || t('vdPartner')}</span>
                                 </h2>
                                 <div className="flex items-center gap-2">

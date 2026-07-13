@@ -5,3 +5,5 @@ node_modules/
 .idea/
 .agent/bcaconnect/
 *.pem
+backend/data/
+*.sqlite

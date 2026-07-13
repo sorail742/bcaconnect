@@ -39,6 +39,7 @@ export function BcaCategoryMegaPanel({ category, categoryId, subItems }) {
                 </Link>
             </div>
 
+<<<<<<< HEAD
             <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-y-8 gap-x-4">
                 {items.map((item, idx) => (
                     <Link
@@ -58,6 +59,21 @@ export function BcaCategoryMegaPanel({ category, categoryId, subItems }) {
                                     {item.icon || '📦'}
                                 </span>
                             )}
+=======
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-y-8 gap-x-6">
+                {subItems.map((item, idx) => {
+                    const categoryParam = categoryId && categoryId !== FOR_YOU_ID ? `?category=${categoryId}` : '';
+                    return (
+                    <Link
+                        key={idx}
+                        to={`/marketplace${categoryParam}`}
+                        className="flex flex-col items-center gap-3 group min-w-0"
+                    >
+                        <div className="relative size-20 sm:size-24 rounded-full bg-white border border-[#f0f0f0] flex items-center justify-center group-hover:border-[#ffd591] group-hover:shadow-md transition-all shrink-0">
+                            <span className="text-3xl sm:text-4xl group-hover:scale-110 transition-transform duration-300">
+                                {item.icon || '📦'}
+                            </span>
+>>>>>>> cc9e8c22a12230e3e9d0244ad41cdcde74833070
                             {item.badge && (
                                 <div className="absolute -top-0.5 -right-0.5 size-6 bg-white rounded-full shadow border border-[#f0f0f0] flex items-center justify-center">
                                     {item.badge === 'blue' ? (
@@ -68,11 +84,16 @@ export function BcaCategoryMegaPanel({ category, categoryId, subItems }) {
                                 </div>
                             )}
                         </div>
+<<<<<<< HEAD
                         <span className="text-[12px] sm:text-[13px] text-center text-[#666] dark:text-gray-400 group-hover:text-[#FF6600] transition-colors leading-tight max-w-[100px]">
+=======
+                        <span className="text-[11px] sm:text-[12px] text-center text-[#666] group-hover:text-[#FF6600] transition-colors leading-tight w-full px-1 line-clamp-2">
+>>>>>>> cc9e8c22a12230e3e9d0244ad41cdcde74833070
                             {item.name}
                         </span>
                     </Link>
-                ))}
+                    );
+                })}
             </div>
         </motion.div>
     );

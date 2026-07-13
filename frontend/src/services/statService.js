@@ -10,12 +10,11 @@ const statService = {
         }
     },
     getAdminStats: async () => {
-        try {
-            const response = await api.get('/stats/admin/public', { timeout: 8000, _bg: true });
-            return response.data;
-        } catch {
-            return null;
-        }
+        // Endpoint AUTHENTIFIÉ (admin) : renvoie stats réelles (GMV, utilisateurs,
+        // transactions), overview, weeklyChart et transactions récentes.
+        // NB : /stats/admin/public ne renvoie que des stats agrégées vitrine.
+        const response = await api.get('/stats/admin');
+        return response.data;
     },
     getLandingStats: async () => {
         try {

@@ -4,7 +4,7 @@ const { OtpVerification } = require('../models');
 const AppError = require('../utils/AppError');
 
 const OTP_TTL_MS = 10 * 60 * 1000;
-const ALLOWED_ACTIONS = ['inscription', 'paiement', 'retrait'];
+const ALLOWED_ACTIONS = ['inscription', 'paiement', 'retrait', 'connexion', 'connexion_offline'];
 
 const generateCode = () => String(crypto.randomInt(100000, 999999));
 

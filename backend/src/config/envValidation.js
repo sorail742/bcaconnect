@@ -127,6 +127,12 @@ const envSchema = Joi.object({
 
     IOT_STUB_ENABLED: Joi.boolean().optional(),
 
+    // SMS Phase 3 (optionnel)
+    SMS_ENABLED: Joi.boolean().default(false),
+    SMS_PROVIDER: Joi.string().valid('console', 'http').default('console'),
+    SMS_WEBHOOK_URL: Joi.string().uri().optional(),
+    SMS_SENDER_ID: Joi.string().max(11).default('BCAConnect'),
+
 }).unknown();
 
 /**

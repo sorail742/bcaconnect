@@ -81,7 +81,7 @@ const CreatableSelect = ({
                         )}
                     </div>
 
-                    {search && !filteredOptions.find(o => o.label.toLowerCase() === search.toLowerCase()) && (
+                    {search && onCreate && !filteredOptions.find(o => o.label.toLowerCase() === search.toLowerCase()) && (
                         <div 
                             onClick={() => {
                                 onCreate(search);

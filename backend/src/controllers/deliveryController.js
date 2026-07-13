@@ -26,6 +26,7 @@ async function findOrderByTrackingRef(trackingNumber) {
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
 const escrowService = require('../services/escrowService');
+<<<<<<< HEAD
 const { carrierAvailableWhere, isCarrierPickupEligible } = require('../utils/deliveryEligibility');
 const { emitOrderStatusUpdate } = require('../utils/orderSocketEvents');
 
@@ -42,6 +43,9 @@ const serializeDeliveryLogs = (logs) => logs.map((log) => {
         updatedAt: updated,
     };
 });
+=======
+const shippingService = require('../services/shippingService');
+>>>>>>> cc9e8c22a12230e3e9d0244ad41cdcde74833070
 
 // ─── Utilitaire RGPD ─────────────────────────────────────────────────────────
 // Masque un nom pour l'affichage public : "Jean Dupont" → "J*** D***"
@@ -305,6 +309,50 @@ const deliveryController = {
             order: [['updated_at', 'DESC']]
         });
         res.json(history);
+    }),
+
+    // 5b. Optimiser la tournée du transporteur (ordre de passage + distance/durée)
+    optimizeMyRoute: catchAsync(async (req, res, next) => {
+        const transporteur_id = req.user.id;
+        const returnToStart = req.body?.returnToStart === true || req.query?.returnToStart === 'true';
+
+        const deliveries = await Order.findAll({
+            where: {
+                transporteur_id,
+                statut_livraison: { [Op.ne]: 'livre' },
+            },
+            attributes: ['id', 'adresse_livraison', 'nom_destinataire', 'statut_livraison'],
+            order: [['updated_at', 'DESC']],
+        });
+
+        // Géocode chaque adresse vers un centroïde de commune ; ignore l'arrêt si non reconnu.
+        const stops = [];
+        const skipped = [];
+        deliveries.forEach((o) => {
+            const geo = shippingService.geocodeAddress(o.adresse_livraison);
+            if (geo) {
+                stops.push({
+                    id: o.id,
+                    label: `#${String(o.id).slice(0, 8)} — ${o.adresse_livraison || geo.commune}`,
+                    lat: geo.lat,
+                    lng: geo.lng,
+                    commune: geo.commune,
+                    destinataire: o.nom_destinataire,
+                });
+            } else {
+                skipped.push({ id: o.id, adresse: o.adresse_livraison });
+            }
+        });
+
+        const route = shippingService.optimizeRoute(stops, shippingService.DEPOT_CONAKRY, returnToStart);
+
+        res.json({
+            depart: shippingService.DEPOT_CONAKRY,
+            total_livraisons: deliveries.length,
+            geocodees: stops.length,
+            non_localisees: skipped,
+            ...route,
+        });
     }),
 
     // 6. Récupérer l'historique de tracking (propriétaire, transporteur ou admin)

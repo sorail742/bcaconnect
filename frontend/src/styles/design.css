@@ -1,4 +1,5 @@
 /* ── Glass & banners (legacy) ── */
+/* NOTE: .glass is kept for components that explicitly need it, but should NOT be applied to opaque elements */
 .glass {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: saturate(180%) blur(20px);
@@ -17,7 +18,7 @@
 }
 
 .banner-gradient {
-  background: linear-gradient(90deg, #fff7e6, #ffe7ba, #ffd591);
+  background: linear-gradient(90deg, #FF6600, #e65c00, #FF6600);
 }
 
 /* ── BCA B2B Marketplace tokens ── */

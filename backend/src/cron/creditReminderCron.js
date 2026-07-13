@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const { Op } = require('sequelize');
 const { Echeancier, Credit, User, Notification } = require('../models');
+const { sendSms } = require('../services/smsService');
 
 /**
  * Tâche Cron : Rappels automatiques pour les échéances de crédit
@@ -85,6 +86,9 @@ const sendNotification = async (user, message, titre = 'Rappel crédit BCA') => 
     } catch (err) {
         console.warn('[CRON] Échec création notification crédit:', err.message);
     }
+
+    const smsText = `${titre}: ${message}`.slice(0, 160);
+    await sendSms(user.telephone, smsText);
 };
 
 module.exports = { startCreditReminders };

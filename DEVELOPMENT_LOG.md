@@ -62,7 +62,26 @@ Ce document sert de fil conducteur pour le développement en groupe. Il réperto
 
 ---
 
-## 🛠️ À Faire (Prochaines Étapes)
+## 🗓️ 07 Juin 2026 - Phase 3 & setup équipe (2 devs)
+
+### Contexte
+- Commit `9fece84` — Phases 1+2 consolidées
+- **Équipe de 2** : chaque dev a sa machine, sa base SQLite, son `.env` local
+
+### Livraisons Phase 3 (démarrage)
+- `backend/phase3 du developpement.md` — roadmap lancement
+- `scripts/dev-backend.sh` — démarrage auto SQLite (sans Docker obligatoire)
+- `scripts/docker-dev.sh` — Postgres optionnel + messages d'erreur Docker
+- `backend/src/services/smsService.js` — SMS crédit (console / webhook)
+- `backend/.env.example` + `EQUIPE_DEV.md` — onboarding identique pour les 2 devs
+- Ports alignés : backend **5001**, frontend **3002**
+
+### Règle équipe
+- **Dev quotidien** : `./scripts/dev-backend.sh` (pas besoin de Postgres)
+- **Postgres** : uniquement pour tests infra Phase 3 (machine avec Docker)
+- **Sync** : `git pull` + `DEVELOPMENT_LOG.md` après chaque session
+
+---
 - [x] **Automatisation Séquestre** : Automatiser le passage en `solde_sequestre` lors de l'achat Wallet jusqu'à validation OTP.
 - [x] **Validation DTO Globale** : Finaliser la couche de validation `express-validator` sur tous les endpoints restants.
 - [x] **Authentification Google** : Connexion sociale Google testée et validée (Compte `Hassimiou Thioye` créé automatiquement).
@@ -71,8 +90,9 @@ Ce document sert de fil conducteur pour le développement en groupe. Il réperto
 ---
 
 ## 👥 Équipe de Développement
-- **Groupe (2)**
+- **2 développeurs** — setup local indépendant (SQLite par défaut, `.env` non partagé)
+- **Guide équipe :** [`EQUIPE_DEV.md`](./EQUIPE_DEV.md)
 - **Assistant AI** : Antigravity
 
 ---
-*Dernière mise à jour : 05 Juin 2026*
+*Dernière mise à jour : 7 juin 2026*
