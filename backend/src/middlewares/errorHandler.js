@@ -57,7 +57,10 @@ const errorHandler = (err, req, res, next) => {
   if (error.name === 'SequelizeUniqueConstraintError') error = handleDuplicateFieldsDB(error);
   if (error.name === 'SequelizeValidationError') error = handleValidationErrorDB(error);
   if (error.name === 'SequelizeDatabaseError' && error.message) {
-    error = new AppError(error.message, 400);
+    // Message générique : le message brut du driver Postgres (ex: "invalid input
+    // syntax for type uuid") ne doit jamais atteindre le client, même en dev — il
+    // expose des détails d'implémentation sans être utile pour l'utilisateur.
+    error = new AppError('Requête invalide (format de donnée incorrect).', 400);
   }
   if (error.name === 'JsonWebTokenError') error = handleJWTError();
   if (error.name === 'TokenExpiredError') error = handleJWTExpiredError();

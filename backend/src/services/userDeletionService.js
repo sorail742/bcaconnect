@@ -33,6 +33,7 @@ const {
     IoTTrackingLog,
     BlockchainTransactionStub,
 } = require('../models');
+const { recordDeletion } = require('../deletion-log/service/deletionLog.service');
 
 const deleteOrderTree = async (orderId, transaction) => {
     const opts = { transaction };
@@ -67,7 +68,7 @@ const deleteOrderTree = async (orderId, transaction) => {
     await Order.destroy({ where: { id: orderId }, ...opts });
 };
 
-const deleteUserCompletely = async (userId) => {
+const deleteUserCompletely = async (userId, actorReq) => {
     const transaction = await sequelize.transaction();
 
     try {
@@ -78,6 +79,47 @@ const deleteUserCompletely = async (userId) => {
         }
 
         const opts = { transaction };
+
+        // Instantané complet AVANT la cascade destructive : c'est la suppression la
+        // plus lourde de la plateforme (efface commandes, messages, litiges, boutique...)
+        // donc la seule preuve qui survit doit être capturée ici, dans la même
+        // transaction (si celle-ci échoue plus loin, cette ligne d'historique
+        // disparaît aussi — rien n'aura réellement été supprimé).
+        const [store, wallet, auditLogs, cascadeCounts] = await Promise.all([
+            Store.findOne({ where: { proprietaire_id: userId }, ...opts }),
+            Wallet.findOne({ where: { user_id: userId }, ...opts }),
+            AuditLog.findAll({ where: { utilisateur_id: userId }, ...opts }),
+            Promise.all([
+                Message.count({ where: { expediteur_id: userId }, ...opts }),
+                Notification.count({ where: { utilisateur_id: userId }, ...opts }),
+                Review.count({ where: { utilisateur_id: userId }, ...opts }),
+                Order.count({ where: { utilisateur_id: userId }, ...opts }),
+                Litige.count({ where: { [Op.or]: [{ demandeur_id: userId }, { defenseur_id: userId }] }, ...opts }),
+                Credit.count({ where: { utilisateur_id: userId }, ...opts }),
+                Publicite.count({ where: { vendeur_id: userId }, ...opts }),
+                Ticket.count({ where: { utilisateur_id: userId }, ...opts }),
+            ]).then(([messages, notifications, reviews, orders, litiges, credits, publicites, tickets]) => ({
+                messages, notifications, reviews, orders, litiges, credits, publicites, tickets,
+            })),
+        ]);
+
+        let productsSnapshot = [];
+        if (store) {
+            const products = await Product.findAll({ where: { boutique_id: store.id }, ...opts });
+            productsSnapshot = products.map((p) => p.toJSON());
+        }
+
+        await recordDeletion('User', user, {
+            req: actorReq,
+            transaction,
+            extra: {
+                store: store ? store.toJSON() : null,
+                products: productsSnapshot,
+                wallet: wallet ? wallet.toJSON() : null,
+                audit_logs: auditLogs.map((a) => a.toJSON()),
+                cascade_counts: cascadeCounts,
+            },
+        });
 
         await refreshTokenService.revokeAllTokens(userId);
 
@@ -162,7 +204,6 @@ const deleteUserCompletely = async (userId) => {
         await Order.update({ transporteur_id: null }, { where: { transporteur_id: userId }, ...opts });
         await OrderItem.update({ fournisseur_id: null }, { where: { fournisseur_id: userId }, ...opts });
 
-        const store = await Store.findOne({ where: { proprietaire_id: userId }, ...opts });
         if (store) {
             const products = await Product.findAll({ where: { boutique_id: store.id }, ...opts });
             const productIds = products.map((p) => p.id);
@@ -187,7 +228,6 @@ const deleteUserCompletely = async (userId) => {
             await Store.destroy({ where: { id: store.id }, ...opts });
         }
 
-        const wallet = await Wallet.findOne({ where: { user_id: userId }, ...opts });
         if (wallet) {
             await Transaction.destroy({ where: { portefeuille_id: wallet.id }, ...opts });
             await Wallet.destroy({ where: { id: wallet.id }, ...opts });

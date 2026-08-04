@@ -49,7 +49,10 @@ const startOrderReminders = (io) => {
             });
 
             for (const order of ordersToCancel) {
-                order.statut = 'annule';
+                // Order.statut utilise 'annulé' (avec accent) partout ailleurs
+                // (orderController.js) — 'annule' ici romprait silencieusement les
+                // comparaisons strictes côté contrôleur et frontend.
+                order.statut = 'annulé';
                 await order.save();
 
                 const notif = await Notification.create({

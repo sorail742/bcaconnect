@@ -298,6 +298,10 @@ const validateEnums = (req, res, next) => {
       "livre",
       "annule",
       "retourne",
+      // Order.statut (commande, pas article) utilise ces variantes accentuées —
+      // voir orderController.js. OrderItem.statut reste 'annule' (sans accent).
+      "annulé",
+      "retourné",
       // Statuts livraison (flux Transporteur)
       "pret",
       "ramasse",
@@ -309,10 +313,18 @@ const validateEnums = (req, res, next) => {
       "en_cours",
       "en_mediation",
       "ferme",
+      "archive",
       // Statuts paiement
       "complete",
       "echoue",
       "terminé",
+      // Statuts webinaires
+      "a_venir",
+      "en_direct",
+      "termine",
+      // Statuts certifications (fournisseur)
+      "validee",
+      "rejetee",
     ],
     statut_commande: [
       "en_attente",

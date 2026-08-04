@@ -72,6 +72,7 @@ const envSchema = Joi.object({
     // Redis - Refresh Token Rotation
     REDIS_URL: Joi.string()
         .uri()
+        .allow('')
         .optional()
         .messages({
             'string.uri': 'REDIS_URL doit être une URI valide'
@@ -93,6 +94,7 @@ const envSchema = Joi.object({
     // Monitoring & Logging
     SENTRY_DSN: Joi.string()
         .uri()
+        .allow('')
         .optional()
         .messages({
             'string.uri': 'SENTRY_DSN doit être une URI valide'
@@ -114,12 +116,12 @@ const envSchema = Joi.object({
     AWS_SECRET_ACCESS_KEY: Joi.string().optional(),
 
     // CinetPay Mobile Money (requis en production)
-    PAYMENT_API_KEY: Joi.string().optional(),
-    PAYMENT_SITE_ID: Joi.string().optional(),
-    PAYMENT_SECRET: Joi.string().optional(),
-    PAYMENT_PROVIDER_URL: Joi.string().uri().optional(),
-    BACKEND_URL: Joi.string().uri().optional(),
-    FRONTEND_URL: Joi.string().uri().optional(),
+    PAYMENT_API_KEY: Joi.string().allow('').optional(),
+    PAYMENT_SITE_ID: Joi.string().allow('').optional(),
+    PAYMENT_SECRET: Joi.string().allow('').optional(),
+    PAYMENT_PROVIDER_URL: Joi.string().uri().allow('').optional(),
+    BACKEND_URL: Joi.string().uri().allow('').optional(),
+    FRONTEND_URL: Joi.string().uri().allow('').optional(),
 
     PAYMENT_MODE: Joi.string()
         .valid('simulation', 'live')
@@ -130,7 +132,7 @@ const envSchema = Joi.object({
     // SMS Phase 3 (optionnel)
     SMS_ENABLED: Joi.boolean().default(false),
     SMS_PROVIDER: Joi.string().valid('console', 'http').default('console'),
-    SMS_WEBHOOK_URL: Joi.string().uri().optional(),
+    SMS_WEBHOOK_URL: Joi.string().uri().allow('').optional(),
     SMS_SENDER_ID: Joi.string().max(11).default('BCAConnect'),
 
 }).unknown();
@@ -157,15 +159,18 @@ function validateEnv() {
 
     const needsPaymentKeys = value.NODE_ENV === 'production' || value.PAYMENT_MODE === 'live';
     if (needsPaymentKeys) {
-        const paymentKeys = ['PAYMENT_API_KEY', 'PAYMENT_SITE_ID', 'PAYMENT_SECRET', 'BACKEND_URL', 'FRONTEND_URL'];
+        const provider = (process.env.PAYMENT_PROVIDER || 'cinetpay').toLowerCase();
+        const paymentKeys = provider === 'lengopay'
+            ? ['LENGOPAY_LICENSE_KEY', 'LENGOPAY_WEBSITE_ID', 'BACKEND_URL', 'FRONTEND_URL']
+            : ['PAYMENT_API_KEY', 'PAYMENT_SITE_ID', 'PAYMENT_SECRET', 'BACKEND_URL', 'FRONTEND_URL'];
         const missing = paymentKeys.filter((k) => !process.env[k]);
         if (missing.length) {
             const doc = value.NODE_ENV === 'production' ? 'DEPLOYMENT_PROD.md' : 'DEPLOYMENT_STAGING.md';
-            console.warn(`⚠️  [CINETPAY] Variables manquantes (${value.NODE_ENV}/${value.PAYMENT_MODE}) : ${missing.join(', ')}`);
+            console.warn(`⚠️  [${provider.toUpperCase()}] Variables manquantes (${value.NODE_ENV}/${value.PAYMENT_MODE}) : ${missing.join(', ')}`);
             console.warn(`    → Voir backend/${doc} et backend/.env.staging.example`);
         }
         if (process.env.BACKEND_URL && !process.env.BACKEND_URL.startsWith('https://')) {
-            console.warn('⚠️  [CINETPAY] BACKEND_URL doit être HTTPS pour recevoir les webhooks CinetPay.');
+            console.warn(`⚠️  [${provider.toUpperCase()}] BACKEND_URL doit être HTTPS pour recevoir les webhooks.`);
         }
     }
 

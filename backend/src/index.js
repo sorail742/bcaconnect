@@ -10,22 +10,18 @@ require("dotenv").config();
 const { validateEnv } = require("./config/envValidation");
 validateEnv();
 
-<<<<<<< HEAD
-const { sequelize } = require("./models");
-=======
 const app = require("./app");
 const { sequelize, Category } = require("./models");
->>>>>>> cc9e8c22a12230e3e9d0244ad41cdcde74833070
 const http = require("http");
 const { Server } = require("socket.io");
 const refreshTokenService = require("./services/refreshTokenService");
 const { startCreditReminders } = require("./cron/creditReminderCron");
+const { startOrderReminders } = require("./cron/orderReminderCron");
+const { startStockAlerts } = require("./cron/stockAlertCron");
+const { startDisputeEscalation } = require("./cron/disputeEscalationCron");
 const { runMigrations } = require("./config/runMigrations");
-<<<<<<< HEAD
 const { initCategoryAttributes } = require("./constants/categoryAttributes");
-=======
 const { ensureDefaultCategories } = require("./config/defaultCategories");
->>>>>>> cc9e8c22a12230e3e9d0244ad41cdcde74833070
 
 // Lancement de la tâche Cron de rappels
 startCreditReminders();
@@ -69,13 +65,40 @@ const start = async () => {
 
     app.set("socketio", io);
 
+    // Expose io to controllers
+    app.set('io', io);
+
+    // Lancement de la tâche Cron pour les relances de commandes
+    startOrderReminders(io);
+    
+    // Lancement des alertes de stocks bas
+    startStockAlerts(io);
+
+    // Lancement de l'escalade des litiges
+    startDisputeEscalation(io);
+
     io.on("connection", (socket) => {
       console.log("⚡ Un utilisateur s'est connecté :", socket.id);
 
-      socket.on("join", (userId) => {
-        socket.join(userId);
-        socket.userId = userId;
-        console.log(`👤 Utilisateur ${userId} a rejoint son canal personnel.`);
+      socket.on("join", (data) => {
+        let userId = null;
+        let role = null;
+        if (typeof data === 'object') {
+          userId = data.id;
+          role = data.role;
+        } else {
+          userId = data;
+        }
+        
+        if (userId) {
+          socket.join(userId);
+          socket.userId = userId;
+          console.log(`👤 Utilisateur ${userId} a rejoint son canal personnel.`);
+        }
+        if (role) {
+          socket.join(`room_${role}`);
+          console.log(`👤 Utilisateur ${userId} a rejoint le canal room_${role}.`);
+        }
       });
 
       socket.on("join_conversation", (conversationId) => {
@@ -88,6 +111,40 @@ const start = async () => {
           userId: socket.userId,
           isTyping,
         });
+      });
+
+      // ── Appels audio/vidéo (signaling WebRTC) ────────────────────────────
+      // Relais pur : le serveur ne comprend pas le contenu SDP/ICE, il
+      // transmet juste au salon personnel du destinataire (déjà rejoint via
+      // "join" ci-dessus) — même convention que le reste du temps réel.
+      socket.on("call_invite", ({ targetId, conversationId, callType, callerName }) => {
+        if (!targetId) return;
+        io.to(targetId).emit("call_invite", {
+          conversationId,
+          callType,
+          callerName,
+          callerId: socket.userId,
+        });
+      });
+
+      socket.on("call_accept", ({ targetId, conversationId }) => {
+        if (!targetId) return;
+        io.to(targetId).emit("call_accepted", { conversationId, calleeId: socket.userId });
+      });
+
+      socket.on("call_reject", ({ targetId, conversationId }) => {
+        if (!targetId) return;
+        io.to(targetId).emit("call_rejected", { conversationId, calleeId: socket.userId });
+      });
+
+      socket.on("call_signal", ({ targetId, signal }) => {
+        if (!targetId) return;
+        io.to(targetId).emit("call_signal", { signal, fromId: socket.userId });
+      });
+
+      socket.on("call_end", ({ targetId, conversationId }) => {
+        if (!targetId) return;
+        io.to(targetId).emit("call_ended", { conversationId, fromId: socket.userId });
       });
 
       socket.on("disconnect", () => {
@@ -122,14 +179,11 @@ const start = async () => {
 
     await runMigrations(sequelize);
 
-<<<<<<< HEAD
-=======
     if (process.env.NODE_ENV !== 'production') {
         await ensureDefaultCategories(Category);
     }
 
     // Démarrer le serveur
->>>>>>> cc9e8c22a12230e3e9d0244ad41cdcde74833070
     server.listen(PORT, () => {
       console.log(`\n🚀 BCA Connect Real-Time API v2.6 — Port ${PORT}`);
       console.log(`🔐 Sécurité: RS256 JWT + Refresh Token Rotation + Redis`);

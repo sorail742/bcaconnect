@@ -1,3 +1,8 @@
+// Ce fichier teste spécifiquement la logique CinetPay : il faut forcer le
+// provider AVANT le require, car PAYMENT_PROVIDER est figé au chargement du
+// module (sinon .env peut charger PAYMENT_PROVIDER=lengopay et faire prendre
+// systématiquement l'autre branche de code, non testée ici).
+process.env.PAYMENT_PROVIDER = 'cinetpay';
 const crypto = require('crypto');
 const paymentProviderService = require('../src/services/paymentProviderService');
 

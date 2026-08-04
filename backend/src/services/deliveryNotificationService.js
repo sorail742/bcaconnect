@@ -1,8 +1,15 @@
 const { User, Notification, Order, OrderItem } = require('../models');
-const { isCarrierPickupEligible } = require('../utils/deliveryEligibility');
+const { isCarrierPickupEligible, isOrderPaidOrCodPending } = require('../utils/deliveryEligibility');
 
 /**
  * Passe la commande en « pret » si tous les articles sont préparés.
+ *
+ * Pour les commandes payées via un provider externe asynchrone (mobile money, carte),
+ * `statut` reste 'en_attente_paiement' jusqu'à confirmation par webhook — un vendeur peut
+ * donc préparer les articles AVANT que le paiement soit confirmé. On ne bascule
+ * `statut_livraison` en 'pret' que si la commande est déjà payée (ou COD) ; sinon elle
+ * resterait indéfiniment invisible aux transporteurs (isCarrierPickupEligible exige les
+ * deux). Voir `resyncPickupAfterPayment`, appelé quand le paiement se confirme ensuite.
  */
 async function syncOrderReadyForPickup(orderId, transaction) {
     const allItems = await OrderItem.findAll({
@@ -14,12 +21,30 @@ async function syncOrderReadyForPickup(orderId, transaction) {
     const allPrepared = allItems.every((i) => i.statut === 'prepare' || i.statut === 'livre');
     if (!allPrepared) return { ready: false };
 
-    const statut_livraison = allItems.every((i) => i.statut === 'livre') ? 'livre' : 'pret';
-    await Order.update(
-        { statut_livraison },
-        { where: { id: orderId }, transaction },
-    );
-    return { ready: statut_livraison === 'pret' };
+    const allDelivered = allItems.every((i) => i.statut === 'livre');
+    if (allDelivered) {
+        await Order.update({ statut_livraison: 'livre' }, { where: { id: orderId }, transaction });
+        return { ready: false };
+    }
+
+    const order = await Order.findByPk(orderId, { transaction });
+    if (!isOrderPaidOrCodPending(order)) {
+        // Articles prêts mais paiement pas encore confirmé : on attend confirmOrderPayment.
+        return { ready: false, waitingForPayment: true };
+    }
+
+    await Order.update({ statut_livraison: 'pret' }, { where: { id: orderId }, transaction });
+    return { ready: true };
+}
+
+/**
+ * À appeler juste après qu'une commande passe au statut 'payé' (webhook / confirmation
+ * paiement) : si le vendeur avait déjà préparé tous les articles pendant que le paiement
+ * était en attente, on débloque immédiatement la visibilité transporteur au lieu de rester
+ * coincé jusqu'au prochain changement de statut d'article.
+ */
+async function resyncPickupAfterPayment(orderId, transaction) {
+    return syncOrderReadyForPickup(orderId, transaction);
 }
 
 /**
@@ -97,6 +122,7 @@ async function syncOrderLogisticsFromItems(orderId, transaction) {
 
 module.exports = {
     syncOrderReadyForPickup,
+    resyncPickupAfterPayment,
     syncOrderLogisticsFromItems,
     notifyCarriersOrderReady,
 };

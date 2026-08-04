@@ -28,4 +28,12 @@ const SPECIALTY_LABELS = {
     solaire: 'Énergie solaire',
 };
 
-module.exports = { TECHNICIAN_SPECIALTIES, SPECIALTY_LABELS };
+/** Le technicien couvre-t-il la spécialité requise par l'intervention ? `specialites`
+ * est une valeur unique exacte de TECHNICIAN_SPECIALTIES (voir dtoValidator.js). */
+const technicianMatchesSpecialty = (technicienSpecialites, specialiteRequise) => {
+    if (!specialiteRequise) return true; // aucune exigence — ouvert à tous (legacy)
+    if (!technicienSpecialites) return false;
+    return technicienSpecialites.toLowerCase().trim() === specialiteRequise.toLowerCase().trim();
+};
+
+module.exports = { TECHNICIAN_SPECIALTIES, SPECIALTY_LABELS, technicianMatchesSpecialty };
