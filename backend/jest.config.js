@@ -6,4 +6,7 @@ module.exports = {
     testTimeout: 30000,
     forceExit: true,
     detectOpenHandles: true,
+    collectCoverageFrom: ['src/**/*.js', '!src/migrations/**', '!src/config/**'],
+    coverageDirectory: 'coverage',
+    coverageReporters: ['lcov', 'text'],
 };

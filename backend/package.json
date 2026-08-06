@@ -10,6 +10,7 @@
     "test:rotation": "node test-refresh-rotation.js",
     "test:validation": "node test-global-validation.js",
     "test": "jest --runInBand --forceExit",
+    "test:coverage": "jest --runInBand --forceExit --coverage",
     "test:security": "jest tests/auth.test.js tests/escrow.test.js tests/disputes.test.js tests/payment-hmac.test.js tests/orders.test.js --runInBand --forceExit",
     "test:phase1": "jest tests/orders.test.js tests/auth.test.js tests/escrow.test.js --runInBand --forceExit",
     "test:phase2": "npm run test:security && node scripts/test-group-purchases.js",

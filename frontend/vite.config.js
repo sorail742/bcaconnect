@@ -2,6 +2,7 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { VitePWA } from 'vite-plugin-pwa'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
@@ -10,19 +11,29 @@ export default defineConfig(({ mode }) => {
   return {
   plugins: [
     react(),
+    // Génère dist/stats.html après `vite build` — diagnostic du contenu réel
+    // du chunk principal (688 kB avant optimisation), pas une supposition.
+    visualizer({ filename: 'dist/stats.html', gzipSize: true, brotliSize: true }),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.png'],
+      // stats.html (rollup-plugin-visualizer) est un artefact de diagnostic de
+      // build, pas un asset applicatif — l'exclure du precache du service
+      // worker (sinon il dépasse maximumFileSizeToCacheInBytes et fait
+      // échouer le build en environnement, cf. incident lors de son ajout).
+      workbox: {
+        globIgnores: ['stats.html'],
+      },
       manifest: {
         name: 'BCA Connect',
         short_name: 'BCA',
         description: 'BCA Connect - Écosystème Connecté',
-        theme_color: '#000000',
+        theme_color: '#1CA0DB',
         icons: [
           {
-            src: 'favicon.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
+            src: 'favicon.png',
+            sizes: '512x512',
+            type: 'image/png',
             purpose: 'any maskable'
           }
         ]
@@ -77,10 +88,6 @@ export default defineConfig(({ mode }) => {
       },
       '/uploads': {
         target: backendUrl,
-        changeOrigin: true,
-      },
-      '/uploads': {
-        target: 'http://localhost:5001',
         changeOrigin: true,
       },
     },

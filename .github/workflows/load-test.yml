@@ -1,0 +1,33 @@
+name: 🚦 Tests de charge (k6)
+
+# Déclenchement manuel (+ nightly optionnel) uniquement — jamais sur chaque PR
+# (lent, coûteux, bruyant) et jamais contre la production (voir Phase 4 du
+# plan : infra Render/Neon actuellement free-tier, non dimensionnée pour ça).
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *' # 03h00 UTC, nightly
+
+jobs:
+  k6:
+    name: 🚦 Scénarios de charge — stack docker-compose locale au runner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🐳 Démarrer la stack applicative
+        run: docker compose up -d
+
+      - name: ⏳ Attendre que le backend soit prêt
+        run: timeout 120 bash -c 'until curl -sf http://localhost:5000/api/health; do sleep 3; done'
+
+      - name: 🚦 k6 (image officielle)
+        uses: grafana/k6-action@v0.3.1
+        with:
+          filename: loadtests/scenarios/_smoke.js
+        env:
+          BASE_URL: http://localhost:5000
+
+      - name: 🐳 Arrêter la stack
+        if: always()
+        run: docker compose down -v

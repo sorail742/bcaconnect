@@ -1,0 +1,82 @@
+name: 🎭 Tests E2E (Playwright)
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  playwright:
+    name: 🎭 Tier 1 — parcours critiques
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: bca_ci
+          POSTGRES_PASSWORD: bca_ci_password
+          POSTGRES_DB: bca_ci_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bca_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://bca_ci:bca_ci_password@localhost:5432/bca_ci_test
+      NODE_ENV: development
+      JWT_SECRET: test_jwt_secret_minimum_32_characters_long_for_bca_ci
+      ENCRYPTION_KEY: d45259cf4cb572049b1c75c5ef9d0893b2bea7c3f3e8b7637d856a87530fd1df
+      GROQ_API_KEY: gsk_ci_dummy_key_for_tests_only
+      WEBHOOK_SECRET: test_webhook_secret_for_ci_only
+      PORT: 5000
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 📦 Dépendances backend
+        working-directory: backend
+        run: npm ci
+
+      - name: 🔄 Migrations
+        working-directory: backend
+        run: npm run migrate
+
+      - name: 🌱 Seed des comptes de test
+        working-directory: backend
+        run: npm run seed:accounts
+
+      - name: 🚀 Démarrer le backend
+        working-directory: backend
+        run: |
+          npm start &
+          timeout 60 bash -c 'until curl -sf http://localhost:5000/api/health; do sleep 2; done'
+
+      - name: 📦 Dépendances frontend
+        working-directory: frontend
+        run: npm ci
+
+      - name: 🎭 Installer les navigateurs Playwright
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: 🎭 Lancer les specs Playwright
+        working-directory: frontend
+        run: npx playwright test
+        env:
+          CI: true
+          VITE_BACKEND_URL: http://localhost:5000
+
+      - name: 📎 Rapport HTML Playwright (en cas d'échec)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 14
