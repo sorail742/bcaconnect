@@ -40,6 +40,19 @@ jobs:
         with:
           node-version: '20'
 
+      - name: 🔑 Paire RSA pour le backend (CI uniquement)
+        # jwtService lève "JWT_PRIVATE_KEY et JWT_PUBLIC_KEY sont requis" sans ça.
+        # Générée à la volée, aucun rapport avec la prod.
+        run: |
+          JWT_PRIVATE_KEY="$(openssl genrsa 2048 2>/dev/null)"
+          JWT_PUBLIC_KEY="$(printf '%s' "$JWT_PRIVATE_KEY" | openssl rsa -pubout 2>/dev/null)"
+          echo "JWT_PRIVATE_KEY<<EOF" >> "$GITHUB_ENV"
+          echo "$JWT_PRIVATE_KEY" >> "$GITHUB_ENV"
+          echo "EOF" >> "$GITHUB_ENV"
+          echo "JWT_PUBLIC_KEY<<EOF" >> "$GITHUB_ENV"
+          echo "$JWT_PUBLIC_KEY" >> "$GITHUB_ENV"
+          echo "EOF" >> "$GITHUB_ENV"
+
       - name: 📦 Dépendances backend
         working-directory: backend
         run: npm ci
