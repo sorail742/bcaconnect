@@ -15,6 +15,10 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     exclude: ['node_modules/**', 'e2e/**', 'dist/**'],
+    // La suite de tests unitaires frontend démarre tout juste (Phase 0) — ne
+    // pas faire échouer la CI tant qu'aucun fichier *.test.js n'est encore
+    // commité. À retirer une fois une première vague de tests en place.
+    passWithNoTests: true,
     coverage: {
       provider: 'v8',
       reporter: ['lcov', 'text'],
