@@ -11,13 +11,13 @@ import { cn } from '../lib/utils';
  */
 const PAGE_LABELS = {
     '/careers':     { title: 'Carrières',              desc: 'Rejoignez notre équipe et participez à la révolution E-commerce.', icon: Rocket, color: 'from-blue-500 to-cyan-400' },
-    '/ads':         { title: 'BCA Ads System',         desc: 'Touchez des millions de clients avec des campagnes hyper-ciblées propulsées par IA.', icon: Zap, color: 'from-[#FF6600] to-orange-400' },
+    '/ads':         { title: 'BCA Ads System',         desc: 'Touchez des millions de clients avec des campagnes hyper-ciblées propulsées par IA.', icon: Zap, color: 'from-[#1CA0DB] to-blue-400' },
     '/insights':    { title: 'BCA Insights',           desc: 'Votre centre de commandement Big Data. Prenez le contrôle de vos KPIs.', icon: LayoutDashboard, color: 'from-emerald-500 to-teal-400' },
     '/ai-trends':   { title: 'BCA AI Engine',          desc: 'Anticipez les ruptures et prédisez les tendances du marché Guinéen avec précision.', icon: Sparkles, color: 'from-violet-500 to-fuchsia-400' },
     '/consultant':  { title: 'Devenir Consultant',     desc: 'Accompagnez l\'écosystème BCA dans la transformation digitale.', icon: Rocket, color: 'from-blue-500 to-indigo-400' },
     '/logistics':   { title: 'BCA Logistique',         desc: 'Gérez vos flottes, optimisez les trajets et garantissez vos SLAs.', icon: CheckCircle2, color: 'from-blue-500 to-cyan-400' },
     '/carrier-join':{ title: 'Rejoindre le Réseau',    desc: 'Devenez transporteur agréé et rentabilisez tous vos déplacements.', icon: Activity, color: 'from-emerald-500 to-teal-400' },
-    '/download':    { title: 'App Mobile BCA',         desc: 'Achetez, Vendez, Gérez. Tout BCA dans votre poche.', icon: Rocket, color: 'from-[#FF6600] to-[#FF9033]' },
+    '/download':    { title: 'App Mobile BCA',         desc: 'Achetez, Vendez, Gérez. Tout BCA dans votre poche.', icon: Rocket, color: 'from-[#1CA0DB] to-[#4FC3F7]' },
     '/returns':     { title: 'Retours & Remboursements', desc: 'Gestion simplifiée de vos retours.', icon: RefreshCcw, color: 'from-amber-500 to-amber-400' },
     '/admin/returns': { title: 'Gestion des Retours', desc: 'Interface administrateur pour les retours.', icon: RefreshCcw, color: 'from-amber-500 to-amber-400' },
 };
@@ -26,7 +26,7 @@ const DEFAULT_LABEL = {
     title: 'Bientôt disponible',
     desc: 'Ce module stratégique est en cours d\'assemblage dans nos laboratoires.',
     icon: Rocket,
-    color: 'from-[#FF6600] to-orange-400'
+    color: 'from-[#1CA0DB] to-blue-400'
 };
 
 export default function ComingSoon() {
@@ -70,7 +70,7 @@ export default function ComingSoon() {
             
             {/* BCA Industrial Dark Aesthetic Background */}
             <div className="absolute inset-0 z-0">
-                <div className="absolute -top-[20%] -right-[10%] w-[70vw] h-[70vw] rounded-full bg-gradient-to-b from-[#FF6600]/10 to-transparent blur-[150px] opacity-70" />
+                <div className="absolute -top-[20%] -right-[10%] w-[70vw] h-[70vw] rounded-full bg-gradient-to-b from-[#1CA0DB]/10 to-transparent blur-[150px] opacity-70" />
                 <div className="absolute top-[40%] -left-[20%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-tr from-blue-500/10 to-transparent blur-[120px] opacity-50" />
                 
                 {/* Tech Grid Pattern */}
@@ -119,7 +119,7 @@ export default function ComingSoon() {
                         <div className="pt-4">
                             {!isSubscribed ? (
                                 <form onSubmit={handleNotifyMe} className="relative group max-w-md">
-                                    <div className="absolute -inset-1 bg-gradient-to-r from-[#FF6600] to-orange-400 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
+                                    <div className="absolute -inset-1 bg-gradient-to-r from-[#1CA0DB] to-blue-400 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
                                     <div className="relative flex items-center bg-slate-800 border border-slate-700 hover:border-slate-600 rounded-2xl overflow-hidden transition-colors shadow-2xl">
                                         <div className="pl-5 shrink-0">
                                             <Bell className="size-5 text-slate-400" />
@@ -195,8 +195,8 @@ export default function ComingSoon() {
                                 transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
                                 className="absolute bottom-16 left-6 bg-slate-800/80 backdrop-blur-xl border border-white/10 px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3"
                             >
-                                <div className="size-8 rounded-lg bg-[#FF6600]/20 flex items-center justify-center">
-                                    <Zap className="size-4 text-[#FF6600]" />
+                                <div className="size-8 rounded-lg bg-[#1CA0DB]/20 flex items-center justify-center">
+                                    <Zap className="size-4 text-[#1CA0DB]" />
                                 </div>
                                 <div>
                                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Performances</p>
@@ -212,7 +212,7 @@ export default function ComingSoon() {
             
             {/* Absolute Logo Bottom */}
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 opacity-20 pointer-events-none">
-                <BcaLogo variant="light" size="h-6" />
+                <BcaLogo variant="light" type="icon" size="h-6" />
             </div>
             
         </div>

@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-    Bot, X, Send, Loader2, Sparkles, ChevronDown, Minimize2, 
+import {
+    Bot, X, Send, Loader2, Sparkles, ChevronDown, Minimize2,
     Code2, MessageSquare, Bug, Copy, Check, ChevronRight,
-    AlertTriangle, Zap, Terminal
+    AlertTriangle, Zap, Terminal, RotateCcw, Maximize2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import aiService from '../../services/aiService';
+import aiService from '../../ai/services/aiService';
 import { useAuth } from '../../hooks/useAuth';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 // ── Markdown renderer minimal (sans dépendance) ───────────────────────────
 const renderMarkdown = (text) => {
@@ -113,7 +113,7 @@ const UserMessage = ({ content, isCode }) => (
     <div className="flex items-end justify-end gap-2 animate-in slide-in-from-right-2 duration-300">
         <div className={cn(
             "max-w-[88%] rounded-xl rounded-br-sm px-3 py-2.5 text-sm font-medium leading-relaxed",
-            isCode ? "bg-zinc-800 text-emerald-400 font-mono text-[11px] border border-zinc-700" : "bg-primary text-slate-900 dark:text-foreground"
+            isCode ? "bg-zinc-800 text-emerald-400 font-mono text-[11px] border border-zinc-700" : "bg-primary text-white"
         )}>
             {isCode ? <pre className="whitespace-pre-wrap">{content}</pre> : content}
         </div>
@@ -137,17 +137,20 @@ const CODE_QUICK_SCANS = [
 const AIChat = () => {
     const { user } = useAuth();
     const location = useLocation();
-    const hideOnPage = location.pathname.startsWith('/messages');
+    const navigate = useNavigate();
+    // Masqué sur /messages (messagerie dédiée) et /ai-mode (qui a son propre assistant intégré,
+    // pour éviter d'avoir deux widgets IA distincts et redondants sur la même page).
+    const hideOnPage = location.pathname.startsWith('/messages') || location.pathname.startsWith('/ai-mode');
     const [isOpen, setIsOpen] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
     const [mode, setMode] = useState('chat'); // 'chat' | 'code'
-    const [messages, setMessages] = useState([
-        {
-            role: 'bot',
-            content: `Bonjour ${user?.nom_complet?.split(' ')[0] || ''} 👋 Je suis **BCA Assistant**. Utilisez le mode 💬 pour me poser des questions ou le mode 🔧 pour analyser votre code et détecter des bugs.`,
-            isCode: false
-        }
-    ]);
+    const greeting = () => ({
+        role: 'bot',
+        content: `Bonjour ${user?.nom_complet?.split(' ')[0] || ''} 👋 Je suis **BCA Assistant**. Utilisez le mode 💬 pour me poser des questions ou le mode 🔧 pour analyser votre code et détecter des bugs.`,
+        isCode: false
+    });
+    const [messages, setMessages] = useState([greeting()]);
+    const [currentConversationId, setCurrentConversationId] = useState(null);
     const [input, setInput] = useState('');
     const [codeInput, setCodeInput] = useState('');
     const [codeContext, setCodeContext] = useState('');
@@ -175,14 +178,20 @@ const AIChat = () => {
         setMessages(prev => [...prev, { role: 'user', content: msg, isCode: false }]);
         setIsLoading(true);
         try {
-            const data = await aiService.chat(msg);
+            const data = await aiService.chat(msg, currentConversationId);
             setMessages(prev => [...prev, { role: 'bot', content: data.response, isCode: false }]);
+            if (data.conversation_id) setCurrentConversationId(data.conversation_id);
             if (!isOpen) setHasUnread(true);
         } catch {
             setMessages(prev => [...prev, { role: 'bot', content: "Désolé, je suis momentanément indisponible.", isCode: false }]);
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const startNewConversation = () => {
+        setMessages([greeting()]);
+        setCurrentConversationId(null);
     };
 
     const sendCodeAnalysis = async () => {
@@ -239,7 +248,7 @@ const AIChat = () => {
                             <button
                                 onClick={() => setMode('chat')}
                                 className={cn("px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wide transition-all flex items-center gap-1",
-                                    mode === 'chat' ? "bg-primary text-slate-900" : "text-muted-foreground hover:text-foreground"
+                                    mode === 'chat' ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
                                 )}
                                 title="Mode Chat"
                             >
@@ -256,6 +265,18 @@ const AIChat = () => {
                             </button>
                         </div>
                         <div className="flex items-center gap-1">
+                            {mode === 'chat' && (
+                                <button onClick={startNewConversation} title="Nouvelle discussion" className="size-6 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-all">
+                                    <RotateCcw className="size-3.5" />
+                                </button>
+                            )}
+                            <button
+                                onClick={() => { setIsOpen(false); navigate('/ai-mode'); }}
+                                title="Ouvrir en plein écran"
+                                className="size-6 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-all"
+                            >
+                                <Maximize2 className="size-3.5" />
+                            </button>
                             <button onClick={() => setIsMinimized(p => !p)} className="size-6 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-all">
                                 {isMinimized ? <ChevronDown className="size-4" /> : <Minimize2 className="size-3.5" />}
                             </button>
@@ -322,7 +343,7 @@ const AIChat = () => {
                                                 onClick={() => sendChatMessage()}
                                                 disabled={!input.trim() || isLoading}
                                                 className={cn("size-6 rounded-lg flex items-center justify-center transition-all",
-                                                    input.trim() && !isLoading ? "bg-primary text-slate-900 hover:scale-105" : "bg-muted text-muted-foreground cursor-not-allowed"
+                                                    input.trim() && !isLoading ? "bg-primary text-white hover:scale-105" : "bg-muted text-muted-foreground cursor-not-allowed"
                                                 )}
                                             >
                                                 <Send className="size-3.5" />
@@ -419,7 +440,7 @@ const AIChat = () => {
                     "size-14 rounded-2xl shadow-2xl shadow-primary/40",
                     "flex items-center justify-center",
                     "transition-all duration-300 hover:scale-110 active:scale-95",
-                    isOpen ? "bg-muted border border-border text-foreground" : "bg-primary text-slate-900 dark:text-foreground"
+                    isOpen ? "bg-muted border border-border text-foreground" : "bg-primary text-white"
                 )}
             >
                 {isOpen ? <X className="size-5" /> : <Bot className="size-6" />}

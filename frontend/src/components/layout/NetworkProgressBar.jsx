@@ -30,8 +30,8 @@ const NetworkProgressBar = () => {
                     transition={{ duration: 0.3 }}
                     className="fixed top-0 left-0 right-0 h-1 bg-primary/40 z-[9999] origin-left pointer-events-none"
                     style={{ 
-                        boxShadow: '0 0 10px rgba(255,102,0,0.4)',
-                        backgroundColor: '#FF6600' // Couleur de marque BCA
+                        boxShadow: '0 0 10px rgba(28,160,219,0.4)',
+                        backgroundColor: '#1CA0DB' // Couleur de marque BCA
                     }}
                 />
             )}

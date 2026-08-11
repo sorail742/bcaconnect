@@ -27,6 +27,8 @@ const DASHBOARD_PREFIXES = [
     '/disputes',
     '/technician',
     '/group-purchase',
+    '/rfq',
+    '/coupons',
     '/sav',
     '/cart',
     '/checkout',

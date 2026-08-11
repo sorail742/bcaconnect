@@ -12,13 +12,15 @@ import ErrorBoundary from './components/ui/ErrorBoundary';
 import './App.css';
 
 import useAuthStore from './store/authStore';
-import authService from './services/authService';
+import authService from './auth/services/authService';
 import useSocket from './hooks/useSocket';
 import { toast, Toaster } from 'sonner';
 import SocketHandler from './components/SocketHandler';
 import RealtimeSync from './components/RealtimeSync';
 import NetworkProgressBar from './components/layout/NetworkProgressBar';
 import ScrollToTop from './components/layout/ScrollToTop';
+import { CallProvider } from './call/context/CallContext';
+import CallManager from './call/components/CallManager';
 
 function App() {
   const location = useLocation();
@@ -64,6 +66,7 @@ function App() {
   }, []);
 
   return (
+      <CallProvider>
       <MainLayout>
         <ScrollToTop />
         <div className={cn(
@@ -85,12 +88,14 @@ function App() {
           <OfflineBanner />
           <SocketHandler />
           <RealtimeSync />
+          <CallManager />
           <ErrorBoundary>
             <AppRoutes />
           </ErrorBoundary>
         </div>
         <AIChat />
       </MainLayout>
+      </CallProvider>
   );
 }
 

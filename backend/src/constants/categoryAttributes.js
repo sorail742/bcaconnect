@@ -5,7 +5,7 @@ const path = require('path');
 const { pathToFileURL } = require('url');
 
 const profilesUrl = pathToFileURL(
-    path.join(__dirname, '../../../frontend/src/lib/categoryAttributeProfiles.js')
+    path.join(__dirname, '../../../frontend/src/category/lib/categoryAttributeProfiles.js')
 ).href;
 
 let profiles = null;

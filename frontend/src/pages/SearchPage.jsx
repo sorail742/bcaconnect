@@ -6,11 +6,11 @@ import {
     Sparkles, TrendingUp, Package, Heart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { aiService } from '../services/aiService';
-import productService from '../services/productService';
+import { aiService } from '../ai/services/aiService';
+import productService from '../product/services/productService';
 import { ProductSkeleton } from '../components/ui/Loader';
 import { cn } from '../lib/utils';
-import useCart from '../hooks/useCart';
+import useCart from '../cart/hooks/useCart';
 import { toast } from 'sonner';
 
 // ── Constants ──────────────────────────────────────────────────────

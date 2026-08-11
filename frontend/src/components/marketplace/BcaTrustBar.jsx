@@ -22,7 +22,7 @@ const BcaTrustBar = ({ className = '' }) => {
                         const label = item.labelKey ? (t(item.labelKey) || item.fallback) : item.fallback;
                         return (
                             <span key={i} className="flex items-center gap-2 shrink-0">
-                                <Icon className="size-4 text-[#FF6600]" strokeWidth={2.5} />
+                                <Icon className="size-4 text-[#1CA0DB]" strokeWidth={2.5} />
                                 <span className="text-[#333] dark:text-slate-300">{label}</span>
                             </span>
                         );

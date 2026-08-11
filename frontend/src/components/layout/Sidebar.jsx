@@ -4,19 +4,22 @@ import {
     LayoutDashboard, Package, ShoppingCart, Store, Receipt,
     Users, MessageSquare, User, Truck, Plus, Landmark,
     Folder, RotateCcw, Bell, Wallet, Settings, LogOut,
-    Megaphone, Gavel, X, Shield, Search, Satellite, Zap, Calendar, BarChart2, GraduationCap
+    Megaphone, Gavel, X, Shield, Search, Satellite, Zap, Calendar, BarChart2, GraduationCap, Radio, Wrench, FileText, Globe2, History, Activity, Tag
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { ROLE_LABELS } from '../../constants/roles';
 import { useAuth } from '../../hooks/useAuth';
 import { useRBAC } from '../../hooks/useRBAC';
-import messageService from '../../services/messageService';
+import messageService from '../../message/services/messageService';
 import socketService from '../../services/socketService';
+import { useLanguage } from '../../context/useLanguage';
+import BcaLogo from '../ui/BcaLogo';
 
 const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
     const { user, logout } = useAuth();
-    const { can } = useRBAC();
+    const { can, is } = useRBAC();
     const navigate = useNavigate();
+    const { t } = useLanguage();
     const [unreadMessages, setUnreadMessages] = useState(0);
 
     // Charger le nombre de messages non lus
@@ -38,65 +41,89 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
 
     const menuItems = {
         admin: [
-            { path: '/admin/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
-            { path: '/admin/logistics', label: 'Logistique', icon: Truck },
-            { path: '/admin/users', label: 'Utilisateurs', icon: Users, permission: 'manage_users' },
-            { path: '/admin/products', label: 'Produits', icon: Package },
-            { path: '/admin/categories', label: 'Catégories', icon: Folder, permission: 'manage_categories' },
-            { path: '/admin/trends', label: 'IA Trends', icon: Zap },
-            { path: '/admin/disputes', label: 'Litiges', icon: Gavel, permission: 'solve_disputes' },
-            { path: '/admin/transactions', label: 'Transactions', icon: Receipt, permission: 'view_all_transactions' },
-            { path: '/admin/financial', label: 'Finances', icon: Landmark, permission: 'view_all_transactions' },
-            { path: '/admin/returns', label: 'Retours', icon: RotateCcw },
-            { path: '/admin/ads', label: 'Publicités', icon: Megaphone, permission: 'manage_ads' },
-            { path: '/admin/education', label: 'BCA Academy', icon: GraduationCap, permission: 'manage_education' },
-            { path: '/messages', label: 'Messages', icon: MessageSquare, badge: unreadMessages },
+            { path: '/admin/dashboard', label: t('dashboard') || 'Tableau de bord', icon: LayoutDashboard },
+            { path: '/admin/logistics', label: t('logistics') || 'Logistique', icon: Truck },
+            { path: '/admin/user-map', label: 'Carte Utilisateurs', icon: Globe2 },
+            { path: '/admin/users', label: t('users') || 'Utilisateurs', icon: Users, permission: 'manage_users' },
+            { path: '/admin/products', label: t('products') || 'Produits', icon: Package },
+            { path: '/admin/categories', label: t('categories') || 'Catégories', icon: Folder, permission: 'manage_categories' },
+            { path: '/admin/trends', label: t('trends') || 'IA Trends', icon: Zap },
+            { path: '/admin/disputes', label: t('disputes') || 'Litiges', icon: Gavel, permission: 'solve_disputes' },
+            { path: '/admin/transactions', label: t('transactions') || 'Transactions', icon: Receipt, permission: 'view_all_transactions' },
+            { path: '/admin/financial', label: t('finances') || 'Finances', icon: Landmark, permission: 'view_all_transactions' },
+            { path: '/admin/returns', label: t('returns') || 'Retours', icon: RotateCcw },
+            { path: '/wallet', label: t('wallet') || 'Portefeuille', icon: Wallet },
+            { path: '/coupons', label: 'Codes promo', icon: Tag },
+            { path: '/admin/ads', label: t('ads') || 'Publicités', icon: Megaphone, permission: 'manage_ads' },
+            { path: '/admin/education', label: t('bcaAcademy') || 'BCA Academy', icon: GraduationCap, permission: 'manage_education' },
+            { path: '/admin/webinars', label: 'Webinaires', icon: Radio, permission: 'manage_content' },
+            { path: '/admin/certifications', label: 'Certifications', icon: Shield, permission: 'manage_users' },
+            { path: '/admin/sav', label: 'SAV', icon: Wrench, permission: 'manage_users' },
+            { path: '/admin/documents', label: 'Documents Commerciaux', icon: FileText, permission: 'manage_users' },
+            { path: '/admin/deletion-history', label: 'Historique des suppressions', icon: History, permission: 'view_deletion_history' },
+            { path: '/admin/audit-log', label: "Journal d'activité", icon: Activity, permission: 'view_audit_logs' },
+            { path: '/messages', label: t('messages') || 'Messages', icon: MessageSquare, badge: unreadMessages },
         ],
         fournisseur: [
-            { path: '/vendor/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
-            { path: '/vendor/products', label: 'Mes Produits', icon: Package, permission: 'manage_own_products' },
-            { path: '/vendor/orders', label: 'Commandes', icon: ShoppingCart, permission: 'view_own_orders' },
-            { path: '/group-purchase', label: 'Achats groupés', icon: Users },
-            { path: '/vendor/reports', label: 'Rapports', icon: BarChart2, permission: 'view_vendor_insights' },
-            { path: '/disputes', label: 'Litiges', icon: Gavel },
-            { path: '/vendor/ads', label: 'Mes Publicités', icon: Megaphone, permission: 'manage_ads' },
-            { path: '/vendor/store', label: 'Ma Boutique', icon: Store, permission: 'manage_own_store' },
-            { path: '/messages', label: 'Messages', icon: MessageSquare, badge: unreadMessages },
+            { path: '/vendor/dashboard', label: t('dashboard') || 'Tableau de bord', icon: LayoutDashboard },
+            { path: '/vendor/products', label: t('myProducts') || 'Mes Produits', icon: Package, permission: 'manage_own_products' },
+            { path: '/vendor/orders', label: t('orders') || 'Commandes', icon: ShoppingCart, permission: 'view_own_orders' },
+            { path: '/vendor/clients-map', label: 'Carte Clients', icon: Globe2 },
+            { path: '/group-purchase', label: t('groupPurchase') || 'Achats groupés', icon: Users },
+            { path: '/rfq', label: t('rfq') || 'Demandes de devis', icon: FileText },
+            { path: '/coupons', label: 'Codes promo', icon: Tag },
+            { path: '/vendor/reports', label: t('reports') || 'Rapports', icon: BarChart2, permission: 'view_vendor_insights' },
+            { path: '/disputes', label: t('disputes') || 'Litiges', icon: Gavel },
+            { path: '/wallet', label: t('wallet') || 'Portefeuille', icon: Wallet },
+            { path: '/vendor/ads', label: t('myAds') || 'Mes Publicités', icon: Megaphone, permission: 'manage_ads' },
+            { path: '/vendor/store', label: t('myStore') || 'Ma Boutique', icon: Store, permission: 'manage_own_store' },
+            { path: '/vendor/certifications', label: 'Certifications', icon: Shield },
+            { path: '/education', label: t('bcaAcademy') || 'BCA Academy', icon: GraduationCap },
+            { path: '/messages', label: t('messages') || 'Messages', icon: MessageSquare, badge: unreadMessages },
         ],
         transporteur: [
-            { path: '/carrier/dashboard', label: 'Missions', icon: Truck, permission: 'view_available_deliveries' },
-            { path: '/wallet', label: 'Portefeuille', icon: Wallet },
-            { path: '/tracking', label: 'Suivi colis', icon: Satellite },
-            { path: '/messages', label: 'Messages', icon: MessageSquare, badge: unreadMessages },
+            { path: '/carrier/dashboard', label: t('missions') || 'Missions', icon: Truck, permission: 'view_available_deliveries' },
+            { path: '/wallet', label: t('wallet') || 'Portefeuille', icon: Wallet },
+            { path: '/tracking', label: t('tracking') || 'Suivi colis', icon: Satellite },
+            { path: '/education', label: t('bcaAcademy') || 'BCA Academy', icon: GraduationCap },
+            { path: '/messages', label: t('messages') || 'Messages', icon: MessageSquare, badge: unreadMessages },
         ],
         client: [
-            { path: '/dashboard', label: 'Mon Espace', icon: LayoutDashboard },
-            { path: '/marketplace', label: 'Marché', icon: Store },
-            { path: '/dashboard/vendors', label: 'Fournisseurs', icon: Users },
-            { path: '/orders', label: 'Mes Commandes', icon: ShoppingCart, permission: 'view_own_history' },
-            { path: '/disputes', label: 'Mes Litiges', icon: Gavel },
-            { path: '/dashboard/credits', label: 'Mes Crédits', icon: Receipt },
-            { path: '/dashboard/credit-calendar', label: 'Calendrier', icon: Calendar },
-            { path: '/payments', label: 'Paiements', icon: Wallet },
-            { path: '/tracking', label: 'Livraisons', icon: Truck },
-            { path: '/sav/guarantees', label: 'Garanties SAV', icon: Shield },
-            { path: '/group-purchase', label: 'Achats groupés', icon: Users },
-            { path: '/messages', label: 'Messages', icon: MessageSquare, badge: unreadMessages },
+            { path: '/dashboard', label: t('myDashboard') || 'Mon Espace', icon: LayoutDashboard },
+            { path: '/marketplace', label: t('marketplace') || 'Marché', icon: Store },
+            { path: '/dashboard/vendors', label: t('vendors') || 'Fournisseurs', icon: Users },
+            { path: '/dashboard/vendors-map', label: 'Carte Marchands', icon: Globe2 },
+            { path: '/orders', label: t('myOrders') || 'Mes Commandes', icon: ShoppingCart, permission: 'view_own_history' },
+            { path: '/disputes', label: t('myDisputes') || 'Mes Litiges', icon: Gavel },
+            { path: '/dashboard/credits', label: t('myCredits') || 'Mes Crédits', icon: Receipt },
+            { path: '/dashboard/credit-calendar', label: t('calendar') || 'Calendrier', icon: Calendar },
+            { path: '/wallet', label: t('wallet') || 'Portefeuille', icon: Wallet },
+            { path: '/tracking', label: t('deliveries') || 'Livraisons', icon: Truck },
+            { path: '/sav/guarantees', label: t('savGuarantees') || 'Garanties SAV', icon: Shield },
+            { path: '/group-purchase', label: t('groupPurchase') || 'Achats groupés', icon: Users },
+            { path: '/rfq', label: t('rfq') || 'Demandes de devis', icon: FileText },
+            { path: '/education', label: t('bcaAcademy') || 'BCA Academy', icon: GraduationCap },
+            { path: '/messages', label: t('messages') || 'Messages', icon: MessageSquare, badge: unreadMessages },
         ],
         technicien: [
-            { path: '/technician/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
-            { path: '/technician/missions', label: 'Missions', icon: Zap },
-            { path: '/technician/equipment', label: 'Équipements', icon: Package },
-            { path: '/group-purchase', label: 'Achats groupés', icon: Users },
-            { path: '/technician/wallet', label: 'Portefeuille', icon: Wallet },
-            { path: '/messages', label: 'Messages', icon: MessageSquare, badge: unreadMessages },
+            { path: '/technician/dashboard', label: t('dashboard') || 'Tableau de bord', icon: LayoutDashboard },
+            { path: '/technician/missions', label: t('missions') || 'Missions', icon: Zap },
+            { path: '/technician/missions-map', label: 'Carte Missions', icon: Globe2 },
+            { path: '/technician/equipment', label: t('equipment') || 'Équipements', icon: Package },
+            { path: '/group-purchase', label: t('groupPurchase') || 'Achats groupés', icon: Users },
+            { path: '/technician/wallet', label: t('wallet') || 'Portefeuille', icon: Wallet },
+            { path: '/education', label: t('bcaAcademy') || 'BCA Academy', icon: GraduationCap },
+            { path: '/messages', label: t('messages') || 'Messages', icon: MessageSquare, badge: unreadMessages },
         ],
         banque: [
-            { path: '/bank/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
-            { path: '/bank/credits', label: 'Crédits en attente', icon: Receipt, permission: 'manage_credits' },
-            { path: '/group-purchase', label: 'Achats groupés', icon: Users },
-            { path: '/admin/financial', label: 'Rapports financiers', icon: Landmark, permission: 'view_financial_reports' },
-            { path: '/messages', label: 'Messages', icon: MessageSquare, badge: unreadMessages },
+            { path: '/bank/dashboard', label: t('dashboard') || 'Tableau de bord', icon: LayoutDashboard },
+            { path: '/bank/credits', label: t('pendingCredits') || 'Crédits en attente', icon: Receipt, permission: 'manage_credits' },
+            { path: '/bank/applicants-map', label: 'Carte Emprunteurs', icon: Globe2, permission: 'manage_credits' },
+            { path: '/group-purchase', label: t('groupPurchase') || 'Achats groupés', icon: Users },
+            { path: '/wallet', label: t('wallet') || 'Portefeuille', icon: Wallet },
+            { path: '/admin/financial', label: t('financialReports') || 'Rapports financiers', icon: Landmark, permission: 'view_financial_reports' },
+            { path: '/education', label: t('bcaAcademy') || 'BCA Academy', icon: GraduationCap },
+            { path: '/messages', label: t('messages') || 'Messages', icon: MessageSquare, badge: unreadMessages },
         ]
     };
 
@@ -114,16 +141,13 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
             )}>
                 <div className="flex flex-col h-full min-h-0 overflow-hidden py-4 px-3">
                     <div className={cn(
-                        "flex items-center gap-3 px-1 mb-6 shrink-0",
-                        isCollapsed ? "justify-center" : "justify-start"
+                        "flex flex-col gap-2 px-1 mb-6 shrink-0",
+                        isCollapsed ? "items-center" : "items-start"
                     )}>
-                        <div className="size-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-                            <Zap className="size-4 text-primary-foreground fill-current" />
-                        </div>
+                        <BcaLogo type={isCollapsed ? 'icon' : 'full'} size={isCollapsed ? 'h-8' : 'h-11'} />
                         {!isCollapsed && (
-                            <div className="flex flex-col min-w-0 text-left">
-                                <h1 translate="no" className="text-foreground text-sm font-bold tracking-tight uppercase leading-none">BCA Connect</h1>
-                                <p className="text-primary text-[9px] font-bold uppercase tracking-widest leading-none mt-1">
+                            <div className="flex flex-col min-w-0 text-left pl-0.5">
+                                <p className="text-primary text-[9px] font-bold uppercase tracking-widest leading-none">
                                     {ROLE_LABELS[user?.role] || 'Membre BCA'}
                                 </p>
                             </div>
@@ -137,7 +161,7 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                                     <input
                                         className="w-full h-9 pl-9 pr-3 bg-muted border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground outline-none focus:border-primary/40"
-                                        placeholder="Rechercher..."
+                                        placeholder={t('searchDots') || "Rechercher..."}
                                     />
                                 </div>
                             </div>
@@ -145,7 +169,7 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
 
                         <nav className="flex flex-col gap-0.5">
                             {!isCollapsed && (
-                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">Navigation</p>
+                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">{t('navigation') || 'Navigation'}</p>
                             )}
                             {currentMenu.map((item) => (
                                 <NavLink
@@ -180,7 +204,7 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
                     </div>
 
                     <div className="flex flex-col gap-2 pt-3 mt-2 border-t border-border shrink-0">
-                        {can('manage_own_products') && !isCollapsed && (
+                        {can('manage_own_products') && is('fournisseur') && !isCollapsed && (
                             <button
                                 id="btn-sidebar-add-product"
                                 onClick={() => {
@@ -190,7 +214,7 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
                                 className="w-full h-10 flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-lg font-semibold text-xs hover:bg-primary/90"
                             >
                                 <Plus className="size-4" />
-                                <span>Ajouter un produit</span>
+                                <span>{t('addProduct') || 'Ajouter un produit'}</span>
                             </button>
                         )}
 
@@ -206,7 +230,7 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
                             )}
                         >
                             <LogOut className="size-4" />
-                            {!isCollapsed && <span className="text-xs uppercase tracking-wide">Déconnexion</span>}
+                            {!isCollapsed && <span className="text-xs uppercase tracking-wide">{t('logout') || 'Déconnexion'}</span>}
                         </button>
                     </div>
                 </div>

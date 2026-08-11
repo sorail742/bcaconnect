@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-    Share2, Globe, Mail, ShieldCheck, Send, Zap, Satellite, Activity, 
-    Truck, CreditCard, Headphones, Shield, Smartphone, ArrowRight
+import {
+    Globe, Mail, ShieldCheck, Send,
+    Truck, Headphones, ArrowRight
 } from 'lucide-react';
 import { useLanguage } from '../../context/useLanguage';
 import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../lib/utils';
 import BcaLogo from '../ui/BcaLogo';
+import { InstagramIcon, LinkedinIcon, XIcon } from '../ui/SocialIcons';
 import mtnLogo from '../../assets/mtn_mobile_money.png';
 import orangeLogo from '../../assets/orange_money.png';
 import paycardLogo from '../../assets/paycard.png';
@@ -126,7 +127,7 @@ const Footer = () => {
                     {/* Brand & Newsletter */}
                     <div className="lg:col-span-4 space-y-8">
                         <Link to="/" className="flex items-center gap-4 group w-fit">
-                            <BcaLogo variant="light" size="h-16" />
+                            <BcaLogo type="full" size="h-16" />
                         </Link>
                         
                         <div className="space-y-4 pt-4">
@@ -150,10 +151,10 @@ const Footer = () => {
 
                         <div className="flex items-center gap-4 pt-2">
                             {[
-                                { Icon: Share2, name: "Instagram" },
-                                { Icon: Globe, name: "LinkedIn" },
+                                { Icon: InstagramIcon, name: "Instagram" },
+                                { Icon: LinkedinIcon, name: "LinkedIn" },
                                 { Icon: Mail, name: "Email" },
-                                { Icon: Zap, name: "Twitter" }
+                                { Icon: XIcon, name: "X" }
                             ].map(({ Icon, name }, i) => (
                                 <button 
                                     key={i} 
@@ -177,7 +178,7 @@ const Footer = () => {
                                 <ul className="space-y-4">
                                     {section.links.map((link, j) => (
                                         <li key={j}>
-                                            <Link to={link.href} className="text-base font-semibold text-slate-500 hover:text-primary hover:translate-x-2 transition-all flex items-center gap-2 group">
+                                            <Link to={link.href} className="text-base font-semibold text-muted-foreground hover:text-primary hover:translate-x-2 transition-all flex items-center gap-2 group">
                                                 <ArrowRight className="size-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-primary" />
                                                 {link.label}
                                             </Link>
@@ -212,7 +213,8 @@ const Footer = () => {
                              {[
                                 { src: mtnLogo, alt: "MTN MoMo", bg: "bg-white", label: "MTN Money" },
                                 { src: orangeLogo, alt: "Orange Money", bg: "bg-white", label: "Orange Money" },
-                                { src: paycardLogo, alt: "PayCard", bg: "bg-white", label: "PayCard" }
+                                { src: paycardLogo, alt: "PayCard", bg: "bg-white", label: "PayCard" },
+                                { src: areerbaLogo, alt: "Areeba", bg: "bg-white", label: "Areeba" }
                              ].map((op, i) => (
                                 <div key={i} className="group relative">
                                     <div className={cn(
@@ -241,16 +243,16 @@ const Footer = () => {
                         </button>
                     </div>
 
-                    <div className="w-full flex flex-col lg:flex-row items-center justify-between gap-6 opacity-60 hover:opacity-100 transition-opacity">
+                    <div className="w-full flex flex-col lg:flex-row items-center justify-between gap-6 opacity-70 hover:opacity-100 transition-opacity">
                         <div className="flex flex-col items-center lg:items-start gap-4">
-                            <div className="flex items-center gap-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
+                            <div className="flex items-center gap-4 text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">
                                 <Link to="/privacy" className="hover:text-primary transition-colors">{t('privacy') || "Confidentialité"}</Link>
-                                <div className="size-1 rounded-full bg-slate-700" />
+                                <div className="size-1 rounded-full bg-muted-foreground/50" />
                                 <Link to="/terms" className="hover:text-primary transition-colors">{t('terms') || "Conditions"}</Link>
-                                <div className="size-1 rounded-full bg-slate-700" />
+                                <div className="size-1 rounded-full bg-muted-foreground/50" />
                                 <Link to="/legal" className="hover:text-primary transition-colors">{t('legalNotice') || "Mentions Légales"}</Link>
                             </div>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                                 © {currentYear} BCA Connect Ecosystem. {t('poweredBy') || "Propulsé par la Technologie 224."}
                             </p>
                         </div>

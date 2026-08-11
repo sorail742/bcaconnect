@@ -2,20 +2,20 @@ import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 // Pages importées de manière synchrone (Core Experience)
-import LandingPage from "../pages/LandingPage";
-import Login from "../pages/auth/Login";
-import Register from "../pages/auth/Register";
-import ForgotPassword from "../pages/auth/ForgotPassword";
-import ProductCatalogue from "../pages/Catalogue";
-import ProductDetail from "../pages/ProductDetails";
-import CartPage from "../pages/CartPage";
+import LandingPage from "../landing/pages/LandingPage";
+import Login from "../auth/pages/Login";
+import Register from "../auth/pages/Register";
+import ForgotPassword from "../auth/pages/ForgotPassword";
+import ProductCatalogue from "../product/pages/Catalogue";
+import ProductDetail from "../product/pages/ProductDetails";
+import CartPage from "../cart/pages/CartPage";
 import NotFound from "../pages/NotFound";
 import ComingSoon from "../pages/ComingSoon";
 import PrivacyPage from "../pages/PrivacyPage";
 import TermsPage from "../pages/TermsPage";
-import AiMode from "../pages/AiMode";
+import AiMode from "../ai/pages/AiMode";
 
-import ProtectedRoute from "../components/auth/ProtectedRoute";
+import ProtectedRoute from "../auth/components/ProtectedRoute";
 import { ROLES } from "../constants/roles";
 
 // Fallback component for lazy loading
@@ -34,80 +34,94 @@ const LazyFallback = () => (
 
 // Public Pages - Lazy Loaded
 const SearchPage = lazy(() => import("../pages/SearchPage"));
-const StorePage = lazy(() => import("../pages/StorePage"));
-const VendorsList = lazy(() => import("../pages/VendorsList"));
+const StorePage = lazy(() => import("../shop/pages/StorePage"));
+const VendorsList = lazy(() => import("../shop/pages/VendorsList"));
 const AboutPage = lazy(() => import("../pages/AboutPage"));
 const ContactPage = lazy(() => import("../pages/ContactPage"));
 const FaqPage = lazy(() => import("../pages/FaqPage"));
-const HelpCenter = lazy(() => import("../pages/HelpCenter"));
-const EducationCenter = lazy(() => import("../pages/EducationCenter"));
-const GroupPurchase = lazy(() => import("../pages/GroupPurchase"));
-const Unauthorized = lazy(() => import("../pages/auth/Unauthorized"));
+const HelpCenter = lazy(() => import("../support/pages/HelpCenter"));
+const EducationCenter = lazy(() => import("../education/pages/EducationCenter"));
+const GroupPurchase = lazy(() => import("../group-purchase/pages/GroupPurchase"));
+const Rfq = lazy(() => import("../rfq/pages/Rfq"));
+const Coupons = lazy(() => import("../coupon/pages/Coupons"));
+const Unauthorized = lazy(() => import("../auth/pages/Unauthorized"));
 
 // Protected Pages - Lazy Loaded
-const Dashboard = lazy(() => import("../pages/dashboard/Dashboard"));
+const Dashboard = lazy(() => import("../dashboard/pages/Dashboard"));
 const DashboardVendors = lazy(
-  () => import("../pages/dashboard/DashboardVendors"),
+  () => import("../dashboard/pages/DashboardVendors"),
 );
-const OrdersClient = lazy(() => import("../pages/OrdersClient"));
-const UserWallet = lazy(() => import("../pages/Wallet"));
-const UserProfile = lazy(() => import("../pages/Profile"));
-const Messages = lazy(() => import("../pages/Messages"));
-const Notifications = lazy(() => import("../pages/Notifications"));
-const Checkout = lazy(() => import("../pages/Checkout"));
-const Tracking = lazy(() => import("../pages/Tracking"));
-const MyCredits = lazy(() => import("../pages/MyCredits"));
-const CreditSimulator = lazy(() => import("../pages/CreditSimulator"));
-const CreditCalendar = lazy(() => import("../pages/CreditCalendar"));
-const DisputeReport = lazy(() => import("../pages/DisputeReport"));
-const MyDisputes = lazy(() => import("../pages/MyDisputes"));
-const DisputeDetail = lazy(() => import("../pages/DisputeDetail"));
-const MyGuarantees = lazy(() => import("../pages/sav/MyGuarantees"));
-const MyInterventions = lazy(() => import("../pages/sav/MyInterventions"));
+const VendorsMap = lazy(() => import("../dashboard/pages/VendorsMap"));
+const OrdersClient = lazy(() => import("../order/pages/OrdersClient"));
+const UserWallet = lazy(() => import("../wallet/pages/Wallet"));
+const UserProfile = lazy(() => import("../user/pages/Profile"));
+const Messages = lazy(() => import("../message/pages/Messages"));
+const Notifications = lazy(() => import("../notification/pages/Notifications"));
+const Checkout = lazy(() => import("../order/pages/Checkout"));
+const Tracking = lazy(() => import("../delivery/pages/Tracking"));
+const MyCredits = lazy(() => import("../credit/pages/MyCredits"));
+const CreditSimulator = lazy(() => import("../credit/pages/CreditSimulator"));
+const CreditCalendar = lazy(() => import("../credit/pages/CreditCalendar"));
+const DisputeReport = lazy(() => import("../dispute/pages/DisputeReport"));
+const MyDisputes = lazy(() => import("../dispute/pages/MyDisputes"));
+const DisputeDetail = lazy(() => import("../dispute/pages/DisputeDetail"));
+const MyGuarantees = lazy(() => import("../sav/pages/MyGuarantees"));
+const MyInterventions = lazy(() => import("../sav/pages/MyInterventions"));
 const MaintenanceRequest = lazy(
-  () => import("../pages/sav/MaintenanceRequest"),
+  () => import("../sav/pages/MaintenanceRequest"),
 );
 
 // Vendor Pages - Lazy Loaded
-const VendorDashboard = lazy(() => import("../pages/vendor/VendorDashboard"));
-const Products = lazy(() => import("../pages/vendor/Products"));
-const AddProduct = lazy(() => import("../pages/vendor/AddProduct"));
-const StoreSettings = lazy(() => import("../pages/vendor/StoreSettings"));
-const OrdersVendor = lazy(() => import("../pages/vendor/OrdersVendor"));
-const VendorReports = lazy(() => import("../pages/vendor/VendorReports"));
+const VendorDashboard = lazy(() => import("../dashboard/pages/VendorDashboard"));
+const Products = lazy(() => import("../product/pages/Products"));
+const AddProduct = lazy(() => import("../product/pages/AddProduct"));
+const StoreSettings = lazy(() => import("../shop/pages/StoreSettings"));
+const OrdersVendor = lazy(() => import("../order/pages/OrdersVendor"));
+const VendorReports = lazy(() => import("../dashboard/pages/VendorReports"));
+const ClientsMap = lazy(() => import("../dashboard/pages/ClientsMap"));
 
 // Carrier Pages - Lazy Loaded
 const CarrierDashboard = lazy(
-  () => import("../pages/carrier/CarrierDashboard"),
+  () => import("../delivery/pages/CarrierDashboard"),
 );
 
 // Bank Pages - Lazy Loaded
-const BankDashboard = lazy(() => import("../pages/bank/BankDashboard"));
-const BankCredits = lazy(() => import("../pages/bank/BankCredits"));
+const BankDashboard = lazy(() => import("../dashboard/pages/BankDashboard"));
+const BankCredits = lazy(() => import("../credit/pages/BankCredits"));
+const CreditApplicantsMap = lazy(() => import("../credit/pages/CreditApplicantsMap"));
 
 
 // Technician Pages - Lazy Loaded
-const TechnicianDashboard = lazy(() => import('../pages/technician/TechnicianDashboard'));
-const TechnicianMissions = lazy(() => import('../pages/technician/TechnicianMissions'));
-const TechnicianEquipment = lazy(() => import('../pages/technician/TechnicianEquipment'));
+const TechnicianDashboard = lazy(() => import('../technician/pages/TechnicianDashboard'));
+const TechnicianMissions = lazy(() => import('../technician/pages/TechnicianMissions'));
+const TechnicianMissionsMap = lazy(() => import('../technician/pages/MissionsMap'));
+const TechnicianEquipment = lazy(() => import('../technician/pages/TechnicianEquipment'));
 
 // Admin Pages - Lazy Loaded
-const AdminDashboard = lazy(() => import("../pages/admin/AdminDashboard"));
-const Users = lazy(() => import("../pages/admin/Users"));
-const AdminProducts = lazy(() => import("../pages/admin/AdminProducts"));
+const AdminDashboard = lazy(() => import("../dashboard/pages/AdminDashboard"));
+const Users = lazy(() => import("../user/pages/Users"));
+const AdminProducts = lazy(() => import("../product/pages/AdminProducts"));
+const DocumentGenerator = lazy(() => import("../order/pages/DocumentGenerator"));
 const AdminTransactions = lazy(
-  () => import("../pages/admin/AdminTransactions"),
+  () => import("../dashboard/pages/AdminTransactions"),
 );
-const Categories = lazy(() => import("../pages/admin/Categories"));
-const AdminEducation = lazy(() => import("../pages/admin/AdminEducation"));
-const Returns = lazy(() => import("../pages/admin/Returns"));
-const AdManager = lazy(() => import("../pages/admin/AdManager"));
-const AdminDisputes = lazy(() => import("../pages/admin/AdminDisputes"));
-const AITrends = lazy(() => import("../pages/admin/AITrends"));
-const FinancialReports = lazy(() => import("../pages/admin/FinancialReports"));
-const AdminLogistics = lazy(() => import("../pages/admin/AdminLogistics"));
-const PaymentSimulation = lazy(() => import("../pages/PaymentSimulation"));
-const PaymentReturn = lazy(() => import("../pages/PaymentReturn"));
+const Categories = lazy(() => import("../category/pages/Categories"));
+const AdminEducation = lazy(() => import("../education/pages/AdminEducation"));
+const Returns = lazy(() => import("../dispute/pages/Returns"));
+const AdManager = lazy(() => import("../ad/pages/AdManager"));
+const AdminDisputes = lazy(() => import("../dispute/pages/AdminDisputes"));
+const AITrends = lazy(() => import("../dashboard/pages/AITrends"));
+const FinancialReports = lazy(() => import("../dashboard/pages/FinancialReports"));
+const AdminLogistics = lazy(() => import("../delivery/pages/AdminLogistics"));
+const AdminUserMap = lazy(() => import("../user/pages/AdminUserMap"));
+const DeletionHistory = lazy(() => import("../deletion-log/pages/DeletionHistory"));
+const AuditLogPage = lazy(() => import("../audit-log/pages/AuditLogPage"));
+const AdminWebinars = lazy(() => import("../webinar/pages/AdminWebinars"));
+const AdminCertifications = lazy(() => import("../certification/pages/AdminCertifications"));
+const VendorCertifications = lazy(() => import("../certification/pages/VendorCertifications"));
+const AdminSAV = lazy(() => import("../sav/pages/AdminSAV"));
+const PaymentSimulation = lazy(() => import("../wallet/pages/PaymentSimulation"));
+const PaymentReturn = lazy(() => import("../wallet/pages/PaymentReturn"));
 
 const AppRoutes = () => {
   return (
@@ -303,6 +317,26 @@ const AppRoutes = () => {
           </Suspense>
         }
       />
+      <Route
+        path="/rfq"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.CLIENT, ROLES.FOURNISSEUR]}>
+              <Rfq />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+      <Route
+        path="/coupons"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.FOURNISSEUR]}>
+              <Coupons />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
 
       <Route
         path="/tracking"
@@ -331,6 +365,17 @@ const AppRoutes = () => {
           <Suspense fallback={<LazyFallback />}>
             <ProtectedRoute>
               <DashboardVendors />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+
+      <Route
+        path="/dashboard/vendors-map"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.CLIENT, ROLES.ADMIN]}>
+              <VendorsMap />
             </ProtectedRoute>
           </Suspense>
         }
@@ -602,6 +647,17 @@ const AppRoutes = () => {
       />
 
       <Route
+        path="/vendor/clients-map"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.FOURNISSEUR]}>
+              <ClientsMap />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+
+      <Route
         path="/vendor/ads"
         element={
           <Suspense fallback={<LazyFallback />}>
@@ -646,6 +702,17 @@ const AppRoutes = () => {
         }
       />
 
+      <Route
+        path="/bank/applicants-map"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.BANQUE, ROLES.ADMIN]}>
+              <CreditApplicantsMap />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+
       {/* Technician Routes */}
       <Route
         path="/technician/dashboard"
@@ -675,6 +742,17 @@ const AppRoutes = () => {
           <Suspense fallback={<LazyFallback />}>
             <ProtectedRoute allowedRoles={[ROLES.TECHNICIEN]}>
               <TechnicianEquipment />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+
+      <Route
+        path="/technician/missions-map"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.TECHNICIEN]}>
+              <TechnicianMissionsMap />
             </ProtectedRoute>
           </Suspense>
         }
@@ -748,11 +826,44 @@ const AppRoutes = () => {
       />
 
       <Route
+        path="/admin/documents"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+              <DocumentGenerator />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+
+      <Route
         path="/admin/education"
         element={
           <Suspense fallback={<LazyFallback />}>
             <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
               <AdminEducation />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+
+      <Route
+        path="/admin/deletion-history"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+              <DeletionHistory />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+
+      <Route
+        path="/admin/audit-log"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+              <AuditLogPage />
             </ProtectedRoute>
           </Suspense>
         }
@@ -825,10 +936,66 @@ const AppRoutes = () => {
       />
 
       <Route
+        path="/admin/user-map"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+              <AdminUserMap />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+
+      <Route
         path="/unauthorized"
         element={
           <Suspense fallback={<LazyFallback />}>
             <Unauthorized />
+          </Suspense>
+        }
+      />
+
+
+      <Route
+        path="/admin/webinars"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+              <AdminWebinars />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+
+      <Route
+        path="/admin/certifications"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+              <AdminCertifications />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+
+      <Route
+        path="/vendor/certifications"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.FOURNISSEUR]}>
+              <VendorCertifications />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+
+      <Route
+        path="/admin/sav"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+              <AdminSAV />
+            </ProtectedRoute>
           </Suspense>
         }
       />

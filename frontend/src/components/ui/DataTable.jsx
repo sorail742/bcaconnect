@@ -39,12 +39,12 @@ const DataTable = ({
                     <div className="flex items-center gap-4">
                         {title && (
                             <div className="flex items-center gap-3">
-                                <div className="size-1.5 bg-[#FF6600] rounded-full shadow-md" />
+                                <div className="size-1.5 bg-primary rounded-full shadow-md" />
                                 <h3 className="text-[10px] font-semibold text-foreground tracking-wide uppercase">{title}</h3>
                             </div>
                         )}
                         {selectable && selectedIds.length > 0 && (
-                            <div className="px-3 py-1 bg-[#FF6600]/10 text-[#FF6600] text-[7px] font-black rounded-lg border border-[#FF6600]/10 animate-in fade-in zoom-in duration-300 uppercase tracking-widest leading-none">
+                            <div className="px-3 py-1 bg-primary/10 text-primary text-[7px] font-black rounded-lg border border-primary/10 animate-in fade-in zoom-in duration-300 uppercase tracking-widest leading-none">
                                 {selectedIds.length} SÉLECTIONNÉS
                             </div>
                         )}
@@ -55,14 +55,14 @@ const DataTable = ({
             <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className="border-b border-slate-100 dark:border-foreground/5 bg-slate-50/30 dark:bg-white/[0.02]">
+                        <tr className="border-b border-border bg-muted/30">
                             {selectable && (
                                 <th className="pl-6 py-4 w-10">
-                                    <input 
-                                        type="checkbox" 
+                                    <input
+                                        type="checkbox"
                                         checked={allSelected}
                                         onChange={handleSelectAll}
-                                        className="size-4 rounded-md border border-slate-200 dark:border-foreground/10 text-[#FF6600] focus:ring-[#FF6600] shadow-sm cursor-pointer dark:bg-foreground/5"
+                                        className="size-4 rounded-md border border-border text-primary focus:ring-primary shadow-sm cursor-pointer bg-muted"
                                     />
                                 </th>
                             )}
@@ -73,26 +73,26 @@ const DataTable = ({
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                    <tbody className="divide-y divide-border">
                         {data.length > 0 ? (
                             data.map((row, rowIdx) => {
                                 const rowId = row.id || row._id;
                                 const isSelected = selectedIds.includes(rowId);
                                 return (
-                                    <tr 
-                                        key={rowIdx} 
+                                    <tr
+                                        key={rowIdx}
                                         className={cn(
-                                            "hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors duration-300 group cursor-default",
-                                            isSelected && "bg-[#FF6600]/[0.02]"
+                                            "hover:bg-muted/50 transition-colors duration-300 group cursor-default",
+                                            isSelected && "bg-primary/[0.02]"
                                         )}
                                     >
                                         {selectable && (
                                             <td className="pl-6 py-4">
-                                                <input 
-                                                    type="checkbox" 
+                                                <input
+                                                    type="checkbox"
                                                     checked={isSelected}
                                                     onChange={() => handleSelectRow(rowId)}
-                                                    className="size-4 rounded-md border border-slate-200 dark:border-foreground/10 text-[#FF6600] focus:ring-[#FF6600] shadow-sm cursor-pointer dark:bg-foreground/5"
+                                                    className="size-4 rounded-md border border-border text-primary focus:ring-primary shadow-sm cursor-pointer bg-muted"
                                                 />
                                             </td>
                                         )}
@@ -111,7 +111,7 @@ const DataTable = ({
                             <tr>
                                 <td colSpan={columns.length + (selectable ? 1 : 0)} className="px-4 py-10 text-center">
                                     <div className="flex flex-col items-center gap-4 opacity-20">
-                                        <div className="size-1 w-px h-10 bg-slate-400 animate-pulse" />
+                                        <div className="size-1 w-px h-10 bg-muted-foreground animate-pulse" />
                                         <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                                             {emptyMessage}
                                         </span>

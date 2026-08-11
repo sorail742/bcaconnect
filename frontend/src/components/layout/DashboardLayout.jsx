@@ -4,17 +4,19 @@ import Sidebar from './Sidebar';
 import { Bell, Menu, Zap, Satellite, Activity, LayoutGrid, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import notificationService from '../../services/notificationService';
-import messageService from '../../services/messageService';
+import notificationService from '../../notification/services/notificationService';
+import messageService from '../../message/services/messageService';
 import socketService from '../../services/socketService';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 import PageTransition from '../ui/PageTransition';
 import { ROLE_LABELS } from '../../constants/roles';
+import { useLanguage } from '../../context/useLanguage';
 
 const DashboardLayout = ({ children, title, noPadding, noFooter, fullHeight, hideHeader }) => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const { t } = useLanguage();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -35,19 +37,24 @@ const DashboardLayout = ({ children, title, noPadding, noFooter, fullHeight, hid
         if (!user?.id) return; // 🛑 Sécurité : Stop total si pas de session
 
         fetchUnreadCount();
-        socketService.connect();
+        
+        socketService.on('connect', () => {
+            if (user) {
+                socketService.socket.emit('join', { id: user.id, role: user.role });
+            }
+        });
+
+        if (user) {
+            socketService.connect({ id: user.id, role: user.role });
+            if (socketService.socket?.connected) {
+                socketService.socket.emit('join', { id: user.id, role: user.role });
+            }
+        }
 
         // Charger messages non lus en arrière-plan
         messageService.getUnreadCount({ _bg: true })
             .then(setUnreadMessages)
             .catch(() => {});
-
-        socketService.on('connect', () => {
-            socketService.socket.emit('join', user.id);
-        });
-        if (socketService.socket?.connected) {
-            socketService.socket.emit('join', user.id);
-        }
 
         const handleNewNotification = (notif) => {
             setUnreadCount(prev => prev + 1);
@@ -99,17 +106,11 @@ const DashboardLayout = ({ children, title, noPadding, noFooter, fullHeight, hid
             {/* Central Intelligence Grid */}
             <div className="flex-1 flex flex-col min-w-0 relative h-full z-10">
 
-<<<<<<< HEAD
-                {/* Executive Command Bar — masqué sur pages immersives (Messages, etc.) */}
-                {!hideHeader && (
-                <header className="h-14 shrink-0 border-b border-border bg-background/90 backdrop-blur-md z-40 px-4 md:px-6 flex items-center justify-between sticky top-0 shadow-sm">
-                    <div className="flex items-center gap-4 relative z-10 min-w-0">
-=======
                 {/* Executive Command Bar — Fully Opaque Sticky Header */}
+                {!hideHeader && (
                 <header className="h-14 shrink-0 border-b border-border bg-background z-50 px-4 md:px-6 flex items-center justify-between sticky top-0 shadow-sm">
                     <div className="flex items-center gap-5 relative z-10">
                         {/* Intelligent Toggle Hub */}
->>>>>>> cc9e8c22a12230e3e9d0244ad41cdcde74833070
                         <button
                             id="btn-sidebar-toggle"
                             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -127,7 +128,7 @@ const DashboardLayout = ({ children, title, noPadding, noFooter, fullHeight, hid
                         </button>
 
                         <h2 className="text-base font-bold text-foreground tracking-tight truncate">
-                            {title || 'Dashboard'}
+                            {title || t('dashboard') || 'Dashboard'}
                         </h2>
                     </div>
 
@@ -162,24 +163,19 @@ const DashboardLayout = ({ children, title, noPadding, noFooter, fullHeight, hid
                         >
                             <div className="size-8 rounded-lg bg-primary overflow-hidden border border-border shrink-0">
                                 {user?.avatar_url ? (
-                                    <img src={user.avatar_url} alt="Profil" className="w-full h-full object-cover" />
+                                    <img src={user.avatar_url} alt={t('profileAlt') || "Profil"} className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="w-full h-full bg-[#FF6600] flex items-center justify-center text-white text-[10px] font-bold">
+                                    <div className="w-full h-full bg-[#1CA0DB] flex items-center justify-center text-white text-[10px] font-bold">
                                         {user?.nom_complet?.charAt(0).toUpperCase() || 'U'}
                                     </div>
                                 )}
                             </div>
-<<<<<<< HEAD
-                            <div className="hidden sm:flex flex-col items-start text-left min-w-0">
-                                <p className="text-xs font-semibold text-foreground leading-none truncate max-w-[120px]">
-=======
                             <div className="hidden sm:flex flex-col items-start text-left max-w-[140px]">
                                 <p className="text-[10px] font-black text-slate-900 dark:text-foreground leading-none mb-1 w-full truncate">
->>>>>>> cc9e8c22a12230e3e9d0244ad41cdcde74833070
-                                    {user?.nom_complet || 'Utilisateur'}
+                                    {user?.nom_complet || t('userFallback') || 'Utilisateur'}
                                 </p>
                                 <span className="text-[10px] font-medium text-primary uppercase tracking-wide leading-none truncate max-w-[120px]">
-                                    {ROLE_LABELS[user?.role] || 'Membre BCA'}
+                                    {ROLE_LABELS[user?.role] || t('bcaMember') || 'Membre BCA'}
                                 </span>
                             </div>
                         </button>
