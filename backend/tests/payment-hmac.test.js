@@ -68,3 +68,29 @@ describe('CinetPay webhook HMAC', () => {
         expect(parsed.success).toBe(true);
     });
 });
+
+describe('Sélection du canal CinetPay (isolation paiement carte — 1.11)', () => {
+    const { resolveCinetPayChannels } = paymentProviderService;
+
+    it('route "carte_bancaire" (valeur envoyée par le checkout frontend) vers CREDIT_CARD', () => {
+        expect(resolveCinetPayChannels('carte_bancaire')).toBe('CREDIT_CARD');
+    });
+
+    it.each(['card', 'carte', 'credit_card', 'CARTE_BANCAIRE'])(
+        'route "%s" vers CREDIT_CARD',
+        (value) => {
+            expect(resolveCinetPayChannels(value)).toBe('CREDIT_CARD');
+        },
+    );
+
+    it('route "mobile_money" vers MOBILE_MONEY', () => {
+        expect(resolveCinetPayChannels('mobile_money')).toBe('MOBILE_MONEY');
+    });
+
+    it.each([undefined, null, '', 'wallet', 'cod', 'virement'])(
+        'retombe sur ALL pour un moyen non dédié à un canal ("%s")',
+        (value) => {
+            expect(resolveCinetPayChannels(value)).toBe('ALL');
+        },
+    );
+});

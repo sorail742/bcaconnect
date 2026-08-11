@@ -162,7 +162,7 @@ const Checkout = () => {
         }
     };
 
-    const [isMobileMoneyProcessing, setIsMobileMoneyProcessing] = useState(false);
+    const [isRedirectPaymentProcessing, setIsRedirectPaymentProcessing] = useState(false);
 
     const handleProcessOrder = async () => {
         if (cartItems.length === 0) {
@@ -200,13 +200,15 @@ const Checkout = () => {
             appliedCoupon?.code,
         );
 
-        // --- FLUX MOBILE MONEY : commande d'abord, paiement ensuite, séquestre au webhook ---
-        if (formData.paymentMethod === 'mobile_money') {
-            if (!formData.mobileMoneyPhone) {
+        // --- FLUX MOBILE MONEY / CARTE : commande d'abord, paiement ensuite (redirection
+        // vers la page hébergée CinetPay), séquestre activé au webhook ---
+        if (formData.paymentMethod === 'mobile_money' || formData.paymentMethod === 'card') {
+            const isCard = formData.paymentMethod === 'card';
+            if (!isCard && !formData.mobileMoneyPhone) {
                 toast.error("Veuillez entrer votre numéro Mobile Money.");
                 return;
             }
-            setIsMobileMoneyProcessing(true);
+            setIsRedirectPaymentProcessing(true);
             try {
                 const orderRes = await orderService.create(orderPayload);
                 const order = orderRes?.data || orderRes;
@@ -214,16 +216,18 @@ const Checkout = () => {
                 const { data: initData } = await api.post('/payments/initiate', {
                     montant: total,
                     order_id: order.id,
-                    moyen_paiement: 'mobile_money'
+                    // Le validateur backend attend "carte_bancaire" (whitelist DTO existante) ;
+                    // "card" reste la clé UI interne courte utilisée dans les conditionnels.
+                    moyen_paiement: isCard ? 'carte_bancaire' : formData.paymentMethod
                 });
 
-                toast.info("Validation sur votre téléphone en cours...", { duration: 2000 });
+                toast.info(isCard ? "Redirection vers le paiement sécurisé..." : "Validation sur votre téléphone en cours...", { duration: 2000 });
 
                 if (initData.payment_url?.includes('/payment/simulate/')) {
                     await api.post('/payments/capture-simulation', {
                         transaction_id: initData.transaction_id
                     });
-                    toast.success("Paiement Mobile Money validé — séquestre activé !");
+                    toast.success(isCard ? "Paiement par carte validé — séquestre activé !" : "Paiement Mobile Money validé — séquestre activé !");
                     clearCart();
                     navigate('/orders');
                 } else if (initData.payment_url) {
@@ -232,9 +236,9 @@ const Checkout = () => {
                 }
             } catch (error) {
                 console.error(error);
-                toast.error(error.response?.data?.message || "Échec du paiement Mobile Money.");
+                toast.error(error.response?.data?.message || (isCard ? "Échec du paiement par carte." : "Échec du paiement Mobile Money."));
             } finally {
-                setIsMobileMoneyProcessing(false);
+                setIsRedirectPaymentProcessing(false);
             }
             return;
         }
@@ -391,12 +395,14 @@ const Checkout = () => {
                                         {[
                                             { key: 'wallet', icon: Zap, label: t('ckBcaWallet'), sub: wallet ? `${t('balance')} : ${parseFloat(wallet.solde_virtuel).toLocaleString()} ${t('gnf')}` : t('ckInstantSecure'), color: 'primary' },
                                             { key: 'mobile_money', icon: Smartphone, label: "Mobile Money", sub: "Orange Money / MTN", color: 'orange' },
+                                            { key: 'card', icon: CreditCard, label: "Carte bancaire", sub: "Visa, Mastercard (via CinetPay)", color: 'sky' },
                                             { key: 'cod', icon: Package, label: t('ckCashAtBusiness'), sub: "Paiement à la livraison", color: 'emerald' },
                                         ].map(opt => (
                                             <div key={opt.key} className={cn("rounded-3xl border-2 transition-all relative overflow-hidden",
                                                 formData.paymentMethod === opt.key
-                                                    ? opt.color === 'primary' ? "border-primary bg-primary/5 shadow-inner" 
+                                                    ? opt.color === 'primary' ? "border-primary bg-primary/5 shadow-inner"
                                                       : opt.color === 'orange' ? "border-orange-500 bg-orange-500/5 shadow-inner"
+                                                      : opt.color === 'sky' ? "border-sky-500 bg-sky-500/5 shadow-inner"
                                                       : "border-emerald-500 bg-emerald-500/5 shadow-inner"
                                                     : "border-border bg-card hover:border-primary/30"
                                             )}>
@@ -404,8 +410,9 @@ const Checkout = () => {
                                                     className="w-full p-5 text-left flex items-start gap-4">
                                                     <div className={cn("size-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg",
                                                         formData.paymentMethod === opt.key
-                                                            ? opt.color === 'primary' ? "bg-primary text-primary-foreground" 
+                                                            ? opt.color === 'primary' ? "bg-primary text-primary-foreground"
                                                               : opt.color === 'orange' ? "bg-orange-500 text-white"
+                                                              : opt.color === 'sky' ? "bg-sky-500 text-white"
                                                               : "bg-emerald-500 text-white"
                                                             : "bg-muted border border-border text-muted-foreground"
                                                     )}>
@@ -416,9 +423,10 @@ const Checkout = () => {
                                                         <p className="text-[10px] font-black text-muted-foreground mt-1 opacity-70 uppercase tracking-widest">{opt.sub}</p>
                                                     </div>
                                                     {formData.paymentMethod === opt.key && (
-                                                        <CheckCircle2 className={cn("size-5 absolute top-4 right-4", 
-                                                            opt.color === 'primary' ? "text-primary" 
+                                                        <CheckCircle2 className={cn("size-5 absolute top-4 right-4",
+                                                            opt.color === 'primary' ? "text-primary"
                                                             : opt.color === 'orange' ? "text-orange-500"
+                                                            : opt.color === 'sky' ? "text-sky-500"
                                                             : "text-emerald-500"
                                                         )} />
                                                     )}
@@ -460,9 +468,9 @@ const Checkout = () => {
                                     <button onClick={() => setStep(1)} className="h-14 px-8 rounded-2xl border border-border text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all flex items-center gap-3">
                                         <ArrowLeft className="size-4" /> {t('ckBack')}
                                     </button>
-                                    <Button onClick={handleProcessOrder} disabled={isSubmitting || isBalanceInsufficient || isMobileMoneyProcessing}
+                                    <Button onClick={handleProcessOrder} disabled={isSubmitting || isBalanceInsufficient || isRedirectPaymentProcessing}
                                         className="flex-1 h-14 rounded-2xl bg-primary text-primary-foreground font-black text-xs uppercase tracking-widest border-none hover:bg-primary/90 flex items-center justify-center gap-3 shadow-lg shadow-primary/20 disabled:opacity-50">
-                                        {(isSubmitting || isMobileMoneyProcessing) ? <><div className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> {isMobileMoneyProcessing ? 'Paiement en cours...' : t('ckProcessing')}</>
+                                        {(isSubmitting || isRedirectPaymentProcessing) ? <><div className="size-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> {isRedirectPaymentProcessing ? 'Paiement en cours...' : t('ckProcessing')}</>
                                             : <><ShieldCheck className="size-5" /> {t('ckConfirmAcquisition')}</>}
                                     </Button>
                                 </div>

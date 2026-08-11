@@ -18,6 +18,19 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3002';
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5001';
 const PAYMENT_MODE = process.env.PAYMENT_MODE || 'simulation';
 
+/**
+ * Canaux CinetPay reconnus par l'API (`channels`) — cf. docs.cinetpay.com/api/1.0-fr/checkout/initier-un-paiement.
+ * Traduit le `moyen_paiement` métier (choisi par le client au checkout) en canal
+ * CinetPay. `ALL` par défaut si le moyen n'impose pas de canal dédié (ex. wallet
+ * interne géré hors CinetPay) — CinetPay affichera alors son sélecteur générique.
+ */
+function resolveCinetPayChannels(moyenPaiement) {
+    const key = String(moyenPaiement || '').toLowerCase();
+    if (key === 'card' || key === 'carte' || key === 'carte_bancaire' || key === 'credit_card') return 'CREDIT_CARD';
+    if (key === 'mobile_money') return 'MOBILE_MONEY';
+    return 'ALL';
+}
+
 const CINETPAY_HMAC_FIELDS = [
     'cpm_site_id',
     'cpm_trans_id',
@@ -96,7 +109,7 @@ const paymentProviderService = {
             customer_phone_number: userPhone || '',
             return_url: `${FRONTEND_URL}${returnPath}`,
             notify_url: `${BACKEND_URL}/api/payments/webhook`,
-            channels: 'ALL',
+            channels: resolveCinetPayChannels(options.moyenPaiement),
             metadata: options.metadata ? JSON.stringify(options.metadata) : undefined,
         };
 
@@ -268,3 +281,4 @@ const paymentProviderService = {
 };
 
 module.exports = paymentProviderService;
+module.exports.resolveCinetPayChannels = resolveCinetPayChannels;

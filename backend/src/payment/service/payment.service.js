@@ -190,6 +190,7 @@ const paymentService = {
             user.telephone,
             {
                 returnPath,
+                moyenPaiement: moyen_paiement,
                 metadata: { type: paymentType, commande_id: orderId || undefined },
                 // Persiste la référence propre au provider (ex. pay_id LengoPay) pour
                 // permettre à verifyTransactionStatus de re-vérifier le paiement plus tard.
