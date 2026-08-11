@@ -290,6 +290,36 @@ const productService = {
         return { message: 'Stock mis à jour.', stock_quantite: product.stock_quantite };
     },
 
+    // Configuration du réapprovisionnement automatique (analyse concurrentielle #4)
+    async patchReappro(id, { reappro_auto_actif, reappro_seuil, reappro_quantite }, user) {
+        if (!isUuid(id)) {
+            throw new AppError("Format d'identifiant invalide.", 400);
+        }
+        const product = await productRepository.findByIdWithStore(id);
+
+        if (!product) throw new AppError('Produit non trouvé.', 404);
+        if (product.boutique.proprietaire_id !== user.id && user.role !== 'admin') {
+            throw new AppError('Action non autorisée.', 403);
+        }
+
+        if (reappro_auto_actif && (!reappro_seuil || !reappro_quantite || reappro_quantite <= 0 || reappro_seuil < 0)) {
+            throw new AppError('Seuil et quantité de réapprovisionnement requis (> 0) pour activer le réapprovisionnement automatique.', 400);
+        }
+
+        await productRepository.updateInstance(product, {
+            reappro_auto_actif: !!reappro_auto_actif,
+            reappro_seuil: reappro_seuil ?? null,
+            reappro_quantite: reappro_quantite ?? null,
+        });
+
+        return {
+            message: reappro_auto_actif ? 'Réapprovisionnement automatique activé.' : 'Réapprovisionnement automatique désactivé.',
+            reappro_auto_actif: product.reappro_auto_actif,
+            reappro_seuil: product.reappro_seuil,
+            reappro_quantite: product.reappro_quantite,
+        };
+    },
+
     async delete(id, user, req) {
         if (!isUuid(id)) {
             throw new AppError("Format d'identifiant invalide.", 400);

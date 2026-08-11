@@ -35,6 +35,12 @@ const productController = {
         res.json(result);
     }),
 
+    // Configuration du réapprovisionnement automatique
+    patchReappro: catchAsync(async (req, res) => {
+        const result = await productService.patchReappro(req.params.id, req.body, req.user);
+        res.json(result);
+    }),
+
     delete: catchAsync(async (req, res) => {
         const result = await productService.delete(req.params.id, req.user, req);
         res.json(result);

@@ -3,14 +3,14 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import {
     Plus, Search, Edit3, Trash2, Package, AlertCircle,
     TrendingUp, RefreshCw, CheckCircle2,
-    XCircle, ShoppingBag
+    XCircle, ShoppingBag, Repeat
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
 import { useLanguage } from '../../context/useLanguage';
 import ProductCard from '../components/ProductCard';
-import { useVendorProducts, useUpdateStock, useDeleteProduct } from '../hooks/useProductData';
+import { useVendorProducts, useUpdateStock, usePatchReappro, useDeleteProduct } from '../hooks/useProductData';
 import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal';
 import ProductVariantManager from '../../product-variant/components/ProductVariantManager';
 import FilterDropdown from '../../components/ui/FilterDropdown';
@@ -87,6 +87,72 @@ const StockEditor = ({ productId, initialStock }) => {
         >
             <span className="text-xs font-black text-slate-900 dark:text-white tabular-nums">{value}</span>
             <Edit3 className="size-3 text-slate-300 group-hover:text-primary transition-colors" />
+        </button>
+    );
+};
+
+// ── Réapprovisionnement automatique (analyse concurrentielle #4) ─────────
+const ReapproConfig = ({ product }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [actif, setActif] = useState(!!product.reappro_auto_actif);
+    const [seuil, setSeuil] = useState(product.reappro_seuil ?? 5);
+    const [quantite, setQuantite] = useState(product.reappro_quantite ?? 20);
+
+    const patchReappro = usePatchReappro();
+
+    const save = () => {
+        patchReappro.mutate(
+            { id: product.id, reappro_auto_actif: actif, reappro_seuil: seuil, reappro_quantite: quantite },
+            { onSuccess: () => setIsEditing(false) }
+        );
+    };
+
+    if (isEditing) {
+        return (
+            <div className="flex flex-col gap-2 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm animate-in zoom-in-95 duration-200 w-56">
+                <label className="flex items-center gap-2 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                    <input type="checkbox" checked={actif} onChange={e => setActif(e.target.checked)} className="accent-primary" />
+                    Réappro. automatique
+                </label>
+                {actif && (
+                    <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                            <span className="text-[9px] text-slate-400 uppercase font-black">Seuil</span>
+                            <input type="number" min={0} value={seuil} onChange={e => setSeuil(e.target.value)}
+                                className="w-full h-7 px-2 text-xs font-black text-center bg-slate-50 dark:bg-white/5 rounded-lg outline-none border border-slate-200 dark:border-white/10" />
+                        </div>
+                        <div className="flex-1">
+                            <span className="text-[9px] text-slate-400 uppercase font-black">Quantité +</span>
+                            <input type="number" min={1} value={quantite} onChange={e => setQuantite(e.target.value)}
+                                className="w-full h-7 px-2 text-xs font-black text-center bg-slate-50 dark:bg-white/5 rounded-lg outline-none border border-slate-200 dark:border-white/10" />
+                        </div>
+                    </div>
+                )}
+                <div className="flex items-center gap-2 justify-end pt-1">
+                    <button onClick={() => setIsEditing(false)} className="h-7 px-3 rounded-lg text-[11px] font-bold text-slate-400 hover:text-slate-600 border-none bg-transparent">Annuler</button>
+                    <button onClick={save} disabled={patchReappro.isPending}
+                        className="h-7 px-3 rounded-lg text-[11px] font-bold text-white bg-primary hover:bg-primary/90 border-none disabled:opacity-50 flex items-center gap-1">
+                        {patchReappro.isPending ? <RefreshCw className="size-3 animate-spin" /> : <CheckCircle2 className="size-3" />}
+                        Enregistrer
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <button
+            onClick={() => setIsEditing(true)}
+            title={product.reappro_auto_actif ? `Réappro. auto : +${product.reappro_quantite} sous ${product.reappro_seuil} unités` : 'Configurer le réapprovisionnement automatique'}
+            className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-300",
+                product.reappro_auto_actif
+                    ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-600"
+                    : "bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5 text-slate-300 hover:text-primary"
+            )}
+        >
+            <Repeat className="size-3.5" />
+            <span className="text-[10px] font-black uppercase tracking-widest">{product.reappro_auto_actif ? 'Auto ON' : 'Auto OFF'}</span>
         </button>
     );
 };
@@ -248,7 +314,12 @@ const Products = () => {
                                             onEdit={(prod) => navigate(`/vendor/products/edit/${prod.id}`)}
                                             onDelete={(prod) => setDeleteConfirm(prod)}
                                             onManageVariants={(prod) => setVariantTarget(prod)}
-                                            customStockEditor={<StockEditor productId={p.id} initialStock={p.stock_quantite} />}
+                                            customStockEditor={
+                                                <div className="flex items-center gap-2">
+                                                    <StockEditor productId={p.id} initialStock={p.stock_quantite} />
+                                                    <ReapproConfig product={p} />
+                                                </div>
+                                            }
                                         />
                                     ))
                                 ) : (

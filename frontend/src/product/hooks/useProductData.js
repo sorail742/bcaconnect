@@ -64,6 +64,23 @@ export const useUpdateStock = () => {
 };
 
 /**
+ * usePatchReappro — Mutation pour configurer le réapprovisionnement automatique.
+ */
+export const usePatchReappro = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, ...payload }) => productService.patchReappro(id, payload),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['vendor-products'] });
+            toast.success(data.message);
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || "Impossible de configurer le réapprovisionnement automatique.");
+        }
+    });
+};
+
+/**
  * useDeleteProduct — Mutation pour supprimer un produit.
  */
 export const useDeleteProduct = () => {

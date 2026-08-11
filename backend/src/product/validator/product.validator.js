@@ -69,6 +69,25 @@ const validateDeleteProduct = [
   validateRequest,
 ];
 
+const validatePatchReappro = [
+  param("id").isUUID().withMessage("ID produit invalide."),
+  body("reappro_auto_actif")
+    .isBoolean()
+    .withMessage("reappro_auto_actif doit être un booléen.")
+    .toBoolean(),
+  body("reappro_seuil")
+    .optional({ nullable: true })
+    .isInt({ min: 0 })
+    .withMessage("Le seuil doit être un nombre positif.")
+    .toInt(),
+  body("reappro_quantite")
+    .optional({ nullable: true })
+    .isInt({ min: 1 })
+    .withMessage("La quantité à réapprovisionner doit être supérieure à 0.")
+    .toInt(),
+  validateRequest,
+];
+
 const validateSearch = [
   query("q")
     .optional()
@@ -110,4 +129,4 @@ const validateSearch = [
   validateRequest,
 ];
 
-module.exports = { validateCreateProduct, validateUpdateProduct, validateDeleteProduct, validateSearch };
+module.exports = { validateCreateProduct, validateUpdateProduct, validateDeleteProduct, validateSearch, validatePatchReappro };

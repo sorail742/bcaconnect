@@ -72,6 +72,25 @@ const Product = sequelize.define('Product', {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
     },
+    // Réapprovisionnement automatique (analyse concurrentielle #4) — quand
+    // stock_quantite <= reappro_seuil, stockAlertCron ajoute automatiquement
+    // reappro_quantite unités au lieu de se limiter à une alerte.
+    reappro_auto_actif: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    },
+    reappro_seuil: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
+    reappro_quantite: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
+    reappro_derniere_execution: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
 }, {
     tableName: 'produits',
     underscored: true,

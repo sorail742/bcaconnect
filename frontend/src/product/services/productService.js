@@ -83,6 +83,12 @@ const productService = {
         return response.data;
     },
 
+    // Configuration du réapprovisionnement automatique
+    patchReappro: async (id, { reappro_auto_actif, reappro_seuil, reappro_quantite }) => {
+        const response = await api.patch(`/products/${id}/reappro`, { reappro_auto_actif, reappro_seuil, reappro_quantite });
+        return response.data;
+    },
+
     delete: async (id, confirmationText) => {
         const response = await api.delete(`/products/${id}`, { data: { confirmation_nom: confirmationText } });
         return response.data;
