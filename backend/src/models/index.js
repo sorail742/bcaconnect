@@ -46,6 +46,7 @@ const ProductQuestion = require('../product-question/models/productQuestion.mode
 const Coupon = require('../coupon/models/coupon.model');
 const CouponUsage = require('../coupon/models/couponUsage.model');
 const ProductVariant = require('../product-variant/models/productVariant.model');
+const PartnerStock = require('../partner-stock/models/partnerStock.model');
 const sequelize = require('../config/database');
 
 // 1. Relations Utilisateur - Portefeuille
@@ -288,6 +289,10 @@ ProductVariant.belongsTo(Product, { foreignKey: 'produit_id', as: 'produit' });
 
 OrderItem.belongsTo(ProductVariant, { foreignKey: 'variante_id', as: 'variante' });
 
+// 24. Stock partenaire / entrepôt tiers (cahier des charges 2.5)
+Product.hasMany(PartnerStock, { foreignKey: 'produit_id', as: 'stocks_partenaires' });
+PartnerStock.belongsTo(Product, { foreignKey: 'produit_id', as: 'produit' });
+
 module.exports = {
     User,
     Wallet,
@@ -337,5 +342,6 @@ module.exports = {
     Coupon,
     CouponUsage,
     ProductVariant,
+    PartnerStock,
     sequelize
 };

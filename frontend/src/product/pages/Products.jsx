@@ -3,7 +3,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import {
     Plus, Search, Edit3, Trash2, Package, AlertCircle,
     TrendingUp, RefreshCw, CheckCircle2,
-    XCircle, ShoppingBag, Repeat
+    XCircle, ShoppingBag, Repeat, Warehouse
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
@@ -13,6 +13,7 @@ import ProductCard from '../components/ProductCard';
 import { useVendorProducts, useUpdateStock, usePatchReappro, useDeleteProduct } from '../hooks/useProductData';
 import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal';
 import ProductVariantManager from '../../product-variant/components/ProductVariantManager';
+import PartnerStockModal from '../components/PartnerStockModal';
 import FilterDropdown from '../../components/ui/FilterDropdown';
 
 // ── Stock Badge ─────────────────────────────────────────
@@ -164,6 +165,7 @@ const Products = () => {
     const [activeFilter, setActiveFilter] = useState('tous');
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const [variantTarget, setVariantTarget] = useState(null);
+    const [partnerStockTarget, setPartnerStockTarget] = useState(null);
 
     // React Query Hooks
     const { data: products = [], isLoading, refetch } = useVendorProducts();
@@ -318,6 +320,13 @@ const Products = () => {
                                                 <div className="flex items-center gap-2">
                                                     <StockEditor productId={p.id} initialStock={p.stock_quantite} />
                                                     <ReapproConfig product={p} />
+                                                    <button
+                                                        onClick={() => setPartnerStockTarget(p)}
+                                                        title="Stock partenaire / entrepôt tiers"
+                                                        className="flex items-center justify-center size-8 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5 text-slate-300 hover:text-primary transition-all"
+                                                    >
+                                                        <Warehouse className="size-3.5" />
+                                                    </button>
                                                 </div>
                                             }
                                         />
@@ -349,6 +358,12 @@ const Products = () => {
             {variantTarget && (
                 <ProductVariantManager product={variantTarget} onClose={() => setVariantTarget(null)} />
             )}
+
+            <PartnerStockModal
+                product={partnerStockTarget}
+                isOpen={!!partnerStockTarget}
+                onClose={() => setPartnerStockTarget(null)}
+            />
         </DashboardLayout>
     );
 };
