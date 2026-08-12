@@ -24,6 +24,7 @@ import ReviewForm from '../../review/components/ReviewForm';
 import ProductQA from '../../product-question/components/ProductQA';
 import { useProductById } from '../hooks/useProductData';
 import { useProductVariants } from '../../product-variant/hooks/useProductVariantData';
+import PriceIndexCard from '../../category/components/PriceIndexCard';
 import { useQuery } from '@tanstack/react-query';
 
 const FALLBACK = 'https://images.unsplash.com/photo-1523275319145-80b01958f7a2?auto=format&fit=crop&q=80&w=800';
@@ -612,6 +613,8 @@ const ProductDetail = () => {
                                     </p>
                                 </div>
                             </div>
+
+                            <PriceIndexCard produitId={id} />
                         </div>
                     </div>
                 </div>
