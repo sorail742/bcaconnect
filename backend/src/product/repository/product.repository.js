@@ -70,7 +70,7 @@ const productRepository = {
                 {
                     model: Store,
                     as: 'boutique',
-                    attributes: ['nom_boutique', 'slug', 'id', 'logo_url', 'is_verified', 'proprietaire_id'],
+                    attributes: ['nom_boutique', 'slug', 'id', 'logo_url', 'is_verified', 'niveau_verification', 'proprietaire_id'],
                     where: isVerifiedOnly ? { is_verified: true } : {}
                 },
                 { model: Category, as: 'categorie', attributes: ['nom_categorie'] },
@@ -106,7 +106,7 @@ const productRepository = {
                     as: 'boutique',
                     attributes: [
                         'nom_boutique', 'slug', 'id', 'proprietaire_id', 'logo_url',
-                        'is_verified', 'localisation', 'temps_reponse', 'createdAt',
+                        'is_verified', 'niveau_verification', 'localisation', 'temps_reponse', 'createdAt',
                     ],
                 },
                 { model: Review, as: 'avis', attributes: ['note', 'commentaire', 'utilisateur_id', 'created_at', 'ia_sentiment'] },

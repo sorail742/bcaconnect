@@ -25,6 +25,11 @@ const getMoq = (product) => {
 const isVerifiedSupplier = (product) =>
     product?.boutique?.is_verified || product?.boutique?.proprietaire?.is_verified;
 
+// Niveau de vérification fournisseur (analyse concurrentielle #5, style
+// Alibaba Verified/Gold Supplier) — 'verifie_or' = badge le plus haut.
+const getVerificationLevel = (product) =>
+    product?.boutique?.niveau_verification || product?.boutique?.proprietaire?.niveau_verification || 'non_verifie';
+
 // ── Shared UI: Price ───────────────────────────────────────────
 export const ProductPrice = ({ price, oldPrice, size = 'md', variant = 'default' }) => {
     const { t } = useLanguage();
@@ -111,18 +116,23 @@ export const ProductStockBadge = ({ qty }) => {
 
 const SupplierRow = ({ product }) => {
     const storeName = product?.boutique?.nom_boutique || product?.boutique?.name || 'Fournisseur BCA';
-    const verified = isVerifiedSupplier(product);
+    const niveau = getVerificationLevel(product);
 
     return (
         <div className="flex items-center gap-1.5 min-w-0 mb-2">
             <Store className="size-3 text-[#999] shrink-0" />
             <span className="text-[11px] text-[#666] truncate">{storeName}</span>
-            {verified && (
+            {niveau === 'verifie_or' ? (
+                <span className="bca-badge-verified shrink-0 !bg-amber-50 !text-amber-600 !border-amber-200" title="Fournisseur Or — 3+ certifications validées">
+                    <BadgeCheck className="size-2.5" />
+                    Or
+                </span>
+            ) : niveau === 'verifie' ? (
                 <span className="bca-badge-verified shrink-0">
                     <BadgeCheck className="size-2.5" />
                     Vérifié
                 </span>
-            )}
+            ) : null}
         </div>
     );
 };
@@ -325,7 +335,12 @@ const ProductCard = ({
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute top-2 left-2 flex flex-col gap-1">
-                    {isVerifiedSupplier(product) && (
+                    {getVerificationLevel(product) === 'verifie_or' ? (
+                        <span className="bca-badge-verified shadow-sm !bg-amber-50 !text-amber-600 !border-amber-200" title="Fournisseur Or — 3+ certifications validées">
+                            <BadgeCheck className="size-2.5" />
+                            Or
+                        </span>
+                    ) : isVerifiedSupplier(product) && (
                         <span className="bca-badge-verified shadow-sm">
                             <BadgeCheck className="size-2.5" />
                             Vérifié

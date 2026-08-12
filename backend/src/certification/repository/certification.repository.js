@@ -38,9 +38,24 @@ const certificationRepository = {
         );
     },
 
+    setVerificationLevel(fournisseurId, niveau) {
+        return Store.update(
+            { niveau_verification: niveau },
+            { where: { proprietaire_id: fournisseurId } },
+        );
+    },
+
     countValidatedForVendor(vendorId) {
         return Certification.count({
             where: { fournisseur_id: vendorId, statut: 'validee' },
+        });
+    },
+
+    countDistinctValidatedTypesForVendor(vendorId) {
+        return Certification.count({
+            where: { fournisseur_id: vendorId, statut: 'validee' },
+            distinct: true,
+            col: 'type',
         });
     },
 };

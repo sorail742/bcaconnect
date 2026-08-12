@@ -38,6 +38,12 @@ const Store = sequelize.define('Store', {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
     },
+    // Niveau de vérification (analyse concurrentielle #5) — calculé depuis le
+    // nombre de certifications validées : 'non_verifie' | 'verifie' | 'verifie_or'.
+    niveau_verification: {
+        type: DataTypes.STRING(20),
+        defaultValue: 'non_verifie',
+    },
     rating: {
         type: DataTypes.FLOAT,
         defaultValue: 4.5,
