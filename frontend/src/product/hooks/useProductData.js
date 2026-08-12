@@ -14,6 +14,13 @@ export const useProducts = (params = {}) => {
         staleTime: 2 * 60_000,
         refetchInterval: 30_000,
         refetchIntervalInBackground: true,
+        // Par défaut react-query (networkMode: 'online') met la requête en
+        // pause dès que navigator.onLine === false et ne rappelle jamais
+        // queryFn — ce qui empêche productService.getAll() d'atteindre son
+        // propre fallback offlineStorage.getProducts() (cahier des charges
+        // 1.12). On gère nous-mêmes l'état réseau dans le service, donc
+        // react-query ne doit pas dupliquer/bloquer ce comportement.
+        networkMode: 'always',
     });
     return { data, loading, error: error?.message || null, isFetching, refetch, mutate: refetch };
 };
