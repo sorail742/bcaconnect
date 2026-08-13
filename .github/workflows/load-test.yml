@@ -7,6 +7,13 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 3 * * *' # 03h00 UTC, nightly
+  # TEMPORAIRE — retiré juste après le premier run réel (3.17). GitHub
+  # n'enregistre workflow_dispatch que pour un workflow déjà présent sur la
+  # branche par défaut ; ce fichier n'existe que sur cette branche de travail,
+  # donc `dispatches` renvoie 404 tant qu'aucun run n'a eu lieu ici.
+  push:
+    branches: [refactor/feature-based-architecture]
+    paths: ['.github/workflows/load-test.yml']
 
 jobs:
   k6:
