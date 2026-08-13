@@ -123,7 +123,7 @@ export function checkoutScenario(data) {
   const res = http.post(
     `${BASE_URL}/api/orders`,
     JSON.stringify({
-      items: [{ produit_id: data.productId, quantite: 1 }],
+      items: [{ productId: data.productId, quantity: 1 }],
       deliveryInfo: {
         nom: 'Client K6',
         telephone: '620000000',

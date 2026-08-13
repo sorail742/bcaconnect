@@ -55,7 +55,8 @@ const orderService = {
             const orderItemsByVendor = [];
 
             for (const item of items) {
-                const pid = item.id || item.productId || item.product_id;
+                const pid = item.id || item.productId || item.product_id || item.produit_id;
+                const qty = item.quantity ?? item.quantite;
                 const variantId = item.variantId || item.variant_id || null;
                 if (!pid) {
                     console.error('🔴 [ORDER ERROR] item sans ID:', item);
@@ -72,14 +73,14 @@ const orderService = {
                         throw new AppError(`Variante introuvable pour "${product.nom_produit}".`, 404);
                     }
                     if (!variant.actif) throw new AppError(`La variante "${variant.nom_variante}" n'est plus disponible.`, 400);
-                    if (variant.stock_quantite < item.quantity) throw new AppError(`Stock insuffisant pour "${product.nom_produit} — ${variant.nom_variante}".`, 400);
+                    if (variant.stock_quantite < qty) throw new AppError(`Stock insuffisant pour "${product.nom_produit} — ${variant.nom_variante}".`, 400);
                     unitPrice = variant.prix_unitaire !== null ? variant.prix_unitaire : product.prix_unitaire;
                     variantName = variant.nom_variante;
                 } else {
-                    if (product.stock_quantite < item.quantity) throw new AppError(`Stock insuffisant: ${product.nom_produit}.`, 400);
+                    if (product.stock_quantite < qty) throw new AppError(`Stock insuffisant: ${product.nom_produit}.`, 400);
                 }
 
-                const subtotal = unitPrice * item.quantity;
+                const subtotal = unitPrice * qty;
                 total_produits += parseFloat(subtotal);
 
                 // Use the correct alias 'boutique' as defined in models/index.js
@@ -101,7 +102,7 @@ const orderService = {
                     produit_id: product.id,
                     fournisseur_id: store.proprietaire_id,
                     boutique_id: store.id,
-                    quantite: item.quantity,
+                    quantite: qty,
                     prix_unitaire_achat: unitPrice,
                     variante_id: variantId || null,
                     variante_nom: variantName,
