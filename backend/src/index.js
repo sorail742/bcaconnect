@@ -49,7 +49,6 @@ const ALLOWED_ORIGINS =
 
 const start = async () => {
   try {
-    // Profils partagés (ESM) — avant require('./app') qui charge aiService
     await initCategoryAttributes();
     console.log("✅ Profils attributs catégories chargés.");
 
