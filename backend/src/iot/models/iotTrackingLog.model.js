@@ -31,6 +31,12 @@ const IoTTrackingLog = sequelize.define('IoTTrackingLog', {
         type: DataTypes.STRING(50),
         defaultValue: 'en_transit',
     },
+    // Lecture hors de la plage [iot_temp_min, iot_temp_max] configurée sur
+    // la commande — déclenche une alerte edge-triggered (voir iot.service.js).
+    hors_seuil: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    },
     timestamp_appareil: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,

@@ -108,6 +108,26 @@ const Order = sequelize.define('Order', {
         type: DataTypes.DECIMAL(15, 2),
         defaultValue: 0,
     },
+    // Suivi IoT temps réel (cahier des charges 3.15) — activé par le vendeur
+    // ou le transporteur pour un envoi équipé d'un capteur physique
+    // (chaîne du froid, fragile...). iot_device_key_hash n'est jamais exposé
+    // en clair après sa génération initiale (voir iot.service.js).
+    suivi_iot_actif: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    },
+    iot_device_key_hash: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+    },
+    iot_temp_min: {
+        type: DataTypes.DECIMAL(5, 2),
+        allowNull: true,
+    },
+    iot_temp_max: {
+        type: DataTypes.DECIMAL(5, 2),
+        allowNull: true,
+    },
 }, {
     tableName: 'commandes',
     timestamps: true,

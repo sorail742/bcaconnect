@@ -12,6 +12,8 @@ import L from 'leaflet';
 import { QRCodeSVG } from 'qrcode.react';
 import { useTrackOrder } from '../hooks/useDeliveryData';
 import { formatRecordDateTime, formatRecordTime, getRecordTimestamp } from '../../lib/dateUtils';
+import useAuthStore from '../../store/authStore';
+import IotTrackingPanel from '../../iot/components/IotTrackingPanel';
 
 const CONAKRY_DEFAULT = { lat: 9.5350, lng: -13.6773 };
 
@@ -52,6 +54,9 @@ const DeliveryTracking = () => {
     const [searchParams] = useSearchParams();
     const urlOrderId = searchParams.get('orderId');
     
+    const { user, isAuthenticated } = useAuthStore();
+    const canManageIot = isAuthenticated && (user?.role === 'fournisseur' || user?.role === 'admin');
+
     const [trackingNumber, setTrackingNumber] = useState(urlOrderId || '');
     const [activeSearch, setActiveSearch] = useState(urlOrderId || '');
     const [liveLocation, setLiveLocation] = useState(CONAKRY_DEFAULT);
@@ -367,6 +372,10 @@ const DeliveryTracking = () => {
                                         </div>
                                         <p className="text-[10px] text-muted-foreground font-medium relative z-10">Position transmise par le transporteur BCA</p>
                                     </div>
+                                )}
+
+                                {isAuthenticated && (
+                                    <IotTrackingPanel orderId={trackingData.id} canManage={canManageIot} />
                                 )}
 
                                 {/* Fin Info Column */}
