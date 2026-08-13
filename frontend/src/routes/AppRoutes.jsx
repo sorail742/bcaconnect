@@ -54,6 +54,7 @@ const DashboardVendors = lazy(
 const VendorsMap = lazy(() => import("../dashboard/pages/VendorsMap"));
 const OrdersClient = lazy(() => import("../order/pages/OrdersClient"));
 const UserWallet = lazy(() => import("../wallet/pages/Wallet"));
+const Organizations = lazy(() => import("../organization/pages/Organizations"));
 const UserProfile = lazy(() => import("../user/pages/Profile"));
 const Messages = lazy(() => import("../message/pages/Messages"));
 const Notifications = lazy(() => import("../notification/pages/Notifications"));
@@ -398,6 +399,17 @@ const AppRoutes = () => {
           <Suspense fallback={<LazyFallback />}>
             <ProtectedRoute>
               <UserWallet />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+
+      <Route
+        path="/organizations"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute>
+              <Organizations />
             </ProtectedRoute>
           </Suspense>
         }

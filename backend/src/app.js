@@ -142,6 +142,7 @@ apiRouter.use('/product-variants', require('./product-variant/routes/productVari
 apiRouter.use('/partner-stock', require('./partner-stock/routes/partnerStock.route'));
 apiRouter.use('/price-index', require('./price-index/routes/priceIndex.route'));
 apiRouter.use('/vendor-scorecard', require('./vendor-scorecard/routes/vendorScorecard.route'));
+apiRouter.use('/organizations', require('./organization/routes/organization.route'));
 
 // Montage du routeur sur le préfixe /api
 app.use('/api', apiRouter);

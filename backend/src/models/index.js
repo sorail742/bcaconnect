@@ -47,6 +47,9 @@ const Coupon = require('../coupon/models/coupon.model');
 const CouponUsage = require('../coupon/models/couponUsage.model');
 const ProductVariant = require('../product-variant/models/productVariant.model');
 const PartnerStock = require('../partner-stock/models/partnerStock.model');
+const Organization = require('../organization/models/organization.model');
+const OrganizationMember = require('../organization/models/organizationMember.model');
+const OrganizationOrderRequest = require('../organization/models/organizationOrderRequest.model');
 const sequelize = require('../config/database');
 
 // 1. Relations Utilisateur - Portefeuille
@@ -293,6 +296,21 @@ OrderItem.belongsTo(ProductVariant, { foreignKey: 'variante_id', as: 'variante' 
 Product.hasMany(PartnerStock, { foreignKey: 'produit_id', as: 'stocks_partenaires' });
 PartnerStock.belongsTo(Product, { foreignKey: 'produit_id', as: 'produit' });
 
+// 25. Comptes entreprise multi-utilisateurs (analyse concurrentielle #2)
+User.hasMany(Organization, { foreignKey: 'proprietaire_id', as: 'organisations_possedees' });
+Organization.belongsTo(User, { foreignKey: 'proprietaire_id', as: 'proprietaire' });
+
+Organization.hasMany(OrganizationMember, { foreignKey: 'organization_id', as: 'membres' });
+OrganizationMember.belongsTo(Organization, { foreignKey: 'organization_id', as: 'organisation' });
+User.hasMany(OrganizationMember, { foreignKey: 'user_id', as: 'appartenances_organisation' });
+OrganizationMember.belongsTo(User, { foreignKey: 'user_id', as: 'utilisateur' });
+
+Organization.hasMany(OrganizationOrderRequest, { foreignKey: 'organization_id', as: 'demandes_achat' });
+OrganizationOrderRequest.belongsTo(Organization, { foreignKey: 'organization_id', as: 'organisation' });
+User.hasMany(OrganizationOrderRequest, { foreignKey: 'demandeur_id', as: 'demandes_achat_soumises' });
+OrganizationOrderRequest.belongsTo(User, { foreignKey: 'demandeur_id', as: 'demandeur' });
+OrganizationOrderRequest.belongsTo(Order, { foreignKey: 'commande_id', as: 'commande' });
+
 module.exports = {
     User,
     Wallet,
@@ -343,5 +361,8 @@ module.exports = {
     CouponUsage,
     ProductVariant,
     PartnerStock,
+    Organization,
+    OrganizationMember,
+    OrganizationOrderRequest,
     sequelize
 };
