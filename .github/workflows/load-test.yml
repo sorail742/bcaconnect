@@ -52,10 +52,23 @@ jobs:
       - name: 💰 Créditer le portefeuille client pour le scénario checkout
         run: docker compose exec -T backend node scripts/fund-load-test-wallet.js
 
+      - name: 📦 Installer k6 (binaire natif — pas l'action Docker)
+        # grafana/k6-action@v0.3.1 exécute k6 dans SON PROPRE conteneur, sur
+        # le réseau Docker "github_network" — jamais connecté au réseau créé
+        # par `docker compose up` (bcaconnect_default), donc BASE_URL=
+        # localhost:5000 y est injoignable (constaté : "Setup: connexion
+        # fournisseur échouée (0)", échec réseau, pas une erreur HTTP). Le
+        # binaire natif tourne dans le netns du runner, exactement comme le
+        # `curl` du healthcheck plus haut, qui lui fonctionne.
+        run: |
+          curl -s https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update -qq
+          sudo apt-get install -y k6
+
       - name: 🚦 k6 — 3 scénarios (produits, connexion, checkout)
-        uses: grafana/k6-action@v0.3.1
-        with:
-          filename: loadtests/scenarios/main.js
+        id: k6
+        run: k6 run --summary-export="$RUNNER_TEMP/k6-summary.json" loadtests/scenarios/main.js
         env:
           BASE_URL: http://localhost:5000
 
@@ -67,6 +80,10 @@ jobs:
             echo "";
             echo "Scénarios : produits (100 VUs/2min), connexion (50 VUs/2min), checkout (25 VUs/2min).";
             echo "Cible : stack docker-compose du runner CI (jamais la production — voir loadtests/config/README.md).";
+            echo "";
+            echo '```json';
+            cat "$RUNNER_TEMP/k6-summary.json" 2>/dev/null || echo "(résumé JSON indisponible — voir les logs de l'étape k6 ci-dessus)";
+            echo '```';
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: 🐳 Arrêter la stack
