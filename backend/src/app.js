@@ -93,9 +93,13 @@ app.get('/api/health', (req, res) => {
 });
 
 // ─── Sécurité : Rate Limiting ────────────────────────────────────────────────
+// LOAD_TEST_MODE : uniquement positionné par .github/workflows/load-test.yml
+// sur la stack docker-compose éphémère du runner CI — jamais en production
+// (voir loadtests/config/README.md). Sans ça, express-rate-limit renvoie des
+// 429 bien avant la capacité réelle du serveur et fausse le rapport de charge.
 const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 1000, // Augmenté pour éviter les faux-positifs en dev
+    max: process.env.LOAD_TEST_MODE === 'true' ? 1_000_000 : 1000, // Augmenté pour éviter les faux-positifs en dev
     message: { message: 'Trop de requêtes.' },
 });
 app.use('/api', globalLimiter);

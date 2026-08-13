@@ -15,18 +15,49 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: 🔑 Secrets jetables pour la stack docker-compose (CI uniquement)
+        # envValidation.js fait échouer le démarrage du backend sans ça.
+        # jwtService accepte les \n littéraux (voir jwtService.js:11-12), donc
+        # on aplatit la clé PEM sur une seule ligne — safe à interpoler dans
+        # docker-compose.yml (des retours à la ligne bruts y casseraient le
+        # parsing YAML). Aucun rapport avec les secrets de production.
+        run: |
+          RAW_PRIVATE="$(openssl genrsa 2048 2>/dev/null)"
+          RAW_PUBLIC="$(printf '%s' "$RAW_PRIVATE" | openssl rsa -pubout 2>/dev/null)"
+          echo "JWT_PRIVATE_KEY=$(printf '%s' "$RAW_PRIVATE" | sed ':a;N;$!ba;s/\n/\\n/g')" >> "$GITHUB_ENV"
+          echo "JWT_PUBLIC_KEY=$(printf '%s' "$RAW_PUBLIC" | sed ':a;N;$!ba;s/\n/\\n/g')" >> "$GITHUB_ENV"
+          echo "GROQ_API_KEY=gsk_ci_dummy_key_for_tests_only" >> "$GITHUB_ENV"
+          echo "WEBHOOK_SECRET=ci_load_test_webhook_secret" >> "$GITHUB_ENV"
+          echo "LOAD_TEST_MODE=true" >> "$GITHUB_ENV"
+
       - name: 🐳 Démarrer la stack applicative
-        run: docker compose up -d
+        run: docker compose up -d --build db redis backend
 
       - name: ⏳ Attendre que le backend soit prêt
-        run: timeout 120 bash -c 'until curl -sf http://localhost:5000/api/health; do sleep 3; done'
+        run: timeout 180 bash -c 'until curl -sf http://localhost:5000/api/health; do sleep 3; done'
 
-      - name: 🚦 k6 (image officielle)
+      - name: 👤 Comptes de test (client + fournisseur)
+        run: docker compose exec -T backend node scripts/create-test-accounts.js
+
+      - name: 💰 Créditer le portefeuille client pour le scénario checkout
+        run: docker compose exec -T backend node scripts/fund-load-test-wallet.js
+
+      - name: 🚦 k6 — 3 scénarios (produits, connexion, checkout)
         uses: grafana/k6-action@v0.3.1
         with:
-          filename: loadtests/scenarios/_smoke.js
+          filename: loadtests/scenarios/main.js
         env:
           BASE_URL: http://localhost:5000
+
+      - name: 📄 Publier le rapport de charge
+        if: always()
+        run: |
+          {
+            echo "## 🚦 Rapport de charge k6 — $(date -u +'%Y-%m-%d %H:%M UTC')";
+            echo "";
+            echo "Scénarios : produits (100 VUs/2min), connexion (50 VUs/2min), checkout (25 VUs/2min).";
+            echo "Cible : stack docker-compose du runner CI (jamais la production — voir loadtests/config/README.md).";
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: 🐳 Arrêter la stack
         if: always()
