@@ -46,6 +46,12 @@ jobs:
         if: always()
         run: docker compose logs backend --no-color
 
+      - name: 📂 Catégories par défaut
+        # ensureDefaultCategories() ne tourne qu'en dehors de production
+        # (index.js) — docker-compose.yml positionne NODE_ENV=production
+        # (comme le vrai déploiement), donc rien n'est semé automatiquement.
+        run: docker compose exec -T backend node scripts/seed-categories.js
+
       - name: 👤 Comptes de test (client + fournisseur)
         run: docker compose exec -T backend node scripts/create-test-accounts.js
 
