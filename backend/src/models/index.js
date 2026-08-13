@@ -52,6 +52,7 @@ const RfqQuoteLine = require('../rfq/models/rfqQuoteLine.model');
 const Organization = require('../organization/models/organization.model');
 const OrganizationMember = require('../organization/models/organizationMember.model');
 const OrganizationOrderRequest = require('../organization/models/organizationOrderRequest.model');
+const AlertThreshold = require('../alert-threshold/models/alertThreshold.model');
 const sequelize = require('../config/database');
 
 // 1. Relations Utilisateur - Portefeuille
@@ -322,6 +323,12 @@ User.hasMany(OrganizationOrderRequest, { foreignKey: 'demandeur_id', as: 'demand
 OrganizationOrderRequest.belongsTo(User, { foreignKey: 'demandeur_id', as: 'demandeur' });
 OrganizationOrderRequest.belongsTo(Order, { foreignKey: 'commande_id', as: 'commande' });
 
+// 26. Seuils d'alerte dynamiques (cahier des charges 3.6)
+User.hasMany(AlertThreshold, { foreignKey: 'utilisateur_id', as: 'seuils_alerte' });
+AlertThreshold.belongsTo(User, { foreignKey: 'utilisateur_id', as: 'utilisateur' });
+Product.hasMany(AlertThreshold, { foreignKey: 'produit_id', as: 'seuils_alerte' });
+AlertThreshold.belongsTo(Product, { foreignKey: 'produit_id', as: 'produit' });
+
 module.exports = {
     User,
     Wallet,
@@ -377,5 +384,6 @@ module.exports = {
     Organization,
     OrganizationMember,
     OrganizationOrderRequest,
+    AlertThreshold,
     sequelize
 };

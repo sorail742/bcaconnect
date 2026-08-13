@@ -12,6 +12,18 @@ db.version(1).stores({
     user_prefs: 'key, value', // Préférences et thèmes offline
 });
 
+// v2 : préchargement des notifications pour consultation hors ligne
+// (cahier des charges 3.6) — table séparée ajoutée sans toucher au schéma v1.
+db.version(2).stores({
+    products: 'id, nom, prix_unitaire, categorie_id, store_id',
+    categories: 'id, nom_categorie',
+    orders_queue: '++id, status, items, total_ttc, timestamp',
+    products_queue: '++id, status, nom_produit, prix_unitaire, timestamp',
+    transactions: '++id, type, montant, date',
+    user_prefs: 'key, value',
+    notifications: 'id, type, est_lu, createdAt', // Cache notifications
+});
+
 // Méthodes utilitaires
 export const offlineStorage = {
     // Produits
@@ -75,5 +87,14 @@ export const offlineStorage = {
     },
     getCategories: async () => {
         return await db.categories.toArray();
-    }
+    },
+
+    // Notifications (préchargement hors ligne — 3.6)
+    saveNotifications: async (notifications) => {
+        if (!Array.isArray(notifications)) return null;
+        return await db.notifications.bulkPut(notifications);
+    },
+    getNotifications: async () => {
+        return await db.notifications.reverse().sortBy('createdAt');
+    },
 };

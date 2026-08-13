@@ -5,13 +5,14 @@ import notificationService from '../services/notificationService';
 import { LoadingState, ErrorState, EmptyState } from '../../components/ui/DataStates';
 import {
     Bell, Trash2, Package, Wallet, MessageSquare,
-    Info, Gavel, Truck, Shield, CheckCheck
+    Info, Gavel, Truck, Shield, CheckCheck, BellRing, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
 import ConfirmDeleteModal from '../../components/ui/ConfirmDeleteModal';
 import FilterDropdown from '../../components/ui/FilterDropdown';
+import { useMyAlertThresholds, useToggleAlertThreshold, useDeleteAlertThreshold } from '../../alert-threshold/hooks/useAlertThresholdData';
 
 const notificationTypes = {
     order:    { label: 'Commandes',  icon: Package,       color: 'text-blue-500',    bg: 'bg-blue-500/10',    border: 'border-blue-500/20'    },
@@ -21,6 +22,53 @@ const notificationTypes = {
     dispute:  { label: 'Litiges',    icon: Gavel,         color: 'text-rose-500',    bg: 'bg-rose-500/10',    border: 'border-rose-500/20'    },
     delivery: { label: 'Livraison',  icon: Truck,         color: 'text-primary',     bg: 'bg-primary/10',     border: 'border-primary/20'     },
     sav:      { label: 'SAV',        icon: Shield,        color: 'text-violet-500',  bg: 'bg-violet-500/10',  border: 'border-violet-500/20'  },
+};
+
+const AlertThresholdsPanel = () => {
+    const { data: seuils = [], loading } = useMyAlertThresholds();
+    const toggleThreshold = useToggleAlertThreshold();
+    const deleteThreshold = useDeleteAlertThreshold();
+
+    if (loading || seuils.length === 0) return null;
+
+    return (
+        <div className="rounded-3xl border border-border bg-card p-5 space-y-3">
+            <div className="flex items-center gap-2">
+                <BellRing className="size-4 text-primary" />
+                <h2 className="text-xs font-black text-foreground uppercase tracking-widest">Mes alertes de seuil</h2>
+            </div>
+            <div className="space-y-2">
+                {seuils.map((s) => (
+                    <div key={s.id} className={cn("flex items-center justify-between gap-3 p-3 rounded-2xl border", s.actif ? "border-border" : "border-border opacity-50")}>
+                        <div className="min-w-0">
+                            <p className="text-xs font-bold text-foreground truncate">{s.produit?.nom_produit || 'Produit'}</p>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                                {s.type === 'prix_produit' ? 'Prix' : 'Stock'} ≤ {Number(s.valeur_seuil).toLocaleString('fr-FR')}
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => toggleThreshold.mutate({ id: s.id, actif: !s.actif })}
+                                title={s.actif ? 'Désactiver' : 'Activer'}
+                                className="border-none bg-transparent text-muted-foreground hover:text-primary"
+                            >
+                                {s.actif ? <ToggleRight className="size-6 text-primary" /> : <ToggleLeft className="size-6" />}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => deleteThreshold.mutate(s.id)}
+                                title="Supprimer"
+                                className="border-none bg-transparent text-muted-foreground hover:text-rose-500"
+                            >
+                                <Trash2 className="size-4" />
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
 };
 
 const Notifications = () => {
@@ -142,6 +190,10 @@ const Notifications = () => {
                             ]}
                         />
                     </div>
+                </div>
+
+                <div className="max-w-2xl mx-auto px-6 pt-10 space-y-4">
+                    <AlertThresholdsPanel />
                 </div>
 
                 <div className="max-w-2xl mx-auto px-6 py-10 space-y-4">

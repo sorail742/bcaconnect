@@ -143,6 +143,7 @@ apiRouter.use('/partner-stock', require('./partner-stock/routes/partnerStock.rou
 apiRouter.use('/price-index', require('./price-index/routes/priceIndex.route'));
 apiRouter.use('/vendor-scorecard', require('./vendor-scorecard/routes/vendorScorecard.route'));
 apiRouter.use('/organizations', require('./organization/routes/organization.route'));
+apiRouter.use('/alert-thresholds', require('./alert-threshold/routes/alertThreshold.route'));
 
 // Montage du routeur sur le préfixe /api
 app.use('/api', apiRouter);

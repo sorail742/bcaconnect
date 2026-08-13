@@ -25,6 +25,7 @@ import ProductQA from '../../product-question/components/ProductQA';
 import { useProductById } from '../hooks/useProductData';
 import { useProductVariants } from '../../product-variant/hooks/useProductVariantData';
 import PriceIndexCard from '../../category/components/PriceIndexCard';
+import AlertThresholdButton from '../../alert-threshold/components/AlertThresholdButton';
 import { useQuery } from '@tanstack/react-query';
 
 const FALLBACK = 'https://images.unsplash.com/photo-1523275319145-80b01958f7a2?auto=format&fit=crop&q=80&w=800';
@@ -393,6 +394,9 @@ const ProductDetail = () => {
                                     >
                                         <Share2 className="size-5" />
                                     </button>
+                                    {!isOwner && (
+                                        <AlertThresholdButton productId={id} currentPrice={price} currentStock={effectiveStock} />
+                                    )}
                                 </div>
                                 <button disabled={!inStock || isOwner} onClick={handleBuyNow} className={cn("w-full h-12 rounded font-semibold text-sm flex items-center justify-center gap-2 border", isOwner ? "border-[#f0f0f0] text-[#999] cursor-not-allowed" : "border-[#1CA0DB] text-[#1CA0DB] hover:bg-[#eff6ff]")}>
                                     <Zap className="size-4" />

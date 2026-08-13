@@ -19,6 +19,7 @@ const { startCreditReminders } = require("./cron/creditReminderCron");
 const { startOrderReminders } = require("./cron/orderReminderCron");
 const { startStockAlerts } = require("./cron/stockAlertCron");
 const { startDisputeEscalation } = require("./cron/disputeEscalationCron");
+const { startAlertThresholds } = require("./cron/alertThresholdCron");
 const { runMigrations } = require("./config/runMigrations");
 const { initCategoryAttributes } = require("./constants/categoryAttributes");
 const { ensureDefaultCategories } = require("./config/defaultCategories");
@@ -76,6 +77,9 @@ const start = async () => {
 
     // Lancement de l'escalade des litiges
     startDisputeEscalation(io);
+
+    // Lancement de l'évaluation des seuils d'alerte dynamiques (3.6)
+    startAlertThresholds(io);
 
     io.on("connection", (socket) => {
       console.log("⚡ Un utilisateur s'est connecté :", socket.id);

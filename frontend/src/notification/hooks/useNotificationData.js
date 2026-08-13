@@ -12,6 +12,12 @@ export const useNotificationsList = () => {
         queryFn: () => notificationService.getAll(),
         staleTime: 30_000,
         enabled: !!token && isAuthenticated,
+        // networkMode 'online' (par défaut) met la requête en pause hors
+        // ligne et n'appelle jamais queryFn — ce qui empêche
+        // notificationService.getAll() d'atteindre son fallback
+        // offlineStorage.getNotifications() (cahier des charges 3.6, même
+        // correctif que useProducts pour 1.12).
+        networkMode: 'always',
     });
     return { data, loading, error: error?.message || null, isFetching, refetch, mutate: refetch };
 };
