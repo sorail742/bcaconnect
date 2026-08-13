@@ -9,6 +9,7 @@ import { useLanguage } from '../../context/useLanguage';
 import { ProductSkeleton } from '../../components/ui/Loader';
 import { useVendorBySlug } from '../hooks/useVendorData';
 import LazyImage from '../../components/ui/LazyImage';
+import VendorScorecardCard from '../components/VendorScorecardCard';
 
 const StorePage = () => {
     const { slug } = useParams();
@@ -171,6 +172,12 @@ const StorePage = () => {
                             </div>
                         </div>
                     </div>
+
+                    {store.proprietaire_id && (
+                        <div className="mb-6">
+                            <VendorScorecardCard vendorId={store.proprietaire_id} />
+                        </div>
+                    )}
 
                     {/* Tabs */}
                     <div className="flex gap-1 bg-muted p-1 rounded-xl w-fit mb-6 border border-border">
