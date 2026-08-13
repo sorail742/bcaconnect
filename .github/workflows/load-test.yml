@@ -13,7 +13,6 @@ on:
   # donc `dispatches` renvoie 404 tant qu'aucun run n'a eu lieu ici.
   push:
     branches: [refactor/feature-based-architecture]
-    paths: ['.github/workflows/load-test.yml']
 
 jobs:
   k6:
