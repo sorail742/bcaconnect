@@ -16,8 +16,12 @@ const RfqRequest = sequelize.define('RfqRequest', {
     categorie_id: { type: DataTypes.UUID, allowNull: true },
     titre: { type: DataTypes.STRING(150), allowNull: false },
     description: { type: DataTypes.TEXT, allowNull: false },
-    quantite: { type: DataTypes.INTEGER, allowNull: false },
+    // NULL pour type_demande='projet' (quantité portée par chaque RfqLineItem).
+    quantite: { type: DataTypes.INTEGER, allowNull: true },
     unite: { type: DataTypes.STRING(30), defaultValue: 'unités' },
+    // 'produit' = flux historique (une ligne, via `quantite` ci-dessus).
+    // 'projet' = appel d'offres chantier multi-lignes (analyse concurrentielle #10).
+    type_demande: { type: DataTypes.STRING(20), defaultValue: 'produit' },
     budget_max: { type: DataTypes.DECIMAL(15, 2), allowNull: true },
     ville_livraison: { type: DataTypes.STRING(100), allowNull: true },
     date_limite: { type: DataTypes.DATE, allowNull: true },

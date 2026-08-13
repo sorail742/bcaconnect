@@ -47,6 +47,8 @@ const Coupon = require('../coupon/models/coupon.model');
 const CouponUsage = require('../coupon/models/couponUsage.model');
 const ProductVariant = require('../product-variant/models/productVariant.model');
 const PartnerStock = require('../partner-stock/models/partnerStock.model');
+const RfqLineItem = require('../rfq/models/rfqLineItem.model');
+const RfqQuoteLine = require('../rfq/models/rfqQuoteLine.model');
 const Organization = require('../organization/models/organization.model');
 const OrganizationMember = require('../organization/models/organizationMember.model');
 const OrganizationOrderRequest = require('../organization/models/organizationOrderRequest.model');
@@ -263,6 +265,15 @@ RfqQuote.belongsTo(RfqRequest, { foreignKey: 'demande_id', as: 'demande' });
 User.hasMany(RfqQuote, { foreignKey: 'fournisseur_id', as: 'devis_soumis' });
 RfqQuote.belongsTo(User, { foreignKey: 'fournisseur_id', as: 'fournisseur' });
 
+// 20b. RFQ multi-lignes — appel d'offres projet (analyse concurrentielle #10)
+RfqRequest.hasMany(RfqLineItem, { foreignKey: 'demande_id', as: 'lignes' });
+RfqLineItem.belongsTo(RfqRequest, { foreignKey: 'demande_id', as: 'demande' });
+
+RfqQuote.hasMany(RfqQuoteLine, { foreignKey: 'devis_id', as: 'lignes' });
+RfqQuoteLine.belongsTo(RfqQuote, { foreignKey: 'devis_id', as: 'devis' });
+RfqLineItem.hasMany(RfqQuoteLine, { foreignKey: 'ligne_id', as: 'reponses' });
+RfqQuoteLine.belongsTo(RfqLineItem, { foreignKey: 'ligne_id', as: 'ligne' });
+
 // 21. Questions/Réponses produit (Q&A style Amazon)
 Product.hasMany(ProductQuestion, { foreignKey: 'produit_id', as: 'questions' });
 ProductQuestion.belongsTo(Product, { foreignKey: 'produit_id', as: 'produit' });
@@ -356,6 +367,8 @@ module.exports = {
     EducationalProgress,
     RfqRequest,
     RfqQuote,
+    RfqLineItem,
+    RfqQuoteLine,
     ProductQuestion,
     Coupon,
     CouponUsage,

@@ -1,14 +1,17 @@
 const { Op } = require('sequelize');
 const RfqRequest = require('../models/rfqRequest.model');
 const RfqQuote = require('../models/rfqQuote.model');
+const RfqLineItem = require('../models/rfqLineItem.model');
+const RfqQuoteLine = require('../models/rfqQuoteLine.model');
 // NOTE: User/Category sont déjà migrées mais n'exposent pas ces formes
 // d'include précises ; Notification/Conversation/ConversationParticipant ne le
 // sont pas encore (features `notification` / `message`).
-const { User, Category, Notification, Conversation, ConversationParticipant } = require('../../models');
+const { User, Category, Notification, Conversation, ConversationParticipant, sequelize } = require('../../models');
 
 const requesterInclude = { model: User, as: 'demandeur', attributes: ['id', 'nom_complet', 'role'] };
 const categorieInclude = { model: Category, as: 'categorie', attributes: ['id', 'nom_categorie'] };
 const quoteFournisseurInclude = { model: User, as: 'fournisseur', attributes: ['id', 'nom_complet', 'role'] };
+const lignesInclude = { model: RfqLineItem, as: 'lignes', order: [['ordre', 'ASC']] };
 
 const rfqRepository = {
     create(data) {
@@ -47,7 +50,7 @@ const rfqRepository = {
 
     findByIdFull(id) {
         return RfqRequest.findByPk(id, {
-            include: [requesterInclude, categorieInclude, { model: RfqQuote, as: 'devis', include: [quoteFournisseurInclude] }],
+            include: [requesterInclude, categorieInclude, lignesInclude, { model: RfqQuote, as: 'devis', include: [quoteFournisseurInclude] }],
         });
     },
 
@@ -77,6 +80,49 @@ const rfqRepository = {
 
     createNotification(data) {
         return Notification.create(data);
+    },
+
+    // ── Appel d'offres projet multi-lignes (analyse concurrentielle #10) ──
+    async createProjectRequest(data, lignes) {
+        return sequelize.transaction(async (t) => {
+            const demande = await RfqRequest.create(data, { transaction: t });
+            await RfqLineItem.bulkCreate(
+                lignes.map((l, i) => ({ demande_id: demande.id, description: l.description, quantite: l.quantite, unite: l.unite || 'unités', ordre: i })),
+                { transaction: t },
+            );
+            return demande;
+        });
+    },
+
+    findByIdWithLines(id) {
+        return RfqRequest.findByPk(id, { include: [requesterInclude, categorieInclude, lignesInclude] });
+    },
+
+    findByIdFullProject(id) {
+        return RfqRequest.findByPk(id, {
+            include: [
+                requesterInclude,
+                categorieInclude,
+                lignesInclude,
+                {
+                    model: RfqQuote,
+                    as: 'devis',
+                    include: [quoteFournisseurInclude, { model: RfqQuoteLine, as: 'lignes' }],
+                },
+            ],
+        });
+    },
+
+    async upsertProjectQuote(quoteData, quoteLines) {
+        return sequelize.transaction(async (t) => {
+            const [quote] = await RfqQuote.upsert(quoteData, { conflictFields: ['demande_id', 'fournisseur_id'], transaction: t });
+            await RfqQuoteLine.destroy({ where: { devis_id: quote.id }, transaction: t });
+            await RfqQuoteLine.bulkCreate(
+                quoteLines.map((l) => ({ devis_id: quote.id, ligne_id: l.ligne_id, prix_unitaire: l.prix_unitaire, quantite_proposee: l.quantite_proposee, disponible: l.disponible !== false })),
+                { transaction: t },
+            );
+            return quote;
+        });
     },
 
     // ── Conversation acheteur/fournisseur (feature `message`, pas encore migrée) ──

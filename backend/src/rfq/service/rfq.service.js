@@ -126,6 +126,101 @@ const rfqService = {
         return { demande, conversation_id: conversationId };
     },
 
+    // ── Appel d'offres projet multi-lignes (analyse concurrentielle #10) ──
+    // Un client publie un besoin global de chantier (plusieurs lignes de
+    // matériaux/services) et reçoit des offres directement comparables de
+    // plusieurs fournisseurs, plutôt qu'une demande produit par produit.
+    async createProject({ titre, description, ville_livraison, date_limite, budget_max, categorie_id, lignes }, userId) {
+        if (!titre?.trim() || !description?.trim()) {
+            throw new AppError('Titre et description sont requis.', 400);
+        }
+        if (!Array.isArray(lignes) || lignes.length === 0) {
+            throw new AppError('Au moins une ligne (matériau/service) est requise.', 400);
+        }
+        for (const l of lignes) {
+            if (!l.description?.trim() || !l.quantite || Number(l.quantite) <= 0) {
+                throw new AppError('Chaque ligne doit avoir une description et une quantité positive.', 400);
+            }
+        }
+
+        return rfqRepository.createProjectRequest(
+            {
+                utilisateur_id: userId,
+                type_demande: 'projet',
+                titre: titre.trim(),
+                description: description.trim(),
+                budget_max: budget_max ? Number(budget_max) : null,
+                ville_livraison: ville_livraison?.trim() || null,
+                date_limite: date_limite || null,
+                categorie_id: categorie_id || null,
+            },
+            lignes,
+        );
+    },
+
+    // Soumettre un devis ligne par ligne pour un appel d'offres projet.
+    async submitProjectQuote(id, { lignes, delai_livraison_jours, message }, user, io) {
+        const demande = await rfqRepository.findByIdWithLines(id);
+        if (!demande) throw new AppError('Appel d\'offres introuvable.', 404);
+        if (demande.type_demande !== 'projet') throw new AppError('Cette demande n\'est pas un appel d\'offres projet.', 400);
+        if (demande.statut !== 'ouverte') throw new AppError('Cet appel d\'offres n\'accepte plus de devis.', 400);
+        if (demande.utilisateur_id === user.id) throw new AppError('Vous ne pouvez pas répondre à votre propre appel d\'offres.', 400);
+        if (!Array.isArray(lignes) || lignes.length === 0) throw new AppError('Au moins une ligne de réponse est requise.', 400);
+
+        const validLineIds = new Set(demande.lignes.map((l) => l.id));
+        let montant_total = 0;
+        for (const l of lignes) {
+            if (!validLineIds.has(l.ligne_id)) throw new AppError('Ligne inconnue pour cet appel d\'offres.', 400);
+            if (l.disponible !== false) {
+                if (!l.prix_unitaire || Number(l.prix_unitaire) <= 0) throw new AppError('Prix unitaire requis pour chaque ligne disponible.', 400);
+                montant_total += Number(l.prix_unitaire) * Number(l.quantite_proposee || 0);
+            }
+        }
+
+        const quote = await rfqRepository.upsertProjectQuote(
+            {
+                demande_id: demande.id,
+                fournisseur_id: user.id,
+                prix_unitaire: 0, // non pertinent pour un devis projet — montant_total fait foi
+                quantite_disponible: 0,
+                montant_total,
+                delai_livraison_jours: delai_livraison_jours ? Number(delai_livraison_jours) : null,
+                message: message?.trim() || null,
+                statut: 'en_attente',
+            },
+            lignes,
+        );
+
+        try {
+            if (io) {
+                const notif = await rfqRepository.createNotification({
+                    utilisateur_id: demande.utilisateur_id,
+                    titre: 'Nouvelle offre reçue',
+                    message: `Un fournisseur a soumis une offre de <span class="font-black text-primary">${montant_total.toLocaleString('fr-FR')} GNF</span> pour votre appel d'offres <span class="font-black">"${demande.titre}"</span>.`,
+                    type: 'order',
+                });
+                io.to(demande.utilisateur_id).emit('notification_received', notif);
+            }
+        } catch (e) {
+            console.warn('[RFQ] Notification offre projet:', e.message);
+        }
+
+        return quote;
+    },
+
+    // Comparaison des offres reçues pour un appel d'offres projet — triées par
+    // montant total croissant, avec le détail ligne par ligne de chaque offre.
+    async getProjectComparison(id, user) {
+        const demande = await rfqRepository.findByIdFullProject(id);
+        if (!demande) throw new AppError('Appel d\'offres introuvable.', 404);
+        if (demande.utilisateur_id !== user.id && user.role !== 'admin') {
+            throw new AppError('Non autorisé.', 403);
+        }
+
+        const devis = [...demande.devis].sort((a, b) => (parseFloat(a.montant_total) || Infinity) - (parseFloat(b.montant_total) || Infinity));
+        return { demande, devis };
+    },
+
     // Fermer une demande sans accepter de devis
     async close(id, user) {
         const demande = await rfqRepository.findById(id);

@@ -4,7 +4,7 @@ import {
     LayoutDashboard, Package, ShoppingCart, Store, Receipt,
     Users, MessageSquare, User, Truck, Plus, Landmark,
     Folder, RotateCcw, Bell, Wallet, Settings, LogOut,
-    Megaphone, Gavel, X, Shield, Search, Satellite, Zap, Calendar, BarChart2, GraduationCap, Radio, Wrench, FileText, Globe2, History, Activity, Tag
+    Megaphone, Gavel, X, Shield, Search, Satellite, Zap, Calendar, BarChart2, GraduationCap, Radio, Wrench, FileText, Globe2, History, Activity, Tag, HardHat
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { ROLE_LABELS } from '../../constants/roles';
@@ -71,6 +71,7 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
             { path: '/vendor/clients-map', label: 'Carte Clients', icon: Globe2 },
             { path: '/group-purchase', label: t('groupPurchase') || 'Achats groupés', icon: Users },
             { path: '/rfq', label: t('rfq') || 'Demandes de devis', icon: FileText },
+            { path: '/rfq/projects', label: "Appels d'offres chantier", icon: HardHat },
             { path: '/coupons', label: 'Codes promo', icon: Tag },
             { path: '/vendor/reports', label: t('reports') || 'Rapports', icon: BarChart2, permission: 'view_vendor_insights' },
             { path: '/disputes', label: t('disputes') || 'Litiges', icon: Gavel },
@@ -102,6 +103,7 @@ const Sidebar = ({ isOpen, isCollapsed, onClose }) => {
             { path: '/sav/guarantees', label: t('savGuarantees') || 'Garanties SAV', icon: Shield },
             { path: '/group-purchase', label: t('groupPurchase') || 'Achats groupés', icon: Users },
             { path: '/rfq', label: t('rfq') || 'Demandes de devis', icon: FileText },
+            { path: '/rfq/projects', label: "Appels d'offres chantier", icon: HardHat },
             { path: '/education', label: t('bcaAcademy') || 'BCA Academy', icon: GraduationCap },
             { path: '/messages', label: t('messages') || 'Messages', icon: MessageSquare, badge: unreadMessages },
         ],

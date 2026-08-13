@@ -47,6 +47,23 @@ const rfqController = {
         res.json({ message: 'Devis accepté. Une conversation a été ouverte pour finaliser la commande.', demande, conversation_id });
     }),
 
+    // ── Appel d'offres projet multi-lignes (analyse concurrentielle #10) ──
+    createProject: catchAsync(async (req, res) => {
+        const demande = await rfqService.createProject(req.body, req.user.id);
+        res.status(201).json({ message: "Appel d'offres publié.", demande });
+    }),
+
+    submitProjectQuote: catchAsync(async (req, res) => {
+        const io = req.app.get('socketio');
+        const quote = await rfqService.submitProjectQuote(req.params.id, req.body, req.user, io);
+        res.status(201).json({ message: 'Offre soumise avec succès.', quote });
+    }),
+
+    getProjectComparison: catchAsync(async (req, res) => {
+        const result = await rfqService.getProjectComparison(req.params.id, req.user);
+        res.json(result);
+    }),
+
     // Fermer une demande sans accepter de devis
     close: catchAsync(async (req, res) => {
         const demande = await rfqService.close(req.params.id, req.user);

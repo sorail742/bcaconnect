@@ -43,6 +43,7 @@ const HelpCenter = lazy(() => import("../support/pages/HelpCenter"));
 const EducationCenter = lazy(() => import("../education/pages/EducationCenter"));
 const GroupPurchase = lazy(() => import("../group-purchase/pages/GroupPurchase"));
 const Rfq = lazy(() => import("../rfq/pages/Rfq"));
+const RfqProjects = lazy(() => import("../rfq/pages/RfqProjects"));
 const Coupons = lazy(() => import("../coupon/pages/Coupons"));
 const Unauthorized = lazy(() => import("../auth/pages/Unauthorized"));
 
@@ -324,6 +325,16 @@ const AppRoutes = () => {
           <Suspense fallback={<LazyFallback />}>
             <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.CLIENT, ROLES.FOURNISSEUR]}>
               <Rfq />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+      <Route
+        path="/rfq/projects"
+        element={
+          <Suspense fallback={<LazyFallback />}>
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.CLIENT, ROLES.FOURNISSEUR]}>
+              <RfqProjects />
             </ProtectedRoute>
           </Suspense>
         }
