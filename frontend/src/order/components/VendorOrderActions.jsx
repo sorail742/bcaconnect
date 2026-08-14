@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     CheckCircle2,
@@ -9,8 +9,15 @@ import {
     XCircle,
     Eye,
     RotateCcw,
+    ReceiptText,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { toast } from 'sonner';
+import invoiceService from '../../invoice/services/invoiceService';
+import { generateFactureLegalePdf } from '../../invoice/lib/legalInvoicePdf';
+
+// Statuts pour lesquels une facture peut être émise (article réellement vendu).
+const INVOICEABLE_ITEM_STATUSES = new Set(['confirme', 'prepare', 'expedie', 'livre']);
 
 const ActionBtn = ({ onClick, disabled, title, children, variant = 'default', icon: Icon }) => {
     const variants = {
@@ -47,7 +54,25 @@ const VendorOrderActions = ({
     isPending,
 }) => {
     const navigate = useNavigate();
+    const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
     const { commande_id: orderId, commande: order, items } = orderGroup;
+    const canInvoice = items.some((i) => INVOICEABLE_ITEM_STATUSES.has(i.statut));
+
+    const handleDownloadInvoice = async () => {
+        setIsDownloadingInvoice(true);
+        try {
+            // Scopée côté backend à SA propre facture (jamais celles des
+            // autres vendeurs d'une commande multi-vendeurs).
+            const [invoice] = await invoiceService.createFromOrder(orderId);
+            const fullInvoice = await invoiceService.getById(invoice.id);
+            const doc = generateFactureLegalePdf(fullInvoice);
+            doc.save(`Facture_${fullInvoice.numero}.pdf`);
+        } catch {
+            toast.error('Impossible de générer la facture pour le moment.');
+        } finally {
+            setIsDownloadingInvoice(false);
+        }
+    };
     const client = order?.client || order?.User;
     const carrier = order?.transporteur;
     const carrierId = carrier?.id || order?.transporteur_id;
@@ -156,6 +181,18 @@ const VendorOrderActions = ({
                     title={carrier?.nom_complet ? `Contacter ${carrier.nom_complet}` : 'Contacter le livreur'}
                 >
                     Livreur
+                </ActionBtn>
+            )}
+
+            {canInvoice && (
+                <ActionBtn
+                    variant="default"
+                    icon={ReceiptText}
+                    disabled={isDownloadingInvoice}
+                    onClick={handleDownloadInvoice}
+                    title="Télécharger la facture légale (NIF/RCCM/TVA)"
+                >
+                    Facture
                 </ActionBtn>
             )}
 

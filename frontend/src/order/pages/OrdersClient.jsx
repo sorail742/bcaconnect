@@ -18,7 +18,8 @@ import Skeleton from '../../components/ui/Skeleton';
 import PrefetchLink from '../../components/ui/PrefetchLink';
 import FilterDropdown from '../../components/ui/FilterDropdown';
 import productService from '../../product/services/productService';
-import { generateFactureOrProformaPdf } from '../../lib/bcaDocumentPdf';
+import invoiceService from '../../invoice/services/invoiceService';
+import { generateFactureLegalePdf } from '../../invoice/lib/legalInvoicePdf';
 
 // Statuts pour lesquels une facture peut être téléchargée (commande réellement payée).
 const INVOICEABLE_STATUSES = new Set(['payé', 'en_préparation', 'en_cours', 'livré']);
@@ -73,25 +74,15 @@ const OrderCard = ({ order, index }) => {
     const handleDownloadFacture = async () => {
         setIsDownloading(true);
         try {
-            const fullOrder = await orderService.getById(order.id);
-            const items = (fullOrder.details || []).map((item) => ({
-                description: item.produit?.nom_produit || 'Article',
-                qte: item.quantite,
-                prixUnitaire: parseFloat(item.prix_unitaire_achat) || 0,
-            }));
-            const doc = generateFactureOrProformaPdf('facture', {
-                numero: `CMD-${fullOrder.id.slice(0, 8).toUpperCase()}`,
-                date: fullOrder.date_commande || fullOrder.createdAt,
-                client: {
-                    nom: fullOrder.client?.nom_complet || fullOrder.nom_destinataire || '—',
-                    adresse: fullOrder.adresse_livraison || '',
-                    telephone: fullOrder.client?.telephone || fullOrder.telephone_livraison || '',
-                },
-                items,
-                livraison: fullOrder.adresse_livraison || '',
-                modePaiement: fullOrder.methode_paiement || '',
-            });
-            doc.save(`BCA_Facture_CMD-${fullOrder.id.slice(0, 8).toUpperCase()}.pdf`);
+            // Une commande multi-vendeurs produit une facture légale par
+            // vendeur (voir invoice.service.js) — jamais une facture unique
+            // qui mélangerait des articles de plusieurs NIF/RCCM différents.
+            const invoices = await invoiceService.createFromOrder(order.id);
+            for (const inv of invoices) {
+                const fullInvoice = await invoiceService.getById(inv.id);
+                const doc = generateFactureLegalePdf(fullInvoice);
+                doc.save(`Facture_${fullInvoice.numero}.pdf`);
+            }
         } catch {
             toast.error('Impossible de générer la facture pour le moment.');
         } finally {

@@ -71,7 +71,9 @@ const StoreSettings = () => {
         description: '',
         logo_url: '',
         use_carousel: false,
-        banner_images: []
+        banner_images: [],
+        nif: '',
+        rccm: '',
     });
     
     const [isUploading, setIsUploading] = useState(false);
@@ -88,7 +90,9 @@ const StoreSettings = () => {
                 description: storeInfo.description || '',
                 logo_url: storeInfo.logo_url || '',
                 use_carousel: storeInfo.use_carousel || false,
-                banner_images: storeInfo.banner_images || []
+                banner_images: storeInfo.banner_images || [],
+                nif: storeInfo.nif || '',
+                rccm: storeInfo.rccm || '',
             });
         }
     }, [storeInfo]);
@@ -192,7 +196,9 @@ const StoreSettings = () => {
             telephone_boutique: shopData.phone,
             logo_url: shopData.logo_url,
             use_carousel: shopData.use_carousel,
-            banner_images: shopData.banner_images
+            banner_images: shopData.banner_images,
+            nif: shopData.nif.trim(),
+            rccm: shopData.rccm.trim(),
         };
         
         saveStore({ ...payload, mode: hasStore ? 'update' : 'create' });
@@ -502,6 +508,33 @@ const StoreSettings = () => {
                                             className="h-12 w-full pl-12 pr-6 bg-muted border border-border focus:ring-2 focus:ring-primary/20 rounded-2xl text-xs font-bold tracking-widest outline-none transition-all text-foreground tabular-nums"
                                         />
                                     </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-primary/5 border border-primary/20 rounded-2xl">
+                                <div className="sm:col-span-2 flex items-center gap-2">
+                                    <ShieldCheck className="size-4 text-primary shrink-0" />
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Identité fiscale — requise pour émettre des factures légales conformes (CGI Guinée)</p>
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">NIF (Numéro d'Identification Fiscale)</label>
+                                    <input
+                                        name="nif"
+                                        value={shopData.nif}
+                                        onChange={handleChange}
+                                        placeholder="NIF de votre boutique"
+                                        className="h-12 w-full px-4 bg-muted border border-border focus:ring-2 focus:ring-primary/20 rounded-2xl text-xs font-bold tracking-widest outline-none transition-all text-foreground"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">RCCM</label>
+                                    <input
+                                        name="rccm"
+                                        value={shopData.rccm}
+                                        onChange={handleChange}
+                                        placeholder="Registre du Commerce"
+                                        className="h-12 w-full px-4 bg-muted border border-border focus:ring-2 focus:ring-primary/20 rounded-2xl text-xs font-bold tracking-widest outline-none transition-all text-foreground"
+                                    />
                                 </div>
                             </div>
 

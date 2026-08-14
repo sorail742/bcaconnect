@@ -152,7 +152,7 @@ const storeService = {
             .filter(Boolean);
     },
 
-    async updateMyStore(ownerId, { nom_boutique, description, email_boutique, telephone_boutique, logo_url, use_carousel, banner_images, latitude, longitude }) {
+    async updateMyStore(ownerId, { nom_boutique, description, email_boutique, telephone_boutique, logo_url, use_carousel, banner_images, latitude, longitude, nif, rccm }) {
         const store = await storeRepository.findByOwnerId(ownerId);
         if (!store) return { outcome: 'not_found' };
 
@@ -169,7 +169,10 @@ const storeService = {
             logo_url,
             use_carousel: use_carousel !== undefined ? use_carousel : store.use_carousel,
             banner_images: banner_images !== undefined ? banner_images : store.banner_images,
-            location
+            location,
+            // Identité fiscale (facturation électronique conforme, concurrentiel #3)
+            nif: nif !== undefined ? nif : store.nif,
+            rccm: rccm !== undefined ? rccm : store.rccm,
         });
 
         return { outcome: 'updated', store: updatedStore };

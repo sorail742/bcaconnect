@@ -53,6 +53,8 @@ const Organization = require('../organization/models/organization.model');
 const OrganizationMember = require('../organization/models/organizationMember.model');
 const OrganizationOrderRequest = require('../organization/models/organizationOrderRequest.model');
 const AlertThreshold = require('../alert-threshold/models/alertThreshold.model');
+const Invoice = require('../invoice/models/invoice.model');
+const InvoiceCounter = require('../invoice/models/invoiceCounter.model');
 const sequelize = require('../config/database');
 
 // 1. Relations Utilisateur - Portefeuille
@@ -329,6 +331,14 @@ AlertThreshold.belongsTo(User, { foreignKey: 'utilisateur_id', as: 'utilisateur'
 Product.hasMany(AlertThreshold, { foreignKey: 'produit_id', as: 'seuils_alerte' });
 AlertThreshold.belongsTo(Product, { foreignKey: 'produit_id', as: 'produit' });
 
+// 27. Facturation électronique conforme (analyse concurrentielle #3)
+Order.hasOne(Invoice, { foreignKey: 'commande_id', as: 'facture' });
+Invoice.belongsTo(Order, { foreignKey: 'commande_id', as: 'commande' });
+Store.hasMany(Invoice, { foreignKey: 'boutique_id', as: 'factures' });
+Invoice.belongsTo(Store, { foreignKey: 'boutique_id', as: 'boutique' });
+User.hasMany(Invoice, { foreignKey: 'utilisateur_id', as: 'factures' });
+Invoice.belongsTo(User, { foreignKey: 'utilisateur_id', as: 'acheteur' });
+
 module.exports = {
     User,
     Wallet,
@@ -385,5 +395,7 @@ module.exports = {
     OrganizationMember,
     OrganizationOrderRequest,
     AlertThreshold,
+    Invoice,
+    InvoiceCounter,
     sequelize
 };

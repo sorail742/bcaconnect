@@ -90,6 +90,19 @@ const Store = sequelize.define('Store', {
         allowNull: true,
         comment: "Date d'expiration du plan 'pro' — repasse en 'gratuit' une fois dépassée",
     },
+    // Identité fiscale du vendeur (facturation électronique conforme CGI
+    // Guinée, analyse concurrentielle #3) — requise pour émettre une
+    // facture légale au nom de la boutique.
+    nif: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        comment: 'Numéro d\'Identification Fiscale du vendeur',
+    },
+    rccm: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        comment: 'Registre du Commerce et du Crédit Mobilier du vendeur',
+    },
     /* location: {
         type: DataTypes.GEOMETRY('POINT'),
         allowNull: true,
