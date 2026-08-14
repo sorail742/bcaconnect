@@ -6,10 +6,9 @@ import {
     ShieldCheck, Zap, Users, Heart,
     Globe, ArrowRight, Star, Award, Building2
 } from 'lucide-react';
-import { useLanguage } from '../context/LanguageContext';
-import BcaLogo from '../components/ui/BcaLogo';
+import { useLanguage } from '../context/useLanguage';
 import { cn } from '../lib/utils';
-import statService from '../services/statService';
+import statService from '../dashboard/services/statService';
 import AnimatedCounter from '../components/ui/AnimatedCounter';
 
 const AboutPage = () => {
@@ -60,7 +59,7 @@ const AboutPage = () => {
 
     const VALUES = [
         { icon: ShieldCheck, title: "Sécurité Absolue", desc: "Notre système de séquestre protège 100% des transactions sur la plateforme.", color: "text-emerald-500", bg: "bg-emerald-50" },
-        { icon: Zap, title: "Innovation", desc: "Nous utilisons l'IA et le Big Data pour optimiser chaque chaîne de valeur.", color: "text-[#FF6600]", bg: "bg-orange-50" },
+        { icon: Zap, title: "Innovation", desc: "Nous utilisons l'IA et le Big Data pour optimiser chaque chaîne de valeur.", color: "text-[#1CA0DB]", bg: "bg-blue-50" },
         { icon: Heart, title: "Inclusion", desc: "Nous démocratisons l'accès au e-commerce pour tous les guinéens.", color: "text-rose-500", bg: "bg-rose-50" },
         { icon: Globe, title: "Standard Global", desc: "Une qualité de service comparable aux plus grands hubs mondiaux.", color: "text-blue-500", bg: "bg-blue-50" },
     ];
@@ -84,7 +83,7 @@ const AboutPage = () => {
                     </div>
                     <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-foreground leading-[0.9]" style={{ fontFamily: "'Outfit', sans-serif" }}>
                         Hub E-commerce Unifié <br className="hidden md:block"/>
-                        de <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-[#FF6600] to-rose-500">Guinée.</span>
+                        de <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-[#1CA0DB] to-rose-500">Guinée.</span>
                     </h1>
                     <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-medium">
                         BCA Connect n'est pas qu'une simple place de marché. C'est une infrastructure 
@@ -135,7 +134,7 @@ const AboutPage = () => {
                         {VALUES.map((v, i) => (
                             <motion.div key={i} variants={itemVariants} className="p-8 rounded-[2rem] bg-card border border-border hover:shadow-2xl hover:border-primary/30 transition-all group overflow-hidden relative">
                                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                                <div className={cn(`size-16 rounded-2xl flex items-center justify-center mb-8 shadow-inner border relative z-10`, v.bg === 'bg-emerald-50' ? 'bg-emerald-500/10 border-emerald-500/20' : v.bg === 'bg-orange-50' ? 'bg-[#FF6600]/10 border-[#FF6600]/20' : v.bg === 'bg-rose-50' ? 'bg-rose-500/10 border-rose-500/20' : 'bg-blue-500/10 border-blue-500/20')}>
+                                <div className={cn(`size-16 rounded-2xl flex items-center justify-center mb-8 shadow-inner border relative z-10`, v.bg === 'bg-emerald-50' ? 'bg-emerald-500/10 border-emerald-500/20' : v.bg === 'bg-blue-50' ? 'bg-[#1CA0DB]/10 border-[#1CA0DB]/20' : v.bg === 'bg-rose-50' ? 'bg-rose-500/10 border-rose-500/20' : 'bg-blue-500/10 border-blue-500/20')}>
                                     <v.icon className={cn(`size-8`, v.color)} />
                                 </div>
                                 <h3 className="text-xl font-black text-foreground mb-4 uppercase tracking-tighter relative z-10">{v.title}</h3>

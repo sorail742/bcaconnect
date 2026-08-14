@@ -1,5 +1,8 @@
 import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import AppRoutes from './routes/AppRoutes';
+import { cn } from './lib/utils';
+import { shouldHidePublicLayout, shouldLockViewport } from './lib/layoutRoutes';
 import OfflineBanner from './components/layout/OfflineBanner';
 import { syncService } from './services/syncService';
 import AIChat from './components/ui/AIChat';
@@ -9,14 +12,20 @@ import ErrorBoundary from './components/ui/ErrorBoundary';
 import './App.css';
 
 import useAuthStore from './store/authStore';
-import authService from './services/authService';
+import authService from './auth/services/authService';
 import useSocket from './hooks/useSocket';
 import { toast, Toaster } from 'sonner';
 import SocketHandler from './components/SocketHandler';
+import RealtimeSync from './components/RealtimeSync';
 import NetworkProgressBar from './components/layout/NetworkProgressBar';
 import ScrollToTop from './components/layout/ScrollToTop';
+import { CallProvider } from './call/context/CallContext';
+import CallManager from './call/components/CallManager';
 
 function App() {
+  const location = useLocation();
+  const hidePublicLayout = shouldHidePublicLayout(location.pathname);
+  const lockViewport = shouldLockViewport(location.pathname);
   const setAuth = useAuthStore(state => state.setAuth);
   const clearAuth = useAuthStore(state => state.clearAuth);
   const setLoading = useAuthStore(state => state.setLoading);
@@ -57,9 +66,14 @@ function App() {
   }, []);
 
   return (
+      <CallProvider>
       <MainLayout>
         <ScrollToTop />
-        <div className="min-h-svh bg-background text-foreground selection:bg-primary/30 selection:text-foreground pb-20">
+        <div className={cn(
+          'bg-background text-foreground selection:bg-primary/30 selection:text-foreground',
+          lockViewport ? 'h-svh overflow-hidden' : 'min-h-svh pb-20',
+          hidePublicLayout && !lockViewport && 'overflow-y-auto',
+        )}>
           <NetworkProgressBar />
           <Toaster
             position="bottom-right"
@@ -73,12 +87,15 @@ function App() {
           />
           <OfflineBanner />
           <SocketHandler />
+          <RealtimeSync />
+          <CallManager />
           <ErrorBoundary>
             <AppRoutes />
           </ErrorBoundary>
         </div>
         <AIChat />
       </MainLayout>
+      </CallProvider>
   );
 }
 

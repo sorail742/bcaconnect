@@ -41,9 +41,22 @@ services:
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=d45259cf4cb572049b1c75c5ef9d0893b2bea7c3f3e8b7637d856a87530fd1df
       - ENCRYPTION_KEY=d45259cf4cb572049b1c75c5ef9d0893b2bea7c3f3e8b7637d856a87530fd1df
+      # Requis par envValidation.js (validateEnv() fait échouer le démarrage
+      # sinon) — non fournis en dur ici, doivent être exportés dans le shell
+      # avant `docker compose up` (voir .github/workflows/load-test.yml pour
+      # la génération à la volée d'une paire RSA jetable, même pattern que
+      # e2e.yml/quality.yml).
+      - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY}
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY:-gsk_ci_dummy_key_for_tests_only}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-test_webhook_secret_for_ci_only}
       - CORS_ORIGINS=http://localhost,http://localhost:3002
       - FRONTEND_URL=http://localhost:3002
       - PORT=5000
+      # Désactivé par défaut (dev normal) — n'est mis à 'true' que par
+      # .github/workflows/load-test.yml pour éviter que le rate limiter
+      # fausse le rapport de charge k6 (voir loadtests/config/README.md).
+      - LOAD_TEST_MODE=${LOAD_TEST_MODE:-false}
     depends_on:
       db:
         condition: service_healthy

@@ -58,7 +58,7 @@ export const GeometricBackground = () => {
                     className="absolute size-4 border border-primary/20 rounded-full"
                     style={{
                         backdropFilter: 'blur(4px)',
-                        boxShadow: '0 0 20px rgba(255,102,0,0.1)'
+                        boxShadow: '0 0 20px rgba(28,160,219,0.1)'
                     }}
                 />
             ))}

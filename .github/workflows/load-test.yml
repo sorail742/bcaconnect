@@ -1,0 +1,91 @@
+name: 🚦 Tests de charge (k6)
+
+# Déclenchement manuel (+ nightly optionnel) uniquement — jamais sur chaque PR
+# (lent, coûteux, bruyant) et jamais contre la production (voir Phase 4 du
+# plan : infra Render/Neon actuellement free-tier, non dimensionnée pour ça).
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *' # 03h00 UTC, nightly
+
+jobs:
+  k6:
+    name: 🚦 Scénarios de charge — stack docker-compose locale au runner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🔑 Secrets jetables pour la stack docker-compose (CI uniquement)
+        # envValidation.js fait échouer le démarrage du backend sans ça.
+        # jwtService accepte les \n littéraux (voir jwtService.js:11-12), donc
+        # on aplatit la clé PEM sur une seule ligne — safe à interpoler dans
+        # docker-compose.yml (des retours à la ligne bruts y casseraient le
+        # parsing YAML). Aucun rapport avec les secrets de production.
+        run: |
+          RAW_PRIVATE="$(openssl genrsa 2048 2>/dev/null)"
+          RAW_PUBLIC="$(printf '%s' "$RAW_PRIVATE" | openssl rsa -pubout 2>/dev/null)"
+          echo "JWT_PRIVATE_KEY=$(printf '%s' "$RAW_PRIVATE" | sed ':a;N;$!ba;s/\n/\\n/g')" >> "$GITHUB_ENV"
+          echo "JWT_PUBLIC_KEY=$(printf '%s' "$RAW_PUBLIC" | sed ':a;N;$!ba;s/\n/\\n/g')" >> "$GITHUB_ENV"
+          echo "GROQ_API_KEY=gsk_ci_dummy_key_for_tests_only" >> "$GITHUB_ENV"
+          echo "WEBHOOK_SECRET=ci_load_test_webhook_secret" >> "$GITHUB_ENV"
+          echo "LOAD_TEST_MODE=true" >> "$GITHUB_ENV"
+
+      - name: 🐳 Démarrer la stack applicative
+        run: docker compose up -d --build db redis backend
+
+      - name: ⏳ Attendre que le backend soit prêt
+        run: timeout 180 bash -c 'until curl -sf http://localhost:5000/api/health; do sleep 3; done'
+
+      - name: 📋 Logs backend (toujours, pour diagnostic)
+        if: always()
+        run: docker compose logs backend --no-color
+
+      - name: 📂 Catégories par défaut
+        # ensureDefaultCategories() ne tourne qu'en dehors de production
+        # (index.js) — docker-compose.yml positionne NODE_ENV=production
+        # (comme le vrai déploiement), donc rien n'est semé automatiquement.
+        run: docker compose exec -T backend node scripts/seed-categories.js
+
+      - name: 👤 Comptes de test (client + fournisseur)
+        run: docker compose exec -T backend node scripts/create-test-accounts.js
+
+      - name: 💰 Créditer le portefeuille client pour le scénario checkout
+        run: docker compose exec -T backend node scripts/fund-load-test-wallet.js
+
+      - name: 📦 Installer k6 (binaire natif — pas l'action Docker)
+        # grafana/k6-action@v0.3.1 exécute k6 dans SON PROPRE conteneur, sur
+        # le réseau Docker "github_network" — jamais connecté au réseau créé
+        # par `docker compose up` (bcaconnect_default), donc BASE_URL=
+        # localhost:5000 y est injoignable (constaté : "Setup: connexion
+        # fournisseur échouée (0)", échec réseau, pas une erreur HTTP). Le
+        # binaire natif tourne dans le netns du runner, exactement comme le
+        # `curl` du healthcheck plus haut, qui lui fonctionne.
+        run: |
+          curl -s https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update -qq
+          sudo apt-get install -y k6
+
+      - name: 🚦 k6 — 3 scénarios (produits, connexion, checkout)
+        id: k6
+        run: k6 run --summary-export="$RUNNER_TEMP/k6-summary.json" loadtests/scenarios/main.js
+        env:
+          BASE_URL: http://localhost:5000
+
+      - name: 📄 Publier le rapport de charge
+        if: always()
+        run: |
+          {
+            echo "## 🚦 Rapport de charge k6 — $(date -u +'%Y-%m-%d %H:%M UTC')";
+            echo "";
+            echo "Scénarios : produits (100 VUs/2min), connexion (50 VUs/2min), checkout (25 VUs/2min).";
+            echo "Cible : stack docker-compose du runner CI (jamais la production — voir loadtests/config/README.md).";
+            echo "";
+            echo '```json';
+            cat "$RUNNER_TEMP/k6-summary.json" 2>/dev/null || echo "(résumé JSON indisponible — voir les logs de l'étape k6 ci-dessus)";
+            echo '```';
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 🐳 Arrêter la stack
+        if: always()
+        run: docker compose down -v

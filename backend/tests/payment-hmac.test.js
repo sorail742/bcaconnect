@@ -1,3 +1,8 @@
+// Ce fichier teste spécifiquement la logique CinetPay : il faut forcer le
+// provider AVANT le require, car PAYMENT_PROVIDER est figé au chargement du
+// module (sinon .env peut charger PAYMENT_PROVIDER=lengopay et faire prendre
+// systématiquement l'autre branche de code, non testée ici).
+process.env.PAYMENT_PROVIDER = 'cinetpay';
 const crypto = require('crypto');
 const paymentProviderService = require('../src/services/paymentProviderService');
 
@@ -62,4 +67,30 @@ describe('CinetPay webhook HMAC', () => {
         expect(parsed.transactionId).toBe('abc');
         expect(parsed.success).toBe(true);
     });
+});
+
+describe('Sélection du canal CinetPay (isolation paiement carte — 1.11)', () => {
+    const { resolveCinetPayChannels } = paymentProviderService;
+
+    it('route "carte_bancaire" (valeur envoyée par le checkout frontend) vers CREDIT_CARD', () => {
+        expect(resolveCinetPayChannels('carte_bancaire')).toBe('CREDIT_CARD');
+    });
+
+    it.each(['card', 'carte', 'credit_card', 'CARTE_BANCAIRE'])(
+        'route "%s" vers CREDIT_CARD',
+        (value) => {
+            expect(resolveCinetPayChannels(value)).toBe('CREDIT_CARD');
+        },
+    );
+
+    it('route "mobile_money" vers MOBILE_MONEY', () => {
+        expect(resolveCinetPayChannels('mobile_money')).toBe('MOBILE_MONEY');
+    });
+
+    it.each([undefined, null, '', 'wallet', 'cod', 'virement'])(
+        'retombe sur ALL pour un moyen non dédié à un canal ("%s")',
+        (value) => {
+            expect(resolveCinetPayChannels(value)).toBe('ALL');
+        },
+    );
 });

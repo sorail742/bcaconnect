@@ -1,4 +1,4 @@
-const API = process.env.API_URL || 'http://localhost:5001/api';
+const API = process.env.API_URL || 'http://localhost:5000/api';
 
 const accounts = {
   client: { email: 'client@test.com', password: 'Client@123' },

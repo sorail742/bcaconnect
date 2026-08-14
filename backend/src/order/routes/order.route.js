@@ -1,0 +1,20 @@
+const express = require('express');
+const router = express.Router();
+const orderController = require('../controller/order.controller');
+const { authMiddleware, authorize, grantAccess } = require('../../middlewares/authMiddleware');
+const { validateCreateOrder, validateUpdateOrder } = require('../validator/order.validator');
+
+router.post('/', authMiddleware, grantAccess('place_orders'), validateCreateOrder, orderController.create);
+router.get('/shipping-quote', authMiddleware, orderController.getShippingQuote);
+router.get('/me', authMiddleware, orderController.getMyOrders);
+router.get('/me/vendors-map', authMiddleware, authorize(['client', 'admin']), orderController.getMyVendorsMap);
+router.get('/vendor', authMiddleware, authorize(['fournisseur', 'admin']), orderController.getVendorOrders);
+router.get('/', authMiddleware, authorize(['admin']), orderController.getAllOrders);
+// ⚠️ Route spécifique AVANT la route générique pour éviter le conflit Express
+router.patch('/items/:itemId/status', authMiddleware, authorize(['fournisseur', 'admin']), orderController.updateItemStatus);
+router.get('/:orderId/vendor-logistics', authMiddleware, authorize(['fournisseur', 'admin']), orderController.getVendorOrderLogistics);
+router.post('/:orderId/vendor-prepare', authMiddleware, authorize(['fournisseur', 'admin']), orderController.prepareVendorOrder);
+router.patch('/:orderId/status', authMiddleware, validateUpdateOrder, orderController.updateOrderStatus);
+router.get('/:id', authMiddleware, orderController.getOrderById);
+
+module.exports = router;

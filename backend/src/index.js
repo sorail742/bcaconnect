@@ -14,18 +14,20 @@ const app = require("./app");
 const { sequelize, Category } = require("./models");
 const http = require("http");
 const { Server } = require("socket.io");
-const { QueryTypes } = require("sequelize");
 const refreshTokenService = require("./services/refreshTokenService");
 const { startCreditReminders } = require("./cron/creditReminderCron");
+const { startOrderReminders } = require("./cron/orderReminderCron");
+const { startStockAlerts } = require("./cron/stockAlertCron");
+const { startDisputeEscalation } = require("./cron/disputeEscalationCron");
+const { startAlertThresholds } = require("./cron/alertThresholdCron");
 const { runMigrations } = require("./config/runMigrations");
+const { initCategoryAttributes } = require("./constants/categoryAttributes");
 const { ensureDefaultCategories } = require("./config/defaultCategories");
 
 // Lancement de la tâche Cron de rappels
 startCreditReminders();
 
-// 🚀 Démarrage du Serveur Node
 const PORT = process.env.PORT || 5000;
-const server = http.createServer(app);
 const ALLOWED_ORIGINS =
   process.env.NODE_ENV === "production"
     ? [
@@ -45,49 +47,114 @@ const ALLOWED_ORIGINS =
         process.env.FRONTEND_URL,
       ].filter(Boolean);
 
-const io = new Server(server, {
-  cors: {
-    origin: process.env.NODE_ENV === "production" ? ALLOWED_ORIGINS : true,
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
-});
-
-// Attacher io à l'app pour y accéder dans les contrôleurs
-app.set("socketio", io);
-
-io.on("connection", (socket) => {
-  console.log("⚡ Un utilisateur s'est connecté :", socket.id);
-
-  // Rejoindre le canal personnel
-  socket.on("join", (userId) => {
-    socket.join(userId);
-    socket.userId = userId;
-    console.log(`👤 Utilisateur ${userId} a rejoint son canal personnel.`);
-  });
-
-  // Rejoindre une room de conversation
-  socket.on("join_conversation", (conversationId) => {
-    socket.join(`conv_${conversationId}`);
-  });
-
-  // Indicateur de frappe
-  socket.on("typing", ({ conversationId, isTyping }) => {
-    socket.to(`conv_${conversationId}`).emit("user_typing", {
-      conversationId,
-      userId: socket.userId,
-      isTyping,
-    });
-  });
-
-  socket.on("disconnect", () => {
-    console.log("🔥 Utilisateur déconnecté :", socket.id);
-  });
-});
-
 const start = async () => {
   try {
-    // 🔐 Initialiser Redis pour la rotation des refresh tokens
+    await initCategoryAttributes();
+    console.log("✅ Profils attributs catégories chargés.");
+
+    const app = require("./app");
+    const server = http.createServer(app);
+
+    const io = new Server(server, {
+      cors: {
+        origin: process.env.NODE_ENV === "production" ? ALLOWED_ORIGINS : true,
+        methods: ["GET", "POST"],
+        credentials: true,
+      },
+    });
+
+    app.set("socketio", io);
+
+    // Expose io to controllers
+    app.set('io', io);
+
+    // Lancement de la tâche Cron pour les relances de commandes
+    startOrderReminders(io);
+    
+    // Lancement des alertes de stocks bas
+    startStockAlerts(io);
+
+    // Lancement de l'escalade des litiges
+    startDisputeEscalation(io);
+
+    // Lancement de l'évaluation des seuils d'alerte dynamiques (3.6)
+    startAlertThresholds(io);
+
+    io.on("connection", (socket) => {
+      console.log("⚡ Un utilisateur s'est connecté :", socket.id);
+
+      socket.on("join", (data) => {
+        let userId = null;
+        let role = null;
+        if (typeof data === 'object') {
+          userId = data.id;
+          role = data.role;
+        } else {
+          userId = data;
+        }
+        
+        if (userId) {
+          socket.join(userId);
+          socket.userId = userId;
+          console.log(`👤 Utilisateur ${userId} a rejoint son canal personnel.`);
+        }
+        if (role) {
+          socket.join(`room_${role}`);
+          console.log(`👤 Utilisateur ${userId} a rejoint le canal room_${role}.`);
+        }
+      });
+
+      socket.on("join_conversation", (conversationId) => {
+        socket.join(`conv_${conversationId}`);
+      });
+
+      socket.on("typing", ({ conversationId, isTyping }) => {
+        socket.to(`conv_${conversationId}`).emit("user_typing", {
+          conversationId,
+          userId: socket.userId,
+          isTyping,
+        });
+      });
+
+      // ── Appels audio/vidéo (signaling WebRTC) ────────────────────────────
+      // Relais pur : le serveur ne comprend pas le contenu SDP/ICE, il
+      // transmet juste au salon personnel du destinataire (déjà rejoint via
+      // "join" ci-dessus) — même convention que le reste du temps réel.
+      socket.on("call_invite", ({ targetId, conversationId, callType, callerName }) => {
+        if (!targetId) return;
+        io.to(targetId).emit("call_invite", {
+          conversationId,
+          callType,
+          callerName,
+          callerId: socket.userId,
+        });
+      });
+
+      socket.on("call_accept", ({ targetId, conversationId }) => {
+        if (!targetId) return;
+        io.to(targetId).emit("call_accepted", { conversationId, calleeId: socket.userId });
+      });
+
+      socket.on("call_reject", ({ targetId, conversationId }) => {
+        if (!targetId) return;
+        io.to(targetId).emit("call_rejected", { conversationId, calleeId: socket.userId });
+      });
+
+      socket.on("call_signal", ({ targetId, signal }) => {
+        if (!targetId) return;
+        io.to(targetId).emit("call_signal", { signal, fromId: socket.userId });
+      });
+
+      socket.on("call_end", ({ targetId, conversationId }) => {
+        if (!targetId) return;
+        io.to(targetId).emit("call_ended", { conversationId, fromId: socket.userId });
+      });
+
+      socket.on("disconnect", () => {
+        console.log("🔥 Utilisateur déconnecté :", socket.id);
+      });
+    });
+
     if (process.env.REDIS_URL) {
       console.log("🔄 Initialisation de Redis...");
       try {
@@ -107,11 +174,9 @@ const start = async () => {
       );
     }
 
-    // Connexion à la base de données
     await sequelize.authenticate();
     console.log("✅ Connexion base de données établie.");
 
-    // Synchronisation standard (ne modifie pas les tables existantes)
     await sequelize.sync();
     console.log("✅ Modèles synchronisés.");
 
@@ -128,10 +193,6 @@ const start = async () => {
       console.log(`📊 Environnement: ${process.env.NODE_ENV}\n`);
     });
 
-    // Handle server errors (e.g., EADDRINUSE)
-    // NOTE: Ne pas basculer automatiquement vers un autre port.
-    // Si le port demandé est occupé, échouer explicitement pour
-    // laisser l'utilisateur relancer le projet sur le port souhaité.
     server.on("error", (err) => {
       if (err.code === "EADDRINUSE") {
         console.error(
@@ -144,11 +205,9 @@ const start = async () => {
       }
     });
 
-    // Gestion de l'arrêt gracieux (Standard BCA v2.6)
     const gracefulShutdown = async (signal) => {
       console.log(`\n⏹️  Signal ${signal} reçu. Arrêt gracieux...`);
 
-      // 1. Arrêter d'accepter de nouvelles connexions
       server.close(async (err) => {
         if (err) {
           console.error("❌ Erreur lors de la fermeture du serveur:", err);
@@ -156,7 +215,6 @@ const start = async () => {
         }
         console.log("✅ Serveur HTTP arrêté.");
 
-        // 2. Déconnexion des services tiers (Redis, DB...)
         try {
           await refreshTokenService.disconnect();
           await sequelize.close();
@@ -171,7 +229,6 @@ const start = async () => {
         process.exit(0);
       });
 
-      // 3. Sécurité : Forcer l'arrêt après 5 secondes si le serveur reste bloqué
       setTimeout(() => {
         console.error("⚠️  Délai d'attente dépassé. Arrêt forcé.");
         process.exit(1);
