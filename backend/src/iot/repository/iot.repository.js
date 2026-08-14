@@ -24,6 +24,14 @@ const iotRepository = {
     createBlockchainStub(data) {
         return BlockchainTransactionStub.create(data);
     },
+
+    updateBlockchainStubStatus(id, statut_onchain) {
+        return BlockchainTransactionStub.update({ statut_onchain }, { where: { id } });
+    },
+
+    findSmartContractsByOrder(commande_id) {
+        return BlockchainTransactionStub.findAll({ where: { commande_id }, order: [['createdAt', 'DESC']] });
+    },
 };
 
 module.exports = iotRepository;

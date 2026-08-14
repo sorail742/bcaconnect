@@ -30,8 +30,13 @@ const iotController = {
 
     createSmartContract: catchAsync(async (req, res) => {
         const { commande_id, type_contrat } = req.body;
-        const stub = await iotService.createSmartContract({ commande_id, type_contrat });
-        res.status(201).json({ message: 'Contrat intelligent simulé généré', stub });
+        const stub = await iotService.createSmartContract({ commande_id, type_contrat }, req.user);
+        res.status(201).json({ message: 'Preuve ancrée sur Polygon Amoy (testnet)', stub });
+    }),
+
+    listSmartContracts: catchAsync(async (req, res) => {
+        const stubs = await iotService.listSmartContracts(req.params.orderId, req.user);
+        res.json({ stubs });
     }),
 };
 

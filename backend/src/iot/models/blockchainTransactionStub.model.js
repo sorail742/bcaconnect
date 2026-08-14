@@ -22,7 +22,7 @@ const BlockchainTransactionStub = sequelize.define('BlockchainTransactionStub', 
     },
     reseau: {
         type: DataTypes.STRING(50),
-        defaultValue: 'polygon_mumbai',
+        defaultValue: 'polygon_amoy',
     },
     statut_onchain: {
         type: DataTypes.ENUM('pending', 'confirmed', 'failed'),

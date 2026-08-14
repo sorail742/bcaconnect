@@ -14,6 +14,7 @@ import { useTrackOrder } from '../hooks/useDeliveryData';
 import { formatRecordDateTime, formatRecordTime, getRecordTimestamp } from '../../lib/dateUtils';
 import useAuthStore from '../../store/authStore';
 import IotTrackingPanel from '../../iot/components/IotTrackingPanel';
+import BlockchainProofPanel from '../../iot/components/BlockchainProofPanel';
 
 const CONAKRY_DEFAULT = { lat: 9.5350, lng: -13.6773 };
 
@@ -375,7 +376,10 @@ const DeliveryTracking = () => {
                                 )}
 
                                 {isAuthenticated && (
-                                    <IotTrackingPanel orderId={trackingData.id} canManage={canManageIot} />
+                                    <>
+                                        <IotTrackingPanel orderId={trackingData.id} canManage={canManageIot} />
+                                        <BlockchainProofPanel orderId={trackingData.id} canManage={canManageIot} />
+                                    </>
                                 )}
 
                                 {/* Fin Info Column */}

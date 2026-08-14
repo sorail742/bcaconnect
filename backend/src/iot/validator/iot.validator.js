@@ -22,4 +22,10 @@ const validateSensorData = [
     validateRequest,
 ];
 
-module.exports = { validateOrderIdParam, validateActivate, validateSensorData };
+const validateSmartContract = [
+    body('commande_id').isUUID().withMessage('ID commande invalide.'),
+    body('type_contrat').isIn(['escrow', 'certificat_authenticite', 'transfert_propriete']).withMessage('Type de contrat invalide.'),
+    validateRequest,
+];
+
+module.exports = { validateOrderIdParam, validateActivate, validateSensorData, validateSmartContract };

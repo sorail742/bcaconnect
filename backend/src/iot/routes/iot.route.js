@@ -2,19 +2,20 @@ const express = require('express');
 const router = express.Router();
 const iotController = require('../controller/iot.controller');
 const { protect } = require('../../middlewares/authMiddleware');
-const { validateOrderIdParam, validateActivate, validateSensorData } = require('../validator/iot.validator');
+const { validateOrderIdParam, validateActivate, validateSensorData, validateSmartContract } = require('../validator/iot.validator');
 
-const BLOCKCHAIN_STUB_ENABLED = process.env.IOT_STUB_ENABLED === 'true' || process.env.NODE_ENV !== 'production';
+const BLOCKCHAIN_MODULE_ENABLED = process.env.BLOCKCHAIN_ENABLED !== 'false';
 
-/** Le smart contract reste un stub de développement — voir cahier des charges 3.16. */
-const blockchainStubGuard = (req, res, next) => {
-    if (!BLOCKCHAIN_STUB_ENABLED) {
-        return res.status(501).json({
-            message: 'Module blockchain non activé en production.',
-            stub: true,
-        });
+/**
+ * Coupe-circuit opérationnel séparé de la configuration du portefeuille
+ * (`blockchainConfig.isConfigured()`, vérifiée dans le service) : permet de
+ * désactiver le module en production sans retirer la clé privée. Le module
+ * appelle réellement Polygon Amoy (testnet) — cf. cahier des charges 3.16.
+ */
+const blockchainGuard = (req, res, next) => {
+    if (!BLOCKCHAIN_MODULE_ENABLED) {
+        return res.status(503).json({ message: 'Module blockchain désactivé (BLOCKCHAIN_ENABLED=false).' });
     }
-    res.setHeader('X-BCA-Stub', 'blockchain-v1');
     next();
 };
 
@@ -28,7 +29,9 @@ router.get('/orders/:orderId/tracking', protect, validateOrderIdParam, iotContro
 // route, jamais un navigateur.
 router.post('/sensor-data', validateSensorData, iotController.logIoTData);
 
-// Contrat intelligent : toujours un stub (cf. 3.16)
-router.post('/smart-contract', blockchainStubGuard, iotController.createSmartContract);
+// Ancrage on-chain (Polygon Amoy testnet) — authentification utilisateur BCA,
+// autorisation vérifiée dans le service (vendeur de la commande ou admin).
+router.post('/smart-contract', protect, validateSmartContract, blockchainGuard, iotController.createSmartContract);
+router.get('/orders/:orderId/smart-contracts', protect, validateOrderIdParam, iotController.listSmartContracts);
 
 module.exports = router;

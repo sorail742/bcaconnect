@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const { OrderItem, Notification } = require('../../models');
 const AppError = require('../../utils/AppError');
 const iotRepository = require('../repository/iot.repository');
+const blockchainConfig = require('../../config/blockchain');
 
 const hashDeviceKey = (key) => crypto.createHash('sha256').update(key).digest('hex');
 
@@ -129,16 +130,69 @@ const iotService = {
         };
     },
 
-    // Simuler la création d'un contrat intelligent — inchangé, cf. 3.16
-    // pour un appel réel à un réseau blockchain.
-    async createSmartContract({ commande_id, type_contrat }) {
-        const mockHash = '0x' + Math.random().toString(16).slice(2) + Date.now().toString(16);
-        return iotRepository.createBlockchainStub({
+    /**
+     * Ancre la preuve d'un événement de commande (mise sous séquestre,
+     * certificat d'authenticité, transfert de propriété) sur le réseau
+     * Polygon Amoy (testnet) au moyen d'une transaction réelle, signée et
+     * diffusée sur le réseau — vérifiable indépendamment de BCA sur
+     * https://amoy.polygonscan.com.
+     *
+     * Pas de contrat Solidity dédié : le hash SHA-256 du contenu à prouver
+     * est porté dans le champ `data` d'une transaction à valeur nulle vers
+     * son propre émetteur (ancrage par preuve d'existence, même principe
+     * que des services comme OpenTimestamps). Ça reste un appel réel au
+     * réseau blockchain — répondant au cahier des charges 3.16 — sans le
+     * coût et le risque opérationnel d'un déploiement/maintien de contrat
+     * séparé.
+     */
+    async createSmartContract({ commande_id, type_contrat }, user) {
+        const order = await iotRepository.findOrderById(commande_id);
+        if (!order) throw new AppError('Commande non trouvée.', 404);
+        await assertCanManage(order, user);
+
+        if (!blockchainConfig.isConfigured()) {
+            throw new AppError(
+                "Module blockchain non configuré : aucun portefeuille Polygon Amoy défini (BLOCKCHAIN_PRIVATE_KEY).",
+                503,
+            );
+        }
+
+        const payload = JSON.stringify({ commande_id, type_contrat, horodatage: new Date().toISOString() });
+        const dataHash = '0x' + crypto.createHash('sha256').update(payload).digest('hex');
+
+        const wallet = blockchainConfig.getWallet();
+        let tx;
+        try {
+            tx = await wallet.sendTransaction({ to: wallet.address, value: 0n, data: dataHash });
+        } catch (err) {
+            throw new AppError(`Échec de l'envoi de la transaction sur Polygon Amoy : ${err.shortMessage || err.message}`, 502);
+        }
+
+        const stub = await iotRepository.createBlockchainStub({
             commande_id,
             type_contrat,
-            hash_transaction: mockHash,
-            statut_onchain: 'confirmed',
+            hash_transaction: tx.hash,
+            reseau: 'polygon_amoy',
+            statut_onchain: 'pending',
         });
+
+        // Ne bloque pas la réponse HTTP sur la confirmation (peut prendre
+        // plusieurs secondes sur Amoy) — mise à jour asynchrone du statut
+        // dès que la transaction est minée (ou marquée en échec sinon).
+        tx.wait(1)
+            .then(() => iotRepository.updateBlockchainStubStatus(stub.id, 'confirmed'))
+            .catch(() => iotRepository.updateBlockchainStubStatus(stub.id, 'failed'));
+
+        return { ...stub.toJSON(), explorer_url: blockchainConfig.explorerTxUrl(tx.hash) };
+    },
+
+    async listSmartContracts(orderId, user) {
+        const order = await iotRepository.findOrderById(orderId);
+        if (!order) throw new AppError('Commande non trouvée.', 404);
+        await assertCanView(order, user);
+
+        const stubs = await iotRepository.findSmartContractsByOrder(orderId);
+        return stubs.map((s) => ({ ...s.toJSON(), explorer_url: blockchainConfig.explorerTxUrl(s.hash_transaction) }));
     },
 };
 

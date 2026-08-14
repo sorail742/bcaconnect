@@ -127,7 +127,16 @@ const envSchema = Joi.object({
         .valid('simulation', 'live')
         .default('simulation'),
 
-    IOT_STUB_ENABLED: Joi.boolean().optional(),
+    // Blockchain — Polygon Amoy (testnet uniquement, cf. cahier des charges 3.16)
+    BLOCKCHAIN_ENABLED: Joi.boolean().default(true),
+    BLOCKCHAIN_PRIVATE_KEY: Joi.string()
+        .pattern(/^0x[a-fA-F0-9]{64}$/)
+        .allow('')
+        .optional()
+        .messages({
+            'string.pattern.base': 'BLOCKCHAIN_PRIVATE_KEY doit être une clé privée hexadécimale (0x + 64 caractères)',
+        }),
+    AMOY_RPC_URL: Joi.string().uri().allow('').optional(),
 
     // SMS Phase 3 (optionnel)
     SMS_ENABLED: Joi.boolean().default(false),

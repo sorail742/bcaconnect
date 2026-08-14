@@ -36,3 +36,29 @@ export const useDeactivateIot = (orderId) => {
         onError: () => toast.error('Impossible de désactiver le suivi IoT.'),
     });
 };
+
+export const useSmartContracts = (orderId, enabled = true) => {
+    const { data, isLoading: loading } = useQuery({
+        queryKey: ['iot-smart-contracts', orderId],
+        queryFn: () => iotService.getSmartContracts(orderId),
+        enabled: !!orderId && enabled,
+        staleTime: 10_000,
+        retry: false,
+        // Un envoi de transaction confirmé côté serveur passe pending -> confirmed
+        // de façon asynchrone (cf. iot.service.js) — on reflète ça sans action utilisateur.
+        refetchInterval: (query) => (query.state.data?.stubs?.some((s) => s.statut_onchain === 'pending') ? 4_000 : false),
+    });
+    return { stubs: data?.stubs || [], loading };
+};
+
+export const useCreateSmartContract = (orderId) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (type_contrat) => iotService.createSmartContract(orderId, type_contrat),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['iot-smart-contracts', orderId] });
+            toast.success('Preuve envoyée sur Polygon Amoy (testnet).');
+        },
+        onError: (e) => toast.error(e.response?.data?.message || "Impossible d'ancrer la preuve sur la blockchain."),
+    });
+};
