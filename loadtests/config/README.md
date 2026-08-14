@@ -1,5 +1,7 @@
 # loadtests/config
 
+Premier rapport de charge réel (cahier des charges 3.17) : voir [`../REPORT.md`](../REPORT.md).
+
 k6 scripts read the target from `__ENV.BASE_URL` — never hardcode a host in a scenario file.
 
 ## Running locally (Windows/Mac Docker Desktop)
