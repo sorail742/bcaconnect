@@ -91,6 +91,18 @@ const Product = sequelize.define('Product', {
         type: DataTypes.DATE,
         allowNull: true,
     },
+    // Revente de services/biens numériques (analyse concurrentielle #7) —
+    // un produit numérique ignore les frais de port (si la commande est
+    // 100% numérique) et livre contenu_numerique instantanément par
+    // notification à l'achat, sans passer par le flux transporteur/OTP.
+    est_numerique: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    },
+    contenu_numerique: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
 }, {
     tableName: 'produits',
     underscored: true,

@@ -21,7 +21,7 @@ const syncProductImages = async (produitId, images) => {
 };
 
 const productService = {
-    async create({ nom_produit, description, prix_unitaire, prix_ancien, stock_quantite, categorie_id, image_url, images, est_local, unite_mesure, mots_cles, marque, preferences_ia }, user, io) {
+    async create({ nom_produit, description, prix_unitaire, prix_ancien, stock_quantite, categorie_id, image_url, images, est_local, unite_mesure, mots_cles, marque, preferences_ia, est_numerique, contenu_numerique }, user, io) {
         // Validation minimale
         if (!nom_produit || nom_produit.trim().length < 3) {
             throw new AppError("Le nom du produit doit contenir au moins 3 caractères.", 422);
@@ -80,7 +80,9 @@ const productService = {
                 ? mots_cles.split(',').map(m => m.trim()).filter(m => m)
                 : (mots_cles || []),
             marque: marque?.trim() || null,
-            preferences_ia: preferences_ia || {}
+            preferences_ia: preferences_ia || {},
+            est_numerique: !!est_numerique,
+            contenu_numerique: est_numerique ? (contenu_numerique?.trim() || null) : null,
         });
 
         // Galerie multi-images (style Alibaba) — si absente, on reprend la couverture
@@ -231,7 +233,7 @@ const productService = {
         return plain;
     },
 
-    async update(id, { nom_produit, description, prix_unitaire, prix_ancien, stock_quantite, categorie_id, image_url, images, est_local, unite_mesure, mots_cles, marque, preferences_ia }, user) {
+    async update(id, { nom_produit, description, prix_unitaire, prix_ancien, stock_quantite, categorie_id, image_url, images, est_local, unite_mesure, mots_cles, marque, preferences_ia, est_numerique, contenu_numerique }, user) {
         if (!isUuid(id)) {
             throw new AppError("Format d'identifiant invalide.", 400);
         }
@@ -261,7 +263,9 @@ const productService = {
                     : mots_cles)
                 : product.mots_cles,
             marque: marque !== undefined ? marque?.trim() || null : product.marque,
-            preferences_ia: preferences_ia !== undefined ? preferences_ia : product.preferences_ia
+            preferences_ia: preferences_ia !== undefined ? preferences_ia : product.preferences_ia,
+            est_numerique: est_numerique !== undefined ? !!est_numerique : product.est_numerique,
+            contenu_numerique: contenu_numerique !== undefined ? (contenu_numerique?.trim() || null) : product.contenu_numerique,
         });
 
         // Galerie multi-images : uniquement remplacée si le vendeur en a envoyé une

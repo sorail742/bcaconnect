@@ -1,5 +1,6 @@
 const { sequelize } = require('../../models');
 const AppError = require('../../utils/AppError');
+const { escapeHtml } = require('../../utils/htmlEscape');
 const escrowService = require('../../common/escrow/service/escrow.service');
 const walletRepository = require('../../common/wallet/repository/wallet.repository');
 const transactionService = require('../../common/transactions/service/transaction.service');
@@ -106,7 +107,15 @@ const orderService = {
                     prix_unitaire_achat: unitPrice,
                     variante_id: variantId || null,
                     variante_nom: variantName,
-                    statut: 'en_attente'
+                    // Un article numérique est livré instantanément par notification
+                    // à l'achat (voir plus bas) — jamais de flux transporteur/OTP.
+                    statut: product.est_numerique ? 'livre' : 'en_attente',
+                    // Champs hors modèle OrderItem — utilisés uniquement dans ce
+                    // scope JS pour le calcul des frais de port et la livraison
+                    // numérique post-commit (Sequelize ignore les clés inconnues).
+                    est_numerique: product.est_numerique,
+                    contenu_numerique: product.contenu_numerique,
+                    nom_produit: product.nom_produit,
                 });
             }
 
@@ -138,12 +147,16 @@ const orderService = {
             }
 
             // --- CALCUL DES FRAIS DE PORT (éco / standard / prioritaire) ---
+            // Une commande 100% numérique n'a rien à expédier — pas de frais de
+            // port (une commande mixte physique/numérique garde le calcul
+            // normal, la répartition par article n'étant pas modélisée).
+            const isFullyDigital = orderItemsByVendor.length > 0 && orderItemsByVendor.every((i) => i.est_numerique);
             const shipping = calculateShipping(
                 deliveryInfo?.adresse,
                 items.length,
                 type_livraison || 'standard',
             );
-            const frais_port = shipping.frais_port;
+            const frais_port = isFullyDigital ? 0 : shipping.frais_port;
             const total_ttc = total_produits + frais_port;
 
             // Délai de livraison : échéance concrète (pas seulement un nombre de jours),
@@ -222,6 +235,20 @@ const orderService = {
                         type: 'order'
                     });
                     io.to(utilisateur_id).emit('notification_received', buyerNotif);
+
+                    // 1b. Livraison instantanée des articles numériques (analyse
+                    // concurrentielle #7) — un message par article, pas de flux
+                    // transporteur/OTP à attendre.
+                    const digitalItems = orderItemsByVendor.filter((item) => item.est_numerique && item.contenu_numerique);
+                    for (const item of digitalItems) {
+                        const digitalNotif = await orderRepository.createNotification({
+                            utilisateur_id: utilisateur_id,
+                            titre: `Accès numérique : ${item.nom_produit}`,
+                            message: `Votre achat <span class="font-black text-primary">${escapeHtml(item.nom_produit)}</span> est disponible immédiatement :<br/><span class="font-mono text-xs">${escapeHtml(item.contenu_numerique)}</span>`,
+                            type: 'order',
+                        });
+                        io.to(utilisateur_id).emit('notification_received', digitalNotif);
+                    }
 
                     // 2. Notifications pour les vendeurs
                     const uniqueVendors = [...new Set(orderItemsByVendor.map(item => item.fournisseur_id))];

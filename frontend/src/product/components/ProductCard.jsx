@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
     ShoppingCart, Star, Heart, CheckCircle2, Store,
-    Package, Edit3, Trash2, MessageCircle, ShieldCheck, BadgeCheck, Layers
+    Package, Edit3, Trash2, MessageCircle, ShieldCheck, BadgeCheck, Layers, Download
 } from 'lucide-react';
 import useCart from '../../cart/hooks/useCart';
 import useWishlistStore from '../store/wishlistStore';
@@ -350,6 +350,12 @@ const ProductCard = ({
                         <ShieldCheck className="size-2.5" />
                         Escrow
                     </span>
+                    {product.est_numerique && (
+                        <span className="bca-badge-trade shadow-sm !bg-violet-50 !text-violet-600 !border-violet-200" title="Livraison instantanée, sans frais de port">
+                            <Download className="size-2.5" />
+                            Numérique
+                        </span>
+                    )}
                 </div>
                 <button 
                     onClick={handleWishlist} 

@@ -36,6 +36,15 @@ const validateCreateProduct = [
     .optional()
     .isArray()
     .withMessage("Les images doivent être un tableau."),
+  body("est_numerique")
+    .optional()
+    .isBoolean()
+    .withMessage("est_numerique doit être un booléen."),
+  body("contenu_numerique")
+    .optional({ nullable: true })
+    .trim()
+    .isLength({ max: 2000 })
+    .withMessage("Le contenu numérique ne doit pas dépasser 2000 caractères."),
   validateRequest,
 ];
 
@@ -61,6 +70,15 @@ const validateUpdateProduct = [
     .isInt({ min: 0 })
     .withMessage("La quantité doit être un nombre positif.")
     .toInt(),
+  body("est_numerique")
+    .optional()
+    .isBoolean()
+    .withMessage("est_numerique doit être un booléen."),
+  body("contenu_numerique")
+    .optional({ nullable: true })
+    .trim()
+    .isLength({ max: 2000 })
+    .withMessage("Le contenu numérique ne doit pas dépasser 2000 caractères."),
   validateRequest,
 ];
 

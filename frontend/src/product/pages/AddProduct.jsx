@@ -161,6 +161,8 @@ const AddProduct = () => {
         unite_mesure: 'Pièce',
         mots_cles: '',
         attributs: {},
+        est_numerique: false,
+        contenu_numerique: '',
     });
 
     const [categories, setCategories] = useState([]);
@@ -294,6 +296,8 @@ const AddProduct = () => {
                         unite_mesure: p.unite_mesure || 'Pièce',
                         mots_cles: Array.isArray(p.mots_cles) ? p.mots_cles.join(', ') : (p.mots_cles || ''),
                         attributs: p.preferences_ia || {},
+                        est_numerique: p.est_numerique ?? false,
+                        contenu_numerique: p.contenu_numerique || '',
                     });
                 }
             } catch (err) {
@@ -445,6 +449,8 @@ const AddProduct = () => {
             unite_mesure: formData.unite_mesure || 'Pièce',
             mots_cles: formData.mots_cles.split(',').map(k => k.trim()).filter(k => k),
             preferences_ia: formData.attributs || {},
+            est_numerique: formData.est_numerique,
+            contenu_numerique: formData.est_numerique ? formData.contenu_numerique.trim() : null,
         };
 
         // GESTION HORS-LIGNE PROACTIVE
@@ -786,6 +792,36 @@ const AddProduct = () => {
                                         onChange={handleChange}
                                         className="size-6 rounded-lg border-2 border-emerald-200 dark:border-emerald-500/30 bg-card text-emerald-500 focus:ring-emerald-500/20 cursor-pointer transition-all"
                                     />
+                                </div>
+
+                                <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20 space-y-3 transition-all">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="size-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center text-xs font-black shadow-lg shadow-primary/20">↓</div>
+                                            <div className="space-y-0.5">
+                                                <p className="text-[11px] font-black text-foreground uppercase leading-none">Produit / service numérique</p>
+                                                <p className="text-[9px] font-bold text-primary/60 uppercase tracking-widest leading-none">Livraison instantanée, sans frais de port</p>
+                                            </div>
+                                        </div>
+                                        <input
+                                            id="input-est-numerique"
+                                            type="checkbox"
+                                            name="est_numerique"
+                                            checked={formData.est_numerique}
+                                            onChange={handleChange}
+                                            className="size-6 rounded-lg border-2 border-primary/30 bg-card text-primary focus:ring-primary/20 cursor-pointer transition-all"
+                                        />
+                                    </div>
+                                    {formData.est_numerique && (
+                                        <textarea
+                                            name="contenu_numerique"
+                                            value={formData.contenu_numerique}
+                                            onChange={handleChange}
+                                            placeholder="Contenu envoyé à l'acheteur (lien de téléchargement, clé de licence, instructions d'accès...)"
+                                            rows={3}
+                                            className="w-full px-3 py-2 rounded-xl border border-primary/20 bg-card text-xs outline-none resize-none"
+                                        />
+                                    )}
                                 </div>
                             </div>
                         </div>
