@@ -6,6 +6,7 @@ const { validateCreateFromOrder, validateIdParam } = require('../validator/invoi
 
 router.get('/mine', protect, invoiceController.listMine);
 router.get('/vendor-mine', protect, invoiceController.listVendorMine);
+router.get('/export/syscohada', protect, invoiceController.exportSyscohada);
 router.post('/from-order/:orderId', protect, validateCreateFromOrder, invoiceController.createFromOrder);
 router.get('/:id', protect, validateIdParam, invoiceController.getById);
 

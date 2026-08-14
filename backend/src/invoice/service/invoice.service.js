@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const { Invoice, InvoiceCounter, Order, OrderItem, Store, User, Product, sequelize } = require('../../models');
 const AppError = require('../../utils/AppError');
 
@@ -155,4 +156,66 @@ async function listForVendor(vendorId) {
     });
 }
 
-module.exports = { getOrCreateForOrder, getById, listMine, listForVendor };
+// Plan Comptable OHADA (SYSCOHADA Révisé 2017) — comptes standards utilisés
+// pour le journal des ventes, indépendants de tout logiciel particulier
+// (AIRAMA ou autre) : n'importe quel outil conforme SYSCOHADA les reconnaît.
+const COMPTE_CLIENTS = '411000';
+const COMPTE_VENTES = '701000';
+const COMPTE_TVA_FACTUREE = '443000';
+
+const csvEscape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+const csvAmount = (n) => (Number(n) || 0).toFixed(2).replace('.', ',');
+const csvDate = (d) => new Date(d).toISOString().slice(0, 10);
+
+/**
+ * Journal des ventes au format SYSCOHADA Révisé 2017 (analyse
+ * concurrentielle #9) — export générique (CSV, plan comptable OHADA
+ * standard), pas d'API propriétaire AIRAMA disponible publiquement à ce
+ * jour. Un vendeur n'exporte que ses propres factures ; l'admin peut
+ * exporter l'ensemble de la plateforme.
+ */
+async function exportSyscohadaJournal(user, { debut, fin } = {}) {
+    if (user.role !== 'admin' && user.role !== 'fournisseur') {
+        throw new AppError('Export comptable réservé aux vendeurs et administrateurs.', 403);
+    }
+
+    const where = {};
+    if (debut || fin) {
+        where.date_emission = {};
+        if (debut) where.date_emission[Op.gte] = new Date(debut);
+        if (fin) where.date_emission[Op.lte] = new Date(`${fin}T23:59:59.999Z`);
+    }
+
+    if (user.role !== 'admin') {
+        const store = await Store.findOne({ where: { proprietaire_id: user.id } });
+        if (!store) return buildCsv([]);
+        where.boutique_id = store.id;
+    }
+
+    const invoices = await Invoice.findAll({
+        where,
+        include: [{ model: Store, as: 'boutique', attributes: ['id', 'nom_boutique'] }],
+        order: [['numero', 'ASC']],
+    });
+
+    return buildCsv(invoices);
+}
+
+function buildCsv(invoices) {
+    const header = ['Date', 'N° Pièce', 'Compte', 'Libellé', 'Débit', 'Crédit'];
+    const rows = [header];
+
+    for (const inv of invoices) {
+        const date = csvDate(inv.date_emission);
+        const libelleVente = `Vente ${inv.boutique?.nom_boutique || ''} — ${inv.numero}`.trim();
+        rows.push([date, inv.numero, COMPTE_CLIENTS, libelleVente, csvAmount(inv.montant_ttc), csvAmount(0)]);
+        rows.push([date, inv.numero, COMPTE_VENTES, libelleVente, csvAmount(0), csvAmount(inv.montant_ht)]);
+        if (parseFloat(inv.montant_tva) > 0) {
+            rows.push([date, inv.numero, COMPTE_TVA_FACTUREE, `TVA ${inv.numero}`, csvAmount(0), csvAmount(inv.montant_tva)]);
+        }
+    }
+
+    return rows.map((row) => row.map(csvEscape).join(';')).join('\r\n');
+}
+
+module.exports = { getOrCreateForOrder, getById, listMine, listForVendor, exportSyscohadaJournal };

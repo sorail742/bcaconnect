@@ -11,7 +11,7 @@ import {
 import {
     TrendingUp, Activity, DollarSign, Loader2, RefreshCw, Package,
     Sparkles, AlertTriangle, ShoppingCart, ArrowUp, ArrowDown, BarChart2,
-    PieChart as PieIcon, Clock, Download, FileText, FileSpreadsheet, FileType,
+    PieChart as PieIcon, Clock, Download, FileText, FileSpreadsheet, FileType, Landmark,
 } from "lucide-react";
 import { cn, adaptiveValueSize } from "../../lib/utils";
 import { toast } from "sonner";
@@ -123,6 +123,28 @@ export default function VendorReports() {
         XLSX.writeFile(workbook, `BCA_Rapport_Vendeur_${Date.now()}.xlsx`);
         setShowExportMenu(false);
         toast.success("Excel généré avec succès.");
+    };
+
+    // Journal des ventes SYSCOHADA Révisé 2017 (analyse concurrentielle #9) —
+    // écritures en partie double (411/701/443), importable dans AIRAMA Pro
+    // Finance ou tout logiciel conforme au plan comptable OHADA.
+    const handleExportSyscohada = async () => {
+        try {
+            const response = await api.get('/invoices/export/syscohada', { responseType: 'blob' });
+            const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `Journal_Ventes_SYSCOHADA_${Date.now()}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setShowExportMenu(false);
+            toast.success('Journal comptable SYSCOHADA généré.');
+        } catch {
+            toast.error("Impossible de générer l'export comptable.");
+        }
     };
 
     const handleExportCSV = () => {
@@ -237,6 +259,16 @@ export default function VendorReports() {
                                         >
                                             <FileText className="size-4 text-red-600" />
                                             PDF
+                                        </button>
+                                        <div className="border-t border-border" />
+                                        <button
+                                            type="button"
+                                            onClick={handleExportSyscohada}
+                                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+                                            title="Journal des ventes en partie double, plan comptable OHADA"
+                                        >
+                                            <Landmark className="size-4 text-primary" />
+                                            Journal comptable (SYSCOHADA)
                                         </button>
                                     </div>
                                 </>

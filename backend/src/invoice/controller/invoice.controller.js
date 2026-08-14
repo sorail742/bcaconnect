@@ -21,6 +21,13 @@ const invoiceController = {
         const invoices = await invoiceService.listForVendor(req.user.id);
         res.json(invoices);
     }),
+
+    exportSyscohada: catchAsync(async (req, res) => {
+        const csv = await invoiceService.exportSyscohadaJournal(req.user, req.query);
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="journal_ventes_syscohada_${Date.now()}.csv"`);
+        res.send(`﻿${csv}`); // BOM — accents lisibles à l'ouverture directe dans Excel
+    }),
 };
 
 module.exports = invoiceController;
