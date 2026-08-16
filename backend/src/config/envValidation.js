@@ -127,6 +127,19 @@ const envSchema = Joi.object({
         .valid('simulation', 'live')
         .default('simulation'),
 
+    // Migration progressive vers NestJS — URL du service Nest pour le proxy
+    // des modules déjà migrés (cf. backend/src/nestProxy.js). Optionnel tant
+    // qu'aucun module n'a basculé.
+    NEST_BACKEND_URL: Joi.string().uri().allow('').optional(),
+
+    // Secret HMAC du pont interne Express <-> NestJS (backend/src/internal/
+    // internal.route.js) — requis dès que backend-nest/ existe, même avant
+    // qu'un module n'appelle réellement ces routes.
+    INTERNAL_SECRET: Joi.string().min(32).required().messages({
+        'string.min': 'INTERNAL_SECRET doit faire au moins 32 caractères',
+        'any.required': 'INTERNAL_SECRET est requis (pont interne Express <-> NestJS)',
+    }),
+
     // Blockchain — Polygon Amoy (testnet uniquement, cf. cahier des charges 3.16)
     BLOCKCHAIN_ENABLED: Joi.boolean().default(true),
     BLOCKCHAIN_PRIVATE_KEY: Joi.string()

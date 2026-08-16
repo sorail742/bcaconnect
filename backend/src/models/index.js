@@ -35,7 +35,6 @@ const BlockchainTransactionStub = require('../iot/models/blockchainTransactionSt
 const AchatGroupe = require('../group-purchase/models/achatGroupe.model');
 const AchatGroupeParticipant = require('../group-purchase/models/achatGroupeParticipant.model');
 const OtpVerification = require('../auth/models/otpVerification.model');
-const Webinar = require('../webinar/models/webinar.model');
 const AiConversation = require('../ai/models/aiConversation.model');
 const AiMessage = require('../ai/models/aiMessage.model');
 const Certification = require('../certification/models/certification.model');
@@ -375,7 +374,6 @@ module.exports = {
     AchatGroupe,
     AchatGroupeParticipant,
     OtpVerification,
-    Webinar,
     AiConversation,
     AiMessage,
     Certification,

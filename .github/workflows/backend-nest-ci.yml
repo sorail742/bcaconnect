@@ -1,0 +1,77 @@
+name: 🐈 CI backend-nest (NestJS + Prisma)
+
+on:
+  push:
+    branches: [ release/v1, main ]
+    paths:
+      - 'backend-nest/**'
+      - '.github/workflows/backend-nest-ci.yml'
+  pull_request:
+    branches: [ release/v1, main ]
+    paths:
+      - 'backend-nest/**'
+      - '.github/workflows/backend-nest-ci.yml'
+
+jobs:
+  build-and-test:
+    name: 🧪 Build + tests (Postgres réel)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: bca_ci
+          POSTGRES_PASSWORD: bca_ci_password
+          POSTGRES_DB: bca_ci_nest_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bca_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://bca_ci:bca_ci_password@localhost:5432/bca_ci_nest_test
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend-nest/package-lock.json
+
+      - name: 📦 Installer les dépendances
+        working-directory: backend-nest
+        run: npm ci
+
+      - name: 🔑 Générer une paire JWT RS256 éphémère (même pattern que e2e.yml/security.yml)
+        working-directory: backend-nest
+        run: |
+          PRIVATE_KEY=$(openssl genrsa 2048 2>/dev/null)
+          PUBLIC_KEY=$(printf '%s' "$PRIVATE_KEY" | openssl rsa -pubout 2>/dev/null)
+          {
+            echo "JWT_PUBLIC_KEY=\"$(printf '%s' "$PUBLIC_KEY" | awk '{printf "%s\\n", $0}')\""
+          } >> .env
+
+      - name: 🧬 Générer le client Prisma
+        working-directory: backend-nest
+        run: npx prisma generate
+
+      - name: 🐘 Appliquer les migrations sur Postgres réel (crée les tables pour de vrai — DB CI vide, contrairement à la base partagée déjà baselinée)
+        working-directory: backend-nest
+        run: npx prisma migrate deploy
+
+      - name: 🏗️ Build NestJS
+        working-directory: backend-nest
+        run: npm run build
+
+      - name: 🧪 Tests unitaires
+        working-directory: backend-nest
+        run: npm test
+
+      - name: 🧪 Tests e2e
+        working-directory: backend-nest
+        run: npm run test:e2e

@@ -28,6 +28,7 @@ jobs:
           echo "JWT_PUBLIC_KEY=$(printf '%s' "$RAW_PUBLIC" | sed ':a;N;$!ba;s/\n/\\n/g')" >> "$GITHUB_ENV"
           echo "GROQ_API_KEY=gsk_ci_dummy_key_for_tests_only" >> "$GITHUB_ENV"
           echo "WEBHOOK_SECRET=ci_load_test_webhook_secret" >> "$GITHUB_ENV"
+          echo "INTERNAL_SECRET=ci_load_test_internal_secret" >> "$GITHUB_ENV"
           echo "LOAD_TEST_MODE=true" >> "$GITHUB_ENV"
 
       - name: 🐳 Démarrer la stack applicative

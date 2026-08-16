@@ -50,6 +50,7 @@ services:
       - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}
       - GROQ_API_KEY=${GROQ_API_KEY:-gsk_ci_dummy_key_for_tests_only}
       - WEBHOOK_SECRET=${WEBHOOK_SECRET:-test_webhook_secret_for_ci_only}
+      - INTERNAL_SECRET=${INTERNAL_SECRET:-test_internal_secret_for_nest_bridge_ci_only}
       - CORS_ORIGINS=http://localhost,http://localhost:3002
       - FRONTEND_URL=http://localhost:3002
       - PORT=5000
