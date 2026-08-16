@@ -135,7 +135,7 @@ apiRouter.use('/iot', require('./iot/routes/iot.route'));
 apiRouter.use('/technician', require('./technician/routes/technician.route'));
 apiRouter.use('/group-purchases', require('./group-purchase/routes/groupPurchase.route'));
 apiRouter.use('/reports', require('./report/routes/report.route'));
-apiRouter.use('/webinars', require('./webinar/routes/webinar.route'));
+apiRouter.use('/webinars', require('./nestProxy').createNestProxy()); // Migré vers NestJS
 apiRouter.use('/certifications', require('./certification/routes/certification.route'));
 apiRouter.use('/deletion-history', require('./deletion-log/routes/deletionLog.route'));
 apiRouter.use('/audit-logs', require('./audit-log/routes/auditLog.route'));
@@ -152,6 +152,12 @@ apiRouter.use('/invoices', require('./invoice/routes/invoice.route'));
 
 // Montage du routeur sur le préfixe /api
 app.use('/api', apiRouter);
+
+// ─── Pont interne (migration NestJS) ────────────────────────────────────────
+// Jamais appelé par un client — uniquement par backend-nest/ pour les
+// capacités qu'il ne possède pas encore (Socket.IO, deletion-log). Voir
+// backend/src/internal/internal.route.js.
+app.use('/internal', require('./internal/internal.route'));
 
 // ─── Gestion des erreurs standardisée ────────────────────────────────────────
 

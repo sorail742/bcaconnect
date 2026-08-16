@@ -31,6 +31,7 @@ jobs:
       ENCRYPTION_KEY: d45259cf4cb572049b1c75c5ef9d0893b2bea7c3f3e8b7637d856a87530fd1df
       GROQ_API_KEY: gsk_ci_dummy_key_for_tests_only
       WEBHOOK_SECRET: test_webhook_secret_for_ci_only
+      INTERNAL_SECRET: test_internal_secret_for_nest_bridge_ci_only
       PORT: 5000
     steps:
       - uses: actions/checkout@v4

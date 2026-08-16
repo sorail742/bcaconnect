@@ -1,0 +1,44 @@
+// Schéma Prisma — ne modélise que les tables déjà reprises par un module
+// NestJS migré (cf. plan de migration progressive, cahier des charges
+// "backend totalement NestJS"). Toute autre table reste possédée par
+// Sequelize côté backend/ tant que son module n'a pas basculé : ne pas
+// ajouter de modèle ici sans faire le cutover correspondant dans
+// backend/src/app.js + supprimer le modèle Sequelize équivalent.
+//
+// Modèle obtenu par introspection réelle (`prisma db pull`) de la base
+// partagée avec Sequelize — jamais recopié à la main depuis les fichiers
+// backend/src/**/models/*.model.js.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Module pilote (Phase 1) — table "webinaires", zéro association entrante
+// ou sortante avec une autre table (vérifié dans backend/src/models/index.js
+// avant de choisir ce module comme pilote).
+model webinaires {
+  id                 String                  @id @db.Uuid
+  titre              String                  @db.VarChar(255)
+  description        String
+  date_heure         DateTime                @db.Timestamptz(6)
+  intervenant        String                  @db.VarChar(255)
+  categorie          String?                 @db.VarChar(255)
+  statut             enum_webinaires_statut? @default(a_venir)
+  participants_count Int?                    @default(0)
+  lien_rejoindre     String?                 @db.VarChar(255)
+  video_url          String?                 @db.VarChar(255)
+  created_at         DateTime                @db.Timestamptz(6)
+  updated_at         DateTime                @db.Timestamptz(6)
+}
+
+enum enum_webinaires_statut {
+  a_venir
+  en_direct
+  termine
+}
