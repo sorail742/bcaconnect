@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { InternalBridgeModule } from './internal-bridge/internal-bridge.module';
 import { WebinarModule } from './webinar/webinar.module';
+import { CategoryModule } from './category/category.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { WebinarModule } from './webinar/webinar.module';
     AuthModule,
     InternalBridgeModule,
     WebinarModule,
+    CategoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
