@@ -37,8 +37,8 @@ export class WebinarService {
         categorie: dto.categorie,
         lien_rejoindre: dto.lien_rejoindre,
         video_url: dto.video_url,
-        created_at: new Date(),
-        updated_at: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     });
   }
@@ -61,7 +61,7 @@ export class WebinarService {
         ...(dto.video_url !== undefined && { video_url: dto.video_url }),
         ...(dto.statut !== undefined && { statut: dto.statut }),
         ...(dto.participants_count !== undefined && { participants_count: dto.participants_count }),
-        updated_at: new Date(),
+        updatedAt: new Date(),
       },
     });
 

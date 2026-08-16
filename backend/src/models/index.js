@@ -3,6 +3,13 @@ const Wallet = require('../common/wallet/models/wallet.model');
 const Store = require('../store/models/store.model');
 const Product = require('../product/models/product.model');
 const ProductImage = require('../product/models/productImage.model');
+// Les routes /api/categories sont migrées vers NestJS/Prisma (voir
+// backend-nest/src/category) — ce modèle Sequelize reste néanmoins
+// nécessaire ici : Product/RfqRequest (encore Sequelize) l'utilisent en
+// lecture seule via belongsTo/include pour joindre les données de
+// catégorie. Plus aucune écriture Sequelize ne passe par ce modèle
+// (l'ancien backend/src/category/{controller,service,repository,routes}
+// a été supprimé) — Prisma est seul propriétaire des écritures.
 const Category = require('../category/models/category.model');
 const Order = require('../order/models/order.model');
 const OrderItem = require('../order/models/orderItem.model');

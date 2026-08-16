@@ -5,9 +5,16 @@
 // ajouter de modèle ici sans faire le cutover correspondant dans
 // backend/src/app.js + supprimer le modèle Sequelize équivalent.
 //
-// Modèle obtenu par introspection réelle (`prisma db pull`) de la base
-// partagée avec Sequelize — jamais recopié à la main depuis les fichiers
+// Modèles obtenus par introspection réelle (`prisma db pull`) de la base
+// partagée avec Sequelize — jamais recopiés à la main depuis les fichiers
 // backend/src/**/models/*.model.js.
+//
+// created_at/updated_at sont mappés en createdAt/updatedAt (@map) : c'est
+// le nom que Sequelize expose réellement côté JSON (timestamps automatiques
+// non affectés par `underscored: true`, qui ne renomme que la colonne SQL,
+// jamais l'attribut JS) — sans ce mapping, tout consommateur frontend qui
+// lit `.createdAt` (ex: l'export Excel/PDF de Categories.jsx) recevrait
+// `undefined`.
 
 generator client {
   provider     = "prisma-client"
@@ -33,12 +40,35 @@ model webinaires {
   participants_count Int?                    @default(0)
   lien_rejoindre     String?                 @db.VarChar(255)
   video_url          String?                 @db.VarChar(255)
-  created_at         DateTime                @db.Timestamptz(6)
-  updated_at         DateTime                @db.Timestamptz(6)
+  createdAt          DateTime                @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime                @map("updated_at") @db.Timestamptz(6)
 }
 
 enum enum_webinaires_statut {
   a_venir
   en_direct
   termine
+}
+
+// Phase 2, module 1/3 — table "categories". Référencée par des tables
+// encore côté Sequelize (produits.categorie_id, demandes_devis.categorie_id,
+// et le self-lien parent_id) — vérifié directement en base (pg_constraint) :
+// les 3 contraintes sont ON DELETE SET NULL, jamais RESTRICT. Supprimer une
+// catégorie qui a encore des produits/sous-catégories/demandes de devis
+// rattachés réussit toujours ; ces lignes se retrouvent juste avec un
+// categorie_id/parent_id à NULL. category.service.ts garde malgré tout une
+// interception générique de P2003 (bonne pratique défensive sur un endpoint
+// de suppression), mais elle ne devrait jamais se déclencher pour ce cas
+// précis.
+model categories {
+  id              String       @id @db.Uuid
+  nom_categorie   String       @unique @db.VarChar(50)
+  description     String?
+  parent_id       String?      @db.Uuid
+  statut          String?      @default("actif") @db.VarChar(20)
+  image_url       String?      @db.VarChar(255)
+  createdAt       DateTime     @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime     @map("updated_at") @db.Timestamptz(6)
+  parent          categories?  @relation("sousCategories", fields: [parent_id], references: [id])
+  sous_categories categories[] @relation("sousCategories")
 }

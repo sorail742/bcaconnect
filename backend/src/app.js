@@ -111,7 +111,7 @@ const apiRouter = express.Router();
 apiRouter.use(validatePagination);
 
 apiRouter.use('/auth', require('./auth/routes/auth.route'));
-apiRouter.use('/categories', require('./category/routes/category.route'));
+apiRouter.use('/categories', require('./nestProxy').createNestProxy()); // Migré vers NestJS
 apiRouter.use('/stores', require('./store/routes/store.route'));
 apiRouter.use('/users', require('./user/routes/user.route'));
 apiRouter.use('/products', require('./product/routes/product.route'));
