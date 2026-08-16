@@ -54,6 +54,7 @@ jobs:
           PUBLIC_KEY=$(printf '%s' "$PRIVATE_KEY" | openssl rsa -pubout 2>/dev/null)
           {
             echo "JWT_PUBLIC_KEY=\"$(printf '%s' "$PUBLIC_KEY" | awk '{printf "%s\\n", $0}')\""
+            echo "INTERNAL_SECRET=ci_backend_nest_internal_secret_ephemeral"
           } >> .env
 
       - name: 🧬 Générer le client Prisma
