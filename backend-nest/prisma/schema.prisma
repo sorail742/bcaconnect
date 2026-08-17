@@ -169,3 +169,24 @@ model details_commandes {
   commandes            commandes? @relation(fields: [commande_id], references: [id])
   produits             produits?  @relation(fields: [produit_id], references: [id])
 }
+
+// Phase 2+ — Certifications fournisseurs (analyse concurrentielle #5, cahier
+// des charges 6.5). Aucune association entrante depuis une autre table
+// (vérifié dans backend/src/models/index.js : seule une FK sortante vers
+// User, qui reste Sequelize jusqu'à la toute fin de la migration) — modèle
+// entièrement supprimable côté Sequelize, comme Webinar/Education.
+// review() déclenche un effet de bord sur boutiques.is_verified/
+// niveau_verification (encore Sequelize) via le pont interne
+// (POST /internal/verify-store), jamais une écriture Prisma directe sur
+// une table dont Sequelize reste par ailleurs seul propriétaire.
+model certifications {
+  id                String    @id @db.Uuid
+  fournisseur_id    String    @db.Uuid
+  type              String    @db.VarChar(100)
+  document_url      String    @db.VarChar(255)
+  statut            String?   @default("en_attente") @db.VarChar(20)
+  commentaire_admin String?
+  date_expiration   DateTime? @db.Date
+  createdAt         DateTime  @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @map("updated_at") @db.Timestamptz(6)
+}

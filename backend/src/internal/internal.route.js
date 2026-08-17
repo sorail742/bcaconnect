@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const router = express.Router();
 const AppError = require('../utils/AppError');
 const deletionLogService = require('../deletion-log/service/deletionLog.service');
+const { Store } = require('../models');
 
 /**
  * Routes internes, jamais exposées à un client (navigateur/app mobile) —
@@ -54,6 +55,25 @@ router.post('/record-deletion', async (req, res) => {
             body: { confirmation_nom: confirmationNom || null },
         },
     });
+    res.json({ ok: true });
+});
+
+// Effet de bord de certification.service.ts#review() (module Certification,
+// NestJS/Prisma) : boutiques.is_verified/niveau_verification restent
+// possédées par Sequelize (table pas encore migrée) — jamais d'écriture
+// Prisma directe dessus. Réplique exactement
+// certificationRepository.markStoreVerified/setVerificationLevel.
+router.post('/verify-store', async (req, res) => {
+    const { fournisseurId, isVerified, niveauVerification } = req.body;
+    if (!fournisseurId) {
+        return res.status(400).json({ message: 'fournisseurId requis.' });
+    }
+    const data = {};
+    if (isVerified) data.is_verified = true;
+    if (niveauVerification) data.niveau_verification = niveauVerification;
+    if (Object.keys(data).length > 0) {
+        await Store.update(data, { where: { proprietaire_id: fournisseurId } });
+    }
     res.json({ ok: true });
 });
 

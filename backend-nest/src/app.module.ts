@@ -9,6 +9,7 @@ import { WebinarModule } from './webinar/webinar.module';
 import { CategoryModule } from './category/category.module';
 import { EducationModule } from './education/education.module';
 import { PriceIndexModule } from './price-index/price-index.module';
+import { CertificationModule } from './certification/certification.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PriceIndexModule } from './price-index/price-index.module';
     CategoryModule,
     EducationModule,
     PriceIndexModule,
+    CertificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
