@@ -61,24 +61,7 @@ jobs:
         working-directory: backend-nest
         run: npx prisma generate
 
-      - name: 🪑 Créer une table utilisateurs minimale (possédée par Sequelize, jamais migrée dans Prisma — la base CI éphémère n'a que les tables créées par Prisma, contrairement à la base partagée où Sequelize l'a déjà créée ; certaines migrations Prisma référencent ses lignes via FK, ex. educational_progress.utilisateur_id)
-        env:
-          PGPASSWORD: bca_ci_password
-        run: |
-          psql -h localhost -U bca_ci -d bca_ci_nest_test -c '
-            CREATE TABLE IF NOT EXISTS utilisateurs (
-              id UUID PRIMARY KEY,
-              nom_complet TEXT NOT NULL,
-              email TEXT NOT NULL,
-              telephone TEXT NOT NULL,
-              mot_de_passe TEXT NOT NULL,
-              role TEXT NOT NULL DEFAULT '\''client'\'',
-              created_at TIMESTAMP NOT NULL DEFAULT now(),
-              updated_at TIMESTAMP NOT NULL DEFAULT now()
-            );
-          '
-
-      - name: 🐘 Appliquer les migrations sur Postgres réel (crée les tables pour de vrai — DB CI vide, contrairement à la base partagée déjà baselinée)
+      - name: 🐘 Appliquer les migrations sur Postgres réel (crée les tables pour de vrai — DB CI vide, contrairement à la base partagée déjà baselinée ; inclut une table utilisateurs minimale, cf. migration 2b_stub_utilisateurs_for_ci)
         working-directory: backend-nest
         run: npx prisma migrate deploy
 
