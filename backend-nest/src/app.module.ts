@@ -8,6 +8,7 @@ import { InternalBridgeModule } from './internal-bridge/internal-bridge.module';
 import { WebinarModule } from './webinar/webinar.module';
 import { CategoryModule } from './category/category.module';
 import { EducationModule } from './education/education.module';
+import { PriceIndexModule } from './price-index/price-index.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { EducationModule } from './education/education.module';
     WebinarModule,
     CategoryModule,
     EducationModule,
+    PriceIndexModule,
   ],
   controllers: [AppController],
   providers: [AppService],
