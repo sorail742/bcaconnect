@@ -2,7 +2,7 @@ const { Op } = require('sequelize');
 const AppError = require('../../utils/AppError');
 const deletionLogRepository = require('../repository/deletionLog.repository');
 const {
-    Product, Category, Notification, Publicite, EducationalResource,
+    Product, Category, Notification, Publicite,
 } = require('../../models');
 
 // Entités pour lesquelles une restauration automatique en un clic est possible :
@@ -11,11 +11,12 @@ const {
 // reste consultable dans l'historique, mais la restauration nécessite une
 // intervention manuelle du support technique.
 //
-// Webinar (retiré) : table migrée vers NestJS/Prisma (backend-nest/src/webinar) —
-// la restauration automatique en un clic n'est plus disponible depuis ce chemin
-// Sequelize. L'historique de suppression (snapshot complet) reste consultable ;
-// une restauration reste possible manuellement via Prisma si nécessaire.
-const RESTORABLE_MODELS = { Product, Category, Notification, Publicite, EducationalResource };
+// Webinar, EducationalResource (retirés) : tables migrées vers NestJS/Prisma
+// (backend-nest/src/webinar, backend-nest/src/education) — la restauration
+// automatique en un clic n'est plus disponible depuis ce chemin Sequelize.
+// L'historique de suppression (snapshot complet) reste consultable ; une
+// restauration reste possible manuellement via Prisma si nécessaire.
+const RESTORABLE_MODELS = { Product, Category, Notification, Publicite };
 
 const filterToModelFields = (Model, data) => {
     const allowed = Object.keys(Model.rawAttributes);

@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { InternalBridgeModule } from './internal-bridge/internal-bridge.module';
 import { WebinarModule } from './webinar/webinar.module';
 import { CategoryModule } from './category/category.module';
+import { EducationModule } from './education/education.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { CategoryModule } from './category/category.module';
     InternalBridgeModule,
     WebinarModule,
     CategoryModule,
+    EducationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
