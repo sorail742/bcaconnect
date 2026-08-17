@@ -70,6 +70,7 @@ model categories {
   updatedAt       DateTime     @map("updated_at") @db.Timestamptz(6)
   parent          categories?  @relation("sousCategories", fields: [parent_id], references: [id])
   sous_categories categories[] @relation("sousCategories")
+  produits        produits[]
 }
 
 // Phase 2, module 2/3 — "BCA Academy" (educational_resources/quizzes/
@@ -133,4 +134,38 @@ model educational_progress {
   educational_resources educational_resources @relation(fields: [resource_id], references: [id], onDelete: Cascade)
 
   @@unique([utilisateur_id, resource_id], map: "educational_progress_utilisateur_id_resource_id")
+}
+
+// Phase 2, module 3/3 — Price-Index (analyse concurrentielle #8, transparence
+// marché). Contrairement aux modules précédents, ce module ne possède AUCUNE
+// table : il agrège en lecture seule des données encore entièrement
+// possédées par Sequelize (produits/commandes/details_commandes). Ces trois
+// modèles ne déclarent donc que les colonnes réellement lues par
+// PriceIndexService — jamais d'écriture Prisma ici, Sequelize reste seul
+// propriétaire du schéma complet de ces tables (voir aussi
+// backend/src/product/models/product.model.js, backend/src/order/models/
+// {order,orderItem}.model.js).
+model produits {
+  id                String              @id @db.Uuid
+  nom_produit       String              @db.VarChar(150)
+  categorie_id      String?             @db.Uuid
+  categories        categories?         @relation(fields: [categorie_id], references: [id])
+  details_commandes details_commandes[]
+}
+
+model commandes {
+  id                String              @id @db.Uuid
+  statut            String?             @db.VarChar(32)
+  details_commandes details_commandes[]
+}
+
+model details_commandes {
+  id                  String     @id @db.Uuid
+  quantite            Int
+  prix_unitaire_achat Decimal    @db.Decimal(15, 2)
+  createdAt            DateTime  @map("created_at") @db.Timestamptz(6)
+  commande_id          String?   @db.Uuid
+  produit_id           String?   @db.Uuid
+  commandes            commandes? @relation(fields: [commande_id], references: [id])
+  produits             produits?  @relation(fields: [produit_id], references: [id])
 }
