@@ -61,7 +61,7 @@ jobs:
         working-directory: backend-nest
         run: npx prisma generate
 
-      - name: 🐘 Appliquer les migrations sur Postgres réel (crée les tables pour de vrai — DB CI vide, contrairement à la base partagée déjà baselinée)
+      - name: 🐘 Appliquer les migrations sur Postgres réel (crée les tables pour de vrai — DB CI vide, contrairement à la base partagée déjà baselinée ; inclut une table utilisateurs minimale, cf. migration 2b_stub_utilisateurs_for_ci)
         working-directory: backend-nest
         run: npx prisma migrate deploy
 

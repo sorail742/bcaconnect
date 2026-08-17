@@ -13,8 +13,7 @@
 // le nom que Sequelize expose réellement côté JSON (timestamps automatiques
 // non affectés par `underscored: true`, qui ne renomme que la colonne SQL,
 // jamais l'attribut JS) — sans ce mapping, tout consommateur frontend qui
-// lit `.createdAt` (ex: l'export Excel/PDF de Categories.jsx) recevrait
-// `undefined`.
+// lit `.createdAt` recevrait `undefined`.
 
 generator client {
   provider     = "prisma-client"
@@ -71,4 +70,67 @@ model categories {
   updatedAt       DateTime     @map("updated_at") @db.Timestamptz(6)
   parent          categories?  @relation("sousCategories", fields: [parent_id], references: [id])
   sous_categories categories[] @relation("sousCategories")
+}
+
+// Phase 2, module 2/3 — "BCA Academy" (educational_resources/quizzes/
+// progress, cahier des charges 3.14). Seule association entrante depuis un
+// module encore Sequelize : educational_progress.utilisateur_id -> User
+// (onDelete: Cascade) — l'alias Sequelize `progression_academy` déclaré
+// dans models/index.js n'est utilisé par aucun `include` dans le reste du
+// code (vérifié par recherche), donc aucun risque de lecture cassée côté
+// Express à retirer ce modèle. educational_quizzes/progress référencent
+// educational_resources en Cascade également (supprimer une ressource
+// supprime son quiz et toute la progression liée — comportement Postgres
+// réel, pas une simplification introduite ici).
+model educational_resources {
+  id                    String                                     @id @db.Uuid
+  titre                 String                                     @db.VarChar(255)
+  description           String
+  type_contenu          enum_educational_resources_type_contenu?   @default(article)
+  url_contenu           String                                     @db.VarChar(500)
+  audience_cible        enum_educational_resources_audience_cible? @default(tous)
+  tag                   String?                                    @db.VarChar(100)
+  createdAt             DateTime                                   @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime                                   @map("updated_at") @db.Timestamptz(6)
+  educational_quizzes   educational_quizzes?
+  educational_progress  educational_progress[]
+}
+
+enum enum_educational_resources_type_contenu {
+  video
+  article
+  guide
+  pdf
+}
+
+enum enum_educational_resources_audience_cible {
+  tous
+  fournisseurs
+  clients
+  transporteurs
+}
+
+model educational_quizzes {
+  id                    String                @id @db.Uuid
+  resource_id           String                @unique @db.Uuid
+  questions             Json                  @default("[]") @db.Json
+  passing_score         Int?                  @default(60)
+  createdAt             DateTime              @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime              @map("updated_at") @db.Timestamptz(6)
+  educational_resources educational_resources @relation(fields: [resource_id], references: [id], onDelete: Cascade)
+}
+
+model educational_progress {
+  id                    String                @id @db.Uuid
+  utilisateur_id        String                @db.Uuid
+  resource_id           String                @db.Uuid
+  statut                String?               @default("vu") @db.VarChar(20)
+  quiz_score            Int?
+  tentatives            Int?                  @default(0)
+  completed_at          DateTime?             @db.Timestamptz(6)
+  createdAt             DateTime              @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime              @map("updated_at") @db.Timestamptz(6)
+  educational_resources educational_resources @relation(fields: [resource_id], references: [id], onDelete: Cascade)
+
+  @@unique([utilisateur_id, resource_id], map: "educational_progress_utilisateur_id_resource_id")
 }

@@ -130,7 +130,7 @@ apiRouter.use('/notifications', require('./notification/routes/notification.rout
 apiRouter.use('/messages', require('./message/routes/message.route'));
 apiRouter.use('/reviews', require('./review/routes/review.route'));
 apiRouter.use('/sav', require('./sav/routes/sav.route'));
-apiRouter.use('/education', require('./education/routes/education.route'));
+apiRouter.use('/education', require('./nestProxy').createNestProxy()); // Migré vers NestJS
 apiRouter.use('/iot', require('./iot/routes/iot.route'));
 apiRouter.use('/technician', require('./technician/routes/technician.route'));
 apiRouter.use('/group-purchases', require('./group-purchase/routes/groupPurchase.route'));

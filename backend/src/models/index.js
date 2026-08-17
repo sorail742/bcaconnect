@@ -34,9 +34,6 @@ const Message = require('../message/models/message.model');
 const ConversationParticipant = require('../message/models/conversationParticipant.model');
 const Guarantee = require('../sav/models/guarantee.model');
 const Intervention = require('../sav/models/intervention.model');
-const EducationalResource = require('../education/models/educationalResource.model');
-const EducationalQuiz = require('../education/models/educationalQuiz.model');
-const EducationalProgress = require('../education/models/educationalProgress.model');
 const IoTTrackingLog = require('../iot/models/iotTrackingLog.model');
 const BlockchainTransactionStub = require('../iot/models/blockchainTransactionStub.model');
 const AchatGroupe = require('../group-purchase/models/achatGroupe.model');
@@ -251,15 +248,10 @@ Certification.belongsTo(User, { foreignKey: 'fournisseur_id', as: 'fournisseur' 
 DeletionLog.belongsTo(User, { foreignKey: 'supprime_par', as: 'auteur' });
 DeletionLog.belongsTo(User, { foreignKey: 'restaure_par', as: 'restaurateur' });
 
-// 19. Formation interactive : quiz & progression (BCA Academy)
-EducationalResource.hasOne(EducationalQuiz, { foreignKey: 'resource_id', as: 'quiz' });
-EducationalQuiz.belongsTo(EducationalResource, { foreignKey: 'resource_id' });
-
-EducationalResource.hasMany(EducationalProgress, { foreignKey: 'resource_id', as: 'progressions' });
-EducationalProgress.belongsTo(EducationalResource, { foreignKey: 'resource_id', as: 'ressource' });
-
-User.hasMany(EducationalProgress, { foreignKey: 'utilisateur_id', as: 'progression_academy' });
-EducationalProgress.belongsTo(User, { foreignKey: 'utilisateur_id' });
+// 19. Formation interactive : quiz & progression (BCA Academy) — migré vers
+// NestJS/Prisma (backend-nest/src/education). educational_resources/
+// quizzes/progress ne sont plus des modèles Sequelize ; aucun autre module
+// Express ne les référençait (vérifié par recherche avant suppression).
 
 // 20. RFQ — Demandes de devis (B2B, style Alibaba)
 User.hasMany(RfqRequest, { foreignKey: 'utilisateur_id', as: 'demandes_devis' });
@@ -375,7 +367,6 @@ module.exports = {
     ConversationParticipant,
     Guarantee,
     Intervention,
-    EducationalResource,
     IoTTrackingLog,
     BlockchainTransactionStub,
     AchatGroupe,
@@ -385,8 +376,6 @@ module.exports = {
     AiMessage,
     Certification,
     DeletionLog,
-    EducationalQuiz,
-    EducationalProgress,
     RfqRequest,
     RfqQuote,
     RfqLineItem,

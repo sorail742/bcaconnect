@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { OptionalJwtAuthGuard } from './optional-jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
 import { PermissionsGuard } from './permissions.guard';
 
@@ -11,7 +12,7 @@ import { PermissionsGuard } from './permissions.guard';
 @Global()
 @Module({
   imports: [PassportModule],
-  providers: [JwtStrategy, JwtAuthGuard, RolesGuard, PermissionsGuard],
-  exports: [JwtAuthGuard, RolesGuard, PermissionsGuard],
+  providers: [JwtStrategy, JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard, PermissionsGuard],
+  exports: [JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard, PermissionsGuard],
 })
 export class AuthModule {}
