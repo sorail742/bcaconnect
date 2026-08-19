@@ -64,4 +64,21 @@ export class InternalBridgeService {
   ): Promise<void> {
     return this.post('/record-deletion', { table, record, ...meta });
   }
+
+  // Réplique certificationRepository.markStoreVerified/setVerificationLevel
+  // (backend/src/certification/repository/certification.repository.js) :
+  // boutiques.is_verified/niveau_verification restent des colonnes
+  // possédées par Sequelize (table pas encore migrée) — Prisma n'y écrit
+  // jamais directement, pour ne jamais faire coexister deux propriétaires
+  // d'écriture sur une même table. Best-effort comme le reste du pont
+  // interne : une panne temporaire ne doit pas faire échouer la revue
+  // admin elle-même (déjà actée et persistée côté certifications) — juste
+  // retarder la mise à jour du badge boutique, journalisée en warning.
+  updateStoreVerification(fournisseurId: string, opts: { isVerified?: boolean; niveauVerification: string }): Promise<void> {
+    return this.post('/verify-store', {
+      fournisseurId,
+      isVerified: opts.isVerified,
+      niveauVerification: opts.niveauVerification,
+    });
+  }
 }

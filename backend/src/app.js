@@ -136,7 +136,7 @@ apiRouter.use('/technician', require('./technician/routes/technician.route'));
 apiRouter.use('/group-purchases', require('./group-purchase/routes/groupPurchase.route'));
 apiRouter.use('/reports', require('./report/routes/report.route'));
 apiRouter.use('/webinars', require('./nestProxy').createNestProxy()); // Migré vers NestJS
-apiRouter.use('/certifications', require('./certification/routes/certification.route'));
+apiRouter.use('/certifications', require('./nestProxy').createNestProxy()); // Migré vers NestJS
 apiRouter.use('/deletion-history', require('./deletion-log/routes/deletionLog.route'));
 apiRouter.use('/audit-logs', require('./audit-log/routes/auditLog.route'));
 apiRouter.use('/rfq', require('./rfq/routes/rfq.route'));

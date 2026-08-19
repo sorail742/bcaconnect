@@ -41,6 +41,13 @@ const AchatGroupeParticipant = require('../group-purchase/models/achatGroupePart
 const OtpVerification = require('../auth/models/otpVerification.model');
 const AiConversation = require('../ai/models/aiConversation.model');
 const AiMessage = require('../ai/models/aiMessage.model');
+// Les routes /api/certifications sont migrées vers NestJS/Prisma (voir
+// backend-nest/src/certification) — ce modèle Sequelize reste néanmoins
+// nécessaire ici : aiScoringService.js l'utilise en lecture seule
+// (Certification.count) pour le score de confiance fournisseur. Plus aucune
+// écriture Sequelize ne passe par ce modèle (l'ancien
+// backend/src/certification/{controller,service,repository,routes} a été
+// supprimé) — Prisma est seul propriétaire des écritures.
 const Certification = require('../certification/models/certification.model');
 const DeletionLog = require('../deletion-log/models/deletionLog.model');
 const RfqRequest = require('../rfq/models/rfqRequest.model');
