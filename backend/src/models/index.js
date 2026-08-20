@@ -56,7 +56,6 @@ const ProductQuestion = require('../product-question/models/productQuestion.mode
 const Coupon = require('../coupon/models/coupon.model');
 const CouponUsage = require('../coupon/models/couponUsage.model');
 const ProductVariant = require('../product-variant/models/productVariant.model');
-const PartnerStock = require('../partner-stock/models/partnerStock.model');
 const RfqLineItem = require('../rfq/models/rfqLineItem.model');
 const RfqQuoteLine = require('../rfq/models/rfqQuoteLine.model');
 const Organization = require('../organization/models/organization.model');
@@ -311,9 +310,11 @@ ProductVariant.belongsTo(Product, { foreignKey: 'produit_id', as: 'produit' });
 
 OrderItem.belongsTo(ProductVariant, { foreignKey: 'variante_id', as: 'variante' });
 
-// 24. Stock partenaire / entrepôt tiers (cahier des charges 2.5)
-Product.hasMany(PartnerStock, { foreignKey: 'produit_id', as: 'stocks_partenaires' });
-PartnerStock.belongsTo(Product, { foreignKey: 'produit_id', as: 'produit' });
+// 24. Stock partenaire / entrepôt tiers (cahier des charges 2.5) — migré
+// vers NestJS/Prisma (voir backend-nest/src/partner-stock). Table feuille
+// sans autre lecteur Sequelize : modèle entièrement supprimé ici (contraste
+// avec Category/Certification, dont le modèle Sequelize reste en lecture
+// seule pour d'autres modules).
 
 // 25. Comptes entreprise multi-utilisateurs (analyse concurrentielle #2)
 User.hasMany(Organization, { foreignKey: 'proprietaire_id', as: 'organisations_possedees' });
@@ -391,7 +392,6 @@ module.exports = {
     Coupon,
     CouponUsage,
     ProductVariant,
-    PartnerStock,
     Organization,
     OrganizationMember,
     OrganizationOrderRequest,

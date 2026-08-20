@@ -143,7 +143,7 @@ apiRouter.use('/rfq', require('./rfq/routes/rfq.route'));
 apiRouter.use('/product-questions', require('./product-question/routes/productQuestion.route'));
 apiRouter.use('/coupons', require('./coupon/routes/coupon.route'));
 apiRouter.use('/product-variants', require('./product-variant/routes/productVariant.route'));
-apiRouter.use('/partner-stock', require('./partner-stock/routes/partnerStock.route'));
+apiRouter.use('/partner-stock', require('./nestProxy').createNestProxy()); // Migré vers NestJS
 apiRouter.use('/price-index', require('./nestProxy').createNestProxy()); // Migré vers NestJS
 apiRouter.use('/vendor-scorecard', require('./vendor-scorecard/routes/vendorScorecard.route'));
 apiRouter.use('/organizations', require('./organization/routes/organization.route'));
