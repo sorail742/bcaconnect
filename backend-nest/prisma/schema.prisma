@@ -146,11 +146,26 @@ model educational_progress {
 // backend/src/product/models/product.model.js, backend/src/order/models/
 // {order,orderItem}.model.js).
 model produits {
-  id                String              @id @db.Uuid
-  nom_produit       String              @db.VarChar(150)
-  categorie_id      String?             @db.Uuid
-  categories        categories?         @relation(fields: [categorie_id], references: [id])
-  details_commandes details_commandes[]
+  id                 String               @id @db.Uuid
+  nom_produit        String               @db.VarChar(150)
+  categorie_id       String?              @db.Uuid
+  boutique_id        String?              @db.Uuid
+  stock_quantite     Int?                 @default(0)
+  categories         categories?          @relation(fields: [categorie_id], references: [id])
+  boutiques          boutiques?           @relation(fields: [boutique_id], references: [id])
+  details_commandes  details_commandes[]
+  stocks_partenaires stocks_partenaires[]
+}
+
+// Modélisation partielle (id + proprietaire_id seulement) — nécessaire à la
+// vérification de propriété d'un produit par partner-stock.service.ts
+// (assertOwnsProduct), jamais un module possédé par Prisma : Sequelize reste
+// seul propriétaire du schéma complet de "boutiques" (20+ colonnes, voir
+// backend/src/store/models/store.model.js).
+model boutiques {
+  id              String     @id @db.Uuid
+  proprietaire_id String?    @db.Uuid
+  produits        produits[]
 }
 
 model commandes {
@@ -189,4 +204,32 @@ model certifications {
   date_expiration   DateTime? @db.Date
   createdAt         DateTime  @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime  @map("updated_at") @db.Timestamptz(6)
+}
+
+// Phase 2+ — Stock détenu par un tiers pour un produit (cahier des charges
+// 2.5). Table feuille : aucune association entrante depuis une autre table
+// (vérifié dans backend/src/models/index.js), modèle Sequelize entièrement
+// supprimable comme Webinar/Education/Certification. La vérification de
+// propriété (assertOwnsProduct côté service) traverse produits -> boutiques,
+// toutes deux encore possédées par Sequelize — lecture seule, jamais
+// d'écriture Prisma sur ces deux tables.
+model stocks_partenaires {
+  id                 String                             @id @db.Uuid
+  produit_id         String                             @db.Uuid
+  partenaire_nom     String                             @db.VarChar(150)
+  partenaire_contact String?                            @db.VarChar(150)
+  type_stock         enum_stocks_partenaires_type_stock @default(entrepot_tiers)
+  quantite           Int                                @default(0)
+  localisation       String?                            @db.VarChar(200)
+  notes              String?
+  derniere_synchro   DateTime?                          @db.Timestamptz(6)
+  createdAt          DateTime                           @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime                           @map("updated_at") @db.Timestamptz(6)
+  produits           produits                           @relation(fields: [produit_id], references: [id], onDelete: Cascade)
+}
+
+enum enum_stocks_partenaires_type_stock {
+  consigne
+  entrepot_tiers
+  dropshipping
 }
