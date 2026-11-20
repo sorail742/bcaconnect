@@ -1,68 +1,13 @@
 const { AlertThreshold, Product, Notification } = require('../../models');
-const AppError = require('../../utils/AppError');
 
-const isUuid = (v) => typeof v === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(v);
-
-const TYPES = ['prix_produit', 'stock_produit'];
-const OPERATEURS = ['inferieur_egal', 'superieur_egal'];
 const COOLDOWN_HEURES = 24;
 
+// listMine/createOrUpdate/toggle/remove ont basculé vers NestJS/Prisma
+// (backend-nest/src/alert-threshold) — seule evaluateAll reste ici, appelée
+// par backend/src/cron/alertThresholdCron.js (accès direct à cette même
+// table côté Sequelize, voir schema.prisma#seuils_alerte pour le détail du
+// partage).
 const alertThresholdService = {
-    async listMine(userId) {
-        return AlertThreshold.findAll({
-            where: { utilisateur_id: userId },
-            include: [{ model: Product, as: 'produit', attributes: ['id', 'nom_produit', 'prix_unitaire', 'stock_quantite'] }],
-            order: [['created_at', 'DESC']],
-        });
-    },
-
-    // Crée le seuil, ou met à jour celui déjà existant pour ce couple
-    // (utilisateur, produit, type) — évite les doublons silencieux.
-    async createOrUpdate(userId, data) {
-        if (!TYPES.includes(data.type)) throw new AppError('Type de seuil invalide.', 400);
-        if (!isUuid(data.produit_id)) throw new AppError('ID produit invalide.', 400);
-
-        const product = await Product.findByPk(data.produit_id);
-        if (!product) throw new AppError('Produit non trouvé.', 404);
-
-        const operateur = OPERATEURS.includes(data.operateur) ? data.operateur : 'inferieur_egal';
-        const valeur_seuil = parseFloat(data.valeur_seuil);
-        if (!Number.isFinite(valeur_seuil) || valeur_seuil < 0) {
-            throw new AppError('Valeur de seuil invalide.', 400);
-        }
-
-        const existing = await AlertThreshold.findOne({
-            where: { utilisateur_id: userId, produit_id: data.produit_id, type: data.type },
-        });
-
-        if (existing) {
-            await existing.update({ operateur, valeur_seuil, actif: true });
-            return existing;
-        }
-
-        return AlertThreshold.create({
-            utilisateur_id: userId,
-            produit_id: data.produit_id,
-            type: data.type,
-            operateur,
-            valeur_seuil,
-        });
-    },
-
-    async toggle(id, userId, actif) {
-        const seuil = await AlertThreshold.findOne({ where: { id, utilisateur_id: userId } });
-        if (!seuil) throw new AppError('Seuil non trouvé.', 404);
-        await seuil.update({ actif: !!actif });
-        return seuil;
-    },
-
-    async remove(id, userId) {
-        const seuil = await AlertThreshold.findOne({ where: { id, utilisateur_id: userId } });
-        if (!seuil) throw new AppError('Seuil non trouvé.', 404);
-        await seuil.destroy();
-        return { message: 'Seuil supprimé.' };
-    },
-
     /**
      * Évalue tous les seuils actifs contre l'état courant du produit et
      * notifie l'utilisateur pour ceux déclenchés — utilisé par

@@ -11,6 +11,12 @@ import { EducationModule } from './education/education.module';
 import { PriceIndexModule } from './price-index/price-index.module';
 import { CertificationModule } from './certification/certification.module';
 import { PartnerStockModule } from './partner-stock/partner-stock.module';
+import { InvoiceModule } from './invoice/invoice.module';
+import { VendorScorecardModule } from './vendor-scorecard/vendor-scorecard.module';
+import { AuditLogModule } from './audit-log/audit-log.module';
+import { AlertThresholdModule } from './alert-threshold/alert-threshold.module';
+import { ProductQuestionModule } from './product-question/product-question.module';
+import { CouponModule } from './coupon/coupon.module';
 
 @Module({
   imports: [
@@ -24,6 +30,12 @@ import { PartnerStockModule } from './partner-stock/partner-stock.module';
     PriceIndexModule,
     CertificationModule,
     PartnerStockModule,
+    InvoiceModule,
+    VendorScorecardModule,
+    AuditLogModule,
+    AlertThresholdModule,
+    ProductQuestionModule,
+    CouponModule,
   ],
   controllers: [AppController],
   providers: [AppService],

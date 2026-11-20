@@ -148,6 +148,8 @@ model educational_progress {
 model produits {
   id                 String               @id @db.Uuid
   nom_produit        String               @db.VarChar(150)
+  prix_unitaire      Decimal              @db.Decimal(15, 2)
+  image_url          String?
   categorie_id       String?              @db.Uuid
   boutique_id        String?              @db.Uuid
   stock_quantite     Int?                 @default(0)
@@ -155,6 +157,9 @@ model produits {
   boutiques          boutiques?           @relation(fields: [boutique_id], references: [id])
   details_commandes  details_commandes[]
   stocks_partenaires stocks_partenaires[]
+  reviews            reviews[]
+  seuils_alerte      seuils_alerte[]
+  questions_produits questions_produits[]
 }
 
 // Modélisation partielle (id + proprietaire_id seulement) — nécessaire à la
@@ -162,27 +167,83 @@ model produits {
 // (assertOwnsProduct), jamais un module possédé par Prisma : Sequelize reste
 // seul propriétaire du schéma complet de "boutiques" (20+ colonnes, voir
 // backend/src/store/models/store.model.js).
+// temps_reponse : colonne texte d'affichage ("< 2h"), jamais une durée
+// numérique — vendor-scorecard.service.ts#getScorecard reproduit fidèlement
+// la coercition JS de l'original (Number('< 2h') = NaN, donc le sous-score
+// réactivité vaut NaN -> `null` une fois sérialisé en JSON) plutôt que de
+// corriger un comportement déjà en production (voir store.model.js, jamais
+// alimentée par une vraie mesure de délai de réponse à ce jour).
 model boutiques {
   id              String     @id @db.Uuid
+  nom_boutique    String     @db.VarChar(100)
   proprietaire_id String?    @db.Uuid
+  temps_reponse   String?    @db.VarChar(50)
+  createdAt       DateTime   @map("created_at") @db.Timestamptz(6)
   produits        produits[]
+  factures        factures[]
+  coupons         coupons[]
 }
 
 model commandes {
   id                String              @id @db.Uuid
   statut            String?             @db.VarChar(32)
+  utilisateur_id    String?             @db.Uuid
   details_commandes details_commandes[]
+  factures          factures[]
 }
 
 model details_commandes {
   id                  String     @id @db.Uuid
   quantite            Int
   prix_unitaire_achat Decimal    @db.Decimal(15, 2)
+  statut              String?    @db.VarChar(32)
   createdAt            DateTime  @map("created_at") @db.Timestamptz(6)
   commande_id          String?   @db.Uuid
   produit_id           String?   @db.Uuid
+  fournisseur_id        String?   @db.Uuid
   commandes            commandes? @relation(fields: [commande_id], references: [id])
   produits             produits?  @relation(fields: [produit_id], references: [id])
+}
+
+// Phase 2+ — Scorecard fournisseur (analyse concurrentielle #6). Modélisation
+// partielle : seuls commande_id/defenseur_id sont lus (vendorScorecard.
+// service.ts#getScorecard compte les commandes distinctes en litige pour un
+// vendeur donné) — Sequelize reste seul propriétaire du schéma complet
+// (backend/src/dispute/models/litige.model.js), lecture seule ici.
+model litiges {
+  id           String @id @db.Uuid
+  commande_id  String @db.Uuid
+  defenseur_id String @db.Uuid
+}
+
+// Phase 2+ — idem, pour la note moyenne d'un vendeur (jointure INNER sur
+// produits.boutique_id, réplique le `required: true` Sequelize original —
+// voir backend/src/review/models/review.model.js pour le schéma complet).
+model reviews {
+  id         String    @id @db.Uuid
+  note       Int
+  produit_id String?   @db.Uuid
+  produits   produits? @relation(fields: [produit_id], references: [id])
+}
+
+// Modélisation partielle (id, nom_complet, email) — nécessaire à
+// invoice.service.ts pour afficher l'identité de l'acheteur sur une facture.
+// telephone est délibérément absent : User.model.js le chiffre au repos
+// (AES-256-GCM, hooks Sequelize beforeSave/afterFind) — une lecture directe
+// via Prisma renverrait le texte chiffré brut, pas un numéro utilisable.
+// Non requis légalement sur la facture (seul le NIF l'est, déjà porté par
+// factures.acheteur_nif) : simplement omis plutôt que mal affiché. Jamais un
+// module possédé par Prisma (auth/user restent Sequelize jusqu'à la toute
+// fin de la migration, voir le plan) : lecture seule.
+model utilisateurs {
+  id               String               @id @db.Uuid
+  nom_complet      String               @db.VarChar(255)
+  email            String               @db.VarChar(255)
+  role             String?              @db.VarChar(20)
+  factures         factures[]
+  audit_logs       audit_logs[]
+  questions_posees questions_produits[] @relation("QuestionAuteur")
+  reponses_donnees questions_produits[] @relation("QuestionRepondant")
 }
 
 // Phase 2+ — Certifications fournisseurs (analyse concurrentielle #5, cahier
@@ -232,4 +293,162 @@ enum enum_stocks_partenaires_type_stock {
   consigne
   entrepot_tiers
   dropshipping
+}
+
+// Phase 2+ — Facturation légale conforme CGI Guinée (analyse concurrentielle
+// #3) et export SYSCOHADA (analyse concurrentielle #9). Aucune association
+// entrante depuis une autre table Sequelize (vérifié dans
+// backend/src/models/index.js) — les deux modèles sont entièrement
+// supprimables côté Sequelize, comme Webinar/Education/Certification/
+// Partner-Stock. Lit produits/commandes/details_commandes/boutiques/
+// utilisateurs, toutes encore possédées par Sequelize (lecture seule,
+// jamais d'écriture Prisma sur ces tables).
+model factures {
+  id             String       @id @db.Uuid
+  numero         String       @unique @db.VarChar(30)
+  commande_id    String       @db.Uuid
+  boutique_id    String       @db.Uuid
+  utilisateur_id String       @db.Uuid
+  acheteur_nif   String?      @db.VarChar(50)
+  montant_ht     Decimal      @db.Decimal(15, 2)
+  taux_tva       Decimal      @default(18.00) @db.Decimal(5, 2)
+  montant_tva    Decimal      @db.Decimal(15, 2)
+  montant_ttc    Decimal      @db.Decimal(15, 2)
+  date_emission  DateTime     @default(now()) @db.Timestamptz(6)
+  createdAt      DateTime     @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime     @map("updated_at") @db.Timestamptz(6)
+  commandes      commandes    @relation(fields: [commande_id], references: [id], onDelete: Cascade)
+  boutiques      boutiques    @relation(fields: [boutique_id], references: [id], onDelete: Cascade)
+  utilisateurs   utilisateurs @relation(fields: [utilisateur_id], references: [id], onDelete: Cascade)
+
+  @@unique([commande_id, boutique_id], map: "factures_commande_boutique_unique")
+}
+
+// Ligne unique verrouillée à chaque émission de facture (numérotation
+// séquentielle sans trou, exigée par le CGI Guinée) — voir
+// invoice.service.ts#nextInvoiceNumber pour la stratégie d'incrémentation
+// atomique (UPDATE ... SET x = x + 1, Postgres sérialise nativement les
+// écritures concurrentes sur une même ligne, pas besoin d'un SELECT FOR
+// UPDATE explicite comme le faisait la version Sequelize).
+model compteurs_facture {
+  id             Int @id @default(autoincrement())
+  dernier_numero Int @default(0)
+}
+
+// Phase 2+ — Journal d'audit (analyse concurrentielle sécurité). Contrairement
+// à Certification/Partner-Stock/Invoice, la table "audit_logs" N'EST PAS
+// entièrement supprimable côté Sequelize : elle reste alimentée en écriture
+// par des dizaines de modules encore Sequelize (middlewares/
+// auditMiddleware.js, utils/logger.js, services/userDeletionService.js) —
+// seule l'API de LECTURE (liste/filtre/export admin) bascule vers
+// NestJS+Prisma ici. Jamais d'écriture Prisma sur cette table, même après le
+// cutover (voir audit-log.service.ts) : même principe de mirroir en lecture
+// seule que litiges/reviews pour vendor-scorecard, mais appliqué cette fois
+// au module propriétaire de l'API plutôt qu'à un lecteur tiers.
+model audit_logs {
+  id                String        @id @db.Uuid
+  action            String        @db.VarChar(100)
+  description       String?
+  table_affectee    String?       @db.VarChar(50)
+  id_enregistrement String?       @db.Uuid
+  adresse_ip        String?       @db.VarChar(45)
+  agent_utilisateur String?
+  niveau_alerte     String?       @default("info") @db.VarChar(10)
+  utilisateur_id    String?       @db.Uuid
+  createdAt         DateTime      @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime      @map("updated_at") @db.Timestamptz(6)
+  utilisateurs      utilisateurs? @relation(fields: [utilisateur_id], references: [id])
+}
+
+// Phase 2+ — Seuils d'alerte dynamiques (cahier des charges 3.6). À la
+// différence des modules précédents, la table "seuils_alerte" reste AUSSI
+// écrite côté Sequelize : backend/src/cron/alertThresholdCron.js appelle
+// toutes les 30 min alertThreshold.service.js#evaluateAll, qui met à jour
+// dernier_declenchement et crée des Notification (table non migrée) — cette
+// fonction et le modèle Sequelize sont donc conservés intentionnellement.
+// NestJS/Prisma ne possède que la surface HTTP utilisateur (créer/activer/
+// désactiver/supprimer un seuil) ; les deux écrivent sur la même table,
+// jamais en conflit (le cron ne touche que actif=true et dernier_declenchement,
+// l'API HTTP ne touche jamais cette colonne).
+model seuils_alerte {
+  id                    String    @id @db.Uuid
+  utilisateur_id        String    @db.Uuid
+  produit_id            String    @db.Uuid
+  type                  String    @db.VarChar(20)
+  operateur             String    @default("inferieur_egal") @db.VarChar(20)
+  valeur_seuil          Decimal   @db.Decimal(15, 2)
+  actif                 Boolean   @default(true)
+  dernier_declenchement DateTime?
+  createdAt             DateTime  @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @map("updated_at") @db.Timestamptz(6)
+  produits              produits  @relation(fields: [produit_id], references: [id], onDelete: Cascade)
+
+  @@unique([utilisateur_id, produit_id, type], map: "seuils_alerte_user_produit_type_unique")
+}
+
+// Phase 2+ — Q&A produit public, style Amazon (cahier des charges). Aucune
+// association entrante depuis une autre table Sequelize (vérifié dans
+// backend/src/models/index.js) — modèle entièrement supprimable côté
+// Sequelize, comme Certification/Partner-Stock/Invoice. Notifications temps
+// réel (nouvelle question / réponse publiée) déléguées au pont interne
+// (internalBridgeService.createNotification, voir internal-bridge.service.ts)
+// — Notification reste une table Sequelize, jamais d'écriture Prisma dessus.
+model questions_produits {
+  id             String        @id @db.Uuid
+  produit_id     String        @db.Uuid
+  utilisateur_id String        @db.Uuid
+  question       String
+  reponse        String?
+  repondu_par    String?       @db.Uuid
+  repondu_at     DateTime?
+  utile_count    Int?          @default(0)
+  visible        Boolean?      @default(true)
+  createdAt      DateTime      @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime      @map("updated_at") @db.Timestamptz(6)
+  produits       produits      @relation(fields: [produit_id], references: [id], onDelete: Cascade)
+  auteur         utilisateurs  @relation("QuestionAuteur", fields: [utilisateur_id], references: [id], onDelete: Cascade)
+  repondant      utilisateurs? @relation("QuestionRepondant", fields: [repondu_par], references: [id])
+}
+
+// Phase 2+ — Codes promo. À la différence des modules purement HTTP déjà
+// migrés, "coupons"/"coupon_usages" restent AUSSI écrites côté Sequelize :
+// order.service.js (module `order`, pas encore migré) appelle directement
+// coupon.service.js#validate/applyDiscountToItems/recordUsage à l'intérieur
+// de sa propre transaction Sequelize (verrou SELECT ... FOR UPDATE sur le
+// coupon pendant la création de commande) — conservées intentionnellement
+// côté Sequelize, jamais dupliquées ici. NestJS/Prisma ne possède que la
+// surface HTTP admin/fournisseur (créer/lister/activer-désactiver/stats) et
+// l'aperçu panier en lecture seule (validateCart, sans verrou : ne consomme
+// jamais l'usage, donc aucun risque de race avec la vraie création de
+// commande). Les deux écrivent sur les mêmes tables sans jamais se
+// chevaucher : seul recordUsage (Sequelize) touche usage_count/coupon_usages.
+model coupons {
+  id                        String          @id @db.Uuid
+  code                      String          @unique @db.VarChar(30)
+  createur_id               String          @db.Uuid
+  boutique_id               String?         @db.Uuid
+  type                      String          @default("percentage") @db.VarChar(15)
+  valeur                    Decimal         @db.Decimal(15, 2)
+  montant_min               Decimal?        @db.Decimal(15, 2)
+  date_debut                DateTime?
+  date_fin                  DateTime?
+  usage_max                 Int?
+  usage_max_par_utilisateur Int?            @default(1)
+  usage_count                Int?           @default(0)
+  actif                      Boolean?       @default(true)
+  createdAt                  DateTime       @map("created_at") @db.Timestamptz(6)
+  updatedAt                  DateTime       @map("updated_at") @db.Timestamptz(6)
+  boutiques                  boutiques?     @relation(fields: [boutique_id], references: [id])
+  coupon_usages               coupon_usages[]
+}
+
+model coupon_usages {
+  id                String   @id @db.Uuid
+  coupon_id         String   @db.Uuid
+  utilisateur_id    String   @db.Uuid
+  commande_id       String?  @db.Uuid
+  montant_reduction Decimal  @db.Decimal(15, 2)
+  createdAt         DateTime @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @map("updated_at") @db.Timestamptz(6)
+  coupons           coupons  @relation(fields: [coupon_id], references: [id], onDelete: Cascade)
 }

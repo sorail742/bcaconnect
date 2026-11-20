@@ -138,17 +138,17 @@ apiRouter.use('/reports', require('./report/routes/report.route'));
 apiRouter.use('/webinars', require('./nestProxy').createNestProxy()); // Migré vers NestJS
 apiRouter.use('/certifications', require('./nestProxy').createNestProxy()); // Migré vers NestJS
 apiRouter.use('/deletion-history', require('./deletion-log/routes/deletionLog.route'));
-apiRouter.use('/audit-logs', require('./audit-log/routes/auditLog.route'));
+apiRouter.use('/audit-logs', require('./nestProxy').createNestProxy()); // Migré vers NestJS (lecture seule — écritures toujours Sequelize)
 apiRouter.use('/rfq', require('./rfq/routes/rfq.route'));
-apiRouter.use('/product-questions', require('./product-question/routes/productQuestion.route'));
-apiRouter.use('/coupons', require('./coupon/routes/coupon.route'));
+apiRouter.use('/product-questions', require('./nestProxy').createNestProxy()); // Migré vers NestJS
+apiRouter.use('/coupons', require('./nestProxy').createNestProxy()); // Migré vers NestJS (validate/recordUsage restent Sequelize — order.service.js)
 apiRouter.use('/product-variants', require('./product-variant/routes/productVariant.route'));
 apiRouter.use('/partner-stock', require('./nestProxy').createNestProxy()); // Migré vers NestJS
 apiRouter.use('/price-index', require('./nestProxy').createNestProxy()); // Migré vers NestJS
-apiRouter.use('/vendor-scorecard', require('./vendor-scorecard/routes/vendorScorecard.route'));
+apiRouter.use('/vendor-scorecard', require('./nestProxy').createNestProxy()); // Migré vers NestJS
 apiRouter.use('/organizations', require('./organization/routes/organization.route'));
-apiRouter.use('/alert-thresholds', require('./alert-threshold/routes/alertThreshold.route'));
-apiRouter.use('/invoices', require('./invoice/routes/invoice.route'));
+apiRouter.use('/alert-thresholds', require('./nestProxy').createNestProxy()); // Migré vers NestJS (evaluateAll reste Sequelize — cron)
+apiRouter.use('/invoices', require('./nestProxy').createNestProxy()); // Migré vers NestJS
 
 // Montage du routeur sur le préfixe /api
 app.use('/api', apiRouter);
