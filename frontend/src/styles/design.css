@@ -18,14 +18,14 @@
 }
 
 .banner-gradient {
-  background: linear-gradient(90deg, #FF6600, #e65c00, #FF6600);
+  background: linear-gradient(90deg, #1CA0DB, #0E86B4, #1CA0DB);
 }
 
 /* ── BCA B2B Marketplace tokens ── */
 :root {
-  --bca-orange: #ff6600;
-  --bca-orange-hover: #e65c00;
-  --bca-orange-light: #fff7e6;
+  --bca-orange: #1CA0DB;
+  --bca-orange-hover: #0E86B4;
+  --bca-orange-light: #E6F7FD;
   --bca-bg: #f5f5f5;
   --bca-border: #e8e8e8;
   --bca-text: #333333;
@@ -117,7 +117,7 @@
   font-weight: 600;
   color: var(--bca-orange);
   background: var(--bca-orange-light);
-  border: 1px solid #ffd591;
+  border: 1px solid #7DD3F0;
   border-radius: 2px;
 }
 
@@ -130,6 +130,10 @@
   background: #fff;
   border: 1px solid var(--bca-border);
   border-radius: 4px;
+}
+
+.glass-panel {
+    @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-slate-800/50 shadow-xl;
 }
 
 .bca-trust-bar {
@@ -160,8 +164,8 @@
 }
 
 .bca-supplier-strip {
-  background: linear-gradient(90deg, #fff7e6 0%, #fff 100%);
-  border: 1px solid #ffd591;
+  background: linear-gradient(90deg, #E6F7FD 0%, #fff 100%);
+  border: 1px solid #7DD3F0;
   border-radius: 4px;
 }
 
@@ -210,6 +214,71 @@
 }
 
 .bca-category-item:focus-visible {
-  outline: 2px solid #ff6600;
+  outline: 2px solid #1CA0DB;
   outline-offset: -2px;
+}
+
+/* ── Mega-menu navbar (portal, centré type Alibaba) ── */
+.bca-mega-menu {
+  width: 100%;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.dark .bca-mega-menu {
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.dark .bca-category-panel {
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
+}
+
+/* ── Widget messagerie centré (Alibaba / Amazon seller center) ── */
+.bca-messenger-page {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: calc(100vh - 7.5rem);
+  padding: 1.25rem 1rem 2rem;
+  background: hsl(var(--muted) / 0.35);
+}
+
+.bca-messenger-shell {
+  display: flex;
+  width: 100%;
+  max-width: 980px;
+  height: 580px;
+  max-height: min(580px, calc(100vh - 10rem));
+  min-height: 460px;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  background: hsl(var(--card));
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.dark .bca-messenger-shell {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+}
+
+@media (max-width: 1023px) {
+  .bca-messenger-page {
+    min-height: calc(100vh - 6rem);
+    padding: 0.75rem;
+  }
+
+  .bca-messenger-shell {
+    max-width: 100%;
+    height: calc(100vh - 8.5rem);
+    max-height: none;
+    min-height: 420px;
+  }
 }

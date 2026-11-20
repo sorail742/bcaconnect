@@ -7,9 +7,9 @@ class SocketService {
         this.socket = null;
     }
 
-    connect(userId = null) {
+    connect(userData = null) {
         if (this.socket?.connected) {
-            if (userId) this.socket.emit('join', userId);
+            if (userData) this.socket.emit('join', userData);
             return this.socket;
         }
 
@@ -19,8 +19,8 @@ class SocketService {
         });
 
         socket.on("connect", () => {
-            if (userId) {
-                socket.emit('join', userId);
+            if (userData) {
+                socket.emit('join', userData);
             }
         });
 

@@ -1,7 +1,7 @@
 import { offlineStorage } from '../lib/db';
 import api from './api';
-import productService from './productService';
-import categoryService from './categoryService';
+import productService from '../product/services/productService';
+import categoryService from '../category/services/categoryService';
 import { toast } from 'sonner';
 
 class SyncService {

@@ -11,6 +11,22 @@ export function cn(...inputs) {
     return twMerge(clsx(inputs))
 }
 
+const TEXT_SIZE_SCALE = ['text-4xl', 'text-3xl', 'text-2xl', 'text-xl', 'text-lg', 'text-base', 'text-sm', 'text-xs'];
+
+/**
+ * Taille de texte Tailwind qui rétrécit avec la longueur de la valeur affichée, pour
+ * qu'un chiffre de statistique ne déborde jamais de sa carte quel que soit son nombre
+ * de chiffres. `maxSize`/`minSize` bornent l'échelle (valeurs courtes → maxSize).
+ */
+export function adaptiveValueSize(value, maxSize = 'text-xl', minSize = 'text-sm') {
+    const len = String(value ?? '').trim().length;
+    const maxIdx = TEXT_SIZE_SCALE.indexOf(maxSize);
+    const minIdx = TEXT_SIZE_SCALE.indexOf(minSize);
+    if (maxIdx === -1 || minIdx === -1 || len <= 4) return maxSize;
+    const steps = Math.min(minIdx - maxIdx, Math.floor((len - 4) / 2));
+    return TEXT_SIZE_SCALE[maxIdx + steps];
+}
+
 export const PUBLIC_PRODUCT_IMAGE_MAP = {
     'agriculture': imgAgriculture,
     'fermier': imgAgriculture,
@@ -37,13 +53,13 @@ export const getImageUrl = (url, keyword = 'default') => {
     
     // Build the server origin from VITE_API_URL.
     // If it is a relative path like "/api", fall back to the known dev backend port.
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
     let serverUrl;
     if (apiUrl.startsWith('http')) {
         serverUrl = apiUrl.replace(/\/api$/, '');
     } else {
         // relative path (/api) — use the Vite proxy target directly
-        serverUrl = 'http://localhost:5001';
+        serverUrl = 'http://localhost:5000';
     }
     
     // Ensure the path points to /uploads/

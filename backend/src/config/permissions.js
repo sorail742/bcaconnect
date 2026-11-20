@@ -12,6 +12,9 @@ const permissions = {
         'view_admin_dashboard',
         'manage_ads',
         'manage_education',
+        'manage_content',   // Webinaires, ressources, etc.
+        'view_deletion_history',
+        'view_audit_logs',
     ],
 
     // Permissions Vendeur (Fournisseur)

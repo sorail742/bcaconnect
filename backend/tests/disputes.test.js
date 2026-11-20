@@ -1,4 +1,4 @@
-jest.mock('../src/services/aiService', () => ({
+jest.mock('../src/ai/service/ai.service', () => ({
     mediateDispute: jest.fn().mockResolvedValue({
         solution_proposee: 'Remboursement intégral recommandé par l\'IA.',
         score_gravite: 0.75

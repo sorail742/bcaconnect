@@ -1,4 +1,4 @@
-const { Order, Wallet, Transaction, Review, User, sequelize } = require('../models');
+const { Order, Wallet, Transaction, Review, User, Certification, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 /**
@@ -138,8 +138,11 @@ class AIScoringService {
     
     let score = Math.min(50, daysSinceCreation * 0.5); // Bonus d'ancienneté
 
-    // Bonus de certification
-    if (user.is_verified) score += 30;
+    // Bonus de certification (au moins une certification validée par l'admin)
+    const hasValidatedCertification = await Certification.count({
+      where: { fournisseur_id: userId, statut: 'validee' },
+    }) > 0;
+    if (hasValidatedCertification) score += 30;
     if (user.role === 'fournisseur' || user.role === 'admin') score += 20;
 
     return Math.min(100, Math.max(0, score));

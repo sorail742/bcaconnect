@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TECHNICIAN_SPECIALTY_VALUES } from '../constants/technicianSpecialties';
 
 /**
  * BCA Connect Validation Schemas (v2.6 API Compliant)
@@ -42,9 +43,9 @@ export const registerTransporteurSchema = registerBaseSchema.extend({
 });
 
 export const registerTechnicienSchema = registerBaseSchema.extend({
-    specialites: z.string().min(2, "Veuillez préciser vos spécialités"),
+    specialites: z.enum(TECHNICIAN_SPECIALTY_VALUES, { errorMap: () => ({ message: 'Veuillez sélectionner une spécialité' }) }),
     numero_agrement: z.string().optional(),
-    zone_intervention: z.string().min(2, "La zone d'intervention est requise"),
+    zone_intervention: z.string().min(1, 'Veuillez sélectionner une zone d\'intervention'),
 });
 
 // Helper : retourne le bon schéma selon le rôle

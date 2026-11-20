@@ -5,30 +5,31 @@ import {
     User, ShoppingCart, Menu, X, Search, Globe, LogIn,
     Bell, LayoutDashboard, Package, LogOut, Wallet, Mic, Loader2,
     Sun, Moon, Camera, Store, ShieldCheck, TrendingUp, Settings,
-    CreditCard, HelpCircle, ChevronRight, Zap, Sparkles, ArrowRight,
+    CreditCard, HelpCircle, ChevronRight, Zap, ArrowRight,
     Star, Shirt, Headphones, Home, Trophy, Diamond, Palette, Flame
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { useLanguage } from '../../context/LanguageContext';
-import useCart from '../../hooks/useCart';
+import { formatNumber } from '../../lib/i18nFormat';
+import { useLanguage } from '../../context/useLanguage';
+import useCart from '../../cart/hooks/useCart';
 import { useAuth } from '../../hooks/useAuth';
-import { useNotifications } from '../../hooks/useNotifications';
-import { useWallet, useCategories } from '../../hooks/useDomainData';
+import { useNotifications } from '../../notification/hooks/useNotifications';
+import { useCategories } from '../../category/hooks/useCategoryData';
+import { useWallet } from '../../wallet/hooks/useWalletData';
 import { useTheme } from '../../context/ThemeContext';
-import authService from '../../services/authService';
+import authService from '../../auth/services/authService';
 import BcaLogo from '../ui/BcaLogo';
 import PrefetchLink from '../ui/PrefetchLink';
 import { useQueryClient } from '@tanstack/react-query';
-import orderService from '../../services/orderService';
-import walletService from '../../services/walletService';
-import categoryService from '../../services/categoryService';
-import productService from '../../services/productService';
-import { getCategoryIconComponent } from '../../lib/categoryConstants';
-import aiService from '../../services/aiService';
+import orderService from '../../order/services/orderService';
+import walletService from '../../wallet/services/walletService';
+import categoryService from '../../category/services/categoryService';
+import productService from '../../product/services/productService';
+import { getCategoryIconComponent } from '../../category/lib/categoryConstants';
+import aiService from '../../ai/services/aiService';
 import { toast } from 'sonner';
-import { ROLES, getDashboardRoute } from '../../constants/roles';
-import AiSourcingModal from '../ui/AiSourcingModal';
-import { BcaMegaMenu } from '../landing/BcaMegaMenu';
+import { ROLES, getDashboardRoute, getOrdersRoute, getWalletRoute, canUseCart } from '../../constants/roles';
+import { BcaMegaMenu } from '../../landing/components/BcaMegaMenu';
 
 // ─── Role badge ───────────────────────────────────────────────────────────────
 function RoleBadge({ role, t }) {
@@ -60,7 +61,6 @@ const Navbar = () => {
     
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [isListening, setIsListening] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -81,6 +81,9 @@ const isDark = theme === 'dark';
     const hideLayout = ['/login', '/register', '/onboarding', '/forgot-password', '/reset-password', '/ai-mode'].includes(location.pathname);
 
     const dashboardLink = user ? getDashboardRoute(user.role) : '/login';
+    const ordersLink = user ? getOrdersRoute(user.role) : '/orders';
+    const walletLink = user ? getWalletRoute(user.role) : '/wallet';
+    const isBuyerLike = user && [ROLES.CLIENT, ROLES.ADMIN].includes(user.role);
 
     // ── Scroll shadow ──────────────────────────────────────────────────────
     useEffect(() => {
@@ -218,7 +221,7 @@ const isDark = theme === 'dark';
     const handleLogout = () => {
         logout();
         setIsUserMenuOpen(false);
-        navigate('/');
+        navigate('/login');
         toast.success("Déconnecté avec succès.");
     };
 
@@ -241,7 +244,7 @@ const isDark = theme === 'dark';
                 isScrolled && "shadow-md"
             )}>
             {/* ── Promotional Banner ───────────────────────────────────────── */}
-            <div className="banner-gradient h-10 flex items-center justify-center relative overflow-hidden bg-[#FF6600]">
+            <div className="banner-gradient h-10 flex items-center justify-center relative overflow-hidden bg-[#1CA0DB]">
                 <div className="flex items-center gap-4 z-10 relative text-white">
                     <span className="font-extrabold text-sm">BCA Work</span>
                     <span className="opacity-40 hidden sm:block">|</span>
@@ -253,7 +256,7 @@ const isDark = theme === 'dark';
                         {t('freeTrial') || "Essai gratuit"} →
                     </Link>
                 </div>
-                <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-[#0050b3] skew-x-12 translate-x-12 z-0 opacity-40" />
+                <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-[#0E86B4] skew-x-12 translate-x-12 z-0 opacity-40" />
             </div>
 
             {/* ── Main Header Row ──────────────────────────────────────────── */}
@@ -261,12 +264,12 @@ const isDark = theme === 'dark';
 
                 {/* Logo */}
                 <Link to="/" className="flex-shrink-0">
-                    <BcaLogo size="h-14 md:h-16" className="py-1" />
+                    <BcaLogo type="full" size="h-14 md:h-16" className="py-1" />
                 </Link>
 
                 {/* Search Bar */}
                 <div className="hidden md:flex flex-1 min-w-0 max-w-none items-center gap-4">
-                    <form onSubmit={handleSearch} className="flex-1 flex items-center rounded-full border-2 border-[#FF6600] bg-background transition-shadow hover:shadow-md focus-within:shadow-md h-12 overflow-hidden">
+                    <form onSubmit={handleSearch} className="flex-1 flex items-center rounded-full border-2 border-[#1CA0DB] bg-background transition-shadow hover:shadow-md focus-within:shadow-md h-12 overflow-hidden">
                         <input
                             type="text"
                             placeholder={t('searchPlaceholder')}
@@ -282,36 +285,25 @@ const isDark = theme === 'dark';
                                 title="Recherche vocale"
                                 className={cn(
                                     "p-2 rounded-full transition-all",
-                                    isListening ? "bg-red-500 text-white animate-pulse" : "text-muted-foreground hover:text-[#FF6600] hover:bg-foreground/5"
+                                    isListening ? "bg-red-500 text-white animate-pulse" : "text-muted-foreground hover:text-[#1CA0DB] hover:bg-foreground/5"
                                 )}
                             >
                                 <Mic className="size-5" />
                             </button>
                             {/* Image */}
                             <label
-                                className="p-2 rounded-full text-muted-foreground hover:text-[#FF6600] cursor-pointer hover:bg-foreground/5 transition-all"
+                                className="p-2 rounded-full text-muted-foreground hover:text-[#1CA0DB] cursor-pointer hover:bg-foreground/5 transition-all"
                                 title="Recherche par image"
                             >
                                 {isAnalyzing ? <Loader2 className="size-5 animate-spin" /> : <Camera className="size-5" />}
                                 <input type="file" accept="image/*" className="hidden" onChange={handleImageSearch} disabled={isAnalyzing} />
                             </label>
                         </div>
-                        <button type="submit" className="shrink-0 h-10 px-6 mx-1 bg-[#FF6600] text-white font-bold text-sm rounded-full hover:bg-[#e65c00] transition-colors whitespace-nowrap">
+                        <button type="submit" className="shrink-0 h-10 px-6 mx-1 bg-[#1CA0DB] text-white font-bold text-sm rounded-full hover:bg-[#0e86b4] transition-colors whitespace-nowrap">
                             {t('explore')}
                         </button>
                     </form>
-
-                    {/* Mode IA Button (BCA Style) */}
-                    <button 
-                        onClick={() => setIsAiModalOpen(true)}
-                        className="shrink-0 flex items-center gap-2 h-12 px-5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full font-black text-xs uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 active:scale-95 transition-all group"
-                    >
-                        <Sparkles className="size-4 group-hover:animate-spin" />
-                        Mode IA
-                    </button>
                 </div>
-
-                <AiSourcingModal isOpen={isAiModalOpen} onClose={() => setIsAiModalOpen(false)} />
 
                 {/* Right Actions */}
                 <div className="flex items-center gap-3 lg:gap-4 shrink-0 ml-auto">
@@ -319,7 +311,7 @@ const isDark = theme === 'dark';
                     {/* Delivery Location */}
                     <div className="hidden xl:flex flex-col cursor-default group">
                         <span className="text-[11px] text-muted-foreground">{t('deliveryTo') || "Livraison vers :"}</span>
-                        <div className="flex items-center gap-1.5 font-bold text-sm text-foreground group-hover:text-[#FF6600] transition-colors">
+                        <div className="flex items-center gap-1.5 font-bold text-sm text-foreground group-hover:text-[#1CA0DB] transition-colors">
                             <span className="text-base leading-none">🇬🇳</span>
                             {t('guinea') || "Guinée"}
                         </div>
@@ -328,8 +320,8 @@ const isDark = theme === 'dark';
                     {/* Language Dropdown */}
                     <div className="hidden lg:relative lg:block group">
                         <button className="flex items-center gap-2 py-2 px-3 hover:bg-foreground/5 rounded-xl transition-all cursor-pointer">
-                            <Globe className="size-5 text-foreground/70 group-hover:text-[#FF6600]" />
-                            <span className="font-bold text-sm text-foreground group-hover:text-[#FF6600]">
+                            <Globe className="size-5 text-foreground/70 group-hover:text-[#1CA0DB]" />
+                            <span className="font-bold text-sm text-foreground group-hover:text-[#1CA0DB]">
                                 {lang} · GNF
                             </span>
                         </button>
@@ -340,7 +332,7 @@ const isDark = theme === 'dark';
                                 { id: 'EN', label: 'English', flag: '🇺🇸' },
                                 { id: 'SO', label: 'Soussou', flag: '🇬🇳' },
                                 { id: 'PE', label: 'Pular', flag: '🇬🇳' },
-                                { id: 'MA', label: 'Maninka', flag: '🇬🇳' },
+                                { id: 'MA', label: 'Malinké', flag: '🇬🇳' },
                             ].map(l => (
                                 <button
                                     key={l.id}
@@ -370,7 +362,7 @@ const isDark = theme === 'dark';
                     {/* Theme Toggle */}
                     <button
                         onClick={toggleTheme}
-                        className="p-2 rounded-full text-foreground/70 hover:text-[#FF6600] hover:bg-foreground/5 transition-all"
+                        className="p-2 rounded-full text-foreground/70 hover:text-[#1CA0DB] hover:bg-foreground/5 transition-all"
                         title={isDark ? (t('lightMode') || "Passer au mode clair") : (t('darkMode') || "Passer au mode sombre")}
                     >
                         {isDark ? <Sun className="size-5" /> : <Moon className="size-5" />}
@@ -380,7 +372,7 @@ const isDark = theme === 'dark';
                     {user && (
                         <Link
                             to="/notifications"
-                            className="relative p-2 rounded-full text-foreground/70 hover:text-[#FF6600] hover:bg-foreground/5 transition-all"
+                            className="relative p-2 rounded-full text-foreground/70 hover:text-[#1CA0DB] hover:bg-foreground/5 transition-all"
                             title="Notifications"
                         >
                             <Bell className="size-5" />
@@ -388,7 +380,7 @@ const isDark = theme === 'dark';
                                 <motion.span
                                     initial={{ scale: 0 }}
                                     animate={{ scale: 1 }}
-                                    className="absolute -top-1 -right-1 bg-[#FF6600] text-white text-[9px] font-black min-w-[18px] h-[18px] flex items-center justify-center rounded-full border-2 border-background tabular-nums"
+                                    className="absolute -top-1 -right-1 bg-[#1CA0DB] text-white text-[9px] font-black min-w-[18px] h-[18px] flex items-center justify-center rounded-full border-2 border-background tabular-nums"
                                 >
                                     {notificationCount > 99 ? '99+' : notificationCount}
                                 </motion.span>
@@ -396,22 +388,24 @@ const isDark = theme === 'dark';
                         </Link>
                     )}
 
-                    {/* Cart */}
-                    <Link to="/cart" className="relative flex items-center group cursor-pointer" title="Mon panier">
-                        <ShoppingCart className="size-6 text-foreground/70 group-hover:text-[#FF6600] transition-colors" />
-                        <AnimatePresence>
-                            {cartCount > 0 && (
-                                <motion.span
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    exit={{ scale: 0 }}
-                                    className="absolute -top-1.5 -right-2 bg-[#FF6600] text-white text-[10px] font-bold px-1.5 rounded-full border-2 border-background tabular-nums"
-                                >
-                                    {cartCount}
-                                </motion.span>
-                            )}
-                        </AnimatePresence>
-                    </Link>
+                    {/* Cart — clients uniquement */}
+                    {(!user || canUseCart(user.role)) && (
+                        <Link to="/cart" className="relative flex items-center group cursor-pointer" title="Mon panier">
+                            <ShoppingCart className="size-6 text-foreground/70 group-hover:text-[#1CA0DB] transition-colors" />
+                            <AnimatePresence>
+                                {cartCount > 0 && (
+                                    <motion.span
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        exit={{ scale: 0 }}
+                                        className="absolute -top-1.5 -right-2 bg-[#1CA0DB] text-white text-[10px] font-bold px-1.5 rounded-full border-2 border-background tabular-nums"
+                                    >
+                                        {cartCount}
+                                    </motion.span>
+                                )}
+                            </AnimatePresence>
+                        </Link>
+                    )}
 
                     {/* ── Auth Section ──────────────────────────────────────── */}
                     {user ? (
@@ -425,16 +419,16 @@ const isDark = theme === 'dark';
                                     <img
                                         src={user.avatar_url}
                                         alt={user.nom_complet}
-                                        className="size-9 rounded-full object-cover border-2 border-[#FF6600]/30 group-hover:border-[#FF6600] transition-colors"
+                                        className="size-9 rounded-full object-cover border-2 border-[#1CA0DB]/30 group-hover:border-[#1CA0DB] transition-colors"
                                     />
                                 ) : (
-                                    <div className="size-9 rounded-full bg-[#FF6600]/10 border-2 border-[#FF6600]/30 group-hover:border-[#FF6600] flex items-center justify-center transition-colors">
-                                        <User className="size-5 text-[#FF6600]" />
+                                    <div className="size-9 rounded-full bg-[#1CA0DB]/10 border-2 border-[#1CA0DB]/30 group-hover:border-[#1CA0DB] flex items-center justify-center transition-colors">
+                                        <User className="size-5 text-[#1CA0DB]" />
                                     </div>
                                 )}
                                 <div className="hidden lg:block text-left">
                                     <span className="block text-[11px] text-muted-foreground">{t('hello') || "Bonjour"}, {user.nom_complet?.split(' ')[0]}</span>
-                                    <span className="block font-bold text-sm text-foreground group-hover:text-[#FF6600] transition-colors">{t('myAccount') || "Mon Compte"}</span>
+                                    <span className="block font-bold text-sm text-foreground group-hover:text-[#1CA0DB] transition-colors">{t('myAccount') || "Mon Compte"}</span>
                                 </div>
                             </button>
 
@@ -453,8 +447,8 @@ const isDark = theme === 'dark';
                                                 {user.avatar_url ? (
                                                     <img src={user.avatar_url} alt="" className="size-12 rounded-xl object-cover border-2 border-white/20" />
                                                 ) : (
-                                                    <div className="size-12 rounded-xl bg-[#FF6600]/20 border border-[#FF6600]/30 flex items-center justify-center">
-                                                        <User className="size-6 text-[#FF6600]" />
+                                                    <div className="size-12 rounded-xl bg-[#1CA0DB]/20 border border-[#1CA0DB]/30 flex items-center justify-center">
+                                                        <User className="size-6 text-[#1CA0DB]" />
                                                     </div>
                                                 )}
                                                 <div className="overflow-hidden">
@@ -479,7 +473,7 @@ const isDark = theme === 'dark';
                                                 </div>
                                                 <div className="flex-1">
                                                     <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mb-0.5">{t('walletBalanceLabel') || "Solde Wallet"}</p>
-                                                    <p className="text-base font-black text-emerald-800 tabular-nums leading-none">{walletBalance.toLocaleString(lang === 'FR' ? 'fr-GN' : 'en-US')} GNF</p>
+                                                    <p className="text-base font-black text-emerald-800 tabular-nums leading-none">{formatNumber(walletBalance, lang)} GNF</p>
                                                 </div>
                                                 <ChevronRight className="size-4 text-emerald-400 group-hover:translate-x-1 transition-transform" />
                                             </Link>
@@ -489,8 +483,14 @@ const isDark = theme === 'dark';
                                         <div className="p-3 space-y-0.5">
                                             {[
                                                 { to: dashboardLink, icon: LayoutDashboard, label: t('dashboard') },
-                                                { to: '/orders', icon: Package, label: t('myOrders') || 'Mes commandes' },
-                                                { to: '/wallet', icon: CreditCard, label: t('myWallet') || 'Mon portefeuille' },
+                                                ...(isBuyerLike ? [
+                                                    { to: ordersLink, icon: Package, label: t('myOrders') || 'Mes commandes' },
+                                                    { to: walletLink, icon: CreditCard, label: t('myWallet') || 'Mon portefeuille' },
+                                                ] : user?.role === ROLES.FOURNISSEUR ? [
+                                                    { to: '/vendor/orders', icon: Package, label: 'Mes commandes' },
+                                                ] : user?.role === ROLES.TECHNICIEN ? [
+                                                    { to: '/technician/wallet', icon: CreditCard, label: 'Mon portefeuille' },
+                                                ] : []),
                                                 { to: '/notifications', icon: Bell, label: t('notifications') || 'Notifications', badge: notificationCount },
                                                 { to: '/profile', icon: Settings, label: t('accountSettings') || 'Paramètres du compte' },
                                                 { to: '/help', icon: HelpCircle, label: t('helpCenter') || "Centre d'assistance" },
@@ -499,12 +499,12 @@ const isDark = theme === 'dark';
                                                     key={item.to}
                                                     to={item.to}
                                                     onClick={() => setIsUserMenuOpen(false)}
-                                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-foreground hover:bg-foreground/5 hover:text-[#FF6600] transition-all group"
+                                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-foreground hover:bg-foreground/5 hover:text-[#1CA0DB] transition-all group"
                                                 >
-                                                    <item.icon className="size-4 text-muted-foreground group-hover:text-[#FF6600] transition-colors" />
+                                                    <item.icon className="size-4 text-muted-foreground group-hover:text-[#1CA0DB] transition-colors" />
                                                     <span className="text-sm font-semibold flex-1">{item.label}</span>
                                                     {item.badge > 0 && (
-                                                        <span className="bg-[#FF6600] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full tabular-nums">
+                                                        <span className="bg-[#1CA0DB] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full tabular-nums">
                                                             {item.badge}
                                                         </span>
                                                     )}
@@ -529,14 +529,14 @@ const isDark = theme === 'dark';
                     ) : (
                         <div className="flex items-center gap-3 shrink-0">
                             <Link to="/login" className="flex items-center gap-1.5 group whitespace-nowrap">
-                                <User className="size-5 text-foreground/70 group-hover:text-[#FF6600] transition-colors shrink-0" />
-                                <span className="hidden md:block font-bold text-sm text-foreground group-hover:text-[#FF6600] transition-colors">
+                                <User className="size-5 text-foreground/70 group-hover:text-[#1CA0DB] transition-colors shrink-0" />
+                                <span className="hidden md:block font-bold text-sm text-foreground group-hover:text-[#1CA0DB] transition-colors">
                                     {t('login')}
                                 </span>
                             </Link>
                             <Link
                                 to="/register"
-                                className="hidden md:flex items-center bg-[#FF6600] text-white px-4 py-2 rounded-full font-bold text-sm hover:bg-[#e65c00] transition-colors shadow-md whitespace-nowrap shrink-0 gap-2"
+                                className="hidden md:flex items-center bg-[#1CA0DB] text-white px-4 py-2 rounded-full font-bold text-sm hover:bg-[#0e86b4] transition-colors shadow-md whitespace-nowrap shrink-0 gap-2"
                             >
                                 <Zap className="size-4" />
                                 <span>{t('register')}</span>
@@ -564,12 +564,12 @@ const isDark = theme === 'dark';
                         onMouseLeave={handleMegaMenuClose}
                     >
                         <div className={cn(
-                            "flex items-center gap-2 cursor-pointer group pr-4 border-r border-border/10 h-full transition-colors",
-                            isMegaMenuOpen && "text-[#FF6600]"
+                            'flex items-center gap-2 cursor-pointer group h-full transition-colors',
+                            isMegaMenuOpen && 'text-[#1CA0DB]',
                         )}>
-                            <Menu className={cn("size-5 transition-colors", isMegaMenuOpen ? "text-[#FF6600]" : "text-foreground group-hover:text-[#FF6600]")} />
-                            <span className={cn("font-bold text-sm transition-colors whitespace-nowrap", isMegaMenuOpen ? "text-[#FF6600]" : "text-foreground group-hover:text-[#FF6600]")}>
-                                {t('allCategories') || "Toutes les catégories"}
+                            <Menu className={cn('size-5 transition-colors', isMegaMenuOpen ? 'text-[#1CA0DB]' : 'text-foreground group-hover:text-[#1CA0DB]')} />
+                            <span className={cn('font-bold text-sm transition-colors whitespace-nowrap', isMegaMenuOpen ? 'text-[#1CA0DB]' : 'text-foreground group-hover:text-[#1CA0DB]')}>
+                                {t('allCategories') || 'Toutes les catégories'}
                             </span>
                         </div>
 
@@ -581,72 +581,63 @@ const isDark = theme === 'dark';
                         />
                     </div>
 
-
-                    <nav className="flex items-center gap-6 lg:gap-8">
+                    <nav className="flex items-center gap-5 lg:gap-8 flex-1 min-w-0 overflow-x-auto scrollbar-none">
                         <PrefetchLink
                             to="/vendors"
                             queryKey={['products']}
                             queryFn={() => productService.getAll()}
-                            className="text-sm font-semibold text-muted-foreground hover:text-[#FF6600] hover:underline whitespace-nowrap transition-colors"
+                            className="text-sm font-semibold text-muted-foreground hover:text-[#1CA0DB] hover:underline whitespace-nowrap transition-colors"
                         >
                             {t('vendors')}
                         </PrefetchLink>
                         <Link
                             to="/help"
-                            className="text-sm font-semibold text-muted-foreground hover:text-[#FF6600] hover:underline whitespace-nowrap transition-colors"
+                            className="text-sm font-semibold text-muted-foreground hover:text-[#1CA0DB] hover:underline whitespace-nowrap transition-colors"
                         >
                             {t('orderProtection') || "Protection des commandes"}
                         </Link>
                         <Link
-                            to="/tracking"
-                            className="text-sm font-semibold text-muted-foreground hover:text-[#FF6600] hover:underline whitespace-nowrap transition-colors"
-                        >
-                            {t('tracking')}
-                        </Link>
-                        <Link
                             to="/marketplace?filter=flash"
-                            className="text-sm font-semibold text-muted-foreground hover:text-[#FF6600] hover:underline whitespace-nowrap transition-colors relative"
+                            className="text-sm font-semibold text-muted-foreground hover:text-[#1CA0DB] hover:underline whitespace-nowrap transition-colors relative"
                         >
                             {t('hotDeals') || "Meilleures Offres"}
-                            <span className="absolute -top-3 text-[10px] text-[#FF6600] font-black animate-pulse">Hot</span>
+                            <span className="absolute -top-3 text-[10px] text-[#1CA0DB] font-black animate-pulse">Hot</span>
                         </Link>
                         {user && (
                             <Link
                                 to={dashboardLink}
-                                className="text-sm font-semibold text-muted-foreground hover:text-[#FF6600] hover:underline whitespace-nowrap transition-colors"
+                                className="text-sm font-semibold text-muted-foreground hover:text-[#1CA0DB] hover:underline whitespace-nowrap transition-colors"
                             >
                                 {t('myDashboard') || "Mon Espace"}
                             </Link>
                         )}
                         <Link
                             to="/contact"
-                            className="text-sm font-semibold text-muted-foreground hover:text-[#FF6600] hover:underline whitespace-nowrap transition-colors"
+                            className="text-sm font-semibold text-muted-foreground hover:text-[#1CA0DB] hover:underline whitespace-nowrap transition-colors"
                         >
                             {t('contactUs') || "Contactez-nous"}
                         </Link>
                         <Link
                             to="/about"
-                            className="text-sm font-semibold text-muted-foreground hover:text-[#FF6600] hover:underline whitespace-nowrap transition-colors"
+                            className="text-sm font-semibold text-muted-foreground hover:text-[#1CA0DB] hover:underline whitespace-nowrap transition-colors"
                         >
                             {t('about')}
                         </Link>
                     </nav>
 
-                    <div className="flex items-center shrink-0">
-                        <Link
-                            to="/register?role=fournisseur"
-                            className="text-sm font-bold text-[#FF6600] hover:underline whitespace-nowrap transition-colors flex items-center gap-1"
-                        >
-
-                            <span className="lg:hidden">{t('sellOnBca') || "Vendre sur BCA"}</span>
-                        </Link>
-                    </div>
+                    <Link
+                        to="/register?role=fournisseur"
+                        className="shrink-0 ml-4 text-sm font-bold text-[#1CA0DB] hover:underline whitespace-nowrap transition-colors hidden lg:flex items-center gap-1"
+                    >
+                        {t('sellOnBca') || 'Vendre sur BCA'}
+                        <ArrowRight className="size-3.5" />
+                    </Link>
                 </div>
             </div>
 
             {/* ── Mobile Search ─────────────────────────────────────────────── */}
             <div className="md:hidden px-4 pb-4">
-                <form onSubmit={handleSearch} className="w-full flex items-center rounded-full border border-[#FF6600] bg-background h-10 overflow-hidden">
+                <form onSubmit={handleSearch} className="w-full flex items-center rounded-full border border-[#1CA0DB] bg-background h-10 overflow-hidden">
                     <input
                         type="text"
                         placeholder={t('searchDots') || "Rechercher..."}
@@ -654,7 +645,7 @@ const isDark = theme === 'dark';
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
-                    <button type="submit" className="h-full px-5 bg-[#FF6600] text-white font-bold text-sm">
+                    <button type="submit" className="h-full px-5 bg-[#1CA0DB] text-white font-bold text-sm">
                         Go
                     </button>
                 </form>
@@ -712,11 +703,11 @@ const isDark = theme === 'dark';
                                 {/* Auth Buttons (guest) */}
                                 {!user && (
                                     <div className="flex gap-3">
-                                        <Link to="/register" onClick={() => setIsMenuOpen(false)} className="flex-1 text-center bg-[#FF6600] text-white py-3 rounded-2xl font-bold text-sm">
-                                            S'inscrire
+                                        <Link to="/register" onClick={() => setIsMenuOpen(false)} className="flex-1 text-center bg-[#1CA0DB] text-white py-3 rounded-2xl font-bold text-sm">
+                                            {t('register') || "S'inscrire"}
                                         </Link>
                                         <Link to="/login" onClick={() => setIsMenuOpen(false)} className="flex-1 text-center bg-muted text-foreground py-3 rounded-2xl font-bold text-sm">
-                                            Se connecter
+                                            {t('login') || "Se connecter"}
                                         </Link>
                                     </div>
                                 )}
@@ -736,20 +727,6 @@ const isDark = theme === 'dark';
                                     </Link>
                                 )}
 
-                                 {/* Mode IA Mobile */}
-                                 <button 
-                                     onClick={() => { setIsAiModalOpen(true); setIsMenuOpen(false); }}
-                                     className="w-full flex items-center gap-4 p-5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-[2rem] shadow-xl shadow-orange-500/20 active:scale-95 transition-all group"
-                                 >
-                                     <div className="size-12 rounded-2xl bg-white/20 flex items-center justify-center">
-                                         <Sparkles className="size-6 text-white group-hover:animate-spin" />
-                                     </div>
-                                     <div className="text-left">
-                                         <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Assistant de sourcing</p>
-                                         <p className="text-base font-black uppercase tracking-tight">Activer Mode IA</p>
-                                     </div>
-                                 </button>
-
                                 {/* Navigation Links */}
                                 <div className="flex flex-col gap-1">
                                     <h4 className="font-black text-[10px] text-muted-foreground uppercase tracking-widest px-2 pb-2">Navigation</h4>
@@ -759,7 +736,11 @@ const isDark = theme === 'dark';
                                         { to: '/marketplace?filter=flash', icon: TrendingUp, label: 'Meilleures Offres' },
                                         ...(user ? [
                                             { to: dashboardLink, icon: LayoutDashboard, label: 'Mon Tableau de bord' },
-                                            { to: '/orders', icon: Package, label: 'Mes commandes' },
+                                            ...(isBuyerLike ? [
+                                                { to: ordersLink, icon: Package, label: 'Mes commandes' },
+                                            ] : user.role === ROLES.FOURNISSEUR ? [
+                                                { to: '/vendor/orders', icon: Package, label: 'Mes commandes' },
+                                            ] : []),
                                             { to: '/notifications', icon: Bell, label: 'Notifications', badge: notificationCount },
                                         ] : []),
                                     ].map(item => (
@@ -769,10 +750,10 @@ const isDark = theme === 'dark';
                                             onClick={() => setIsMenuOpen(false)}
                                             className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-foreground/5 transition-colors group"
                                         >
-                                            <item.icon className="size-5 text-muted-foreground group-hover:text-[#FF6600] transition-colors" />
-                                            <span className="font-semibold text-foreground group-hover:text-[#FF6600] transition-colors flex-1">{item.label}</span>
+                                            <item.icon className="size-5 text-muted-foreground group-hover:text-[#1CA0DB] transition-colors" />
+                                            <span className="font-semibold text-foreground group-hover:text-[#1CA0DB] transition-colors flex-1">{item.label}</span>
                                             {item.badge > 0 && (
-                                                <span className="bg-[#FF6600] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full tabular-nums">{item.badge}</span>
+                                                <span className="bg-[#1CA0DB] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full tabular-nums">{item.badge}</span>
                                             )}
                                         </Link>
                                     ))}
@@ -792,8 +773,8 @@ const isDark = theme === 'dark';
                                             onClick={() => setIsMenuOpen(false)}
                                             className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-foreground/5 transition-colors group"
                                         >
-                                            <item.icon className="size-5 text-muted-foreground group-hover:text-[#FF6600] transition-colors" />
-                                            <span className="font-semibold text-foreground group-hover:text-[#FF6600] transition-colors">{item.label}</span>
+                                            <item.icon className="size-5 text-muted-foreground group-hover:text-[#1CA0DB] transition-colors" />
+                                            <span className="font-semibold text-foreground group-hover:text-[#1CA0DB] transition-colors">{item.label}</span>
                                         </Link>
                                     ))}
                                 </div>
@@ -808,11 +789,15 @@ const isDark = theme === 'dark';
                                         {isDark ? 'Mode Clair' : 'Mode Sombre'}
                                     </button>
                                     <button
-                                        onClick={() => changeLanguage(lang === 'FR' ? 'EN' : 'FR')}
+                                        onClick={() => {
+                                            const order = ['FR', 'EN', 'SO', 'PE', 'MA'];
+                                            const next = order[(order.indexOf(lang) + 1) % order.length];
+                                            changeLanguage(next);
+                                        }}
                                         className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-muted hover:bg-foreground/10 transition-colors font-bold text-sm"
                                     >
                                         <Globe className="size-4" />
-                                        {lang === 'FR' ? 'English' : 'Français'}
+                                        {{ FR: 'Français', EN: 'English', SO: 'Soussou', PE: 'Pular', MA: 'Malinké' }[lang] || 'Français'}
                                     </button>
                                 </div>
 
@@ -823,7 +808,7 @@ const isDark = theme === 'dark';
                                         className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-colors font-bold"
                                     >
                                         <LogOut className="size-4" />
-                                        Déconnexion
+                                        {t('logout') || "Déconnexion"}
                                     </button>
                                 )}
                             </div>

@@ -8,23 +8,26 @@ const buttonVariants = cva(
     {
         variants: {
             variant: {
-                default: 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:bg-primary/90 border border-slate-300 dark:border-foreground/10',
+                default: 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:bg-primary/90 border border-border',
                 destructive:
                     'bg-destructive text-destructive-foreground shadow-lg shadow-destructive/20 hover:bg-destructive/90',
                 outline:
-                    'border border-slate-200 dark:border-slate-300 dark:border-foreground/10 bg-foreground/50 dark:bg-slate-900/5 dark:bg-foreground/5 shadow-sm hover:bg-slate-50 dark:hover:bg-foreground/10 hover:text-slate-900 dark:hover:text-slate-900 dark:text-foreground backdrop-blur-sm',
+                    'border border-border bg-background/50 text-foreground shadow-sm hover:bg-muted backdrop-blur-sm',
                 secondary:
-                    'bg-slate-100 dark:bg-foreground/10 text-slate-900 dark:text-slate-900 dark:text-foreground shadow-sm hover:bg-slate-200 dark:hover:bg-foreground/20',
+                    'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80',
                 ghost:
-                    'hover:bg-slate-100 dark:hover:bg-slate-900/5 dark:bg-foreground/5 hover:text-slate-900 dark:hover:text-slate-900 dark:text-foreground',
+                    'text-foreground hover:bg-muted',
                 link: 'text-primary underline-offset-4 hover:underline',
                 premium: 'bg-premium-gradient text-slate-900 dark:text-foreground shadow-xl shadow-blue-500/20 hover:shadow-blue-500/40 border border-foreground/20',
             },
             size: {
                 default: 'h-10 px-5 py-2.5',
                 sm: 'h-9 px-4 text-xs',
-                lg: 'h-12 px-10 text-base',
-                icon: 'size-6',
+                xs: 'h-8 px-3 text-xs2',
+                lg: 'h-11 px-8 text-sm',
+                icon: 'size-9',
+                'icon-sm': 'size-8',
+                'icon-lg': 'size-10',
             },
         },
         defaultVariants: {

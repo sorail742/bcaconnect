@@ -22,7 +22,7 @@ describe("🛡️ Suite de Tests de Sécurité - Authentification (V2.6)", () =>
     email: "security-test@bca.gn",
     telephone: "1234567890",
     mot_de_passe: "Password123!",
-    role: "admin",
+    role: "client",
   };
 
   describe("POST /api/auth/register", () => {
@@ -57,7 +57,7 @@ describe("🛡️ Suite de Tests de Sécurité - Authentification (V2.6)", () =>
         telephone: "2233445577",
         mot_de_passe: "SecurePass123",
         role: "technicien",
-        specialites: "Plomberie, Electricité",
+        specialites: "plomberie",
         zone_intervention: "Conakry",
       });
 

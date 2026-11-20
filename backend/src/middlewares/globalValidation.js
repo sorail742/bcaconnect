@@ -151,8 +151,18 @@ const validateUUIDParams = (req, res, next) => {
  * 5. Middleware de Validation des Limites de Pagination
  */
 const validatePagination = (req, res, next) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 20;
+  // Ne valider que si des paramètres de pagination sont fournis (GET listes)
+  const hasPage = req.query.page !== undefined && req.query.page !== "";
+  const hasLimit = req.query.limit !== undefined && req.query.limit !== "";
+  if (!hasPage && !hasLimit) {
+    req.pagination = { page: 1, limit: 20, offset: 0 };
+    return next();
+  }
+
+  const pageRaw = hasPage ? parseInt(req.query.page, 10) : 1;
+  const page = Number.isNaN(pageRaw) ? 1 : pageRaw;
+  const limitRaw = hasLimit ? parseInt(req.query.limit, 10) : 20;
+  const limit = Number.isNaN(limitRaw) ? 20 : limitRaw;
 
   if (page < 1) {
     return sendValidationError(
@@ -288,6 +298,10 @@ const validateEnums = (req, res, next) => {
       "livre",
       "annule",
       "retourne",
+      // Order.statut (commande, pas article) utilise ces variantes accentuées —
+      // voir orderController.js. OrderItem.statut reste 'annule' (sans accent).
+      "annulé",
+      "retourné",
       // Statuts livraison (flux Transporteur)
       "pret",
       "ramasse",
@@ -299,10 +313,18 @@ const validateEnums = (req, res, next) => {
       "en_cours",
       "en_mediation",
       "ferme",
+      "archive",
       // Statuts paiement
       "complete",
       "echoue",
       "terminé",
+      // Statuts webinaires
+      "a_venir",
+      "en_direct",
+      "termine",
+      // Statuts certifications (fournisseur)
+      "validee",
+      "rejetee",
     ],
     statut_commande: [
       "en_attente",

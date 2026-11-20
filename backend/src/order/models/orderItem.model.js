@@ -1,0 +1,41 @@
+const { DataTypes } = require('sequelize');
+const sequelize = require('../../config/database');
+
+const OrderItem = sequelize.define('OrderItem', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+    },
+    quantite: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
+    prix_unitaire_achat: {
+        type: DataTypes.DECIMAL(15, 2),
+        allowNull: false,
+    },
+    statut: {
+        type: DataTypes.STRING(32),
+        defaultValue: 'en_attente',
+    },
+    escrow_released: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        comment: 'True si les fonds séquestre ont été libérés au vendeur',
+    },
+    variante_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+    },
+    variante_nom: {
+        type: DataTypes.STRING(150),
+        allowNull: true,
+    },
+}, {
+    tableName: 'details_commandes',
+    timestamps: true,
+    underscored: true,
+});
+
+module.exports = OrderItem;

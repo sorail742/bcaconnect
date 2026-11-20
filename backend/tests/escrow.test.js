@@ -4,7 +4,7 @@ const app = require('../src/app');
 const {
     User, Wallet, Store, Product, Category, Order, OrderItem, sequelize
 } = require('../src/models');
-const escrowService = require('../src/services/escrowService');
+const escrowService = require('../src/common/escrow/service/escrow.service');
 const tokenService = require('../src/services/tokenService');
 
 describe('🛡️ Escrow Service — Séquestre bulletproof', () => {

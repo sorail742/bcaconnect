@@ -1,42 +1,35 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Zap } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-import { useLanguage } from '../../context/LanguageContext';
+// Recadrages du logo officiel (frontend/public/logo-BCA.png) :
+const ASSETS = {
+    icon: '/logo-BCA-icon.png',  // Pictogramme seul (carré bleu + chariot blanc)
+    mark: '/logo-BCA-mark.png',  // Pictogramme + « BCA » — usage compact (navbar, header)
+    full: '/logo-BCA-full.png',  // Pictogramme + « BCA » + « Best Centrale d'Achat »
+};
 
-const BcaLogo = ({ className, size = "h-10", variant = "color", hideText = false }) => {
-    const { t } = useLanguage();
-    // Brand colors from screenshot
-    const orangeBrand = "#FF6600";
-    
+/**
+ * Logo officiel BCA Connect. `variant="light"` force un rendu blanc monochrome,
+ * à réserver aux surfaces toujours sombres (fond fixe type slate-900) — sur les
+ * surfaces qui suivent le thème (bg-background), laisser la valeur par défaut :
+ * l'inversion se fait automatiquement en mode sombre.
+ */
+const BcaLogo = ({ className, size = 'h-10', variant = 'color', type = 'mark' }) => {
+    const forceLight = variant === 'light';
+
     return (
-        <div translate="no" className={cn("inline-flex items-center gap-3 select-none group", className)}>
-            {/* Logo Icon: Orange Square with White Zap */}
-            <motion.div 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={cn(
-                    "flex items-center justify-center rounded-xl transition-shadow",
-                    size, "aspect-square shadow-lg shadow-orange-500/20"
-                )}
-                style={{ backgroundColor: orangeBrand }}
-            >
-                <Zap className="size-1/2 text-white fill-white" />
-            </motion.div>
-
-            {!hideText && (
-                <div className="flex flex-col leading-none">
-                    <span className="text-xl md:text-2xl font-black tracking-tighter flex items-center">
-                        <span className="text-foreground">BCA</span>
-                        <span style={{ color: orangeBrand }} className="ml-1 uppercase">CONNECT</span>
-                    </span>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mt-0.5">
-                        {t('logoSubtitle') || "Premier Hub de Guinée"}
-                    </span>
-                </div>
+        <img
+            src={ASSETS[type] || ASSETS.mark}
+            alt="BCA Connect — Best Centrale d'Achat"
+            translate="no"
+            draggable={false}
+            className={cn(
+                size,
+                'w-auto object-contain select-none',
+                forceLight ? 'brightness-0 invert' : 'dark:brightness-0 dark:invert',
+                className
             )}
-        </div>
+        />
     );
 };
 

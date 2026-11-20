@@ -25,3 +25,9 @@ pnpm-debug.log*
 # Misc
 *.local
 backup_backend/
+
+# Testing / coverage
+coverage/
+playwright-report/
+test-results/
+e2e/.auth/

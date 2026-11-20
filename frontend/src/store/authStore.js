@@ -70,7 +70,7 @@ const useAuthStore = create(
              */
             logout: () => {
                 get().clearAuth();
-                window.location.href = '/';
+                window.location.href = '/login';
             }
         }),
         {

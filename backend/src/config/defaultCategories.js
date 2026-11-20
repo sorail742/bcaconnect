@@ -1,4 +1,4 @@
-/** Taxonomie BCA standard — alignée avec frontend/src/lib/categoryConstants.jsx */
+/** Taxonomie BCA standard — alignée avec frontend/src/category/lib/categoryConstants.jsx */
 const DEFAULT_CATEGORIES = [
     'Vêtements & Accessoires',
     'Électronique grand public',

@@ -8,8 +8,8 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
-import { useLanguage } from '../context/LanguageContext';
-import supportService from '../services/supportService';
+import { useLanguage } from '../context/useLanguage';
+import supportService from '../support/services/supportService';
 
 const ContactPage = () => {
     const { t, lang } = useLanguage();
@@ -62,24 +62,24 @@ const ContactPage = () => {
     const itemVariants = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 
     return (
-        <div className="bg-slate-50 dark:bg-[#0A0D14] min-h-screen font-sans">
+        <div className="bg-muted dark:bg-[#0A0D14] min-h-screen font-sans">
             {/* ══ HERO ══ */}
-            <section className="relative pt-32 pb-20 overflow-hidden bg-white dark:bg-[#0F1219] border-b border-border">
-                <div className="absolute inset-0 bg-gradient-to-b from-[#FF6600]/5 to-transparent pointer-events-none" />
+            <section className="relative pt-32 pb-20 overflow-hidden bg-card dark:bg-[#0F1219] border-b border-border">
+                <div className="absolute inset-0 bg-gradient-to-b from-[#1CA0DB]/5 to-transparent pointer-events-none" />
                 <motion.div 
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
                     className="max-w-5xl mx-auto px-6 text-center space-y-6 relative z-10"
                 >
-                    <div className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-[#FF6600]/10 border border-[#FF6600]/20 text-[#FF6600] font-bold text-sm mb-4">
+                    <div className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-[#1CA0DB]/10 border border-[#1CA0DB]/20 text-[#1CA0DB] font-bold text-sm mb-4">
                         <Phone className="size-4" /> {t('contact').toUpperCase()}
                     </div>
-                    <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
+                    <h1 className="text-4xl md:text-5xl font-extrabold text-foreground dark:text-white tracking-tight leading-tight">
                         Discutons de <br className="hidden md:block"/>
-                        <span className="text-[#FF6600]">votre projet</span> 
+                        <span className="text-[#1CA0DB]">votre projet</span> 
                     </h1>
-                    <p className="text-lg text-slate-600 dark:text-slate-400 max-w-3xl mx-auto leading-relaxed">
+                    <p className="text-lg text-muted-foreground dark:text-muted-foreground max-w-3xl mx-auto leading-relaxed">
                         {t('contactSubHero')}
                     </p>
                 </motion.div>
@@ -103,14 +103,14 @@ const ContactPage = () => {
                                 { icon: Phone, label: "TÉLÉPHONE", value: "+224 621 00 00 00", sub: lang === 'FR' ? "Lun-Sam, 8h-18h" : "Mon-Sat, 8am-6pm" },
                                 { icon: MapPin, label: "ADRESSE", value: "Kaloum, Conakry", sub: "Guinée" },
                             ].map((item, i) => (
-                                <div key={i} className="flex items-start gap-5 p-6 rounded-2xl bg-white dark:bg-slate-800 border border-border hover:shadow-md hover:border-[#FF6600]/40 transition-all group">
-                                    <div className="size-12 rounded-xl bg-slate-50 dark:bg-slate-700 flex items-center justify-center shrink-0 border border-black/5 dark:border-white/5 group-hover:bg-[#FF6600] transition-colors">
-                                        <item.icon className="size-5 text-[#FF6600] group-hover:text-white transition-colors" />
+                                <div key={i} className="flex items-start gap-5 p-6 rounded-2xl bg-card dark:bg-slate-800 border border-border hover:shadow-md hover:border-[#1CA0DB]/40 transition-all group">
+                                    <div className="size-12 rounded-xl bg-muted dark:bg-slate-700 flex items-center justify-center shrink-0 border border-black/5 dark:border-white/5 group-hover:bg-[#1CA0DB] transition-colors">
+                                        <item.icon className="size-5 text-[#1CA0DB] group-hover:text-white transition-colors" />
                                     </div>
                                     <div className="flex flex-col justify-center">
-                                        <p className="text-xs font-semibold text-slate-500 mb-1 tracking-wider">{item.label}</p>
-                                        <p className="text-lg font-bold text-slate-900 dark:text-white">{item.value}</p>
-                                        <p className="text-xs text-[#FF6600] font-medium mt-1">{item.sub}</p>
+                                        <p className="text-xs font-semibold text-muted-foreground mb-1 tracking-wider">{item.label}</p>
+                                        <p className="text-lg font-bold text-foreground dark:text-white">{item.value}</p>
+                                        <p className="text-xs text-[#1CA0DB] font-medium mt-1">{item.sub}</p>
                                     </div>
                                 </div>
                             ))}
@@ -118,10 +118,10 @@ const ContactPage = () => {
 
                         <motion.div variants={itemVariants} className="p-6 rounded-2xl bg-slate-900 border border-slate-800 text-white space-y-4 shadow-xl">
                             <div className="flex items-center gap-3">
-                                <Sparkles className="size-5 text-[#FF6600]" />
+                                <Sparkles className="size-5 text-[#1CA0DB]" />
                                 <span className="text-sm font-bold tracking-wider">SUPPORT PRIORITAIRE</span>
                             </div>
-                            <p className="text-sm text-slate-300 leading-relaxed font-medium">
+                            <p className="text-sm text-muted-foreground leading-relaxed font-medium">
                                 Les utilisateurs disposant d'un compte professionnel bénéficient d'un traitement express de leurs requêtes (H24).
                             </p>
                         </motion.div>
@@ -133,16 +133,16 @@ const ContactPage = () => {
                             <motion.div 
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="h-full flex flex-col items-center justify-center gap-6 text-center p-16 rounded-3xl bg-white dark:bg-slate-800 border border-border shadow-md"
+                                className="h-full flex flex-col items-center justify-center gap-6 text-center p-16 rounded-3xl bg-card dark:bg-slate-800 border border-border shadow-md"
                             >
                                 <div className="size-20 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">
                                     <CheckCircle2 className="size-10" />
                                 </div>
-                                <h3 className="text-3xl font-bold text-slate-900 dark:text-white">Message Envoyé !</h3>
-                                <p className="text-base text-slate-500 max-w-sm">
+                                <h3 className="text-3xl font-bold text-foreground dark:text-white">Message Envoyé !</h3>
+                                <p className="text-base text-muted-foreground max-w-sm">
                                     Notre équipe a bien reçu votre demande et vous répondra dans les plus brefs délais.
                                 </p>
-                                <Button onClick={() => setSent(false)} className="mt-6 px-10 h-12 bg-slate-900 text-white hover:bg-slate-800 rounded-xl">
+                                <Button onClick={() => setSent(false)} className="mt-6 px-10 h-12 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 rounded-xl">
                                     Nouveau Message
                                 </Button>
                             </motion.div>
@@ -152,28 +152,28 @@ const ContactPage = () => {
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ duration: 0.5, delay: 0.2 }}
                                 onSubmit={handleSubmit} 
-                                className="p-8 md:p-12 rounded-3xl bg-white dark:bg-[#0F1219] border border-border space-y-8 shadow-xl"
+                                className="p-8 md:p-12 rounded-3xl bg-card dark:bg-[#0F1219] border border-border space-y-8 shadow-xl"
                             >
                                 <div>
-                                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Laissez-nous un message</h3>
-                                    <p className="text-sm text-slate-500">Remplissez les champs ci-dessous pour contacter le bon département.</p>
+                                    <h3 className="text-2xl font-bold text-foreground dark:text-white mb-2">Laissez-nous un message</h3>
+                                    <p className="text-sm text-muted-foreground">Remplissez les champs ci-dessous pour contacter le bon département.</p>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Nom complet *</label>
+                                        <label className="text-sm font-semibold text-foreground/80 dark:text-muted-foreground">Nom complet *</label>
                                         <Input name="nom" value={form.nom} onChange={handleChange} placeholder="Mamadou Diallo" className="h-12 bg-transparent" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Adresse Email *</label>
+                                        <label className="text-sm font-semibold text-foreground/80 dark:text-muted-foreground">Adresse Email *</label>
                                         <Input name="email" type="email" value={form.email} onChange={handleChange} placeholder="votre@email.com" className="h-12 bg-transparent" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Téléphone (Optionnel)</label>
+                                        <label className="text-sm font-semibold text-foreground/80 dark:text-muted-foreground">Téléphone (Optionnel)</label>
                                         <Input name="telephone" value={form.telephone} onChange={handleChange} placeholder="+224 6XX XX XX XX" className="h-12 bg-transparent" />
                                     </div>
                                     <div className={cn(
-                                         "h-16 px-6 rounded-2xl flex items-center justify-center shadow-lg border border-border bg-white transition-all duration-500 hover:scale-105 hover:shadow-primary/20",
+                                         "h-12 px-6 rounded-2xl flex items-center justify-center shadow-lg border border-border bg-card transition-all duration-500 hover:scale-105 hover:shadow-primary/20",
                                          "overflow-hidden mb-4"
                                      )}>
                                         <div className="relative w-full">
@@ -181,28 +181,28 @@ const ContactPage = () => {
                                                 name="raison"
                                                 value={form.raison}
                                                 onChange={handleChange}
-                                                className="w-full h-12 rounded-xl border border-border bg-slate-50 dark:bg-slate-800/50 px-4 text-sm font-medium focus:outline-none focus:border-[#FF6600]/40 appearance-none text-slate-900 dark:text-white transition-all cursor-pointer"
+                                                className="w-full h-12 rounded-xl border border-border bg-muted dark:bg-slate-800/50 px-4 text-sm font-medium focus:outline-none focus:border-[#1CA0DB]/40 appearance-none text-foreground dark:text-white transition-all cursor-pointer"
                                             >
                                                 <option value="">Sélectionner une option...</option>
                                                 {CONTACT_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
                                             </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
+                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Votre message *</label>
+                                    <label className="text-sm font-semibold text-foreground/80 dark:text-muted-foreground">Votre message *</label>
                                     <textarea
                                         name="message"
                                         value={form.message}
                                         onChange={handleChange}
                                         placeholder="Comment pouvons-nous vous aider aujourd'hui ?"
-                                        className="w-full min-h-[140px] rounded-xl border border-border bg-slate-50 dark:bg-slate-800/50 p-4 text-sm font-medium focus:outline-none focus:border-[#FF6600]/40 text-slate-900 dark:text-white placeholder:text-slate-400 resize-none transition-all"
+                                        className="w-full min-h-[140px] rounded-xl border border-border bg-muted dark:bg-slate-800/50 p-4 text-sm font-medium focus:outline-none focus:border-[#1CA0DB]/40 text-foreground dark:text-white placeholder:text-muted-foreground resize-none transition-all"
                                     />
                                 </div>
 
-                                <Button type="submit" isLoading={isSending} className="w-full h-14 bg-[#FF6600] text-white rounded-xl text-base font-bold hover:shadow-lg hover:shadow-[#FF6600]/20 transition-all">
+                                <Button type="submit" isLoading={isSending} className="w-full h-14 bg-[#1CA0DB] text-white rounded-xl text-base font-bold hover:shadow-lg hover:shadow-[#1CA0DB]/20 transition-all">
                                     <Send className="size-5 mr-2" />
                                     {isSending ? t('sending') : t('sendMessage')}
                                 </Button>

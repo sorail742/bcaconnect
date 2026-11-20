@@ -1,0 +1,48 @@
+# compiled output
+/dist
+/node_modules
+/build
+
+# Prisma generated client
+/generated/prisma
+
+# Doc de référence Prisma CLI/Client (scaffoldée par `prisma init`) : gardée
+# une seule fois dans .agents/skills/ (utile pour les prochaines phases de
+# la migration), mais .claude/ et .windsurf/ ne sont que des symlinks vers
+# le même contenu — sous Windows/ce setup git, ils se résolvent en copies
+# complètes plutôt qu'en vrais symlinks (triple le nombre de fichiers pour
+# rien). skills-lock.json reste suivi (petit fichier de provenance).
+.claude/
+.windsurf/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+
+# Tests
+/coverage
+/.nyc_output
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+*.launch
+.settings/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Environment variables — jamais commitées (DATABASE_URL, JWT_PUBLIC_KEY, secrets)
+.env
+.env.*.local
+
+# temp directory
+.temp
+.tmp

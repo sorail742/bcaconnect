@@ -13,6 +13,11 @@ const globalErrorHandler = require('./middlewares/errorHandler');
 const app = express();
 const path = require('path');
 
+// En production (Render, derrière un proxy), sans ceci req.ip renvoie l'IP interne
+// du proxy pour CHAQUE requête — ce qui invaliderait tout suivi d'IP utilisateur
+// (journal d'activité, rate limiting) en environnement réel.
+app.set('trust proxy', 1);
+
 // ─── Servir les fichiers statiques (Uploads) ─────────────────────────────────
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
@@ -88,9 +93,13 @@ app.get('/api/health', (req, res) => {
 });
 
 // ─── Sécurité : Rate Limiting ────────────────────────────────────────────────
+// LOAD_TEST_MODE : uniquement positionné par .github/workflows/load-test.yml
+// sur la stack docker-compose éphémère du runner CI — jamais en production
+// (voir loadtests/config/README.md). Sans ça, express-rate-limit renvoie des
+// 429 bien avant la capacité réelle du serveur et fausse le rapport de charge.
 const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 1000, // Augmenté pour éviter les faux-positifs en dev
+    max: process.env.LOAD_TEST_MODE === 'true' ? 1_000_000 : 1000, // Augmenté pour éviter les faux-positifs en dev
     message: { message: 'Trop de requêtes.' },
 });
 app.use('/api', globalLimiter);
@@ -101,33 +110,54 @@ const apiRouter = express.Router();
 // Appliquer la validation de pagination sur les routes GET
 apiRouter.use(validatePagination);
 
-apiRouter.use('/auth', require('./routes/authRoutes'));
-apiRouter.use('/categories', require('./routes/categoryRoutes'));
-apiRouter.use('/stores', require('./routes/storeRoutes'));
-apiRouter.use('/users', require('./routes/userRoutes'));
-apiRouter.use('/products', require('./routes/productRoutes'));
-apiRouter.use('/orders', require('./routes/orderRoutes'));
-apiRouter.use('/payments', require('./routes/paymentRoutes'));
-apiRouter.use('/wallet', require('./routes/walletRoutes'));
-apiRouter.use('/delivery', require('./routes/deliveryRoutes'));
-apiRouter.use('/ai', require('./routes/aiRoutes'));
-apiRouter.use('/ads', require('./routes/adRoutes'));
-apiRouter.use('/disputes', require('./routes/disputeRoutes'));
-apiRouter.use('/credits', require('./routes/creditRoutes'));
-apiRouter.use('/stats', require('./routes/statRoutes'));
-apiRouter.use('/support', require('./routes/supportRoutes'));
-apiRouter.use('/upload', require('./routes/uploadRoutes'));
-apiRouter.use('/notifications', require('./routes/notificationRoutes'));
-apiRouter.use('/messages', require('./routes/messageRoutes'));
-apiRouter.use('/reviews', require('./routes/reviewRoutes'));
-apiRouter.use('/sav', require('./routes/savRoutes'));
-apiRouter.use('/education', require('./routes/educationRoutes'));
-apiRouter.use('/iot', require('./routes/iotRoutes'));
-apiRouter.use('/technician', require('./routes/technicianRoutes'));
-apiRouter.use('/group-purchases', require('./routes/groupPurchaseRoutes'));
+apiRouter.use('/auth', require('./auth/routes/auth.route'));
+apiRouter.use('/categories', require('./nestProxy').createNestProxy()); // Migré vers NestJS
+apiRouter.use('/stores', require('./store/routes/store.route'));
+apiRouter.use('/users', require('./user/routes/user.route'));
+apiRouter.use('/products', require('./product/routes/product.route'));
+apiRouter.use('/orders', require('./order/routes/order.route'));
+apiRouter.use('/payments', require('./payment/routes/payment.route'));
+apiRouter.use('/wallet', require('./common/wallet/routes/wallet.route'));
+apiRouter.use('/delivery', require('./delivery/routes/delivery.route'));
+apiRouter.use('/ai', require('./ai/routes/ai.route'));
+apiRouter.use('/ads', require('./ad/routes/ad.route'));
+apiRouter.use('/disputes', require('./dispute/routes/dispute.route'));
+apiRouter.use('/credits', require('./credit/routes/credit.route'));
+apiRouter.use('/stats', require('./dashboard/routes/dashboard.route'));
+apiRouter.use('/support', require('./support/routes/support.route'));
+apiRouter.use('/upload', require('./upload/routes/upload.route'));
+apiRouter.use('/notifications', require('./notification/routes/notification.route'));
+apiRouter.use('/messages', require('./message/routes/message.route'));
+apiRouter.use('/reviews', require('./review/routes/review.route'));
+apiRouter.use('/sav', require('./sav/routes/sav.route'));
+apiRouter.use('/education', require('./nestProxy').createNestProxy()); // Migré vers NestJS
+apiRouter.use('/iot', require('./iot/routes/iot.route'));
+apiRouter.use('/technician', require('./technician/routes/technician.route'));
+apiRouter.use('/group-purchases', require('./group-purchase/routes/groupPurchase.route'));
+apiRouter.use('/reports', require('./report/routes/report.route'));
+apiRouter.use('/webinars', require('./nestProxy').createNestProxy()); // Migré vers NestJS
+apiRouter.use('/certifications', require('./nestProxy').createNestProxy()); // Migré vers NestJS
+apiRouter.use('/deletion-history', require('./deletion-log/routes/deletionLog.route'));
+apiRouter.use('/audit-logs', require('./nestProxy').createNestProxy()); // Migré vers NestJS (lecture seule — écritures toujours Sequelize)
+apiRouter.use('/rfq', require('./rfq/routes/rfq.route'));
+apiRouter.use('/product-questions', require('./nestProxy').createNestProxy()); // Migré vers NestJS
+apiRouter.use('/coupons', require('./nestProxy').createNestProxy()); // Migré vers NestJS (validate/recordUsage restent Sequelize — order.service.js)
+apiRouter.use('/product-variants', require('./product-variant/routes/productVariant.route'));
+apiRouter.use('/partner-stock', require('./nestProxy').createNestProxy()); // Migré vers NestJS
+apiRouter.use('/price-index', require('./nestProxy').createNestProxy()); // Migré vers NestJS
+apiRouter.use('/vendor-scorecard', require('./nestProxy').createNestProxy()); // Migré vers NestJS
+apiRouter.use('/organizations', require('./organization/routes/organization.route'));
+apiRouter.use('/alert-thresholds', require('./nestProxy').createNestProxy()); // Migré vers NestJS (evaluateAll reste Sequelize — cron)
+apiRouter.use('/invoices', require('./nestProxy').createNestProxy()); // Migré vers NestJS
 
 // Montage du routeur sur le préfixe /api
 app.use('/api', apiRouter);
+
+// ─── Pont interne (migration NestJS) ────────────────────────────────────────
+// Jamais appelé par un client — uniquement par backend-nest/ pour les
+// capacités qu'il ne possède pas encore (Socket.IO, deletion-log). Voir
+// backend/src/internal/internal.route.js.
+app.use('/internal', require('./internal/internal.route'));
 
 // ─── Gestion des erreurs standardisée ────────────────────────────────────────
 

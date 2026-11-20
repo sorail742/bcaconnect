@@ -79,11 +79,14 @@ const COMMUNE_CENTROIDS = {
     ratoma: { lat: 9.596, lng: -13.646 },
     matam: { lat: 9.535, lng: -13.660 },
     matoto: { lat: 9.585, lng: -13.610 },
+    hamdallaye: { lat: 9.615, lng: -13.630 },
     kagbelen: { lat: 9.680, lng: -13.480 },
     dubréka: { lat: 9.790, lng: -13.520 },
     dubreka: { lat: 9.790, lng: -13.520 },
     coyah: { lat: 9.710, lng: -13.385 },
     kindia: { lat: 10.056, lng: -12.865 },
+    labé: { lat: 11.318, lng: -12.283 },
+    labe: { lat: 11.318, lng: -12.283 },
     conakry: { lat: 9.537, lng: -13.677 },
 };
 

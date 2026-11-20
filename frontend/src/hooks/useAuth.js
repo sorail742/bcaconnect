@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import useAuthStore from '../store/authStore';
-import authService from '../services/authService';
+import authService from '../auth/services/authService';
 
 /**
  * Hook personnalisé pour interagir avec le système d'authentification.
@@ -110,16 +110,16 @@ export const useAuth = () => {
             // Ignorer — clearAuth dans tous les cas
         }
         clearAuth();
-        window.location.href = '/';
+        window.location.href = '/login';
     };
 
     /**
      * Supprime le compte de l'utilisateur.
      */
-    const deleteAccount = async () => {
+    const deleteAccount = async (confirmationText) => {
         try {
             setLoading(true);
-            await authService.deleteAccount();
+            await authService.deleteAccount(confirmationText);
             await logout();
         } catch (err) {
             const message = err.response?.data?.message || err.message || "Erreur de suppression";

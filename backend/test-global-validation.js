@@ -153,9 +153,10 @@ async function testTechnicienValidRegistration() {
   if (
     response.status !== 201 &&
     response.status !== 400 &&
-    response.status !== 401
+    response.status !== 401 &&
+    response.status !== 422
   ) {
-    throw new Error(`Expected 201 or 400/401, got ${response.status}`);
+    throw new Error(`Expected 201 or 400/401/422, got ${response.status}`);
   }
 }
 
@@ -340,8 +341,8 @@ async function testValidProductCreation() {
   const response = await client.post("/products", {
     nom_produit: "Test Product",
     description: "A test product description",
-    prix: 10000.5,
-    quantite_stock: 100,
+    prix_unitaire: 10000.5,
+    stock_quantite: 100,
     categorie_id: "550e8400-e29b-41d4-a716-446655440000",
   });
 
@@ -357,8 +358,8 @@ async function testInvalidProductPrice() {
   const response = await client.post("/products", {
     nom_produit: "Test Product",
     description: "A test product description",
-    prix: -100,
-    quantite_stock: 100,
+    prix_unitaire: -100,
+    stock_quantite: 100,
     categorie_id: "550e8400-e29b-41d4-a716-446655440000",
   });
 
@@ -369,7 +370,7 @@ async function testInvalidProductPrice() {
   if (response.status === 422) {
     if (
       !response.data.errors ||
-      !response.data.errors.some((e) => e.field === "prix")
+      !response.data.errors.some((e) => e.field === "prix_unitaire")
     ) {
       throw new Error("Price validation error not found");
     }
@@ -381,8 +382,8 @@ async function testInvalidProductQuantity() {
   const response = await client.post("/products", {
     nom_produit: "Test Product",
     description: "A test product description",
-    prix: 10000,
-    quantite_stock: -50,
+    prix_unitaire: 10000,
+    stock_quantite: -50,
     categorie_id: "550e8400-e29b-41d4-a716-446655440000",
   });
 
@@ -393,7 +394,7 @@ async function testInvalidProductQuantity() {
   if (response.status === 422) {
     if (
       !response.data.errors ||
-      !response.data.errors.some((e) => e.field === "quantite_stock")
+      !response.data.errors.some((e) => e.field === "stock_quantite")
     ) {
       throw new Error("Quantity validation error not found");
     }

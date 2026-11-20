@@ -19,7 +19,7 @@ jobs:
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
 
-      - name: 🛡️ Audit des dépendances (NPM Audit)
+      - name: 🛡️ Audit des dépendances (NPM Audit) — backend
         working-directory: backend
         run: npm audit --audit-level=high
 
@@ -36,4 +36,82 @@ jobs:
           JWT_SECRET: test_jwt_secret_minimum_32_characters_long_for_bca_ci
           ENCRYPTION_KEY: d45259cf4cb572049b1c75c5ef9d0893b2bea7c3f3e8b7637d856a87530fd1df
           GROQ_API_KEY: gsk_ci_dummy_key_for_tests_only
-          DATABASE_URL: sqlite::memory:
+          DATABASE_URL: "sqlite::memory:"
+
+  security-audit-frontend:
+    name: 🛡️ Audit des dépendances — frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 🛡️ Audit des dépendances (NPM Audit) — frontend
+        working-directory: frontend
+        run: npm audit --audit-level=high
+
+  migrations-postgres:
+    name: 🐘 Test des migrations (PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: bca_ci
+          POSTGRES_PASSWORD: bca_ci_password
+          POSTGRES_DB: bca_ci_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bca_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: 📦 Installer les dépendances
+        working-directory: backend
+        run: npm ci
+
+      - name: 🔄 Appliquer toutes les migrations sur PostgreSQL réel
+        working-directory: backend
+        run: npm run migrate
+        env:
+          DATABASE_URL: postgres://bca_ci:bca_ci_password@localhost:5432/bca_ci_test
+
+      - name: ✅ Vérifier que les migrations sont bien enregistrées et rejouables
+        working-directory: backend
+        run: |
+          cat > ./ci-verify-migrations.tmp.js << 'EOF'
+          const { sequelize } = require('./src/models');
+          (async () => {
+            const [meta] = await sequelize.query('SELECT COUNT(*)::int AS count FROM sequelize_meta');
+            const applied = meta[0].count;
+            const fs = require('fs');
+            const total = fs.readdirSync('./src/migrations').filter((f) => f.endsWith('.js')).length;
+            if (applied !== total) {
+              console.error(`🔴 ${applied}/${total} migrations enregistrées dans sequelize_meta.`);
+              process.exit(1);
+            }
+            console.log(`✅ ${applied}/${total} migrations appliquées et tracées.`);
+            await sequelize.close();
+          })().catch((err) => { console.error(err); process.exit(1); });
+          EOF
+          node ./ci-verify-migrations.tmp.js
+          rm -f ./ci-verify-migrations.tmp.js
+          npm run migrate
+        env:
+          DATABASE_URL: postgres://bca_ci:bca_ci_password@localhost:5432/bca_ci_test

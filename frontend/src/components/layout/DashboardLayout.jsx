@@ -4,16 +4,19 @@ import Sidebar from './Sidebar';
 import { Bell, Menu, Zap, Satellite, Activity, LayoutGrid, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import notificationService from '../../services/notificationService';
-import messageService from '../../services/messageService';
+import notificationService from '../../notification/services/notificationService';
+import messageService from '../../message/services/messageService';
 import socketService from '../../services/socketService';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 import PageTransition from '../ui/PageTransition';
+import { ROLE_LABELS } from '../../constants/roles';
+import { useLanguage } from '../../context/useLanguage';
 
-const DashboardLayout = ({ children, title, noPadding, noFooter }) => {
+const DashboardLayout = ({ children, title, noPadding, noFooter, fullHeight, hideHeader }) => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const { t } = useLanguage();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -34,26 +37,28 @@ const DashboardLayout = ({ children, title, noPadding, noFooter }) => {
         if (!user?.id) return; // 🛑 Sécurité : Stop total si pas de session
 
         fetchUnreadCount();
-        socketService.connect();
+        
+        socketService.on('connect', () => {
+            if (user) {
+                socketService.socket.emit('join', { id: user.id, role: user.role });
+            }
+        });
+
+        if (user) {
+            socketService.connect({ id: user.id, role: user.role });
+            if (socketService.socket?.connected) {
+                socketService.socket.emit('join', { id: user.id, role: user.role });
+            }
+        }
 
         // Charger messages non lus en arrière-plan
         messageService.getUnreadCount({ _bg: true })
             .then(setUnreadMessages)
             .catch(() => {});
 
-        socketService.on('connect', () => {
-            socketService.socket.emit('join', user.id);
-        });
-        if (socketService.socket?.connected) {
-            socketService.socket.emit('join', user.id);
-        }
-
         const handleNewNotification = (notif) => {
             setUnreadCount(prev => prev + 1);
-            toast.message(notif.titre || "BCA Connect", {
-                description: notif.message,
-                action: { label: "Voir", onClick: () => navigate('/notifications') }
-            });
+            // Toast global géré par SocketHandler — éviter les doublons
         };
 
         const handleNewMessage = () => {
@@ -70,7 +75,7 @@ const DashboardLayout = ({ children, title, noPadding, noFooter }) => {
     }, [navigate, user?.id, fetchUnreadCount]);
 
     return (
-        <div className="flex h-screen bg-background font-sans text-foreground overflow-hidden selection:bg-primary/30 selection:text-foreground antialiased relative">
+        <div className="flex h-full min-h-0 bg-background font-sans text-foreground overflow-hidden selection:bg-primary/30 selection:text-foreground antialiased relative">
             
             {/* Subtle Atmospheric Influence — Optimized for Performance */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 opacity-40">
@@ -102,41 +107,35 @@ const DashboardLayout = ({ children, title, noPadding, noFooter }) => {
             <div className="flex-1 flex flex-col min-w-0 relative h-full z-10">
 
                 {/* Executive Command Bar — Fully Opaque Sticky Header */}
+                {!hideHeader && (
                 <header className="h-14 shrink-0 border-b border-border bg-background z-50 px-4 md:px-6 flex items-center justify-between sticky top-0 shadow-sm">
                     <div className="flex items-center gap-5 relative z-10">
                         {/* Intelligent Toggle Hub */}
                         <button
                             id="btn-sidebar-toggle"
                             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                            className="hidden md:flex size-7 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-foreground/5 bg-foreground/[0.03] border border-foreground/10 rounded-xl transition-all"
+                            className="hidden md:flex size-8 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted border border-border rounded-lg transition-all"
                         >
-                            <LayoutGrid className={cn("size-4 transition-transform duration-500", isSidebarCollapsed ? 'rotate-90' : 'rotate-0')} />
+                            <LayoutGrid className={cn("size-4 transition-transform duration-300", isSidebarCollapsed ? 'rotate-90' : 'rotate-0')} />
                         </button>
 
                         <button
                             id="btn-mobile-sidebar-toggle"
                             onClick={() => setIsSidebarOpen(true)}
-                            className="md:hidden size-7 flex items-center justify-center text-muted-foreground hover:text-primary bg-foreground/[0.03] border border-foreground/10 rounded-xl"
+                            className="md:hidden size-8 flex items-center justify-center text-muted-foreground hover:text-primary border border-border rounded-lg"
                         >
                             <Menu className="size-4" />
                         </button>
 
-                        <div className="space-y-0.5">
-                            <h2 className="text-base font-bold text-foreground tracking-tight leading-none">
-                                {title || 'Dashboard'}
-                            </h2>
-                            <div className="flex items-center gap-2">
-                                <div className="size-1.5 rounded-full bg-primary animate-pulse" />
-                                <p className="text-[9px] text-primary font-bold uppercase tracking-widest leading-none">Réseau Actif</p>
-                            </div>
-                        </div>
+                        <h2 className="text-base font-bold text-foreground tracking-tight truncate">
+                            {title || t('dashboard') || 'Dashboard'}
+                        </h2>
                     </div>
 
-                    <div className="flex items-center gap-5 relative z-10">
-                        {/* Messages */}
+                    <div className="flex items-center gap-3 relative z-10 shrink-0">
                         <button
                             onClick={() => { navigate('/messages'); setUnreadMessages(0); }}
-                            className="relative size-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted bg-muted border border-border rounded-xl transition-all group"
+                            className="relative size-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted border border-border rounded-lg transition-all"
                         >
                             <MessageSquare className="size-4" />
                             {unreadMessages > 0 && (
@@ -146,76 +145,81 @@ const DashboardLayout = ({ children, title, noPadding, noFooter }) => {
                             )}
                         </button>
 
-                        {/* Notifications Hub */}
                         <button
                             id="btn-notifications"
                             onClick={() => navigate('/notifications')}
-                            className="relative size-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted bg-muted border border-border rounded-xl transition-all group"
+                            className="relative size-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted border border-border rounded-lg transition-all"
                         >
-                            <Bell className="size-4 transition-transform group-hover:rotate-6" />
+                            <Bell className="size-4" />
                             {unreadCount > 0 && (
                                 <span className="absolute top-2 right-2 size-2 bg-primary rounded-full border-2 border-background" />
                             )}
                         </button>
 
-                        {/* Identity Module — Fully Dynamic v2.7 */}
                         <button
                             id="btn-profile-hub"
                             onClick={() => navigate('/profile')}
-                            className="flex items-center gap-3 group p-0.5 pr-3 rounded-xl bg-muted border border-border hover:border-primary/40 transition-all"
+                            className="flex items-center gap-2 group p-0.5 pr-3 rounded-lg bg-muted border border-border hover:border-primary/40 transition-all"
                         >
-                            <div className="size-8 rounded-lg bg-primary p-0.5 transition-all group-hover:scale-105 overflow-hidden border border-border">
+                            <div className="size-8 rounded-lg bg-primary overflow-hidden border border-border shrink-0">
                                 {user?.avatar_url ? (
-                                    <img
-                                        src={user.avatar_url}
-                                        alt="Profil"
-                                        className="w-full h-full object-cover rounded shadow-md bg-background"
-                                    />
+                                    <img src={user.avatar_url} alt={t('profileAlt') || "Profil"} className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="w-full h-full bg-[#FF6600] flex items-center justify-center text-white text-[10px] font-black">
+                                    <div className="w-full h-full bg-[#1CA0DB] flex items-center justify-center text-white text-[10px] font-bold">
                                         {user?.nom_complet?.charAt(0).toUpperCase() || 'U'}
                                     </div>
                                 )}
                             </div>
                             <div className="hidden sm:flex flex-col items-start text-left max-w-[140px]">
                                 <p className="text-[10px] font-black text-slate-900 dark:text-foreground leading-none mb-1 w-full truncate">
-                                    {user?.nom_complet || 'Utilisateur'}
+                                    {user?.nom_complet || t('userFallback') || 'Utilisateur'}
                                 </p>
-                                <span className="text-[8px] font-black text-primary uppercase tracking-widest opacity-80 leading-none">
-                                    {user?.role === 'admin' ? 'Administrateur' : 
-                                     user?.role === 'fournisseur' ? 'Marchand' : 
-                                     user?.role === 'transporteur' ? 'Logistique' : 'Client Privilège'}
+                                <span className="text-[10px] font-medium text-primary uppercase tracking-wide leading-none truncate max-w-[120px]">
+                                    {ROLE_LABELS[user?.role] || t('bcaMember') || 'Membre BCA'}
                                 </span>
                             </div>
                         </button>
                     </div>
                 </header>
+                )}
 
                 {/* Intelligence Viewport */}
                 <main className={cn(
-                    "flex-1 overflow-y-auto overflow-x-hidden relative bg-background custom-scrollbar",
-                    noPadding ? "" : "p-4 md:p-6 pb-10"
+                    "flex-1 relative bg-background",
+                    fullHeight
+                        ? "flex flex-col min-h-0 overflow-hidden"
+                        : "overflow-y-auto overflow-x-hidden custom-scrollbar",
+                    noPadding ? "" : "p-4 md:p-6 pb-10",
                 )}>
                     {/* Visual Grain & Scale Layer */}
                     <div className="absolute inset-x-0 top-0 h-[800px] bg-gradient-to-b from-primary/[0.01] to-transparent pointer-events-none" />
                     
+                    {fullHeight ? (
+                        <div className={cn(
+                            "relative z-10 w-full min-w-0 max-w-full flex flex-col flex-1 min-h-0",
+                            !noPadding && "container max-w-full",
+                        )}>
+                            {children}
+                        </div>
+                    ) : (
                     <PageTransition
                         className={cn(
                             "relative z-10 w-full min-w-0 max-w-full",
-                            !noPadding && "container max-w-full"
+                            !noPadding && "container max-w-full",
                         )}
                     >
                         {children}
                     </PageTransition>
+                    )}
 
                     {/* Infrastructure Ledger Footer */}
                     {!noFooter && (
-                        <footer className="mt-40 py-12 px-10 border-t border-white/[0.02] flex flex-col sm:flex-row items-center justify-between gap-5 opacity-20 hover:opacity-100 transition-opacity duration-1000">
-                            <div className="flex items-center gap-5">
-                                <Zap className="size-5 text-primary animate-pulse" />
-                                <p className="text-[10px] font-black uppercase text-muted-foreground pt-0.5">BCA Connect v2.6</p>
+                        <footer className="mt-8 py-4 px-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 opacity-40 hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-2">
+                                <Zap className="size-3.5 text-primary" />
+                                <p className="text-[9px] font-semibold uppercase text-muted-foreground">BCA Connect v2.6</p>
                             </div>
-                            <p className="text-[10px] font-black uppercase text-muted-foreground pt-0.5">© 2026 BCA Connect v2.6</p>
+                            <p className="text-[9px] font-semibold uppercase text-muted-foreground">© 2026 BCA Connect</p>
                         </footer>
                     )}
                 </main>

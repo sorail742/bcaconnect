@@ -1,0 +1,9 @@
+import { IsOptional, IsString } from 'class-validator';
+
+// Le frontend envoie ce champ sur DELETE (ConfirmDeleteModal — l'admin doit
+// retaper le nom de l'élément) — capturé dans le journal de suppression.
+export class DeleteResourceDto {
+  @IsOptional()
+  @IsString()
+  confirmation_nom?: string;
+}

@@ -43,7 +43,7 @@ const NotFound = () => {
                     <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-md">
                         <Link
                             to="/"
-                            className="w-full sm:flex-1 bg-primary hover:bg-primary/90 text-slate-900 dark:text-foreground font-bold h-14 flex items-center justify-center rounded-lg transition-all shadow-lg shadow-primary/20"
+                            className="w-full sm:flex-1 bg-primary hover:bg-primary/90 text-white font-bold h-14 flex items-center justify-center rounded-lg transition-all shadow-lg shadow-primary/20"
                         >
                             <Home className="mr-2 size-5" />
                             Retourner à l'accueil

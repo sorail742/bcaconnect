@@ -57,10 +57,21 @@ export default {
                     foreground: "hsl(var(--popover-foreground))",
                 },
             },
+            fontSize: {
+                '3xs': ['0.5rem', { lineHeight: '0.75rem' }],
+                '2xs': ['0.625rem', { lineHeight: '0.875rem' }],
+                'xs2': ['0.6875rem', { lineHeight: '1rem' }],
+            },
             borderRadius: {
-                lg: "var(--radius)",
-                md: "calc(var(--radius) - 2px)",
                 sm: "calc(var(--radius) - 4px)",
+                md: "calc(var(--radius) - 2px)",
+                lg: "var(--radius)",
+                // xl/2xl/3xl plafonnés à var(--radius) + 4px (20px avec --radius: 1rem) : un seul
+                // système cohérent au lieu des rayons Tailwind par défaut (12/16/24px) qui
+                // désynchronisaient silencieusement dès que --radius changeait.
+                xl: "calc(var(--radius) + 2px)",
+                "2xl": "calc(var(--radius) + 4px)",
+                "3xl": "calc(var(--radius) + 4px)",
             },
             boxShadow: {
                 'glow-sm': '0 0 10px rgba(59, 130, 246, 0.15)',
